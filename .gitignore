@@ -27,3 +27,6 @@ dist
 .env
 .env.local
 .env.*.local
+
+# MCP private config
+.agents/mcp_config.json
