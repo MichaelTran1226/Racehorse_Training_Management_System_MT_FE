@@ -1,0 +1,55 @@
+/* Reset tối thiểu + nền tảng chữ/màu cho toàn app. Mọi giá trị lấy từ tokens.css. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Để thanh cuộn, ô date, autofill của trình duyệt cũng đổi theo theme. */
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  letter-spacing: var(--ls-body);
+}
+
+a {
+  color: var(--brand-700);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--brand-600);
+  text-decoration: underline;
+}
+
+/* Trợ năng: focus luôn thấy rõ, không bao giờ tắt outline. */
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+/* Chữ chỉ dành cho trình đọc màn hình (ví dụ lý do một nút bị khóa). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

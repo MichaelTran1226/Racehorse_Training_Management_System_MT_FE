@@ -1,0 +1,38 @@
+.stack {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 9px;
+}
+.toast {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 15px;
+  border-radius: var(--r);
+  background: var(--toast-bg);
+  border: 1px solid var(--toast-border);
+  color: var(--toast-text);
+  box-shadow: var(--shadow-lg);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  max-width: 380px;
+}
+/* Nền toast đảo sáng/tối theo theme nên màu icon có token riêng. */
+.ok .icon { color: var(--toast-icon-ok); }
+.warn .icon { color: var(--toast-icon-warn); }
+.danger .icon { color: var(--toast-icon-danger); }
+.info .icon { color: var(--toast-icon-info); }
+.icon { display: flex; }
+.text { flex: 1; }
+.close { background: none; border: 0; color: inherit; opacity: 0.6; cursor: pointer; padding: 0; display: flex; }
+.close:hover { opacity: 1; }
+@media (max-width: 720px) {
+  .stack { left: 17px; right: 17px; align-items: stretch; }
+  .toast { max-width: none; }
+}

@@ -1,0 +1,17 @@
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 17px 22px 0; }
+.headText { min-width: 0; }
+.title { margin: 0; font-size: var(--fs-card-title); font-weight: 800; letter-spacing: var(--ls-card-title); color: var(--text); }
+.subtitle { margin: 3px 0 0; font-size: 11px; color: var(--muted); line-height: 1.5; }
+.action { flex-shrink: 0; }
+.body { flex: 1; min-width: 0; }
+.foot { padding: 13px 22px; background: var(--surface-2); border-top: 1px solid var(--border-soft); font-size: 11px; color: var(--muted); }

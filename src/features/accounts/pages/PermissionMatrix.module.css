@@ -1,0 +1,41 @@
+.grid { display: grid; grid-template-columns: 1fr 322px; gap: var(--gap-grid); align-items: start; }
+.groups { display: flex; flex-direction: column; gap: 22px; }
+.groupLabel { margin: 0 0 4px; font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: var(--ls-eyebrow); color: var(--muted); }
+.row { display: flex; align-items: center; gap: 17px; padding: 11px 0; border-top: 1px solid var(--border-soft); }
+.rowText { flex: 1; min-width: 0; }
+.rowText strong { display: block; font-size: 12px; font-weight: 700; color: var(--text); }
+.rowText span { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+.aside { display: grid; gap: var(--gap-grid); }
+.facts { display: flex; flex-direction: column; gap: 11px; font-size: 12px; }
+.facts > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.facts span { color: var(--muted); }
+.facts b { color: var(--text); }
+.num { font-family: var(--font-numeric); }
+.identity { display: flex; align-items: center; gap: 11px; }
+.identity strong { display: block; font-size: 12.5px; color: var(--text); }
+.identity span { font-size: 11px; color: var(--muted); }
+.saveStack { display: flex; flex-direction: column; gap: 11px; }
+.note { margin: 0; font-size: 11px; color: var(--muted); line-height: 1.6; }
+
+/* Màn hình hẹp (design 1.10d): danh sách và thẻ tài khoản xếp dọc, nút lưu nằm trong một thanh gọn phía trên. */
+.compact { display: none; }
+@media (max-width: 1280px) {
+  .grid { grid-template-columns: 1fr; }
+  .aside { display: none; }
+  .compact {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 17px;
+    flex-wrap: wrap;
+    padding: 13px 17px;
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--r);
+  }
+  .compactWho { display: flex; align-items: center; gap: 11px; }
+  .compactWho strong { display: block; font-size: 12px; color: var(--text); }
+  .compactWho span { font-size: 11px; color: var(--muted); }
+  .compactBtns { display: flex; gap: 9px; }
+}

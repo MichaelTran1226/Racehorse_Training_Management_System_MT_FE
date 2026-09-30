@@ -1,0 +1,20 @@
+.wrap { position: relative; display: inline-flex; }
+.block { display: flex; width: 100%; }
+.tip {
+  position: absolute;
+  z-index: 70;
+  padding: 7px 10px;
+  border-radius: var(--r-sm);
+  background: var(--toast-bg);
+  color: var(--toast-text);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  max-width: 230px;
+  width: max-content;
+  box-shadow: var(--shadow-lg);
+  pointer-events: none;
+}
+.top { bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%); }
+.bottom { top: calc(100% + 7px); left: 50%; transform: translateX(-50%); }
+.right { left: calc(100% + 7px); top: 50%; transform: translateY(-50%); }

@@ -1,0 +1,47 @@
+/* Style chung cho Input và Select. */
+.wrap { position: relative; display: flex; align-items: center; }
+.icon { position: absolute; left: 11px; color: var(--muted-2); pointer-events: none; display: flex; }
+.chevron { position: absolute; right: 10px; color: var(--muted-2); pointer-events: none; display: flex; }
+.toggle {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  padding: 4px;
+  border: none;
+  background: none;
+  color: var(--muted-2);
+  cursor: pointer;
+  border-radius: var(--r-sm);
+}
+.toggle:hover { color: var(--text-2); }
+
+.control {
+  width: 100%;
+  padding: 9px 11px;
+  border-radius: var(--r-field);
+  background: var(--surface);
+  border: 1px solid var(--border-field);
+  font-family: var(--font);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.control::placeholder { color: var(--muted-2); }
+.control:disabled { background: var(--surface-2); cursor: not-allowed; }
+.control[readonly] { cursor: default; }
+.withIcon { padding-left: 33px; }
+.withToggle { padding-right: 33px; }
+.numeric { font-family: var(--font-numeric); font-variant-numeric: tabular-nums; }
+.invalid { border-color: var(--danger); box-shadow: 0 0 0 3px var(--danger-bg); }
+
+.select { appearance: none; padding-right: 32px; }
+.select option:disabled { color: var(--muted-2); }
+
+/* Ô nhập cao hơn trên màn hình cảm ứng để đạt vùng bấm 44px. */
+@media (max-width: 720px) {
+  .control { min-height: 46px; font-size: 14px; }
+}
+
+/* Ô nhập nhiều dòng: chỉ cho kéo giãn theo chiều dọc. */
+.textarea { resize: vertical; min-height: 72px; line-height: 1.6; }

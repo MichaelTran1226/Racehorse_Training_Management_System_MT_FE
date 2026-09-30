@@ -1,0 +1,24 @@
+.wrap { display: grid; justify-items: center; text-align: center; gap: 14px; padding: 12px 0; }
+.icon { width: 52px; height: 52px; border-radius: var(--r); display: grid; place-items: center; background: var(--danger-bg); color: var(--danger); }
+.eyebrow { margin: 0 0 7px; font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: var(--ls-eyebrow); color: var(--muted); }
+.title { margin: 0; font-size: var(--fs-h1); font-weight: 800; letter-spacing: var(--ls-h1); color: var(--ink); }
+.text { margin: 9px auto 0; max-width: 470px; font-size: 12.5px; color: var(--muted); line-height: 1.7; }
+.actions { display: flex; gap: 11px; margin-top: 4px; flex-wrap: wrap; justify-content: center; }
+.facts {
+  margin: 9px 0 0;
+  padding: 12px 17px;
+  border-radius: var(--r);
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  gap: 22px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.facts div { display: flex; gap: 6px; }
+.facts dt::after { content: " ·"; }
+.facts dt, .facts dd { margin: 0; }
+.facts dd { color: var(--text-2); font-weight: 600; }
+@media (max-width: 720px) { .title { font-size: 21px; } }

@@ -1,0 +1,10 @@
+.avatar {
+  flex-shrink: 0;
+  border-radius: var(--r-sm);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+.brand { background: var(--brand-100); color: var(--brand-700); }
+.neutral { background: var(--surface-3); color: var(--text-2); }

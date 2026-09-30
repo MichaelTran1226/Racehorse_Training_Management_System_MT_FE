@@ -1,0 +1,32 @@
+.btn {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text-2);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+.btn:hover { background: var(--surface-2); }
+.badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--text-on-brand);
+  font-family: var(--font-numeric);
+  font-size: 9px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--surface);
+}
+@media (max-width: 720px) { .btn { width: 44px; height: 44px; } }
