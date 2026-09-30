@@ -269,7 +269,10 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
 
 // Sidebar chỉ hiện mục mà tài khoản được cấp quyền (xây từ danh sách quyền, không chỉ từ tên vai trò).
 export function navFor(role: Role, permissions: PermissionMap): NavGroup[] {
-  return ROLE_NAV[role]
+  const groups = role !== "CLUB_MANAGER" && permissions.viewAudit
+    ? [...ROLE_NAV[role], { label: "AUDIT", items: [item("audit", "Audit Log", "history", { requires: "viewAudit" })] }]
+    : ROLE_NAV[role];
+  return groups
     .map((g) => ({ ...g, items: g.items.filter((it) => !it.requires || permissions[it.requires]) }))
     .filter((g) => g.items.length > 0);
 }
@@ -304,6 +307,9 @@ export function screenAccess(role: Role, permissions: PermissionMap, pathname: s
   const open: ScreenAccess = { allowed: true, ownerRoles: [], inOwnRole: false };
   if (OPEN_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) return open;
 
+  if (pathname === "/audit" || pathname.startsWith("/audit/")) {
+    return { allowed: !!permissions.viewAudit, group: "REPORTS", label: "Audit Log", ownerRoles: ["CLUB_MANAGER"], inOwnRole: role === "CLUB_MANAGER" };
+  }
   if (pathname === "/accounts" || pathname.startsWith("/accounts/")) {
     return {
       allowed: !!permissions.manageAccounts,
