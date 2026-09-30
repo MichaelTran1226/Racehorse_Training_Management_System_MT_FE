@@ -70,8 +70,8 @@ const INITIAL_INJURIES: PointInjury[] = [
     severity: "MODERATE",
     stage: "ACUTE",
     detectedDate: "2026-09-28",
-    x: 38,
-    y: 78,
+    x: 37,
+    y: 75,
     notes: "Tổn thương vi sợi độ 1, ấn đau phản xạ rõ rệt",
   },
   {
@@ -84,8 +84,8 @@ const INITIAL_INJURIES: PointInjury[] = [
     severity: "MILD",
     stage: "RECOVERING",
     detectedDate: "2026-09-20",
-    x: 35,
-    y: 44,
+    x: 38,
+    y: 34,
     notes: "Đang massage vật lý trị liệu, phản xạ vận động đã cải thiện tốt",
   },
 ];
@@ -262,30 +262,34 @@ export default function InjuryMapPage() {
           {/* Canvas SVG Area */}
           <div
             className={cx(styles.canvasArea, markingMode && styles.marking)}
-            onClick={handleCanvasClick}
           >
-            {/* SVG Horse Anatomy Graphic */}
-            <HorseAnatomyGraphic view={view} layer={layer} />
+            <div
+              className={styles.stageWrapper}
+              onClick={handleCanvasClick}
+            >
+              {/* SVG Horse Anatomy Graphic */}
+              <HorseAnatomyGraphic view={view} layer={layer} />
 
-            {/* Render Pins */}
-            {visibleInjuries.map((inj, idx) => (
-              <div
-                key={inj.id}
-                className={cx(styles.pin, inj.id === selectedId && styles.selected)}
-                style={{
-                  left: `${inj.x}%`,
-                  top: `${inj.y}%`,
-                  backgroundColor: STAGE_COLORS[inj.stage],
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedId(inj.id);
-                }}
-                title={`${inj.region}: ${inj.injuryType} (${STAGE_LABELS[inj.stage]})`}
-              >
-                {idx + 1}
-              </div>
-            ))}
+              {/* Render Pins */}
+              {visibleInjuries.map((inj, idx) => (
+                <div
+                  key={inj.id}
+                  className={cx(styles.pin, inj.id === selectedId && styles.selected)}
+                  style={{
+                    left: `${inj.x}%`,
+                    top: `${inj.y}%`,
+                    backgroundColor: STAGE_COLORS[inj.stage],
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedId(inj.id);
+                  }}
+                  title={`${inj.region}: ${inj.injuryType} (${STAGE_LABELS[inj.stage]})`}
+                >
+                  {idx + 1}
+                </div>
+              ))}
+            </div>
           </div>
 
           <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap", fontSize: "12px" }}>
