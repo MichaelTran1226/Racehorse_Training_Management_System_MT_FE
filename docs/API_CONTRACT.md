@@ -8,15 +8,15 @@ What the web app expects from the backend. It was written from the mock API of t
 
 | Topic | Rule |
 |---|---|
-| Base URL | `VITE_API_URL`, for example `http://localhost:8080/api` |
-| CORS | While developing, the web app runs at `http://localhost:5173` and calls the backend on another port, so the backend must allow that origin **with credentials** (needed for the session cookie) |
+| Base URL | `VITE_API_URL`, for example `http://localhost:3000/api` (NestJS backend) |
+| CORS | While developing, the web app runs at `http://localhost:5173` and calls the backend on another port, so the backend must allow that origin |
 | Format | JSON in, JSON out. Dates are ISO-8601 strings (`2026-09-21T08:30:00Z`) |
-| Authentication | Server-side session in an `HttpOnly` cookie. The web app sends `credentials: "include"` on every call |
-| Session lifetime | Expires after 30 minutes without activity; the API then answers `401 UNAUTHENTICATED` |
+| Authentication | JWT. `/auth/login` returns `accessToken` (15 minutes) + `refreshToken` (7 days, 30 days with `remember`). The web app sends `Authorization: Bearer <accessToken>` on every call and trades the refresh token at `POST /auth/refresh` when it gets `401 UNAUTHENTICATED` |
+| Session lifetime | Ends when the refresh token expires or is revoked (logout, password change, account locked); the API then answers `401 UNAUTHENTICATED` |
 | Passwords | Never returned by any endpoint |
 | Email format | Must end with `@gmail.com` (enforced by the web app and the mock on register, invite-staff and forgot-password) — reject anything else with `400 VALIDATION` / `400 INVALID_EMAIL` |
-| Success | `2xx` with the body shown in each table below |
-| Error | Non-`2xx` with the body `{ "code": "SOME_CODE", "message": "text", "data": { ... } }` |
+| Success | `2xx` with `{ "success": true, "data": <body shown in each table below> }`. The web app unwraps `data` |
+| Error | Non-`2xx` with the body `{ "success": false, "code": "SOME_CODE", "message": "text", "data": { ... } }` |
 
 ### Errors every screen handles
 
@@ -38,9 +38,10 @@ Error `code` values are turned into readable English sentences by `src/shared/li
 | `POST` | `/auth/verify-email` | `{ email, code }` | `{ email, fullName, role, requestCode, requestedAt, reviewer }` | `400 OTP_INVALID` (`data.attemptsLeft`) · `400 OTP_EXPIRED` · `404 OTP_NOT_FOUND` · `429 OTP_ATTEMPTS_EXCEEDED` |
 | `GET` | `/auth/otp?email=&purpose=signup\|reset\|invite` | - | `{ sentAt, expiresAt, resendAt }` (feeds the countdown) | `404 OTP_NOT_FOUND` |
 | `POST` | `/auth/otp/resend` | `{ email, purpose }` | `{ sentAt, expiresAt, resendAt }` | `429 OTP_COOLDOWN` (`data.resendAt`) |
-| `POST` | `/auth/login` | `{ email, password, remember }` | `{ user }` and sets the session cookie | see the login table below |
-| `POST` | `/auth/logout` | - | `{ ok: true }` | - |
-| `GET` | `/auth/me` | - | `{ user }` | `401 UNAUTHENTICATED` |
+| `POST` | `/auth/login` | `{ email, password, remember }` | `{ accessToken, refreshToken, expiresIn, tokenType, user }` | see the login table below |
+| `POST` | `/auth/refresh` | `{ refreshToken }` | `{ accessToken, refreshToken, expiresIn, tokenType }` (the old refresh token is revoked) | `401 UNAUTHENTICATED` |
+| `POST` | `/auth/logout` | `{ refreshToken }` | `{ success: true, message }` | - |
+| `GET` | `/auth/me` | - | the user profile (same fields as `user`) | `401 UNAUTHENTICATED` |
 | `POST` | `/auth/forgot-password` | `{ email }` | `{ sent: true, sentAt, expiresAt, resendAt }` — **same answer whether or not the email exists** | `400 INVALID_EMAIL` |
 | `POST` | `/auth/reset-password/verify` | `{ email, code }` | `{ resetToken, expiresAt }` | `400 OTP_INVALID` · `400 OTP_EXPIRED` · `404 OTP_NOT_FOUND` · `429 OTP_ATTEMPTS_EXCEEDED` |
 | `POST` | `/auth/reset-password` | `{ resetToken, password }` | `{ ok: true, activated }` — `activated: true` when an `INVITED` account set its first password (→ `ACTIVE`) | `400 RESET_EXPIRED` · `400 WEAK_PASSWORD` |
@@ -94,7 +95,7 @@ All of these answer `403 FORBIDDEN` when the caller lacks `manageAccounts`. The 
 |---|---|---|---|---|
 | `PUT` | `/me/profile` | `{ fullName, phone }` | `{ user }` | `400 VALIDATION` (`data.field`) |
 | `PUT` | `/me/notifications` | `{ key, value }` | `{ user }` | `400 VALIDATION` · `409 LOCKED` |
-| `POST` | `/me/password` | `{ current, next }` | `{ nextChangeDue }` | `400 WRONG_PASSWORD` · `400 SAME_PASSWORD` · `400 WEAK_PASSWORD` |
+| `POST` | `/me/password` | `{ current, next }` | `{ nextChangeDue, accessToken, refreshToken }` — other devices are signed out, this one gets a new token pair | `400 WRONG_PASSWORD` · `400 SAME_PASSWORD` · `400 WEAK_PASSWORD` |
 
 ## Access-denied trail
 

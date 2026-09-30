@@ -1,4 +1,5 @@
 import { api } from "@/shared/lib/api";
+import { saveTokens, type TokenPair } from "@/shared/lib/tokens";
 import type { AuthUser, NotifyKey } from "@/shared/types/auth";
 import type { ForbiddenInfo, InviteVerifyResult, OtpPurpose, OtpTimes, RegisterInput, RegistrationResult, ResetVerifyResult } from "./types";
 
@@ -36,8 +37,14 @@ export const updateProfile = (input: { fullName: string; phone: string }) =>
 export const updateNotification = (key: NotifyKey, value: boolean) =>
   api<{ user: AuthUser }>("PUT", "/me/notifications", { key, value });
 
-export const changePassword = (current: string, next: string) =>
-  api<{ nextChangeDue: string }>("POST", "/me/password", { current, next });
+// Backend đăng xuất mọi thiết bị khác và trả cặp token mới cho thiết bị này (mock không trả token).
+export async function changePassword(current: string, next: string) {
+  const res = await api<{ nextChangeDue: string } & Partial<TokenPair>>("POST", "/me/password", { current, next });
+  if (res.accessToken && res.refreshToken) {
+    saveTokens({ accessToken: res.accessToken, refreshToken: res.refreshToken });
+  }
+  return { nextChangeDue: res.nextChangeDue };
+}
 
 // ---- 403 ----
 export const logForbidden = (screen: string) => api<ForbiddenInfo>("POST", "/audit/forbidden", { screen });

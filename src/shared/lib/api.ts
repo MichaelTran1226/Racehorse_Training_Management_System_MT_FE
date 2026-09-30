@@ -1,8 +1,11 @@
 // CỔNG DUY NHẤT gọi backend. Trang và component KHÔNG gọi fetch trực tiếp.
-//  - NEXT_PUBLIC_USE_MOCK=true  => chuyển sang src/shared/mock/ (dữ liệu giả)
-//  - ngược lại                  => fetch tới NEXT_PUBLIC_API_URL, gửi kèm cookie phiên
-//  - 401 (UNAUTHENTICATED)      => mở modal Session Expired
+//  - VITE_USE_MOCK=true         => chuyển sang src/shared/mock/ (dữ liệu giả)
+//  - ngược lại                  => fetch tới VITE_API_URL, gửi kèm "Authorization: Bearer <access token>"
+//  - backend bọc kết quả trong { success, data } => trả về phần data
+//  - 401 (UNAUTHENTICATED)      => thử làm mới token một lần; vẫn lỗi thì mở modal Session Expired
 //  - 403 (FORBIDDEN)            => chuyển tới trang 403
+
+import { clearTokens, getTokens, saveTokens } from "@/shared/lib/tokens";
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 
@@ -46,17 +49,15 @@ export async function api<T>(method: HttpMethod, path: string, body?: unknown, o
       return (await handleMock(method, path, body)) as T;
     }
 
-    const res = await fetch(`${API_URL}${path}`, {
-      method,
-      credentials: "include",
-      headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-    });
-    const payload = await res.json().catch(() => null);
-    if (!res.ok) {
-      throw new ApiError(res.status, payload?.code ?? "UNKNOWN", payload?.message, payload?.data ?? {});
+    try {
+      return await request<T>(method, path, body);
+    } catch (err) {
+      // Access token hết hạn (15 phút) => đổi refresh token lấy cặp mới rồi gọi lại đúng một lần.
+      if (err instanceof ApiError && err.status === 401 && err.code === "UNAUTHENTICATED" && (await refreshTokens())) {
+        return await request<T>(method, path, body);
+      }
+      throw err;
     }
-    return payload as T;
   } catch (err) {
     const error = err instanceof ApiError ? err : new ApiError(0, "NETWORK_ERROR", "Network error");
     if (!options.silent) {
@@ -65,4 +66,45 @@ export async function api<T>(method: HttpMethod, path: string, body?: unknown, o
     }
     throw error;
   }
+}
+
+async function request<T>(method: HttpMethod, path: string, body?: unknown): Promise<T> {
+  const headers: Record<string, string> = {};
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+  const accessToken = getTokens()?.accessToken;
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+
+  const res = await fetch(`${API_URL}${path}`, {
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  const payload = await res.json().catch(() => null);
+  if (!res.ok) {
+    // Lỗi từ backend: { success: false, code, message, data }
+    const message = Array.isArray(payload?.message) ? payload.message.join(" ") : payload?.message;
+    throw new ApiError(res.status, payload?.code ?? "UNKNOWN", message, payload?.data ?? {});
+  }
+  return (payload && typeof payload === "object" && "success" in payload && "data" in payload ? payload.data : payload) as T;
+}
+
+// Dùng chung một lần làm mới cho các request 401 xảy ra cùng lúc.
+let refreshing: Promise<boolean> | null = null;
+
+function refreshTokens(): Promise<boolean> {
+  const refreshToken = getTokens()?.refreshToken;
+  if (!refreshToken) return Promise.resolve(false);
+  refreshing ??= request<{ accessToken: string; refreshToken: string }>("POST", "/auth/refresh", { refreshToken })
+    .then((tokens) => {
+      saveTokens(tokens);
+      return true;
+    })
+    .catch(() => {
+      clearTokens();
+      return false;
+    })
+    .finally(() => {
+      refreshing = null;
+    });
+  return refreshing;
 }
