@@ -11,6 +11,7 @@ import { Textarea } from "@/shared/components/form/Textarea";
 import { useAuth } from "@/shared/components/layout/AuthProvider";
 import { useToast } from "@/shared/components/ui/Toast";
 import { cx } from "@/shared/lib/cx";
+import { HorseAnatomyGraphic } from "../components/HorseAnatomyGraphic";
 import type { InjuryItem, InjuryStage, SeverityLevel } from "../types";
 import styles from "./InjuryMapPage.module.css";
 
@@ -70,7 +71,7 @@ const INITIAL_INJURIES: PointInjury[] = [
     stage: "ACUTE",
     detectedDate: "2026-09-28",
     x: 38,
-    y: 72,
+    y: 78,
     notes: "Tổn thương vi sợi độ 1, ấn đau phản xạ rõ rệt",
   },
   {
@@ -83,8 +84,8 @@ const INITIAL_INJURIES: PointInjury[] = [
     severity: "MILD",
     stage: "RECOVERING",
     detectedDate: "2026-09-20",
-    x: 32,
-    y: 42,
+    x: 35,
+    y: 44,
     notes: "Đang massage vật lý trị liệu, phản xạ vận động đã cải thiện tốt",
   },
 ];
@@ -264,40 +265,7 @@ export default function InjuryMapPage() {
             onClick={handleCanvasClick}
           >
             {/* SVG Horse Anatomy Graphic */}
-            <svg
-              viewBox="0 0 800 500"
-              style={{
-                width: "90%",
-                height: "90%",
-                transform: view === "RIGHT" ? "scaleX(-1)" : "none",
-                transition: "transform 0.3s ease",
-              }}
-            >
-              {/* Silhouette Body Path */}
-              <path
-                d="M 120 180 C 130 110, 180 80, 240 100 C 290 120, 310 160, 340 160 C 400 160, 480 150, 560 170 C 620 190, 680 230, 690 300 C 680 340, 660 380, 640 430 C 630 450, 620 460, 600 460 C 590 460, 580 430, 580 380 C 570 320, 550 280, 500 280 C 460 280, 430 300, 410 320 C 390 340, 380 400, 370 460 C 360 460, 350 450, 340 420 C 330 360, 320 300, 280 290 C 260 290, 240 320, 220 370 C 210 420, 200 460, 180 460 C 170 460, 160 420, 160 360 C 160 300, 180 260, 170 230 C 150 220, 130 210, 120 180 Z"
-                fill={layer === "MUSCLE" ? "var(--brand-100)" : "#e2e6de"}
-                stroke="var(--brand)"
-                strokeWidth="2.5"
-              />
-              {/* Head & Ears */}
-              <polygon points="120,180 90,140 130,130" fill="var(--brand-100)" stroke="var(--brand)" strokeWidth="2" />
-              <circle cx="140" cy="150" r="5" fill="var(--brand)" />
-
-              {/* Anatomy Sub-regions Guide Lines */}
-              <line x1="240" y1="100" x2="280" y2="290" stroke="var(--border-strong)" strokeDasharray="4" />
-              <line x1="340" y1="160" x2="410" y2="320" stroke="var(--border-strong)" strokeDasharray="4" />
-              <line x1="560" y1="170" x2="500" y2="280" stroke="var(--border-strong)" strokeDasharray="4" />
-
-              {/* Region Label Tags */}
-              <text x="140" y="125" fontSize="12" fill="var(--muted)">Đầu</text>
-              <text x="210" y="150" fontSize="12" fill="var(--muted)">Cổ</text>
-              <text x="320" y="145" fontSize="12" fill="var(--muted)">Vai u</text>
-              <text x="440" y="180" fontSize="12" fill="var(--muted)">Lưng</text>
-              <text x="590" y="220" fontSize="12" fill="var(--muted)">Mông</text>
-              <text x="200" y="440" fontSize="11" fill="var(--muted)">Chân trước</text>
-              <text x="610" y="440" fontSize="11" fill="var(--muted)">Chân sau</text>
-            </svg>
+            <HorseAnatomyGraphic view={view} layer={layer} />
 
             {/* Render Pins */}
             {visibleInjuries.map((inj, idx) => (
