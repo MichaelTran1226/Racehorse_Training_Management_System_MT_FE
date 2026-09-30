@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate, Outlet, useParams } from "react-router-dom";
+import AuditLogPage from "@/features/dashboard/pages/AuditLogPage";
 import AccountListPage from "@/features/accounts/pages/AccountListPage";
 import AcceptInvitePage from "@/features/auth/pages/AcceptInvitePage";
 import PermissionMatrix from "@/features/accounts/pages/PermissionMatrix";
@@ -92,6 +93,7 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { path: "/dashboard", element: <DashboardPage /> },
+          { path: "/audit", element: <AuditLogPage /> },
           { path: "/accounts", element: <AccountListPage /> },
           { path: "/accounts/:id/permissions", element: <PermissionMatrixRoute /> },
           { path: "/profile", element: <MyProfilePage /> },
