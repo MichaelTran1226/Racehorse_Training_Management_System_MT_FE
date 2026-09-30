@@ -10,21 +10,80 @@ on:
     branches:
       - main
 
+# Bot chỉ cần đọc code; không cấp quyền ghi cho GITHUB_TOKEN.
+permissions:
+  contents: read
+
+# Push liên tiếp lên cùng một nhánh/PR: huỷ lần chạy cũ, chỉ giữ lần mới nhất.
+concurrency:
+  group: fe-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '24'
+
 jobs:
+  # ==========================================
+  # STAGE 0: REPOSITORY GATE (BOUNDARY + SECRETS)
+  # ==========================================
+  verify-repo-boundary:
+    name: "0. Repository Gate (Boundary & Secrets)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+
+      - name: Validate Frontend Scope (No Backend Files)
+        run: |
+          echo "=== [GATE 0a] VALIDATING FRONTEND REPOSITORY BOUNDARY ==="
+          DISALLOWED_PATTERNS="((^|/)prisma/|\.(sqlite|sqlite3|db)$|(^|/)migrations/|\.controller\.ts$|(^|/)nest-cli\.json$)"
+          VIOLATIONS=$(git ls-files | grep -E "$DISALLOWED_PATTERNS" || true)
+          if [ -n "$VIOLATIONS" ]; then
+            echo "❌ [BOUNDARY VIOLATION] Phát hiện file Backend trong Frontend Repository:"
+            echo "$VIOLATIONS"
+            echo "------------------------------------------------------------------"
+            echo "Quy tắc: Frontend repo chỉ chứa giao diện, mock, test UI."
+            echo "Prisma schema, migration, database, controller phải nằm ở repo Backend:"
+            echo "MichaelTran1226/Racehorse_Training_Management_System_MT_BE"
+            exit 1
+          fi
+          echo "✅ Boundary Check Passed: Không có code Backend trong repo Frontend."
+
+      - name: Block Committed Secrets
+        run: |
+          echo "=== [GATE 0b] SCANNING FOR COMMITTED SECRETS ==="
+          # File bí mật không bao giờ được commit (chỉ .env.example được phép).
+          SECRET_FILES=$(git ls-files | grep -E '(^|/)\.env$|(^|/)\.env\.(local|development|production|test)(\.local)?$|\.(pem|key|p12|pfx)$|(^|/)mcp_config\.json$' || true)
+          # Mẫu khoá có định dạng rõ ràng (ít báo nhầm). Chỉ in file:dòng, KHÔNG in giá trị ra log công khai.
+          PATTERN='-----BEGIN [A-Z ]*PRIVATE KEY-----|ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{50,}|AIza[0-9A-Za-z_-]{35}|sk-ant-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|xox[baprs]-[A-Za-z0-9-]{10,}'
+          SECRET_LINES=$(git grep -nIE -e "$PATTERN" -- . ':!package-lock.json' | cut -d: -f1,2 || true)
+          if [ -n "$SECRET_FILES$SECRET_LINES" ]; then
+            echo "❌ [SECRET LEAK] Phát hiện bí mật trong repo:"
+            [ -n "$SECRET_FILES" ] && echo "File bí mật bị commit:" && echo "$SECRET_FILES"
+            [ -n "$SECRET_LINES" ] && echo "Dòng chứa khoá (file:dòng):" && echo "$SECRET_LINES"
+            echo "------------------------------------------------------------------"
+            echo "Xoá khỏi commit (git rm --cached <file>), ĐỔI khoá/mật khẩu ngay và báo Lead."
+            exit 1
+          fi
+          echo "✅ Secret Scan Passed: Không có file .env/khoá bí mật trong repo."
+
   # ==========================================
   # STAGE 1: LINT & TYPECHECK
   # ==========================================
   lint-and-typecheck:
     name: "1. Lint & Typecheck"
+    needs: verify-repo-boundary
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install Dependencies
@@ -43,14 +102,15 @@ jobs:
     name: "2. Build Frontend"
     needs: lint-and-typecheck
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install Dependencies
@@ -62,7 +122,7 @@ jobs:
           VITE_USE_MOCK: 'true'
 
       - name: Upload Built Application
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fe-built-application
           path: dist/
@@ -76,14 +136,15 @@ jobs:
     name: "3. Black-box Playwright UI Tests"
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install Dependencies
@@ -93,7 +154,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Download Built Application
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: fe-built-application
           path: dist/
@@ -102,35 +163,68 @@ jobs:
         run: npm run test:e2e
 
       - name: Upload Playwright Test Report & Traces
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: playwright-report
-          path: playwright-report/
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
           retention-days: 7
 
   # ==========================================
-  # STAGE 4: SONARQUBE QUALITY & SECURITY GATE
+  # STAGE 4: SECURITY & QUALITY GATE (npm audit + SonarQube)
   # ==========================================
   sonarqube-quality-gate:
-    name: "4. SonarQube Quality & Security Gate"
+    name: "4. Security & Quality Gate (npm audit + SonarQube)"
     needs: black-box-playwright-tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Đưa secret lên env của job để điều kiện "if" ở từng bước đọc được
+    # (env khai báo ngay trong một bước không dùng được cho "if" của chính bước đó).
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - name: SonarQube Scan
-        uses: sonarsource/sonarqube-scan-action@v2
-        if: env.SONAR_TOKEN != ''
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Dependency Audit (block on Critical)
+        run: |
+          npm audit --omit=dev --json > audit.json || true
+          node -e '
+            const v = require("./audit.json").metadata.vulnerabilities;
+            require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, ["### npm audit (production dependencies)", "",
+              "| Critical | High | Moderate | Low |", "|---|---|---|---|",
+              `| ${v.critical} | ${v.high} | ${v.moderate} | ${v.low} |`, "",
+              "Chặn merge khi có **Critical**. High/Moderate: cảnh báo, xử lý bằng PR nâng cấp thư viện (cần Lead duyệt).", ""].join("\n"));
+            if (v.high > 0) console.log(`::warning title=npm audit::${v.high} lỗ hổng High trong thư viện production. Chạy "npm audit" để xem chi tiết.`);
+          '
+          npm audit --omit=dev --audit-level=critical
+
+      - name: SonarQube Scan (waits for Quality Gate)
+        if: env.SONAR_TOKEN != '' && env.SONAR_HOST_URL != ''
+        uses: SonarSource/sonarqube-scan-action@v8
         with:
           args: >
             -Dsonar.projectKey=Racehorse_Training_Management_System_MT_FE
             -Dsonar.projectName="Racehorse Training FE"
             -Dsonar.sources=src
             -Dsonar.tests=tests
+            -Dsonar.qualitygate.wait=true
+
+      - name: SonarQube Not Configured
+        if: env.SONAR_TOKEN == '' || env.SONAR_HOST_URL == ''
+        run: |
+          MSG="SonarQube chưa được cấu hình (thiếu secret SONAR_TOKEN / SONAR_HOST_URL) nên KHÔNG quét. Lead thêm ở Settings > Secrets and variables > Actions."
+          echo "::notice title=SonarQube skipped::$MSG"
+          echo "### SonarQube: bỏ qua" >> "$GITHUB_STEP_SUMMARY"
+          echo "$MSG" >> "$GITHUB_STEP_SUMMARY"
