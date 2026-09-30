@@ -52,10 +52,11 @@ Sau đó lên GitHub bấm **Compare & pull request** vào nhánh `main`:
 
 | Bước | Lệnh | Qua khi |
 |---|---|---|
+| 0. Repository Gate | tự chạy | Không có file BE (`prisma/`, migration, `*.sqlite`, controller); không có `.env`, khoá, token bị commit |
 | 1. Lint & Typecheck | `npm run lint`, `npm run typecheck` | Không có **lỗi** (cảnh báo vẫn qua) |
-| 2. Unit test | `npm run test:unit` (nếu có) | Tất cả pass |
-| 3. Playwright | `npm run build` rồi `npm run test:e2e` (nếu có) | Build được, test pass |
-| 4. SonarQube | tự chạy | Không có lỗi bảo mật nghiêm trọng |
+| 2. Build | `npm run build` | Build được (chế độ mock) |
+| 3. Playwright | `npm run test:e2e` | Test pass |
+| 4. Security & Quality | `npm audit --omit=dev --audit-level=critical` + SonarQube | Không có lỗ hổng **Critical**; SonarQube đạt Quality Gate (khi Lead đã cài secret) |
 
 Quy tắc của mẫu PR: chỉ code FE (không có migration hay controller server); làm đúng tiêu chí của issue, không tự thêm tính năng; không cài package mới khi Lead chưa duyệt.
 
