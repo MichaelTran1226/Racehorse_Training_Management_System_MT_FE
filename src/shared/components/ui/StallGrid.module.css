@@ -1,0 +1,35 @@
+/* Mỗi trạng thái đặt hai biến màu --bg và --fg; ô chuồng và chú giải đều dùng lại. */
+.fit { --bg: var(--health-fit-bg); --fg: var(--health-fit); }
+.watch { --bg: var(--health-watch-bg); --fg: var(--health-watch); }
+.injured { --bg: var(--health-injured-bg); --fg: var(--health-injured); }
+.quarantine { --bg: var(--health-quarantine-bg); --fg: var(--health-quarantine); }
+.empty { --bg: var(--surface-2); --fg: var(--muted); }
+
+.grid { display: grid; gap: 9px; }
+.cell {
+  text-align: left;
+  padding: 11px 12px;
+  min-height: 74px;
+  min-width: 0;
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  border: 1px solid transparent;
+  font-family: var(--font);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+.static { cursor: default; }
+.selected { border-color: var(--fg); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-ring) 25%, transparent); }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.code { font-family: var(--font-numeric); font-variant-numeric: tabular-nums; font-size: 10px; font-weight: 700; color: var(--fg); letter-spacing: 0.3px; }
+.dot { width: 5px; height: 5px; border-radius: 999px; background: var(--fg); flex-shrink: 0; }
+.horse { font-size: 11.5px; font-weight: 700; color: var(--text); letter-spacing: -0.15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.horseEmpty { color: var(--muted); }
+.task { display: inline-flex; align-items: center; gap: 4px; font-size: 9.5px; color: var(--fg); font-weight: 600; margin-top: auto; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-family: var(--font); font-size: 10px; color: var(--muted); }
+.legendItem { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 3px; background: var(--bg); border: 1px solid color-mix(in srgb, var(--fg) 35%, transparent); }

@@ -30,3 +30,7 @@ dist
 
 # MCP private config
 .agents/mcp_config.json
+
+# Local assistant notes
+CLAUDE.md
+.claude/

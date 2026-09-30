@@ -1,0 +1,31 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: var(--scrim-modal);
+  backdrop-filter: blur(2px);
+}
+.dialog {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--r-modal);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  max-height: calc(100vh - 44px);
+  overflow-y: auto;
+}
+.dialog:focus { outline: none; }
+.head { display: flex; align-items: flex-start; gap: 13px; padding: 20px 22px 0; }
+.badge { width: 34px; height: 34px; border-radius: var(--r-sm); flex-shrink: 0; display: grid; place-items: center; }
+.danger { background: var(--danger-bg); color: var(--danger); }
+.warn { background: var(--warn-bg); color: var(--warn); }
+.headText { flex: 1; min-width: 0; }
+.title { margin: 0; font-size: 15px; font-weight: 800; letter-spacing: -0.35px; color: var(--text); }
+.subtitle { margin: 3px 0 0; font-size: 12px; color: var(--muted); line-height: 1.6; }
+.close { background: none; border: 0; color: var(--muted); cursor: pointer; padding: 0; display: flex; }
+.body { padding: 16px 22px 20px; font-size: 12px; color: var(--text-2); line-height: 1.6; }
+.foot { display: flex; justify-content: flex-end; gap: 9px; padding: 14px 22px; background: var(--surface-2); border-top: 1px solid var(--border-soft); }

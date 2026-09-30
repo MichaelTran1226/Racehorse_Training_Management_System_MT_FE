@@ -1,0 +1,10 @@
+.panel { margin-bottom: var(--sp-5); }
+.list { list-style: none; margin: 0; padding: 0; }
+.item { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) var(--sp-5); border-top: 1px solid var(--border-soft); flex-wrap: wrap; }
+.item:first-child { border-top: 0; }
+.who { min-width: 0; flex: 1; font-size: var(--fs-body); color: var(--text-2); line-height: var(--lh-body); }
+.who strong { color: var(--text); }
+.meta { display: block; font-size: var(--fs-micro); color: var(--muted); }
+.actions { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.link { font-size: var(--fs-caption); font-weight: var(--fw-bold); padding: 0 var(--sp-1); }
+@media (max-width: 720px) { .item { padding-left: var(--sp-4); padding-right: var(--sp-4); } }

@@ -1,55 +1,88 @@
-# EquiFlow - Racehorse Training & Stable Management System (Frontend)
+# TMEC - Quản lý CLB đua ngựa (Frontend)
 
-[![React](https://img.shields.io/badge/React-19.x-61DAFB?logo=react)](https://react.dev/)
-[![Vite](https://img.shields.io/badge/Vite-6.x-646CFF?logo=vite)](https://vitejs.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8%2B-3178C6?logo=typescript)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.x-38B2AC?logo=tailwindcss)](https://tailwindcss.com/)
-[![React Router](https://img.shields.io/badge/React_Router-v7-CA4245?logo=reactrouter)](https://reactrouter.com/)
+Đồ án SWP391. **React 19 + Vite + TypeScript**, định tuyến bằng React Router.
 
-Giao diện Web Portal của Hệ thống Quản lý và Huấn luyện Ngựa đua EquiFlow (Thiết kế tối ưu cho Desktop 1280px / 1440px / 1920px theo quy chuẩn Stitch V2).
+Đã code xong **Giai đoạn 0 (đăng nhập) và Priority 1 (xác thực + phân quyền)** — 16 màn hình theo
+bản thiết kế trong `design-handoff`. Các nghiệp vụ sau (hồ sơ ngựa, giáo án, y tế...) mới có
+thư mục rỗng, sẽ code ở giai đoạn sau.
 
----
+## Chạy thử
 
-## 1. Công nghệ Frontend (Tech Stack - Decision D-01)
-
-- **Framework:** React `19.2.8`
-- **Build Tool:** Vite `8.3.0` / `^6.x`
-- **Language:** TypeScript `~5.8` / `~6.0` (Target `ES2022`)
-- **Routing:** `react-router-dom` `^7.18.4` (Data router & component routes)
-- **Styling:** Tailwind CSS (bảng màu EquiFlow Forest Green `#1B4332`, Gold accents, font Manrope)
-- **Icon Set:** Lucide React
-
----
-
-## 2. Cài đặt & Khởi động (Getting Started)
-
-### 2.1. Cài đặt Dependencies
 ```bash
 npm install
-```
-
-### 2.2. Cấu hình Biến Môi Trường
-```bash
-cp .env.example .env
-```
-Nội dung file `.env`:
-```env
-VITE_API_URL=http://localhost:3000/api
-```
-
-### 2.3. Khởi động Development Server
-```bash
+Copy-Item .env.example .env.local     # macOS/Linux: cp .env.example .env.local
 npm run dev
 ```
-Truy cập: `http://localhost:5173`
 
----
+Mở http://localhost:5173
 
-## 3. Lệnh Kiểm thử & Chất lượng Code (Quality Gates)
-
-| Lệnh | Mục đích |
+| Lệnh | Tác dụng |
 |---|---|
-| `npm run lint` | Chạy ESLint kiểm tra quy chuẩn mã nguồn |
-| `npm run typecheck` | Kiểm tra tính toàn vẹn kiểu dữ liệu TypeScript (`tsc --noEmit`) |
-| `npm run build` | Biên dịch dự án phục vụ môi trường Production |
-| `npm run preview` | Khởi chạy xem trước bản build production |
+| `npm run dev` | Chạy server phát triển, tự tải lại khi sửa code |
+| `npm run build` | Kiểm tra kiểu TypeScript rồi đóng gói ra `dist/` |
+| `npm run preview` | Chạy thử bản đã đóng gói |
+| `npm run lint` | Kiểm tra lỗi code |
+
+## Tài khoản dùng thử
+
+Chưa có backend nên dữ liệu là **dữ liệu giả** lưu trong trình duyệt (`VITE_USE_MOCK=true`).
+Mọi tài khoản dùng mật khẩu **`equiflow123`**, mã OTP luôn là **`123456`**.
+
+| Email | Vai trò | Thấy gì |
+|---|---|---|
+| `viet.do@gmail.com` | Club Manager | Quản lý tài khoản và phân quyền |
+| `nam.tran@gmail.com` | Head Trainer | Menu huấn luyện; vào `/accounts` sẽ ra trang 403 |
+| `chau.le@gmail.com` | Veterinarian | Menu y tế |
+| `ha.ly@gmail.com` | Horse Owner | Menu chủ ngựa |
+| `binh.pham@gmail.com` | Groom | Tài khoản bị khóa - xem thông báo khi đăng nhập |
+| `anh.nguyen@gmail.com` | Horse Owner | Đang chờ duyệt - xem thông báo khi đăng nhập |
+
+Muốn xóa dữ liệu thử về ban đầu: F12 → Application → Local Storage → xóa `equiflow.mock.db.v1`.
+
+## Các màn hình đã có
+
+**Công khai:** Đăng nhập · Đăng ký · Nhập OTP xác minh email · Chờ duyệt · Quên mật khẩu ·
+Nhập OTP đặt lại · Đặt mật khẩu mới
+
+**Sau đăng nhập:** Dashboard · Danh sách tài khoản (duyệt, từ chối, khóa, mở khóa) ·
+Phân quyền từng tài khoản · Hồ sơ cá nhân · Đổi mật khẩu · Trang 403 · Hết phiên ·
+Trang "sắp có" cho các menu chưa code
+
+## Cấu trúc thư mục
+
+```text
+Horse-Training-Club/
+├── public/                  ảnh, font, logo
+├── docs/                    WorkFlow_*.md (luồng chuẩn để làm theo), API_CONTRACT.md (API)
+├── index.html               trang HTML duy nhất
+├── package.json             danh sách thư viện và lệnh chạy
+├── vite.config.ts           cấu hình Vite
+├── tsconfig.json            cấu hình TypeScript
+├── .env.example             mẫu biến môi trường
+└── src/
+    ├── main.tsx             điểm khởi động
+    ├── app/                 TẦNG ĐỊNH TUYẾN
+    │   ├── router.tsx       bảng đường dẫn: URL nào hiện trang nào
+    │   └── RoleGuard.tsx    chặn trang khi tài khoản không đủ quyền
+    ├── features/            MỖI NGHIỆP VỤ MỘT THƯ MỤC
+    │   ├── auth/            đăng nhập, đăng ký, OTP, hồ sơ cá nhân        (đã code)
+    │   ├── accounts/        danh sách tài khoản, phân quyền               (đã code)
+    │   ├── dashboard/       trang tổng quan                               (đã code)
+    │   ├── horses/          hồ sơ ngựa                                    (giai đoạn sau)
+    │   ├── master-data/     nhân viên, vật tư, chuồng                     (giai đoạn sau)
+    │   ├── training/        giáo án, lịch tập, cảnh báo                   (giai đoạn sau)
+    │   ├── health/          sức khỏe, khóa huấn luyện                     (giai đoạn sau)
+    │   ├── stable/          chuồng trại, khẩu phần                        (tùy chọn)
+    │   └── racing/          thi đấu                                       (tùy chọn)
+    │      (mỗi feature có: pages/ = màn hình, components/ = mảnh giao diện,
+    │       api.ts = gọi dữ liệu, types.ts = kiểu dữ liệu)
+    └── shared/              ĐỒ DÙNG CHUNG cho mọi nghiệp vụ
+        ├── components/      ui/ (nút, bảng, hộp thoại), form/ (ô nhập), layout/ (khung trang)
+        ├── lib/             gọi API, phân quyền, nhãn trạng thái, câu báo lỗi
+        ├── mock/            dữ liệu giả khi chưa có backend
+        ├── styles/          màu, font, CSS chung
+        └── types/           kiểu dữ liệu dùng chung
+```
+
+**Quy tắc phụ thuộc:** `app` → `features` → `shared`. Import chỉ đi xuống.
+Một feature không được import feature khác; thứ gì hai feature cùng cần thì đưa vào `shared/`.

@@ -1,0 +1,10 @@
+.form { display: flex; flex-direction: column; gap: var(--sp-3); }
+.facts { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: var(--sp-1) var(--sp-3); padding: var(--sp-3); background: var(--surface-2); border: 1px solid var(--border-soft); border-radius: var(--r); font-size: var(--fs-body); }
+.facts dt { color: var(--muted); font-weight: var(--fw-semibold); }
+.facts dd { margin: 0; color: var(--text-2); min-width: 0; overflow-wrap: anywhere; }
+.buttons { display: flex; justify-content: flex-end; gap: var(--sp-2); }
+.formError { color: var(--danger); font-size: var(--fs-caption); }
+.danger { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--border-soft); }
+.dangerText { margin: 0; font-size: var(--fs-caption); color: var(--muted); line-height: var(--lh-body); }
+.dangerText strong { display: block; color: var(--text); font-size: var(--fs-body); }
+@media (max-width: 520px) { .danger { flex-direction: column; align-items: stretch; } }

@@ -1,0 +1,19 @@
+.row { display: flex; gap: 9px; min-width: 0; width: 100%; }
+.box {
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+  height: 52px;
+  text-align: center;
+  border-radius: var(--r-field);
+  border: 1px solid var(--border-field);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-numeric);
+  font-variant-numeric: tabular-nums;
+  font-size: 20px;
+  font-weight: 600;
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.box:disabled { background: var(--surface-2); cursor: not-allowed; }
+.invalid { border-color: var(--danger); box-shadow: 0 0 0 3px var(--danger-bg); }
