@@ -2,6 +2,8 @@
 
 Đồ án SWP391. **React 19 + Vite + TypeScript**, định tuyến bằng React Router.
 
+> **Thành viên mới:** đọc [docs/HUONG_DAN_GITHUB.md](docs/HUONG_DAN_GITHUB.md) (clone, chạy, tạo nhánh, mở PR qua bot CI). Task + đặc tả: [Project 2](https://github.com/users/MichaelTran1226/projects/2) · [tasks/](tasks/) · [docs/specs/](docs/specs/).
+
 Đã code xong **Giai đoạn 0 (đăng nhập) và Priority 1 (xác thực + phân quyền)** — 16 màn hình theo
 bản thiết kế trong `design-handoff`. Các nghiệp vụ sau (hồ sơ ngựa, giáo án, y tế...) mới có
 thư mục rỗng, sẽ code ở giai đoạn sau.
