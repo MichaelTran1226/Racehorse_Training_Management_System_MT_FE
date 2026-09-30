@@ -148,6 +148,9 @@ Mật khẩu mọi tài khoản mẫu: `equiflow123` (riêng `minhmaiki@gmail.co
 |---|---|
 | `viet.do@gmail.com` | Club Manager — vào được `/accounts`, thấy panel Permission requests |
 | `nam.tran@gmail.com` | Head Trainer — vào `/accounts` phải ra 403 |
+| `nhan.vien.groom@gmail.com` | Groom (Nhân viên chăm sóc) — xem lịch sinh hoạt, cập nhật trạng thái ngựa |
+| `bac.si.thuy@gmail.com` | Veterinarian (Bác sĩ thú y) — quản lý hồ sơ y tế, thêm bệnh án, đơn thuốc |
+| `chu.ngua.owner@gmail.com` | Owner (Chủ ngựa) — xem thông tin cá nhân và ngựa của mình, bị giới hạn dữ liệu |
 | `ha.ly@gmail.com` | Sai mật khẩu 5 lần → khóa tạm + đếm ngược |
 | `binh.pham@gmail.com` | `LOCKED` → `423` + lý do |
 | `anh.nguyen@gmail.com` | Chờ duyệt → `403 ACCOUNT_PENDING` + `REQ-2609-012` |
