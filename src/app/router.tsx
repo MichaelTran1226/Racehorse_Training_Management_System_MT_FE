@@ -15,6 +15,10 @@ import SignUpPage from "@/features/auth/pages/SignUpPage";
 import VerifyEmailPage from "@/features/auth/pages/VerifyEmailPage";
 import ComingSoonPage from "@/features/dashboard/pages/ComingSoonPage";
 import DashboardPage from "@/features/dashboard/pages/DashboardPage";
+import MedicalRecordPage from "@/features/health/pages/MedicalRecordPage";
+import RecordListPage from "@/features/health/pages/RecordListPage";
+import RecordDetailPage from "@/features/health/pages/RecordDetailPage";
+import RecordFormPage from "@/features/health/pages/RecordFormPage";
 import { AppShell } from "@/shared/components/layout/AppShell";
 import { Providers } from "@/shared/components/layout/Providers";
 import { RoleGuard } from "./RoleGuard";
@@ -82,6 +86,16 @@ export const router = createBrowserRouter([
           { path: "/profile/password", element: <ChangePasswordPage /> },
           { path: "/forbidden", element: <Forbidden403Page /> },
           { path: "/session-expired", element: <SessionExpiredPage /> },
+
+          // ---- Phân hệ Y tế & Sức khỏe (Flow 3: P2-01 & P2-02)
+          { path: "/records", element: <RecordListPage /> },
+          { path: "/medical/records", element: <RecordListPage /> },
+          { path: "/medical/records/new", element: <RecordFormPage /> },
+          { path: "/medical/records/:id/edit", element: <RecordFormPage /> },
+          { path: "/medical/records/:id", element: <RecordDetailPage /> },
+          { path: "/medical/horses/:id", element: <MedicalRecordPage /> },
+          { path: "/records/horse/:id", element: <MedicalRecordPage /> },
+
           { path: "*", element: <ComingSoonRoute /> },
         ],
       },

@@ -64,6 +64,15 @@ export function getDb(): Db {
     const raw = window.localStorage.getItem(KEY);
     if (raw) {
       const db = JSON.parse(raw) as Db;
+      // Đảm bảo viet.do@gmail.com luôn được mở khóa
+      const viet = db.accounts?.find((a) => a.email.toLowerCase() === "viet.do@gmail.com");
+      if (viet && (viet.status === "LOCKED" || viet.lockedAt)) {
+        viet.status = "ACTIVE";
+        viet.lockedAt = null;
+        viet.statusReason = null;
+        if (db.loginFails) delete db.loginFails["viet.do@gmail.com"];
+        saveDb(db);
+      }
       if (db.seedVersion === SEED_VERSION) return db;
     }
   } catch {

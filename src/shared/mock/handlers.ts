@@ -12,6 +12,8 @@ import { clearSession, readSession, writeSession } from "@/shared/lib/session";
 import { audit, getDb, saveDb, toPublic } from "@/shared/mock/db";
 import type { Db, OtpPurpose, OtpRecord } from "@/shared/mock/db";
 import type { Account, NotifyKey, PermissionKey, PermissionMap, Role } from "@/shared/types/auth";
+import { buildMockProfile, getMockMedicalStore, saveMockMedicalStore } from "@/shared/mock/medicalData";
+import type { FollowUpItem, MedicalRecord, PrescriptionItem, TreatmentPhase } from "@/features/health/types";
 
 const OTP_CODE = "123456";
 const OTP_TTL = 10 * 60 * 1000;
@@ -653,6 +655,287 @@ const routes: Route[] = [
       audit(db, actor.fullName, `PERMISSION_REQUEST_${status}`, `${who}: ${request.screen} (${request.reference})`);
       saveDb(db);
       return { request: withAccount(db, request) };
+    },
+  },
+
+  // ===== FLOW 3: MEDICAL & HEALTH ROUTES =====
+  {
+    method: "GET",
+    pattern: /^\/medical\/horses\/([^/]+)$/,
+    handler({ db, params }) {
+      const user = currentUser(db);
+      return buildMockProfile(params[0], user.role);
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/horses\/([^/]+)\/health-board$/,
+    handler({ db, params }) {
+      const user = currentUser(db);
+      return buildMockProfile(params[0], user.role);
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/medical\/horses\/([^/]+)\/observations$/,
+    handler({ params, url }) {
+      const store = getMockMedicalStore();
+      const urgency = url.searchParams.get("urgency");
+      const list = store.observations.filter(
+        (o) => o.horseId === params[0] && (!urgency || o.urgency === urgency),
+      );
+      return { observations: list };
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/medical\/records$/,
+    handler({ url }) {
+      const store = getMockMedicalStore();
+      const horseId = url.searchParams.get("horseId");
+      const status = url.searchParams.get("status");
+      const search = url.searchParams.get("search")?.toLowerCase();
+
+      let list = store.records;
+      if (horseId) list = list.filter((r) => r.horseId === horseId);
+      if (status) list = list.filter((r) => r.status === status);
+      if (search) {
+        list = list.filter(
+          (r) =>
+            r.recordNumber.toLowerCase().includes(search) ||
+            r.horseName?.toLowerCase().includes(search) ||
+            r.diagnosis?.toLowerCase().includes(search),
+        );
+      }
+
+      return {
+        records: list,
+        total: list.length,
+        page: 1,
+        limit: 50,
+        totalPages: 1,
+      };
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/medical\/records\/([^/]+)$/,
+    handler({ params }) {
+      const store = getMockMedicalStore();
+      const rec = store.records.find((r) => r.id === params[0] || r.recordNumber === params[0]);
+      if (!rec) throw new ApiError(404, "NOT_FOUND", "Medical record not found");
+      return { record: rec };
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/medical\/records$/,
+    handler({ db, body }) {
+      const user = currentUser(db);
+      const store = getMockMedicalStore();
+      const id = `rec-${Date.now()}`;
+      const seq = store.records.length + 1;
+      const recordNumber = `BA-26${String(seq).padStart(4, "0")}`;
+
+      const newRec: MedicalRecord = {
+        id,
+        recordNumber,
+        horseId: String(body.horseId || "horse-1"),
+        horseName: body.horseId === "horse-2" ? "Northern Dancer Legacy" : "Thunderbolt Swift",
+        status: body.saveAsDraft ? "DRAFT" : "OPEN",
+        examinationDate: String(body.examinationDate || new Date().toISOString()),
+        examinationType: String(body.examinationType || "Khám bệnh"),
+        examinationReason: String(body.examinationReason || "Khám sức khỏe"),
+        symptoms: body.symptoms ? String(body.symptoms) : undefined,
+        discoverySource: body.discoverySource ? String(body.discoverySource) : undefined,
+        vitals: body.vitals as any,
+        labTests: (body.labTests as any) || [],
+        diagnosis: body.diagnosis ? String(body.diagnosis) : undefined,
+        severity: (body.severity as any) || "MODERATE",
+        proposedStatus: body.proposedStatus ? String(body.proposedStatus) : undefined,
+        proposeMedicalLock: Boolean(body.proposeMedicalLock),
+        treatmentPhases: [],
+        prescriptions: [],
+        followUps: [],
+        createdAt: new Date().toISOString(),
+        vetId: user.id,
+        vetName: user.fullName,
+      };
+
+      store.records.unshift(newRec);
+      saveMockMedicalStore(store);
+      return { record: newRec };
+    },
+  },
+  {
+    method: "PUT",
+    pattern: /^\/medical\/records\/([^/]+)$/,
+    handler({ params, body }) {
+      const store = getMockMedicalStore();
+      const rec = store.records.find((r) => r.id === params[0]);
+      if (!rec) throw new ApiError(404, "NOT_FOUND", "Record not found");
+      if (rec.status !== "DRAFT") throw new ApiError(400, "INVALID_STATE", "Only DRAFT records can be edited");
+
+      Object.assign(rec, {
+        examinationDate: body.examinationDate || rec.examinationDate,
+        examinationType: body.examinationType || rec.examinationType,
+        examinationReason: body.examinationReason || rec.examinationReason,
+        symptoms: body.symptoms !== undefined ? body.symptoms : rec.symptoms,
+        discoverySource: body.discoverySource || rec.discoverySource,
+        vitals: body.vitals || rec.vitals,
+        labTests: body.labTests || rec.labTests,
+        diagnosis: body.diagnosis !== undefined ? body.diagnosis : rec.diagnosis,
+        severity: body.severity || rec.severity,
+        proposedStatus: body.proposedStatus || rec.proposedStatus,
+        proposeMedicalLock: body.proposeMedicalLock !== undefined ? body.proposeMedicalLock : rec.proposeMedicalLock,
+      });
+
+      saveMockMedicalStore(store);
+      return { record: rec };
+    },
+  },
+  {
+    method: "DELETE",
+    pattern: /^\/medical\/records\/([^/]+)$/,
+    handler({ params }) {
+      const store = getMockMedicalStore();
+      const idx = store.records.findIndex((r) => r.id === params[0]);
+      if (idx === -1) throw new ApiError(404, "NOT_FOUND", "Record not found");
+      store.records.splice(idx, 1);
+      saveMockMedicalStore(store);
+      return { ok: true };
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/medical\/records\/([^/]+)\/finalize$/,
+    handler({ params }) {
+      const store = getMockMedicalStore();
+      const rec = store.records.find((r) => r.id === params[0]);
+      if (!rec) throw new ApiError(404, "NOT_FOUND", "Record not found");
+      rec.status = "OPEN";
+      saveMockMedicalStore(store);
+      return { record: rec };
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/medical\/records\/([^/]+)\/treatment-phases$/,
+    handler({ params, body }) {
+      const store = getMockMedicalStore();
+      const rec = store.records.find((r) => r.id === params[0]);
+      if (!rec) throw new ApiError(404, "NOT_FOUND", "Record not found");
+      const phase: TreatmentPhase = {
+        id: `phase-${Date.now()}`,
+        phaseName: String(body.phaseName || "Giai đoạn"),
+        startDate: String(body.startDate),
+        endDate: String(body.endDate),
+        target: String(body.target),
+        allowedActivity: String(body.allowedActivity),
+        careInstructions: (body.careInstructions as any) || [],
+      };
+      rec.treatmentPhases = rec.treatmentPhases || [];
+      rec.treatmentPhases.push(phase);
+      saveMockMedicalStore(store);
+      return { phase };
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/medical\/records\/([^/]+)\/prescriptions$/,
+    handler({ params, body }) {
+      const store = getMockMedicalStore();
+      const rec = store.records.find((r) => r.id === params[0]);
+      if (!rec) throw new ApiError(404, "NOT_FOUND", "Record not found");
+      const rx: PrescriptionItem = {
+        id: `rx-${Date.now()}`,
+        medicationName: String(body.medicationName),
+        dosage: Number(body.dosage),
+        unit: String(body.unit),
+        route: String(body.route),
+        frequencyPerDay: Number(body.frequencyPerDay),
+        startDate: String(body.startDate),
+        daysCount: Number(body.daysCount),
+        withdrawalDays: body.withdrawalDays ? Number(body.withdrawalDays) : undefined,
+        notes: body.notes ? String(body.notes) : undefined,
+        status: "ACTIVE",
+      };
+      rec.prescriptions = rec.prescriptions || [];
+      rec.prescriptions.push(rx);
+      saveMockMedicalStore(store);
+      return { prescription: rx };
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/medical\/records\/([^/]+)\/prescriptions\/([^/]+)\/stop$/,
+    handler({ params, body }) {
+      const store = getMockMedicalStore();
+      const rec = store.records.find((r) => r.id === params[0]);
+      if (!rec) throw new ApiError(404, "NOT_FOUND", "Record not found");
+      const rx = rec.prescriptions?.find((p) => p.id === params[1]);
+      if (!rx) throw new ApiError(404, "NOT_FOUND", "Prescription not found");
+      rx.status = "STOPPED";
+      rx.stoppedReason = String(body.stoppedReason || "Đã dừng");
+      rx.stoppedDate = String(body.stoppedDate || new Date().toISOString().split("T")[0]);
+      saveMockMedicalStore(store);
+      return { prescription: rx };
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/medical\/records\/([^/]+)\/follow-ups$/,
+    handler({ db, params, body }) {
+      const user = currentUser(db);
+      const store = getMockMedicalStore();
+      const rec = store.records.find((r) => r.id === params[0]);
+      if (!rec) throw new ApiError(404, "NOT_FOUND", "Record not found");
+      const fu: FollowUpItem = {
+        id: `fu-${Date.now()}`,
+        followUpDate: String(body.followUpDate || new Date().toISOString()),
+        temperature: Number(body.temperature),
+        restingHeartRate: Number(body.restingHeartRate),
+        respiratoryRate: Number(body.respiratoryRate),
+        progressNotes: String(body.progressNotes),
+        adjustments: body.adjustments ? String(body.adjustments) : undefined,
+        vetName: user.fullName,
+      };
+      rec.followUps = rec.followUps || [];
+      rec.followUps.unshift(fu);
+      saveMockMedicalStore(store);
+      return { followUp: fu };
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/medical\/records\/([^/]+)\/close$/,
+    handler({ params, body }) {
+      const store = getMockMedicalStore();
+      const rec = store.records.find((r) => r.id === params[0]);
+      if (!rec) throw new ApiError(404, "NOT_FOUND", "Record not found");
+      rec.status = "CLOSED";
+      rec.conclusion = String(body.conclusion);
+      rec.treatmentResult = String(body.treatmentResult || "Khỏi hoàn toàn");
+      rec.closedAt = new Date().toISOString();
+      if (rec.prescriptions) {
+        for (const p of rec.prescriptions) {
+          if (p.status === "ACTIVE") p.status = "COMPLETED";
+        }
+      }
+      saveMockMedicalStore(store);
+      return { record: rec };
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/medical\/records\/([^/]+)\/reopen$/,
+    handler({ params }) {
+      const store = getMockMedicalStore();
+      const rec = store.records.find((r) => r.id === params[0]);
+      if (!rec) throw new ApiError(404, "NOT_FOUND", "Record not found");
+      rec.status = "OPEN";
+      saveMockMedicalStore(store);
+      return { record: rec };
     },
   },
 ];

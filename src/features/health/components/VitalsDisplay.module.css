@@ -1,0 +1,125 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.vitalCard {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.vitalCard:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.vitalCard.warning {
+  border-color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vitalLabel {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.valueRow {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+.vitalCard.warning .value {
+  color: var(--danger-600);
+}
+
+.unit {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.reference {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.notes {
+  font-size: 12px;
+  color: var(--text-2);
+  padding: 8px;
+  background: var(--surface);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+.historySection {
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.historyTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.historyTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.historyTable th {
+  text-align: left;
+  padding: 6px 10px;
+  background: var(--surface-table-head);
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.historyTable td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-2);
+}
+
+.historyTable tr:hover td {
+  background: var(--surface-row-hover);
+}
+
+.abnormal {
+  color: var(--danger-600);
+  font-weight: 600;
+}
