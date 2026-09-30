@@ -19,6 +19,18 @@ import MedicalRecordPage from "@/features/health/pages/MedicalRecordPage";
 import RecordListPage from "@/features/health/pages/RecordListPage";
 import RecordDetailPage from "@/features/health/pages/RecordDetailPage";
 import RecordFormPage from "@/features/health/pages/RecordFormPage";
+import InjuryMapPage from "@/features/health/pages/InjuryMapPage";
+import TrainingLockPage from "@/features/health/pages/TrainingLockPage";
+import CareSchedulePage from "@/features/health/pages/CareSchedulePage";
+import HerdHealthPage from "@/features/health/pages/HerdHealthPage";
+import PlanListPage from "@/features/training/pages/PlanListPage";
+import PlanWizardPage from "@/features/training/pages/PlanWizardPage";
+import PlanHistoryPage from "@/features/training/pages/PlanHistoryPage";
+import WeeklyCalendarPage from "@/features/training/pages/WeeklyCalendarPage";
+import TrialRunsPage from "@/features/training/pages/TrialRunsPage";
+import SessionMetricsPage from "@/features/training/pages/SessionMetricsPage";
+import LiveMonitorPage from "@/features/training/pages/LiveMonitorPage";
+import AlertListPage from "@/features/training/pages/AlertListPage";
 import { AppShell } from "@/shared/components/layout/AppShell";
 import { Providers } from "@/shared/components/layout/Providers";
 import { RoleGuard } from "./RoleGuard";
@@ -87,7 +99,7 @@ export const router = createBrowserRouter([
           { path: "/forbidden", element: <Forbidden403Page /> },
           { path: "/session-expired", element: <SessionExpiredPage /> },
 
-          // ---- Phân hệ Y tế & Sức khỏe (Flow 3: P2-01 & P2-02)
+          // ---- Phân hệ Y tế & Sức khỏe (Flow 3: P2-01 -> P2-05)
           { path: "/records", element: <RecordListPage /> },
           { path: "/medical/records", element: <RecordListPage /> },
           { path: "/medical/records/new", element: <RecordFormPage /> },
@@ -95,6 +107,31 @@ export const router = createBrowserRouter([
           { path: "/medical/records/:id", element: <RecordDetailPage /> },
           { path: "/medical/horses/:id", element: <MedicalRecordPage /> },
           { path: "/records/horse/:id", element: <MedicalRecordPage /> },
+          { path: "/medical/horses/:id/injuries", element: <InjuryMapPage /> },
+          { path: "/injuries/:id", element: <InjuryMapPage /> },
+          { path: "/medical/locks", element: <TrainingLockPage /> },
+          { path: "/locks", element: <TrainingLockPage /> },
+          { path: "/medical/preventive", element: <CareSchedulePage /> },
+          { path: "/catalogs/preventive-types", element: <CareSchedulePage /> },
+          { path: "/medical/herd", element: <HerdHealthPage /> },
+          { path: "/herd", element: <HerdHealthPage /> },
+
+          // ---- Phân hệ Huấn luyện & Giáo án (Flow 2: P2-06 -> P2-09)
+          { path: "/training/plans", element: <PlanListPage /> },
+          { path: "/plans", element: <PlanListPage /> },
+          { path: "/training/plans/new", element: <PlanWizardPage /> },
+          { path: "/plans/new", element: <PlanWizardPage /> },
+          { path: "/training/plans/history", element: <PlanHistoryPage /> },
+          { path: "/training/calendar", element: <WeeklyCalendarPage /> },
+          { path: "/calendar", element: <WeeklyCalendarPage /> },
+          { path: "/training/trials", element: <TrialRunsPage /> },
+          { path: "/trials", element: <TrialRunsPage /> },
+          { path: "/training/metrics", element: <SessionMetricsPage /> },
+          { path: "/metrics", element: <SessionMetricsPage /> },
+          { path: "/training/monitor", element: <LiveMonitorPage /> },
+          { path: "/monitor", element: <LiveMonitorPage /> },
+          { path: "/training/alerts", element: <AlertListPage /> },
+          { path: "/alerts", element: <AlertListPage /> },
 
           { path: "*", element: <ComingSoonRoute /> },
         ],

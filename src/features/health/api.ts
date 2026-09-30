@@ -116,3 +116,124 @@ export const closeRecord = (recordId: string, input: CloseRecordInput) =>
 // P2-02: Mở lại bệnh án (DL-3.09, FR-3.05)
 export const reopenRecord = (recordId: string, input: ReopenRecordInput) =>
   api<{ record: MedicalRecord }>("POST", `/medical/records/${recordId}/reopen`, input);
+
+// P2-04: Khóa huấn luyện (SC-3.06, FR-3.10, FR-3.11, FR-3.12, FR-3.19)
+export const getLocks = async (): Promise<import("./types").TrainingLockHistoryItem[]> => {
+  return [
+    {
+      id: "lock-001",
+      lockCode: "LOCK-2026-001",
+      horseId: "horse-2",
+      appliedMedicalStatus: "Chấn thương",
+      lockedAt: "2026-09-28",
+      lockedBy: "Bác sĩ Thú y Trưởng",
+      lockReason: "Viêm gân gấp chi trước bên trái mức độ 2, cần nghỉ ngơi và điều trị kháng viêm tích cực",
+      reviewDate: "2026-10-12",
+      status: "ACTIVE",
+    },
+    {
+      id: "lock-002",
+      lockCode: "LOCK-2026-002",
+      horseId: "horse-4",
+      appliedMedicalStatus: "Cách ly",
+      lockedAt: "2026-09-15",
+      lockedBy: "Bác sĩ Thú y Trưởng",
+      lockReason: "Sốt siêu vi thể nhẹ, nghi ngờ lây nhiễm đường hô hấp",
+      reviewDate: "2026-09-22",
+      releasedAt: "2026-09-23",
+      releasedBy: "Bác sĩ Thú y Trưởng",
+      releaseReason: "Đã cắt sốt hoàn toàn 72h, xét nghiệm PCR âm tính, thể lực hồi phục tốt",
+      durationDays: 8,
+      status: "RELEASED",
+    },
+  ];
+};
+
+export const applyTrainingLock = (horseId: string, input: { appliedMedicalStatus: string; lockReason: string; reviewDate: string }) =>
+  api<{ ok: true }>("POST", `/medical/horses/${horseId}/lock`, input);
+
+export const releaseTrainingLock = (horseId: string, input: { releaseReason: string; targetStatus: string }) =>
+  api<{ ok: true }>("POST", `/medical/horses/${horseId}/unlock`, input);
+
+export const extendTrainingLock = (horseId: string, input: { newReviewDate: string; reason: string }) =>
+  api<{ ok: true }>("POST", `/medical/horses/${horseId}/lock/extend`, input);
+
+// P2-05: Chăm sóc định kỳ & danh mục loại (SC-3.07, SC-3.08, FR-3.13 -> FR-3.16)
+export const getCareSchedules = async (): Promise<import("./types").PreventiveCareItem[]> => {
+  return [
+    {
+      id: "care-1",
+      horseId: "horse-1",
+      type: "Tiêm phòng Cúm Equine Influenza",
+      category: "VACCINATION",
+      lastAdministeredDate: "2026-04-05",
+      administeredBy: "Trạm thú y EquiFlow",
+      dueDate: "2026-10-05",
+      status: "DUE_SOON",
+      notes: "Mũi nhắc lại định kỳ 6 tháng theo chuẩn hiệp hội đua ngựa",
+    },
+    {
+      id: "care-2",
+      horseId: "horse-2",
+      type: "Tẩy giun đường ruột Ivermectin",
+      category: "DEWORMING",
+      lastAdministeredDate: "2026-07-01",
+      administeredBy: "BS Thú y Trưởng",
+      dueDate: "2026-10-01",
+      status: "DUE_SOON",
+      notes: "Phối hợp điều chỉnh dinh dưỡng",
+    },
+    {
+      id: "care-3",
+      horseId: "horse-3",
+      type: "Gọt & Đóng móng đua hợp kim",
+      category: "FARRIER",
+      lastAdministeredDate: "2026-08-20",
+      administeredBy: "Thợ móng Nguyễn Văn Móng",
+      dueDate: "2026-09-25",
+      status: "OVERDUE",
+      notes: "Đã quá hạn 5 ngày! Cần bố trí thợ móng kiểm tra góc móng chân trước",
+    },
+    {
+      id: "care-4",
+      horseId: "horse-1",
+      type: "Mài răng & Kiểm tra nha khoa",
+      category: "DENTAL",
+      lastAdministeredDate: "2026-03-10",
+      administeredBy: "Phòng khám thú y",
+      dueDate: "2026-09-10",
+      status: "UP_TO_DATE",
+      notes: "Răng đều, không có mảng bám bất thường",
+    },
+  ];
+};
+
+export const recordCareCompletion = async (
+  careId: string,
+  input: { administeredDate: string; administeredBy: string; nextDueDate: string; notes?: string },
+) => {
+  return { ok: true, careId, input };
+};
+
+export const healthApi = {
+  getHorseMedicalProfile,
+  getHorseObservations,
+  listRecords,
+  getRecordDetail,
+  createRecord,
+  updateRecord,
+  deleteDraftRecord,
+  finalizeRecord,
+  addTreatmentPhase,
+  addPrescription,
+  stopPrescription,
+  addFollowUp,
+  closeRecord,
+  reopenRecord,
+  getLocks,
+  applyTrainingLock,
+  releaseTrainingLock,
+  extendTrainingLock,
+  getCareSchedules,
+  recordCareCompletion,
+};
