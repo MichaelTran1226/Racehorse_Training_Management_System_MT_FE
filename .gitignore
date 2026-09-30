@@ -34,3 +34,5 @@ dist
 # Local assistant notes
 CLAUDE.md
 .claude/
+playwright-report/
+test-results/
