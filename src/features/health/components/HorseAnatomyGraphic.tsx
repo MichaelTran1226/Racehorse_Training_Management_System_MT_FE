@@ -75,39 +75,10 @@ export const HorseAnatomyGraphic: React.FC<HorseAnatomyGraphicProps> = ({
             style={{
               filter: isSkeleton
                 ? "contrast(1.15) brightness(1.02)"
-                : "saturate(1.08) contrast(1.04)",
+                : "contrast(1.02)",
               transition: "filter 0.3s ease, opacity 0.25s ease",
             }}
           />
-
-          {/* Highlighted SDFT Tendon cord when in Muscle layer */}
-          {!isSkeleton && (
-            <g id="muscle-tendon-glow">
-              <line
-                x1="383"
-                y1="475"
-                x2="383"
-                y2="555"
-                stroke="#eab308"
-                strokeWidth="5"
-                strokeLinecap="round"
-                opacity="0.9"
-                filter="url(#tendonGlow)"
-              />
-              {/* Hind leg calcaneal / Achilles tendon highlight */}
-              <line
-                x1="745"
-                y1="440"
-                x2="738"
-                y2="520"
-                stroke="#eab308"
-                strokeWidth="4"
-                strokeLinecap="round"
-                opacity="0.75"
-                filter="url(#tendonGlow)"
-              />
-            </g>
-          )}
         </g>
       </svg>
     </div>
