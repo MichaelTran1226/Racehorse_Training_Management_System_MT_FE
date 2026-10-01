@@ -27,11 +27,10 @@ export default function TrainingLockPage() {
   const loadLocks = useCallback(async () => {
     try {
       setLoading(true);
-      // Giả lập danh sách tổng hợp khóa huấn luyện của đàn ngựa
       const data = await healthApi.getLocks();
       setLocks(data);
     } catch {
-      toast.show("Không thể tải danh sách khóa huấn luyện", "danger");
+      toast.show("Unable to load training locks", "danger");
     } finally {
       setLoading(false);
     }
@@ -55,9 +54,9 @@ export default function TrainingLockPage() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Quản lý Khóa Huấn Luyện Y Tế</h1>
+          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Medical Training Lock Management</h1>
           <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
-            Theo dõi, gia hạn và gỡ lệnh khóa tập luyện của ngựa chấn thương theo quy định thú y
+            Monitor, extend, and lift training lock orders for injured horses per veterinary protocols (SC-3.07)
           </p>
         </div>
 
@@ -69,7 +68,7 @@ export default function TrainingLockPage() {
               setModalMode("place");
             }}
           >
-            + Đặt khóa huấn luyện mới
+            + Place New Training Lock
           </Button>
         )}
       </div>
@@ -79,9 +78,9 @@ export default function TrainingLockPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
           <Tabs
             items={[
-              { id: "ACTIVE", label: `Đang hiệu lực (${locks.filter((l) => l.status === "ACTIVE").length})` },
-              { id: "RELEASED", label: `Đã gỡ khóa (${locks.filter((l) => l.status === "RELEASED").length})` },
-              { id: "ALL", label: `Tất cả (${locks.length})` },
+              { id: "ACTIVE", label: `Active (${locks.filter((l) => l.status === "ACTIVE").length})` },
+              { id: "RELEASED", label: `Released (${locks.filter((l) => l.status === "RELEASED").length})` },
+              { id: "ALL", label: `All (${locks.length})` },
             ]}
             active={activeTab}
             onChange={setActiveTab}
@@ -89,7 +88,7 @@ export default function TrainingLockPage() {
 
           <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
             <Input
-              placeholder="Tìm mã khóa, lý do..."
+              placeholder="Search lock code, reason..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{ minWidth: 260 }}
@@ -101,25 +100,25 @@ export default function TrainingLockPage() {
       {/* Table list */}
       <Card>
         {loading ? (
-          <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Đang tải danh sách khóa...</div>
+          <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Loading training locks...</div>
         ) : filteredLocks.length === 0 ? (
           <EmptyState
-            title="Không có lệnh khóa huấn luyện nào"
-            description="Hiện không có bản ghi khóa huấn luyện nào khớp với điều kiện lọc."
+            title="No training locks found"
+            description="No training lock records match the current filter criteria."
           />
         ) : (
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.875rem" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-sunken)" }}>
-                  <th style={{ padding: "0.75rem 1rem" }}>Mã khóa</th>
-                  <th style={{ padding: "0.75rem 1rem" }}>Mã ngựa</th>
-                  <th style={{ padding: "0.75rem 1rem" }}>Trạng thái áp dụng</th>
-                  <th style={{ padding: "0.75rem 1rem" }}>Lý do y tế</th>
-                  <th style={{ padding: "0.75rem 1rem" }}>Ngày khóa</th>
-                  <th style={{ padding: "0.75rem 1rem" }}>Hạn xem xét</th>
-                  <th style={{ padding: "0.75rem 1rem" }}>Trạng thái</th>
-                  {isVet && <th style={{ padding: "0.75rem 1rem", textAlign: "right" }}>Thao tác</th>}
+                  <th style={{ padding: "0.75rem 1rem" }}>Lock Code</th>
+                  <th style={{ padding: "0.75rem 1rem" }}>Horse ID</th>
+                  <th style={{ padding: "0.75rem 1rem" }}>Applied Status</th>
+                  <th style={{ padding: "0.75rem 1rem" }}>Medical Reason</th>
+                  <th style={{ padding: "0.75rem 1rem" }}>Locked Date</th>
+                  <th style={{ padding: "0.75rem 1rem" }}>Review Date</th>
+                  <th style={{ padding: "0.75rem 1rem" }}>Status</th>
+                  {isVet && <th style={{ padding: "0.75rem 1rem", textAlign: "right" }}>Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -138,7 +137,7 @@ export default function TrainingLockPage() {
                       <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={lock.lockReason}>
                         {lock.lockReason}
                       </div>
-                      <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Bác sĩ: {lock.lockedBy}</span>
+                      <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Vet: {lock.lockedBy}</span>
                     </td>
                     <td style={{ padding: "0.75rem 1rem" }}>{lock.lockedAt}</td>
                     <td style={{ padding: "0.75rem 1rem" }}>
@@ -148,9 +147,9 @@ export default function TrainingLockPage() {
                     </td>
                     <td style={{ padding: "0.75rem 1rem" }}>
                       {lock.status === "ACTIVE" ? (
-                        <Badge tone="danger">Đang khóa</Badge>
+                        <Badge tone="danger">Active Lock</Badge>
                       ) : (
-                        <Badge tone="neutral">Đã gỡ</Badge>
+                        <Badge tone="neutral">Released</Badge>
                       )}
                     </td>
                     {isVet && (
@@ -164,7 +163,7 @@ export default function TrainingLockPage() {
                                 setModalMode("extend");
                               }}
                             >
-                              Gia hạn
+                              Extend
                             </Button>
                             <Button
                               tone="accent"
@@ -173,11 +172,11 @@ export default function TrainingLockPage() {
                                 setModalMode("lift");
                               }}
                             >
-                              Gỡ khóa
+                              Lift Lock
                             </Button>
                           </div>
                         ) : (
-                          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Gỡ ngày {lock.releasedAt}</span>
+                          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Released {lock.releasedAt}</span>
                         )}
                       </td>
                     )}
@@ -192,7 +191,7 @@ export default function TrainingLockPage() {
       {/* Lock Modals */}
       {modalMode && (
         <TrainingLockModal
-          horseName={selectedLock?.horseId || "Bạch Mã Hoàng Tử (horse-2)"}
+          horseName={selectedLock?.horseId || "Northern Dancer Legacy (horse-2)"}
           currentReviewDate={selectedLock?.reviewDate}
           mode={modalMode}
           onClose={() => {
@@ -200,19 +199,19 @@ export default function TrainingLockPage() {
             setSelectedLock(null);
           }}
           onPlaceLock={async () => {
-            toast.show("Đã đặt khóa huấn luyện y tế thành công (DL-3.01)", "ok");
+            toast.show("Training lock placed successfully (DL-3.01)", "ok");
             setModalMode(null);
             setSelectedLock(null);
             void loadLocks();
           }}
           onLiftLock={async () => {
-            toast.show("Đã gỡ khóa huấn luyện y tế thành công (DL-3.02)", "ok");
+            toast.show("Training lock lifted successfully (DL-3.02)", "ok");
             setModalMode(null);
             setSelectedLock(null);
             void loadLocks();
           }}
           onExtendLock={async () => {
-            toast.show("Đã gia hạn khóa huấn luyện y tế thành công (DL-3.03)", "ok");
+            toast.show("Training lock review date extended successfully (DL-3.03)", "ok");
             setModalMode(null);
             setSelectedLock(null);
             void loadLocks();

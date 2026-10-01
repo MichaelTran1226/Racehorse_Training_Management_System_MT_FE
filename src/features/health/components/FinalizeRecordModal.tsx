@@ -34,7 +34,7 @@ export function FinalizeRecordModal({
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (proposeMedicalLock && !lockReason.trim()) {
-      setError("Vui lòng nhập lý do đặt Khóa huấn luyện.");
+      setError("Please enter a clinical reason for placing a Training Lock.");
       return;
     }
 
@@ -50,7 +50,7 @@ export function FinalizeRecordModal({
       });
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Không thể chốt bệnh án.");
+      setError(err instanceof Error ? err.message : "Failed to finalize medical record.");
     } finally {
       setBusy(false);
     }
@@ -58,17 +58,17 @@ export function FinalizeRecordModal({
 
   return (
     <Modal
-      title={`Chốt bệnh án ${recordNumber} (DL-3.08)`}
-      subtitle="Chuyển bệnh án sang trạng thái Đang điều trị. Phần khám và chẩn đoán sẽ bị khóa chỉnh sửa."
+      title={`Finalize Medical Record ${recordNumber} (DL-3.08)`}
+      subtitle="Transitions medical record to In-Treatment status. Examination and diagnostic sections will be locked against editing."
       width={520}
       onClose={onClose}
       foot={
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, width: "100%" }}>
           <Button tone="ghost" onClick={onClose} disabled={busy}>
-            Hủy
+            Cancel
           </Button>
           <Button tone="primary" onClick={handleSubmit} disabled={busy}>
-            Xác nhận chốt bệnh án
+            Confirm Finalization
           </Button>
         </div>
       }
@@ -81,9 +81,9 @@ export function FinalizeRecordModal({
         )}
 
         {proposedStatus && (
-          <Field label="Áp dụng trạng thái đề xuất" hint={`Cập nhật sức khỏe của ngựa thành: ${proposedStatus}`}>
+          <Field label="Apply Proposed Status" hint={`Update horse health status to: ${proposedStatus}`}>
             <Checkbox
-              label="Áp dụng trạng thái này cho hồ sơ ngựa ngay khi chốt"
+              label="Apply this status to horse profile immediately upon finalization"
               checked={applyProposedStatus}
               onChange={setApplyProposedStatus}
             />
@@ -92,28 +92,28 @@ export function FinalizeRecordModal({
 
         <div style={{ borderTop: "1px solid var(--border)", paddingTop: 12 }}>
           <Checkbox
-            label="Kích hoạt Khóa huấn luyện (Training Lock)"
+            label="Activate Training Lock"
             checked={proposeMedicalLock}
             onChange={setProposeMedicalLock}
           />
           <span style={{ fontSize: "12px", color: "var(--muted)", display: "block", marginTop: 4 }}>
-            Lệnh có ưu tiên cao nhất toàn hệ thống, tự động chặn bài tập nặng và treo đăng ký thi đấu.
+            Highest system priority order; automatically blocks heavy exercise and holds race entries.
           </span>
         </div>
 
         {proposeMedicalLock && (
           <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingLeft: 12, borderLeft: "2px solid var(--danger)" }}>
-            <Field label="Lý do khóa huấn luyện *" hint="Mô tả tổn thương hoặc chỉ định thú y cần cách ly/nghỉ ngơi">
+            <Field label="Lock Reason *" hint="Describe musculoskeletal lesion or clinical rationale for mandatory rest">
               <Textarea
                 rows={2}
                 value={lockReason}
                 onChange={(e) => setLockReason(e.target.value)}
-                placeholder="VD: Viêm gân độ 2 cần nghỉ hoàn toàn..."
+                placeholder="e.g., Grade 2 SDFT desmitis requiring strict stall rest..."
                 required
               />
             </Field>
 
-            <Field label="Số ngày dự kiến nghỉ ngơi" hint="Hệ thống sẽ tính ngày xem xét lại = hôm nay + số ngày này">
+            <Field label="Expected Rest Duration (days)" hint="System calculates review date = today + specified days">
               <Input
                 type="number"
                 min={1}
@@ -123,11 +123,11 @@ export function FinalizeRecordModal({
               />
             </Field>
 
-            <Field label="Điều kiện mở khóa" hint="Tiêu chí để VET xem xét gỡ khóa">
+            <Field label="Unlock Conditions" hint="Clinical benchmarks required before VET lifts lock">
               <Input
                 value={lockUnlockConditions}
                 onChange={(e) => setLockUnlockConditions(e.target.value)}
-                placeholder="VD: Tái khám siêu âm gân lành hoàn toàn, không đau khi ấn..."
+                placeholder="e.g., Follow-up ultrasound confirms tendon healing, zero pain on palpation..."
               />
             </Field>
           </div>

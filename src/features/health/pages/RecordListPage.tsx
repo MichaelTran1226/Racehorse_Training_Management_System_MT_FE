@@ -11,10 +11,10 @@ import type { MedicalRecord } from "../types";
 import styles from "./MedicalRecordPage.module.css";
 
 const STATUS_OPTIONS = [
-  { value: "", label: "Tất cả trạng thái" },
-  { value: "DRAFT", label: "Bản nháp (Draft)" },
-  { value: "OPEN", label: "Đang điều trị (Open)" },
-  { value: "CLOSED", label: "Đã kết thúc (Closed)" },
+  { value: "", label: "All Statuses" },
+  { value: "DRAFT", label: "Draft" },
+  { value: "OPEN", label: "In Treatment (Open)" },
+  { value: "CLOSED", label: "Closed" },
 ];
 
 export default function RecordListPage() {
@@ -57,16 +57,16 @@ export default function RecordListPage() {
       <div className={styles.headerCard}>
         <div className={styles.headerTop}>
           <div className={styles.titleArea}>
-            <h1 className={styles.horseTitle}>Hồ sơ Bệnh án Điện tử (SC-3.09)</h1>
+            <h1 className={styles.horseTitle}>Electronic Medical Records (SC-3.09)</h1>
             <span style={{ fontSize: "14px", color: "var(--muted)" }}>
-              Quản lý chẩn đoán, phác đồ điều trị, đơn thuốc và lịch sử tái khám của toàn bộ đàn ngựa.
+              Manage clinical diagnoses, treatment protocols, prescriptions, and follow-up history for the entire herd.
             </span>
           </div>
 
           {isVet && (
             <div className={styles.actions}>
               <Button tone="primary" icon="plus" onClick={() => navigate("/medical/records/new")}>
-                Tạo bệnh án mới
+                Create Medical Record
               </Button>
             </div>
           )}
@@ -78,7 +78,7 @@ export default function RecordListPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm theo mã bệnh án, tên ngựa, chẩn đoán..."
+              placeholder="Search by record number, horse name, diagnosis..."
             />
           </div>
 
@@ -94,7 +94,7 @@ export default function RecordListPage() {
           </div>
 
           <Button tone="ghost" onClick={() => { setSearch(""); setStatus(""); setPage(1); }}>
-            Xóa bộ lọc
+            Clear Filters
           </Button>
         </div>
       </div>
@@ -103,32 +103,32 @@ export default function RecordListPage() {
       <div className={styles.sectionCard}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--muted)" }}>
-            Hiển thị {records.length} trên tổng số {total} bệnh án
+            Showing {records.length} of {total} records
           </span>
         </div>
 
         {loading ? (
           <div style={{ textAlign: "center", padding: "40px", color: "var(--muted)" }}>
-            Đang tải dữ liệu bệnh án...
+            Loading medical records...
           </div>
         ) : records.length === 0 ? (
           <EmptyState
-            title="Không tìm thấy bệnh án phù hợp"
-            description="Hãy thử thay đổi từ khóa tìm kiếm hoặc bộ lọc trạng thái."
+            title="No medical records found"
+            description="Try adjusting your search keywords or status filter."
           />
         ) : (
           <div className={styles.tableContainer}>
             <table className={styles.dataTable}>
               <thead>
                 <tr>
-                  <th>Mã bệnh án</th>
-                  <th>Chiến mã</th>
-                  <th>Ngày khám</th>
-                  <th>Loại khám</th>
-                  <th>Chẩn đoán</th>
-                  <th>Mức độ</th>
-                  <th>Trạng thái</th>
-                  <th>Bác sĩ phụ trách</th>
+                  <th>Record No.</th>
+                  <th>Horse</th>
+                  <th>Exam Date</th>
+                  <th>Exam Type</th>
+                  <th>Diagnosis</th>
+                  <th>Severity</th>
+                  <th>Status</th>
+                  <th>Attending Vet</th>
                 </tr>
               </thead>
               <tbody>
@@ -136,9 +136,9 @@ export default function RecordListPage() {
                   <tr key={r.id} onClick={() => navigate(`/medical/records/${r.id}`)}>
                     <td><strong>{r.recordNumber}</strong></td>
                     <td>{r.horseName || r.horseId}</td>
-                    <td>{new Date(r.examinationDate).toLocaleDateString("vi-VN")}</td>
+                    <td>{new Date(r.examinationDate).toLocaleDateString("en-US")}</td>
                     <td>{r.examinationType}</td>
-                    <td>{r.diagnosis || "Chưa ghi nhận"}</td>
+                    <td>{r.diagnosis || "None recorded"}</td>
                     <td>
                       <Badge
                         tone={
@@ -157,7 +157,7 @@ export default function RecordListPage() {
                         tone={r.status === "OPEN" ? "info" : r.status === "CLOSED" ? "ok" : "neutral"}
                         dot
                       >
-                        {r.status === "OPEN" ? "Đang điều trị" : r.status === "CLOSED" ? "Đã kết thúc" : "Bản nháp"}
+                        {r.status === "OPEN" ? "In Treatment" : r.status === "CLOSED" ? "Closed" : "Draft"}
                       </Badge>
                     </td>
                     <td>{r.vetName || "—"}</td>

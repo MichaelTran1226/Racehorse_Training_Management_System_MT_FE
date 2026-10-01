@@ -768,8 +768,8 @@ const routes: Route[] = [
         horseName: body.horseId === "horse-2" ? "Northern Dancer Legacy" : "Thunderbolt Swift",
         status: body.saveAsDraft ? "DRAFT" : "OPEN",
         examinationDate: String(body.examinationDate || new Date().toISOString()),
-        examinationType: String(body.examinationType || "Khám bệnh"),
-        examinationReason: String(body.examinationReason || "Khám sức khỏe"),
+        examinationType: String(body.examinationType || "General Examination"),
+        examinationReason: String(body.examinationReason || "Routine checkup"),
         symptoms: body.symptoms ? String(body.symptoms) : undefined,
         discoverySource: body.discoverySource ? String(body.discoverySource) : undefined,
         vitals: body.vitals as any,
@@ -851,7 +851,7 @@ const routes: Route[] = [
       if (!rec) throw new ApiError(404, "NOT_FOUND", "Record not found");
       const phase: TreatmentPhase = {
         id: `phase-${Date.now()}`,
-        phaseName: String(body.phaseName || "Giai đoạn"),
+        phaseName: String(body.phaseName || "Phase"),
         startDate: String(body.startDate),
         endDate: String(body.endDate),
         target: String(body.target),
@@ -900,7 +900,7 @@ const routes: Route[] = [
       const rx = rec.prescriptions?.find((p) => p.id === params[1]);
       if (!rx) throw new ApiError(404, "NOT_FOUND", "Prescription not found");
       rx.status = "STOPPED";
-      rx.stoppedReason = String(body.stoppedReason || "Đã dừng");
+      rx.stoppedReason = String(body.stoppedReason || "Discontinued");
       rx.stoppedDate = String(body.stoppedDate || new Date().toISOString().split("T")[0]);
       saveMockMedicalStore(store);
       return { prescription: rx };
@@ -939,7 +939,7 @@ const routes: Route[] = [
       if (!rec) throw new ApiError(404, "NOT_FOUND", "Record not found");
       rec.status = "CLOSED";
       rec.conclusion = String(body.conclusion);
-      rec.treatmentResult = String(body.treatmentResult || "Khỏi hoàn toàn");
+      rec.treatmentResult = String(body.treatmentResult || "Full Recovery");
       rec.closedAt = new Date().toISOString();
       if (rec.prescriptions) {
         for (const p of rec.prescriptions) {

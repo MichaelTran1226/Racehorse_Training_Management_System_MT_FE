@@ -57,7 +57,7 @@ export const HorseAnatomyGraphic: React.FC<HorseAnatomyGraphicProps> = ({
         {/* Blueprint Grid Canvas */}
         <rect width="1024" height="682" fill="url(#vetGridPattern)" rx="8" />
 
-        {/* Horse Anatomy Image (Clean high-res illustration, perfectly sized without overlapping text) */}
+        {/* Horse Anatomy Image (Lớp Cơ: horse_muscle.png | Lớp Xương: horse_anatomy.png) */}
         <g
           style={{
             transform: isRight ? "scaleX(-1)" : "none",
@@ -66,7 +66,7 @@ export const HorseAnatomyGraphic: React.FC<HorseAnatomyGraphicProps> = ({
           }}
         >
           <image
-            href="/assets/horse_anatomy.png"
+            href={isSkeleton ? "/assets/horse_anatomy.png" : "/assets/horse_muscle.png"}
             x="0"
             y="0"
             width="1024"
@@ -74,9 +74,9 @@ export const HorseAnatomyGraphic: React.FC<HorseAnatomyGraphicProps> = ({
             preserveAspectRatio="xMidYMid meet"
             style={{
               filter: isSkeleton
-                ? "contrast(1.18) brightness(1.03)"
-                : "saturate(1.15) contrast(1.05)",
-              transition: "filter 0.3s ease",
+                ? "contrast(1.15) brightness(1.02)"
+                : "saturate(1.08) contrast(1.04)",
+              transition: "filter 0.3s ease, opacity 0.25s ease",
             }}
           />
 

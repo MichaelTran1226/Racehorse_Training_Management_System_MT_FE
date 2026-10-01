@@ -12,75 +12,81 @@ import { useToast } from "@/shared/components/ui/Toast";
 import { createRecord, getRecordDetail, updateRecord } from "../api";
 import { isHeartRateWarning, isRespiratoryWarning, isTempWarning } from "../components/VitalsDisplay";
 import type { LabTestItem, SeverityLevel } from "../types";
+import { getStoredHorses } from "@/shared/mock/horsesData";
 import styles from "./MedicalRecordPage.module.css";
 
-const HORSE_OPTIONS = [
-  { value: "horse-1", label: "Thunderbolt Swift (RFID-985141002341)" },
-  { value: "horse-2", label: "Northern Dancer Legacy (RFID-985141002342)" },
-  { value: "horse-3", label: "Red Rum Champion (RFID-985141002343)" },
-  { value: "horse-4", label: "Secretariat Star (RFID-985141002344)" },
-];
 
 const EXAM_TYPE_OPTIONS = [
-  { value: "Khám bệnh", label: "Khám bệnh" },
-  { value: "Khám chấn thương", label: "Khám chấn thương" },
-  { value: "Khám định kỳ", label: "Khám định kỳ" },
-  { value: "Tái khám", label: "Tái khám" },
-  { value: "Khám trước thi đấu", label: "Khám trước thi đấu" },
+  { value: "Routine Clinical", label: "Routine Clinical" },
+  { value: "Injury Examination", label: "Injury Examination" },
+  { value: "Periodic Checkup", label: "Periodic Checkup" },
+  { value: "Follow-up", label: "Follow-up" },
+  { value: "Pre-Race Veterinary Exam", label: "Pre-Race Veterinary Exam" },
 ];
 
 const DISCOVERY_OPTIONS = [
-  { value: "VET tự phát hiện", label: "VET tự phát hiện" },
-  { value: "Ghi chú quan sát của nhân viên chăm sóc", label: "Ghi chú quan sát của nhân viên chăm sóc" },
-  { value: "Dấu hiệu bất thường sau buổi tập", label: "Dấu hiệu bất thường sau buổi tập" },
-  { value: "Khám định kỳ", label: "Khám định kỳ" },
+  { value: "VET Self-Discovered", label: "VET Self-Discovered" },
+  { value: "Groom Observation Log", label: "Groom Observation Log" },
+  { value: "Post-Training Abnormality", label: "Post-Training Abnormality" },
+  { value: "Routine Checkup", label: "Routine Checkup" },
 ];
 
 const LAB_TYPE_OPTIONS = [
-  { value: "Xét nghiệm máu", label: "Xét nghiệm máu" },
-  { value: "Nước tiểu", label: "Xét nghiệm nước tiểu" },
-  { value: "X-quang", label: "Chụp X-quang" },
-  { value: "Siêu âm", label: "Siêu âm cơ xương" },
-  { value: "Nội soi", label: "Nội soi đường hô hấp" },
-  { value: "Khác", label: "Khác" },
+  { value: "Blood Test", label: "Blood Test" },
+  { value: "Urinalysis", label: "Urinalysis" },
+  { value: "X-Ray", label: "Radiograph (X-Ray)" },
+  { value: "Ultrasound", label: "Musculoskeletal Ultrasound" },
+  { value: "Endoscopy", label: "Respiratory Endoscopy" },
+  { value: "Other", label: "Other" },
 ];
 
 const PROPOSED_STATUS_OPTIONS = [
-  { value: "UNDER_OBSERVATION", label: "Cần theo dõi (Under Observation)" },
-  { value: "INJURED", label: "Chấn thương (Injured)" },
-  { value: "QUARANTINED", label: "Cách ly (Quarantined)" },
-  { value: "FIT", label: "Đủ điều kiện (Fit)" },
+  { value: "UNDER_OBSERVATION", label: "Under Observation" },
+  { value: "INJURED", label: "Injured" },
+  { value: "QUARANTINED", label: "Quarantined" },
+  { value: "FIT", label: "Fit" },
 ];
 
 export default function RecordFormPage() {
-  const { id } = useParams(); // Nếu có id là mode edit
+  const { id } = useParams(); // If id exists, it's edit mode
   const [searchParams] = useSearchParams();
   const horseIdParam = searchParams.get("horseId") || "";
 
   const navigate = useNavigate();
   const toast = useToast();
 
+  const storedHorses = getStoredHorses();
+  const horseOptions = storedHorses.length > 0
+    ? storedHorses.map((h) => ({
+        value: h.id,
+        label: `${h.name} (${h.code}) · ${h.stall}`,
+      }))
+    : [{ value: "", label: "-- No horses available (Add horse in Herd first) --" }];
+
   const isEdit = Boolean(id);
 
-  // Block 1: Thông tin khám
-  const [horseId, setHorseId] = useState(horseIdParam || "horse-1");
+  // Block 1: Exam info
+  const [horseId, setHorseId] = useState(() => {
+    if (horseIdParam && storedHorses.some((h) => h.id === horseIdParam)) return horseIdParam;
+    return storedHorses[0]?.id || "";
+  });
   const [examinationDate, setExaminationDate] = useState(new Date().toISOString().slice(0, 16));
-  const [examinationType, setExaminationType] = useState("Khám bệnh");
+  const [examinationType, setExaminationType] = useState("Routine Clinical");
   const [examinationReason, setExaminationReason] = useState("");
   const [symptoms, setSymptoms] = useState("");
-  const [discoverySource, setDiscoverySource] = useState("VET tự phát hiện");
+  const [discoverySource, setDiscoverySource] = useState("VET Self-Discovered");
 
-  // Block 2: Chỉ số sinh tồn
+  // Block 2: Vital signs
   const [temperature, setTemperature] = useState<number | undefined>(38.1);
   const [restingHeartRate, setRestingHeartRate] = useState<number | undefined>(36);
   const [respiratoryRate, setRespiratoryRate] = useState<number | undefined>(12);
   const [weightKg, setWeightKg] = useState<number | undefined>(480);
   const [clinicalNotes, setClinicalNotes] = useState("");
 
-  // Block 3: Cận lâm sàng
+  // Block 3: Diagnostics
   const [labTests, setLabTests] = useState<LabTestItem[]>([]);
 
-  // Block 4: Chẩn đoán
+  // Block 4: Diagnosis
   const [diagnosis, setDiagnosis] = useState("");
   const [severity, setSeverity] = useState<SeverityLevel>("MODERATE");
   const [proposedStatus, setProposedStatus] = useState("UNDER_OBSERVATION");
@@ -99,7 +105,7 @@ export default function RecordFormPage() {
         setExaminationType(r.examinationType);
         setExaminationReason(r.examinationReason);
         setSymptoms(r.symptoms || "");
-        setDiscoverySource(r.discoverySource || "VET tự phát hiện");
+        setDiscoverySource(r.discoverySource || "VET Self-Discovered");
         if (r.vitals) {
           setTemperature(r.vitals.temperature);
           setRestingHeartRate(r.vitals.restingHeartRate);
@@ -120,7 +126,7 @@ export default function RecordFormPage() {
     setLabTests([
       ...labTests,
       {
-        testType: "Xét nghiệm máu",
+        testType: "Blood Test",
         testDate: new Date().toISOString().split("T")[0],
         result: "",
       },
@@ -139,16 +145,16 @@ export default function RecordFormPage() {
 
   async function handleSave(saveAsDraft: boolean) {
     if (!horseId) {
-      setError("Vui lòng chọn ngựa.");
+      setError("Please select a horse.");
       return;
     }
     if (!saveAsDraft) {
       if (!examinationReason.trim()) {
-        setError("Vui lòng nhập lý do khám.");
+        setError("Please enter reason for examination.");
         return;
       }
       if (!diagnosis.trim()) {
-        setError("Vui lòng nhập chẩn đoán trước khi chốt bệnh án.");
+        setError("Please enter a definitive diagnosis before finalizing.");
         return;
       }
     }
@@ -181,18 +187,18 @@ export default function RecordFormPage() {
     try {
       if (isEdit && id) {
         const updated = await updateRecord(id, payload);
-        toast.show("Cập nhật bệnh án thành công.", "ok");
+        toast.show("Medical record updated successfully.", "ok");
         navigate(`/medical/records/${updated.record.id}`);
       } else {
         const created = await createRecord(payload);
         toast.show(
-          saveAsDraft ? "Đã lưu nháp bệnh án thành công." : "Tạo và chốt bệnh án thành công.",
+          saveAsDraft ? "Draft medical record saved successfully." : "Medical record created and finalized.",
           "ok",
         );
         navigate(`/medical/records/${created.record.id}`);
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Lỗi khi lưu bệnh án.");
+      setError(err instanceof Error ? err.message : "Failed to save medical record.");
     } finally {
       setBusy(false);
     }
@@ -208,10 +214,10 @@ export default function RecordFormPage() {
         <div className={styles.headerTop}>
           <div className={styles.titleArea}>
             <h1 className={styles.horseTitle}>
-              {isEdit ? "Chỉnh sửa Bệnh án (Nháp)" : "Tạo mới Bệnh án Điện tử (SC-3.03)"}
+              {isEdit ? "Edit Medical Record (Draft)" : "New Electronic Medical Record (SC-3.03)"}
             </h1>
             <span style={{ fontSize: "14px", color: "var(--muted)" }}>
-              Nhập kết quả khám lâm sàng, chỉ số sinh tồn và thiết lập phác đồ điều trị ban đầu.
+              Record clinical exam findings, vital signs, and initialize the treatment plan.
             </span>
           </div>
         </div>
@@ -223,24 +229,24 @@ export default function RecordFormPage() {
         </div>
       )}
 
-      {/* Khối 1: Thông tin khám */}
+      {/* Block 1: Examination Details */}
       <div className={styles.sectionCard}>
         <h2 className={styles.sectionTitle}>
           <Icon name="clipboard" size={18} />
-          1. Thông tin khám
+          1. Examination Information
         </h2>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
-          <Field label="Chiến mã *" hint="Chọn con ngựa cần khám chữa">
+          <Field label="Horse *" hint="Select the horse to examine">
             <Select
-              options={HORSE_OPTIONS}
+              options={horseOptions}
               value={horseId}
               onChange={(e) => setHorseId(e.target.value)}
               disabled={isEdit}
             />
           </Field>
 
-          <Field label="Ngày giờ khám *">
+          <Field label="Examination Date & Time *">
             <Input
               type="datetime-local"
               value={examinationDate}
@@ -249,7 +255,7 @@ export default function RecordFormPage() {
             />
           </Field>
 
-          <Field label="Loại khám *">
+          <Field label="Examination Type *">
             <Select
               options={EXAM_TYPE_OPTIONS}
               value={examinationType}
@@ -257,7 +263,7 @@ export default function RecordFormPage() {
             />
           </Field>
 
-          <Field label="Nguồn phát hiện">
+          <Field label="Discovery Source">
             <Select
               options={DISCOVERY_OPTIONS}
               value={discoverySource}
@@ -266,46 +272,46 @@ export default function RecordFormPage() {
           </Field>
 
           <div style={{ gridColumn: "1 / -1" }}>
-            <Field label="Lý do khám *" hint="Từ 5 đến 500 ký tự">
+            <Field label="Reason for Examination *" hint="Between 5 and 500 characters">
               <Textarea
                 rows={2}
                 value={examinationReason}
                 onChange={(e) => setExaminationReason(e.target.value)}
-                placeholder="VD: Ngựa có biểu hiện khập khiễng chân trước sau bài tập galop sáng nay..."
+                placeholder="e.g., Horse exhibits front limb lameness following morning gallop workout..."
                 required
               />
             </Field>
           </div>
 
           <div style={{ gridColumn: "1 / -1" }}>
-            <Field label="Triệu chứng lâm sàng quan sát được" hint="Tối đa 2000 ký tự">
+            <Field label="Observed Clinical Symptoms" hint="Max 2,000 characters">
               <Textarea
                 rows={2}
                 value={symptoms}
                 onChange={(e) => setSymptoms(e.target.value)}
-                placeholder="VD: Sưng nề nhẹ vùng khớp cổ chân, ấn có phản xạ đau..."
+                placeholder="e.g., Mild swelling around the fetlock joint, tender on palpation..."
               />
             </Field>
           </div>
         </div>
       </div>
 
-      {/* Khối 2: Chỉ số sinh tồn */}
+      {/* Block 2: Vital Signs */}
       <div className={styles.sectionCard}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h2 className={styles.sectionTitle}>
             <Icon name="pulse" size={18} />
-            2. Chỉ số sinh tồn
+            2. Vital Signs
           </h2>
           <span style={{ fontSize: "12px", color: "var(--muted)" }}>
-            Hệ thống sẽ tô đỏ các chỉ số vượt ngưỡng tham chiếu sinh lý của ngựa trưởng thành.
+            Values exceeding adult equine physiological reference ranges will be highlighted in red.
           </span>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
           <Field
-            label="Nhiệt độ (°C) *"
-            hint={tempWarn ? "Ngoài ngưỡng tham chiếu (37.2 - 38.6 °C)!" : "Bình thường: 37.2 – 38.6 °C"}
+            label="Temperature (°C) *"
+            hint={tempWarn ? "Outside reference range (37.2 – 38.6 °C)!" : "Normal: 37.2 – 38.6 °C"}
           >
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <Input
@@ -318,13 +324,13 @@ export default function RecordFormPage() {
                 style={tempWarn ? { borderColor: "var(--danger)", color: "var(--danger)" } : undefined}
                 required
               />
-              {tempWarn && <Badge tone="danger">Cảnh báo</Badge>}
+              {tempWarn && <Badge tone="danger">Alert</Badge>}
             </div>
           </Field>
 
           <Field
-            label="Nhịp tim lúc nghỉ (bpm) *"
-            hint={hrWarn ? "Ngoài ngưỡng tham chiếu (28 - 44 bpm)!" : "Bình thường: 28 – 44 bpm"}
+            label="Resting Heart Rate (bpm) *"
+            hint={hrWarn ? "Outside reference range (28 – 44 bpm)!" : "Normal: 28 – 44 bpm"}
           >
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <Input
@@ -336,13 +342,13 @@ export default function RecordFormPage() {
                 style={hrWarn ? { borderColor: "var(--danger)", color: "var(--danger)" } : undefined}
                 required
               />
-              {hrWarn && <Badge tone="danger">Cảnh báo</Badge>}
+              {hrWarn && <Badge tone="danger">Alert</Badge>}
             </div>
           </Field>
 
           <Field
-            label="Nhịp thở (lần/phút) *"
-            hint={rrWarn ? "Ngoài ngưỡng tham chiếu (8 - 16 lần/phút)!" : "Bình thường: 8 – 16 lần/phút"}
+            label="Respiratory Rate (breaths/min) *"
+            hint={rrWarn ? "Outside reference range (8 – 16 breaths/min)!" : "Normal: 8 – 16 breaths/min"}
           >
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <Input
@@ -354,11 +360,11 @@ export default function RecordFormPage() {
                 style={rrWarn ? { borderColor: "var(--danger)", color: "var(--danger)" } : undefined}
                 required
               />
-              {rrWarn && <Badge tone="danger">Cảnh báo</Badge>}
+              {rrWarn && <Badge tone="danger">Alert</Badge>}
             </div>
           </Field>
 
-          <Field label="Cân nặng (kg)" hint="Tiêu chuẩn: 200 – 800 kg">
+          <Field label="Weight (kg)" hint="Standard: 200 – 800 kg">
             <Input
               type="number"
               min={200}
@@ -369,33 +375,33 @@ export default function RecordFormPage() {
           </Field>
 
           <div style={{ gridColumn: "1 / -1" }}>
-            <Field label="Khám lâm sàng chi tiết *" hint="10 đến 4000 ký tự">
+            <Field label="Detailed Clinical Examination *" hint="10 to 4,000 characters">
               <Textarea
                 rows={3}
                 value={clinicalNotes}
                 onChange={(e) => setClinicalNotes(e.target.value)}
-                placeholder="Ghi nhận tiếng thở phổi, âm ruột, niêm mạc mắt, độ đàn hồi của da, dáng đi..."
+                placeholder="Note lung sounds, gut sounds, mucous membranes, skin turgor, gait..."
               />
             </Field>
           </div>
         </div>
       </div>
 
-      {/* Khối 3: Cận lâm sàng */}
+      {/* Block 3: Diagnostic Tests */}
       <div className={styles.sectionCard}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h2 className={styles.sectionTitle}>
             <Icon name="file" size={18} />
-            3. Xét nghiệm & Chẩn đoán hình ảnh (0 – 20 dòng)
+            3. Diagnostic Tests & Imaging (0–20 items)
           </h2>
           <Button size="sm" tone="ghost" icon="plus" onClick={addLabTest}>
-            Thêm kết quả xét nghiệm
+            Add Diagnostic Result
           </Button>
         </div>
 
         {labTests.length === 0 ? (
           <div style={{ color: "var(--muted)", fontSize: "13px" }}>
-            Chưa có xét nghiệm cận lâm sàng nào được thêm. Bấm "Thêm kết quả" nếu có kết quả máu, X-quang hoặc siêu âm.
+            No diagnostic tests added yet. Click &quot;Add Diagnostic Result&quot; to record blood work, X-rays, or ultrasound findings.
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -427,7 +433,7 @@ export default function RecordFormPage() {
                 <Input
                   value={test.result}
                   onChange={(e) => updateLabTest(idx, "result", e.target.value)}
-                  placeholder="Mô tả kết quả chữ (VD: Bạch cầu tăng, hình ảnh gãy nứt xương nhẹ...)"
+                  placeholder="Result description (e.g., Elevated WBC count, hairline fissure on lateral condyle...)"
                 />
 
                 <button
@@ -443,25 +449,25 @@ export default function RecordFormPage() {
         )}
       </div>
 
-      {/* Khối 4: Chẩn đoán & Đề xuất */}
+      {/* Block 4: Diagnosis & Proposed Actions */}
       <div className={styles.sectionCard}>
         <h2 className={styles.sectionTitle}>
           <Icon name="stethoscope" size={18} />
-          4. Chẩn đoán xác định & Đề xuất xử lý
+          4. Confirmatory Diagnosis & Proposed Actions
         </h2>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <Field label="Chẩn đoán xác định *" hint="Từ 5 đến 1000 ký tự">
+          <Field label="Definitive Diagnosis *" hint="Between 5 and 1,000 characters">
             <Textarea
               rows={3}
               value={diagnosis}
               onChange={(e) => setDiagnosis(e.target.value)}
-              placeholder="VD: Viêm bao hoạt dịch gân gấp ngón chân trước bên trái cấp tính..."
+              placeholder="e.g., Acute tenosynovitis of the left forelimb digital flexor tendon sheath..."
               required
             />
           </Field>
 
-          <Field label="Mức độ nghiêm trọng *">
+          <Field label="Severity Level *">
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
               <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
                 <input
@@ -470,7 +476,7 @@ export default function RecordFormPage() {
                   checked={severity === "MILD"}
                   onChange={() => setSeverity("MILD")}
                 />
-                Nhẹ (Mild)
+                Mild
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
                 <input
@@ -479,7 +485,7 @@ export default function RecordFormPage() {
                   checked={severity === "MODERATE"}
                   onChange={() => setSeverity("MODERATE")}
                 />
-                Trung bình (Moderate)
+                Moderate
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
                 <input
@@ -488,7 +494,7 @@ export default function RecordFormPage() {
                   checked={severity === "SEVERE"}
                   onChange={() => setSeverity("SEVERE")}
                 />
-                Nặng (Severe)
+                Severe
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
                 <input
@@ -497,13 +503,13 @@ export default function RecordFormPage() {
                   checked={severity === "CRITICAL"}
                   onChange={() => setSeverity("CRITICAL")}
                 />
-                Nguy kịch (Critical)
+                Critical
               </label>
             </div>
           </Field>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "center" }}>
-            <Field label="Đề xuất trạng thái cho ngựa">
+            <Field label="Proposed Horse Status">
               <Select
                 options={PROPOSED_STATUS_OPTIONS}
                 value={proposedStatus}
@@ -513,12 +519,12 @@ export default function RecordFormPage() {
 
             <div>
               <Checkbox
-                label="Đề xuất kích hoạt Khóa huấn luyện (Training Lock)"
+                label="Propose Training Lock activation"
                 checked={proposeMedicalLock}
                 onChange={setProposeMedicalLock}
               />
               <span style={{ fontSize: "12px", color: "var(--muted)", display: "block", marginTop: 4 }}>
-                Khi chốt bệnh án, hệ thống sẽ mở bước xác nhận đặt lệnh khóa bảo vệ chiến mã.
+                Upon finalizing the medical record, a confirmation step will be prompted to issue a protective training lock.
               </span>
             </div>
           </div>
@@ -539,15 +545,15 @@ export default function RecordFormPage() {
         }}
       >
         <Button tone="ghost" onClick={() => navigate(-1)} disabled={busy}>
-          Hủy bỏ
+          Cancel
         </Button>
 
         <div style={{ display: "flex", gap: 12 }}>
           <Button tone="ghost" icon="file" onClick={() => void handleSave(true)} disabled={busy}>
-            Lưu nháp (DRAFT)
+            Save Draft (DRAFT)
           </Button>
           <Button tone="primary" icon="checkCircle" onClick={() => void handleSave(false)} disabled={busy}>
-            Lưu và chốt bệnh án (OPEN)
+            Save & Finalize (OPEN)
           </Button>
         </div>
       </div>

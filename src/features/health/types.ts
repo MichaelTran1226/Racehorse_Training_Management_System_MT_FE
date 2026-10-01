@@ -3,7 +3,7 @@ import type { HealthStatus } from "@/shared/types/enums";
 export type MedicalRecordStatus = "DRAFT" | "OPEN" | "CLOSED";
 export type SeverityLevel = "MILD" | "MODERATE" | "SEVERE" | "CRITICAL";
 export type ObservationUrgency = "NORMAL" | "ATTENTION" | "URGENT";
-export type AllowedActivity = "Nghỉ hoàn toàn" | "Đi bộ nhẹ" | "Tập nhẹ" | "Tập bình thường";
+export type AllowedActivity = "Strict stall rest" | "Hand walk 10-15 mins" | "Light exercise" | "Full training" | string;
 export type PrescriptionStatus = "ACTIVE" | "STOPPED" | "COMPLETED";
 export type PreventiveStatus = "UP_TO_DATE" | "DUE_SOON" | "OVERDUE" | "NO_DATA";
 export type InjuryStage = "ACUTE" | "SUBACUTE" | "RECOVERING" | "HEALED";

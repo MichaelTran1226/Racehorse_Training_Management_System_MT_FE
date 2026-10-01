@@ -9,10 +9,10 @@ import { Modal } from "@/shared/components/ui/Modal";
 import type { StopPrescriptionInput } from "../types";
 
 const STOP_REASON_OPTIONS = [
-  { value: "Đã khỏi", label: "Đã khỏi bệnh / Hết triệu chứng" },
-  { value: "Tác dụng phụ", label: "Phát hiện tác dụng phụ / Dị ứng" },
-  { value: "Đổi thuốc", label: "Đổi sang phác đồ thuốc khác hiệu quả hơn" },
-  { value: "Khác", label: "Lý do khác" },
+  { value: "Resolved", label: "Condition resolved / Symptoms cleared" },
+  { value: "Adverse reaction", label: "Adverse reaction / Allergy detected" },
+  { value: "Medication switched", label: "Switched to alternative medication" },
+  { value: "Other", label: "Other clinical reason" },
 ];
 
 interface StopPrescriptionModalProps {
@@ -22,7 +22,7 @@ interface StopPrescriptionModalProps {
 }
 
 export function StopPrescriptionModal({ medicationName, onClose, onSubmit }: StopPrescriptionModalProps) {
-  const [stoppedReason, setStoppedReason] = useState("Đã khỏi");
+  const [stoppedReason, setStoppedReason] = useState("Resolved");
   const [stopNotes, setStopNotes] = useState("");
   const [stoppedDate, setStoppedDate] = useState(new Date().toISOString().split("T")[0]);
   const [busy, setBusy] = useState(false);
@@ -40,7 +40,7 @@ export function StopPrescriptionModal({ medicationName, onClose, onSubmit }: Sto
       });
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Lỗi khi dừng thuốc.");
+      setError(err instanceof Error ? err.message : "Failed to discontinue medication.");
     } finally {
       setBusy(false);
     }
@@ -48,18 +48,18 @@ export function StopPrescriptionModal({ medicationName, onClose, onSubmit }: Sto
 
   return (
     <Modal
-      title={`Dừng thuốc: ${medicationName} (DL-3.06)`}
-      subtitle="Chuyển trạng thái thuốc sang Đã dừng. Thuốc đã dừng không thể phục hồi sử dụng."
+      title={`Discontinue Medication: ${medicationName} (DL-3.06)`}
+      subtitle="Marks medication status as Discontinued. Discontinued prescriptions cannot be reactivated."
       width={480}
       tone="warn"
       onClose={onClose}
       foot={
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, width: "100%" }}>
           <Button tone="ghost" onClick={onClose} disabled={busy}>
-            Hủy
+            Cancel
           </Button>
           <Button tone="danger" onClick={handleSubmit} disabled={busy}>
-            Xác nhận dừng thuốc
+            Confirm Discontinue
           </Button>
         </div>
       }
@@ -71,7 +71,7 @@ export function StopPrescriptionModal({ medicationName, onClose, onSubmit }: Sto
           </div>
         )}
 
-        <Field label="Lý do dừng thuốc *">
+        <Field label="Discontinuation Reason *">
           <Select
             options={STOP_REASON_OPTIONS}
             value={stoppedReason}
@@ -79,16 +79,16 @@ export function StopPrescriptionModal({ medicationName, onClose, onSubmit }: Sto
           />
         </Field>
 
-        <Field label="Ngày dừng *">
+        <Field label="Discontinuation Date *">
           <Input type="date" value={stoppedDate} onChange={(e) => setStoppedDate(e.target.value)} required />
         </Field>
 
-        <Field label="Ghi chú chi tiết">
+        <Field label="Detailed Notes">
           <Textarea
             rows={2}
             value={stopNotes}
             onChange={(e) => setStopNotes(e.target.value)}
-            placeholder="Mô tả lý do hoặc đánh giá lâm sàng khi quyết định dừng..."
+            placeholder="Describe clinical rationale or findings upon discontinuing medication..."
           />
         </Field>
       </form>

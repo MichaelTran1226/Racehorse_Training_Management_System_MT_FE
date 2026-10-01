@@ -16,12 +16,12 @@ import type { HorseMedicalProfile, ObservationNote } from "../types";
 import styles from "./MedicalRecordPage.module.css";
 
 const TABS = [
-  { id: "overview", label: "Tổng quan" },
-  { id: "records", label: "Bệnh án" },
-  { id: "injuries", label: "Chấn thương" },
-  { id: "locks", label: "Khóa huấn luyện" },
-  { id: "preventive", label: "Lịch định kỳ" },
-  { id: "observations", label: "Ghi chú quan sát" },
+  { id: "overview", label: "Overview" },
+  { id: "records", label: "Medical Records" },
+  { id: "injuries", label: "Injury Map" },
+  { id: "locks", label: "Training Locks" },
+  { id: "preventive", label: "Preventive Care" },
+  { id: "observations", label: "Observations" },
 ];
 
 export default function MedicalRecordPage() {
@@ -56,7 +56,7 @@ export default function MedicalRecordPage() {
       setProfile(res);
       setObservations(res.observations || []);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Không thể tải hồ sơ y tế của ngựa.");
+      setError(err instanceof Error ? err.message : "Unable to load horse medical profile.");
     } finally {
       setLoading(false);
     }
@@ -74,7 +74,7 @@ export default function MedicalRecordPage() {
       const res = await getHorseObservations(id, { urgency: urgency || undefined });
       setObservations(res.observations);
     } catch {
-      toast.show("Lỗi khi lọc ghi chú quan sát.", "danger");
+      toast.show("Error filtering observation notes.", "danger");
     }
   }
 
@@ -86,7 +86,7 @@ export default function MedicalRecordPage() {
     return (
       <div className={styles.container}>
         <div style={{ textAlign: "center", padding: "60px 0", color: "var(--muted)" }}>
-          Đang tải hồ sơ y tế...
+          Loading medical profile...
         </div>
       </div>
     );
@@ -96,11 +96,11 @@ export default function MedicalRecordPage() {
     return (
       <div className={styles.container}>
         <EmptyState
-          title="Không thể tải hồ sơ y tế"
-          description={error || "Không tìm thấy dữ liệu hoặc bạn không có quyền xem hồ sơ con ngựa này."}
+          title="Unable to load medical profile"
+          description={error || "Data not found or you lack permission to view this horse's profile."}
           action={
             <Button tone="primary" onClick={() => void loadData()}>
-              Thử lại
+              Try Again
             </Button>
           }
         />
@@ -121,19 +121,19 @@ export default function MedicalRecordPage() {
               <HealthBadge status={horse.healthStatus} withIcon />
               {horse.isMedicalLocked && (
                 <Badge tone="danger" icon="lock">
-                  Đang khóa huấn luyện
+                  Active Training Lock
                 </Badge>
               )}
             </div>
             <div className={styles.horseMeta}>
               <span className={styles.metaItem}>
-                <Icon name="pin" size={14} /> Mã vi chíp: <strong>{horse.microchipRfid}</strong>
+                <Icon name="pin" size={14} /> Microchip RFID: <strong>{horse.microchipRfid}</strong>
               </span>
               <span className={styles.metaItem}>
-                <Icon name="horse" size={14} /> Giống: <strong>{horse.breed}</strong>
+                <Icon name="horse" size={14} /> Breed: <strong>{horse.breed}</strong>
               </span>
               <span className={styles.metaItem}>
-                <Icon name="grid" size={14} /> Chuồng: <strong>{horse.stallCode || "Chưa xếp ô"}</strong>
+                <Icon name="grid" size={14} /> Stall: <strong>{horse.stallCode || "Unassigned"}</strong>
               </span>
             </div>
           </div>
@@ -146,20 +146,20 @@ export default function MedicalRecordPage() {
                   icon="plus"
                   onClick={() => navigate(`/medical/records/new?horseId=${horse.id}`)}
                 >
-                  Tạo bệnh án mới
+                  Create Medical Record
                 </Button>
 
                 {!horse.isMedicalLocked ? (
                   <Button tone="danger" icon="lock" onClick={() => setLockModalMode("place")}>
-                    Đặt Khóa huấn luyện
+                    Place Training Lock
                   </Button>
                 ) : (
                   <>
                     <Button tone="ghost" icon="clock" onClick={() => setLockModalMode("extend")}>
-                      Gia hạn xem xét
+                      Extend Review Date
                     </Button>
                     <Button tone="primary" icon="unlock" onClick={() => setLockModalMode("lift")}>
-                      Gỡ Khóa huấn luyện
+                      Lift Training Lock
                     </Button>
                   </>
                 )}
@@ -174,15 +174,15 @@ export default function MedicalRecordPage() {
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <Icon name="alert" size={20} />
               <div>
-                <strong>LỆNH KHÓA HUẤN LUYỆN ĐANG HIỆU LỰC ({horse.activeLock.lockCode})</strong>
+                <strong>ACTIVE TRAINING LOCK ORDER IN FORCE ({horse.activeLock.lockCode})</strong>
                 <div>
-                  Lý do: {horse.activeLock.lockReason} · Người đặt: {horse.activeLock.lockedBy} (
-                  {new Date(horse.activeLock.lockedAt).toLocaleDateString("vi-VN")})
+                  Reason: {horse.activeLock.lockReason} · Placed by: {horse.activeLock.lockedBy} (
+                  {new Date(horse.activeLock.lockedAt).toLocaleDateString("en-US")})
                 </div>
               </div>
             </div>
             <div>
-              Ngày xem xét lại: <strong>{new Date(horse.activeLock.reviewDate).toLocaleDateString("vi-VN")}</strong>
+              Review Date: <strong>{new Date(horse.activeLock.reviewDate).toLocaleDateString("en-US")}</strong>
             </div>
           </div>
         )}
@@ -191,27 +191,27 @@ export default function MedicalRecordPage() {
       {/* Tabs Navigation */}
       <Tabs items={TABS} active={activeTab} onChange={handleTabChange} />
 
-      {/* Tab 1: Tổng quan */}
+      {/* Tab 1: Overview */}
       {activeTab === "overview" && (
         <div className={styles.tabContent}>
           <div className={styles.overviewGrid}>
-            {/* Tình trạng & Vận động */}
+            {/* Activity Level & Directives */}
             <div className={styles.sectionCard}>
               <h2 className={styles.sectionTitle}>
                 <Icon name="activity" size={18} />
-                Mức vận động & Tình trạng áp dụng
+                Activity Level & Care Directives
               </h2>
               <div style={{ fontSize: "14px", display: "flex", flexDirection: "column", gap: 10 }}>
                 <div>
-                  Mức vận động cho phép:{" "}
+                  Allowed activity level:{" "}
                   <Badge tone="brand">
-                    {overview.allowedActivity || "Bình thường"}
+                    {overview.allowedActivity || "Normal"}
                   </Badge>
                 </div>
                 <div>
-                  Hướng dẫn chăm sóc đặc biệt:
+                  Special care instructions:
                   {overview.careInstructions.length === 0 ? (
-                    <div style={{ color: "var(--muted)", marginTop: 4 }}>Không có chỉ định đặc biệt.</div>
+                    <div style={{ color: "var(--muted)", marginTop: 4 }}>No special directives.</div>
                   ) : (
                     <ul style={{ margin: "6px 0 0 18px", padding: 0, color: "var(--text-2)" }}>
                       {overview.careInstructions.map((c, i) => (
@@ -225,25 +225,25 @@ export default function MedicalRecordPage() {
               </div>
             </div>
 
-            {/* Thuốc đang dùng (Ẩn với Owner & Groom theo FR-3.18) */}
+            {/* Active Medications (Hidden from Owner & Groom per FR-3.18) */}
             {!isOwner && !isGroom && (
               <div className={styles.sectionCard}>
                 <h2 className={styles.sectionTitle}>
                   <Icon name="pill" size={18} />
-                  Thuốc đang sử dụng
+                  Active Medications
                 </h2>
                 {overview.activeMedications.length === 0 ? (
-                  <div style={{ color: "var(--muted)", fontSize: "13px" }}>Hiện không dùng thuốc nào.</div>
+                  <div style={{ color: "var(--muted)", fontSize: "13px" }}>Currently no active medications.</div>
                 ) : (
                   <div className={styles.tableContainer}>
                     <table className={styles.dataTable}>
                       <thead>
                         <tr>
-                          <th>Tên thuốc</th>
-                          <th>Liều dùng</th>
-                          <th>Đường dùng</th>
-                          <th>Tần suất</th>
-                          <th>Thời gian</th>
+                          <th>Medication</th>
+                          <th>Dosage</th>
+                          <th>Route</th>
+                          <th>Frequency</th>
+                          <th>Duration</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -252,8 +252,8 @@ export default function MedicalRecordPage() {
                             <td><strong>{m.medicationName}</strong></td>
                             <td>{m.dosage} {m.unit}</td>
                             <td>{m.route}</td>
-                            <td>{m.frequencyPerDay} lần/ngày</td>
-                            <td>{m.daysCount} ngày</td>
+                            <td>{m.frequencyPerDay} times/day</td>
+                            <td>{m.daysCount} days</td>
                           </tr>
                         ))}
                       </tbody>
@@ -264,11 +264,11 @@ export default function MedicalRecordPage() {
             )}
           </div>
 
-          {/* Chỉ số sinh tồn */}
+          {/* Vital Signs */}
           <div className={styles.sectionCard}>
             <h2 className={styles.sectionTitle}>
               <Icon name="pulse" size={18} />
-              Chỉ số sinh tồn gần nhất & Lịch sử
+              Latest Vital Signs & History
             </h2>
             <VitalsDisplay
               vitals={overview.latestVitals}
@@ -279,36 +279,36 @@ export default function MedicalRecordPage() {
         </div>
       )}
 
-      {/* Tab 2: Bệnh án */}
+      {/* Tab 2: Medical Records */}
       {activeTab === "records" && (
         <div className={styles.tabContent}>
           <div className={styles.sectionCard}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <h2 className={styles.sectionTitle}>
                 <Icon name="clipboard" size={18} />
-                Lịch sử hồ sơ bệnh án
+                Medical Record History
               </h2>
               {isVet && (
                 <Button size="sm" tone="primary" icon="plus" onClick={() => navigate(`/medical/records/new?horseId=${horse.id}`)}>
-                  Thêm bệnh án
+                  Add Record
                 </Button>
               )}
             </div>
 
             {records.length === 0 ? (
-              <EmptyState title="Chưa có bệnh án nào" description="Ngựa này hiện chưa ghi nhận hồ sơ bệnh án khám chữa." />
+              <EmptyState title="No medical records found" description="No clinical records currently documented for this horse." />
             ) : (
               <div className={styles.tableContainer}>
                 <table className={styles.dataTable}>
                   <thead>
                     <tr>
-                      <th>Mã bệnh án</th>
-                      <th>Ngày khám</th>
-                      <th>Loại khám</th>
-                      <th>Chẩn đoán</th>
-                      <th>Mức độ</th>
-                      <th>Trạng thái</th>
-                      <th>Bác sĩ thú y</th>
+                      <th>Record No.</th>
+                      <th>Exam Date</th>
+                      <th>Exam Type</th>
+                      <th>Diagnosis</th>
+                      <th>Severity</th>
+                      <th>Status</th>
+                      <th>Attending Vet</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -317,9 +317,9 @@ export default function MedicalRecordPage() {
                         <td>
                           <strong>{r.recordNumber}</strong>
                         </td>
-                        <td>{new Date(r.examinationDate).toLocaleDateString("vi-VN")}</td>
+                        <td>{new Date(r.examinationDate).toLocaleDateString("en-US")}</td>
                         <td>{r.examinationType}</td>
-                        <td>{r.diagnosis || "Chưa có"}</td>
+                        <td>{r.diagnosis || "None"}</td>
                         <td>
                           <Badge tone={r.severity === "CRITICAL" || r.severity === "SEVERE" ? "danger" : "ok"}>
                             {r.severity || "—"}
@@ -327,7 +327,7 @@ export default function MedicalRecordPage() {
                         </td>
                         <td>
                           <Badge tone={r.status === "OPEN" ? "info" : r.status === "CLOSED" ? "ok" : "neutral"} dot>
-                            {r.status === "OPEN" ? "Đang điều trị" : r.status === "CLOSED" ? "Đã kết thúc" : "Nháp"}
+                            {r.status === "OPEN" ? "In Treatment" : r.status === "CLOSED" ? "Closed" : "Draft"}
                           </Badge>
                         </td>
                         <td>{r.vetName || "—"}</td>
@@ -341,39 +341,39 @@ export default function MedicalRecordPage() {
         </div>
       )}
 
-      {/* Tab 3: Chấn thương */}
+      {/* Tab 3: Injury Map */}
       {activeTab === "injuries" && (
         <div className={styles.tabContent}>
           <div className={styles.sectionCard}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <h2 className={styles.sectionTitle}>
                 <Icon name="bone" size={18} />
-                Danh sách chấn thương & Vị trí tổn thương
+                Injury List & Anatomical Lesions
               </h2>
               <Button size="sm" tone="ghost" icon="map" onClick={() => navigate(`/medical/horses/${horse.id}/injuries`)}>
-                Mở mô hình 2D
+                Open 2D Model
               </Button>
             </div>
 
             {injuries.length === 0 ? (
-              <EmptyState title="Không có chấn thương" description="Ngựa hiện không ghi nhận tổn thương cơ xương khớp nào." />
+              <EmptyState title="No injuries recorded" description="No musculoskeletal lesions currently documented for this horse." />
             ) : (
               <div className={styles.tableContainer}>
                 <table className={styles.dataTable}>
                   <thead>
                     <tr>
-                      <th>Vùng tổn thương</th>
-                      <th>Loại tổn thương</th>
-                      <th>Mức độ</th>
-                      <th>Giai đoạn</th>
-                      <th>Ngày phát hiện</th>
-                      <th>Ghi chú</th>
+                      <th>Anatomical Region</th>
+                      <th>Injury Type</th>
+                      <th>Severity</th>
+                      <th>Stage</th>
+                      <th>Detected Date</th>
+                      <th>Notes</th>
                     </tr>
                   </thead>
                   <tbody>
                     {injuries.map((inj) => (
                       <tr key={inj.id}>
-                        <td><strong>{inj.region}</strong> ({inj.view === "LEFT" ? "Bên trái" : "Bên phải"})</td>
+                        <td><strong>{inj.region}</strong> ({inj.view === "LEFT" ? "Left View" : "Right View"})</td>
                         <td>{inj.injuryType}</td>
                         <td>
                           <Badge tone={inj.severity === "SEVERE" || inj.severity === "CRITICAL" ? "danger" : "warn"}>
@@ -382,10 +382,10 @@ export default function MedicalRecordPage() {
                         </td>
                         <td>
                           <Badge tone={inj.stage === "ACUTE" ? "danger" : inj.stage === "HEALED" ? "ok" : "warn"} dot>
-                            {inj.stage === "ACUTE" ? "Cấp tính" : inj.stage === "SUBACUTE" ? "Bán cấp" : inj.stage === "RECOVERING" ? "Hồi phục" : "Đã lành"}
+                            {inj.stage === "ACUTE" ? "Acute" : inj.stage === "SUBACUTE" ? "Subacute" : inj.stage === "RECOVERING" ? "Recovering" : "Healed"}
                           </Badge>
                         </td>
-                        <td>{new Date(inj.detectedDate).toLocaleDateString("vi-VN")}</td>
+                        <td>{new Date(inj.detectedDate).toLocaleDateString("en-US")}</td>
                         <td>{inj.notes || "—"}</td>
                       </tr>
                     ))}
@@ -397,30 +397,30 @@ export default function MedicalRecordPage() {
         </div>
       )}
 
-      {/* Tab 4: Khóa huấn luyện */}
+      {/* Tab 4: Training Locks */}
       {activeTab === "locks" && (
         <div className={styles.tabContent}>
           <div className={styles.sectionCard}>
             <h2 className={styles.sectionTitle}>
               <Icon name="lock" size={18} />
-              Lịch sử Khóa huấn luyện (Training Locks)
+              Training Lock History
             </h2>
 
             {locks.length === 0 ? (
-              <EmptyState title="Chưa từng bị khóa" description="Ngựa này chưa từng nhận lệnh Khóa huấn luyện nào." />
+              <EmptyState title="No training locks on record" description="This horse has no training lock orders on record." />
             ) : (
               <div className={styles.tableContainer}>
                 <table className={styles.dataTable}>
                   <thead>
                     <tr>
-                      <th>Mã khóa</th>
-                      <th>Trạng thái áp dụng</th>
-                      <th>Thời điểm đặt</th>
-                      <th>Người đặt</th>
-                      <th>Lý do</th>
-                      <th>Ngày xem xét</th>
-                      <th>Gỡ lúc</th>
-                      <th>Lý do gỡ</th>
+                      <th>Lock Code</th>
+                      <th>Applied Status</th>
+                      <th>Placed Date</th>
+                      <th>Placed By</th>
+                      <th>Reason</th>
+                      <th>Review Date</th>
+                      <th>Lifted Date</th>
+                      <th>Release Reason</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -428,11 +428,11 @@ export default function MedicalRecordPage() {
                       <tr key={lk.id}>
                         <td><strong>{lk.lockCode}</strong></td>
                         <td><Badge tone="danger">{lk.appliedMedicalStatus}</Badge></td>
-                        <td>{new Date(lk.lockedAt).toLocaleDateString("vi-VN")}</td>
+                        <td>{new Date(lk.lockedAt).toLocaleDateString("en-US")}</td>
                         <td>{lk.lockedBy}</td>
                         <td>{lk.lockReason}</td>
-                        <td>{new Date(lk.reviewDate).toLocaleDateString("vi-VN")}</td>
-                        <td>{lk.releasedAt ? new Date(lk.releasedAt).toLocaleDateString("vi-VN") : "Đang hiệu lực"}</td>
+                        <td>{new Date(lk.reviewDate).toLocaleDateString("en-US")}</td>
+                        <td>{lk.releasedAt ? new Date(lk.releasedAt).toLocaleDateString("en-US") : "Active"}</td>
                         <td>{lk.releaseReason || "—"}</td>
                       </tr>
                     ))}
@@ -444,28 +444,28 @@ export default function MedicalRecordPage() {
         </div>
       )}
 
-      {/* Tab 5: Lịch định kỳ */}
+      {/* Tab 5: Preventive Care */}
       {activeTab === "preventive" && (
         <div className={styles.tabContent}>
           <div className={styles.sectionCard}>
             <h2 className={styles.sectionTitle}>
               <Icon name="calendar" size={18} />
-              Lịch tiêm phòng, tẩy giun & kiểm tra móng
+              Vaccination, Deworming & Farrier Schedule
             </h2>
 
             {preventive.length === 0 ? (
-              <EmptyState title="Chưa có lịch định kỳ" description="Chưa thiết lập danh mục chăm sóc định kỳ cho ngựa này." />
+              <EmptyState title="No preventive schedules" description="No preventive care catalog set up for this horse." />
             ) : (
               <div className={styles.tableContainer}>
                 <table className={styles.dataTable}>
                   <thead>
                     <tr>
-                      <th>Hạng mục</th>
-                      <th>Nhóm</th>
-                      <th>Lần gần nhất</th>
-                      <th>Người thực hiện</th>
-                      <th>Ngày đến hạn</th>
-                      <th>Tình trạng</th>
+                      <th>Service</th>
+                      <th>Category</th>
+                      <th>Last Administered</th>
+                      <th>Administered By</th>
+                      <th>Due Date</th>
+                      <th>Status</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -473,12 +473,12 @@ export default function MedicalRecordPage() {
                       <tr key={p.id}>
                         <td><strong>{p.type}</strong></td>
                         <td>{p.category}</td>
-                        <td>{p.lastAdministeredDate ? new Date(p.lastAdministeredDate).toLocaleDateString("vi-VN") : "—"}</td>
+                        <td>{p.lastAdministeredDate ? new Date(p.lastAdministeredDate).toLocaleDateString("en-US") : "—"}</td>
                         <td>{p.administeredBy || "—"}</td>
-                        <td>{new Date(p.dueDate).toLocaleDateString("vi-VN")}</td>
+                        <td>{new Date(p.dueDate).toLocaleDateString("en-US")}</td>
                         <td>
                           <Badge tone={p.status === "OVERDUE" ? "danger" : p.status === "DUE_SOON" ? "warn" : "ok"} dot>
-                            {p.status === "OVERDUE" ? "Quá hạn" : p.status === "DUE_SOON" ? "Sắp đến hạn" : "Còn hạn"}
+                            {p.status === "OVERDUE" ? "Overdue" : p.status === "DUE_SOON" ? "Due Soon" : "Up to Date"}
                           </Badge>
                         </td>
                       </tr>
@@ -491,51 +491,51 @@ export default function MedicalRecordPage() {
         </div>
       )}
 
-      {/* Tab 6: Ghi chú quan sát */}
+      {/* Tab 6: Observations */}
       {activeTab === "observations" && (
         <div className={styles.tabContent}>
           <div className={styles.sectionCard}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
               <h2 className={styles.sectionTitle}>
                 <Icon name="eye" size={18} />
-                Nhật ký quan sát sức khỏe của Groom
+                Groom Health Observation Log
               </h2>
 
               <div className={styles.filtersRow}>
-                <span style={{ fontSize: "13px", color: "var(--muted)" }}>Mức độ:</span>
+                <span style={{ fontSize: "13px", color: "var(--muted)" }}>Urgency:</span>
                 <Button
                   size="sm"
                   tone={obsUrgency === "" ? "primary" : "ghost"}
                   onClick={() => void handleFilterObservations("")}
                 >
-                  Tất cả
+                  All
                 </Button>
                 <Button
                   size="sm"
                   tone={obsUrgency === "NORMAL" ? "primary" : "ghost"}
                   onClick={() => void handleFilterObservations("NORMAL")}
                 >
-                  Bình thường
+                  Normal
                 </Button>
                 <Button
                   size="sm"
                   tone={obsUrgency === "ATTENTION" ? "primary" : "ghost"}
                   onClick={() => void handleFilterObservations("ATTENTION")}
                 >
-                  Cần chú ý
+                  Attention
                 </Button>
                 <Button
                   size="sm"
                   tone={obsUrgency === "URGENT" ? "danger" : "ghost"}
                   onClick={() => void handleFilterObservations("URGENT")}
                 >
-                  Khẩn cấp
+                  Urgent
                 </Button>
               </div>
             </div>
 
             {observations.length === 0 ? (
-              <EmptyState title="Không có ghi chú nào" description="Chưa có nhật ký quan sát nào từ nhân viên chăm sóc." />
+              <EmptyState title="No observation notes" description="No observation logs submitted by care staff." />
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {observations.map((o) => (
@@ -545,11 +545,11 @@ export default function MedicalRecordPage() {
                         <strong>{o.groomName}</strong>
                         <span style={{ fontSize: "12px", color: "var(--muted)" }}>({o.shift})</span>
                         <Badge tone={o.urgency === "URGENT" ? "danger" : o.urgency === "ATTENTION" ? "warn" : "neutral"} dot>
-                          {o.urgency === "URGENT" ? "Khẩn cấp" : o.urgency === "ATTENTION" ? "Cần chú ý" : "Bình thường"}
+                          {o.urgency === "URGENT" ? "Urgent" : o.urgency === "ATTENTION" ? "Attention" : "Normal"}
                         </Badge>
                       </div>
                       <span style={{ fontSize: "12px", color: "var(--muted)" }}>
-                        {new Date(o.observedAt).toLocaleString("vi-VN")}
+                        {new Date(o.observedAt).toLocaleString("en-US")}
                       </span>
                     </div>
                     <div style={{ fontSize: "13px", color: "var(--text)" }}>{o.content}</div>
@@ -569,15 +569,15 @@ export default function MedicalRecordPage() {
           currentReviewDate={horse.activeLock?.reviewDate}
           onClose={() => setLockModalMode(null)}
           onPlaceLock={async () => {
-            toast.show("Đã kích hoạt Khóa huấn luyện.", "ok");
+            toast.show("Training lock placed successfully.", "ok");
             await loadData();
           }}
           onLiftLock={async () => {
-            toast.show("Đã gỡ Khóa huấn luyện.", "ok");
+            toast.show("Training lock lifted successfully.", "ok");
             await loadData();
           }}
           onExtendLock={async () => {
-            toast.show("Đã gia hạn ngày xem xét khóa.", "ok");
+            toast.show("Training lock review date extended successfully.", "ok");
             await loadData();
           }}
         />

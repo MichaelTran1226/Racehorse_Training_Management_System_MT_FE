@@ -8,14 +8,14 @@ import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
 
 const APPLIED_STATUS_OPTIONS = [
-  { value: "INJURED", label: "Chấn thương (Injured)" },
-  { value: "UNDER_OBSERVATION", label: "Cần theo dõi (Under Observation)" },
-  { value: "QUARANTINED", label: "Cách ly (Quarantined)" },
+  { value: "INJURED", label: "Injured" },
+  { value: "UNDER_OBSERVATION", label: "Under Observation" },
+  { value: "QUARANTINED", label: "Quarantined" },
 ];
 
 const RESTORE_STATUS_OPTIONS = [
-  { value: "FIT", label: "Đủ điều kiện (Fit) - Cho phép tập luyện lại" },
-  { value: "UNDER_OBSERVATION", label: "Cần theo dõi (Under Observation) - Chỉ tập nhẹ" },
+  { value: "FIT", label: "Fit - Allow full training resumption" },
+  { value: "UNDER_OBSERVATION", label: "Under Observation - Light exercise only" },
 ];
 
 interface TrainingLockModalProps {
@@ -53,21 +53,21 @@ export function TrainingLockModal({
   const [error, setError] = useState<string | null>(null);
 
   const titles = {
-    place: `Đặt Khóa huấn luyện: ${horseName} (DL-3.01)`,
-    lift: `Gỡ Khóa huấn luyện: ${horseName} (DL-3.02)`,
-    extend: `Gia hạn ngày xem xét khóa: ${horseName} (DL-3.03)`,
+    place: `Place Training Lock: ${horseName} (DL-3.01)`,
+    lift: `Lift Training Lock: ${horseName} (DL-3.02)`,
+    extend: `Extend Lock Review Date: ${horseName} (DL-3.03)`,
   };
 
   const subtitles = {
-    place: "Lệnh ưu tiên cao nhất, lập tức chặn xếp lịch tập nặng và đăng ký thi đấu của ngựa.",
-    lift: "Gỡ bỏ khóa sau khi ngựa đã bình phục. Các buổi tập bị chặn sẽ chuyển sang chờ HLV khôi phục.",
-    extend: "Gia hạn thêm thời gian phục hồi nếu ngựa chưa đạt tiêu chí mở khóa.",
+    place: "Highest system priority order; immediately blocks heavy training assignments and race entries.",
+    lift: "Lift lock following clinical recovery. Blocked sessions transition to pending trainer reactivation.",
+    extend: "Extend recovery period if the horse has not yet met unlocking criteria.",
   };
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!reason.trim()) {
-      setError("Vui lòng nhập lý do thực hiện.");
+      setError("Please enter a clinical reason.");
       return;
     }
 
@@ -94,7 +94,7 @@ export function TrainingLockModal({
       }
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Thao tác thất bại.");
+      setError(err instanceof Error ? err.message : "Operation failed.");
     } finally {
       setBusy(false);
     }
@@ -110,14 +110,14 @@ export function TrainingLockModal({
       foot={
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, width: "100%" }}>
           <Button tone="ghost" onClick={onClose} disabled={busy}>
-            Hủy
+            Cancel
           </Button>
           <Button
             tone={mode === "lift" ? "primary" : mode === "place" ? "danger" : "primary"}
             onClick={handleSubmit}
             disabled={busy}
           >
-            {mode === "place" ? "Xác nhận đặt khóa" : mode === "lift" ? "Xác nhận gỡ khóa" : "Lưu gia hạn"}
+            {mode === "place" ? "Confirm Training Lock" : mode === "lift" ? "Confirm Lift Lock" : "Save Extension"}
           </Button>
         </div>
       }
@@ -131,7 +131,7 @@ export function TrainingLockModal({
 
         {mode === "place" && (
           <>
-            <Field label="Trạng thái sức khỏe áp dụng *">
+            <Field label="Applied Health Status *">
               <Select
                 options={APPLIED_STATUS_OPTIONS}
                 value={appliedStatus}
@@ -139,25 +139,25 @@ export function TrainingLockModal({
               />
             </Field>
 
-            <Field label="Ngày xem xét lại *" hint="Hệ thống sẽ gửi thông báo nhắc VET kiểm tra khi đến ngày này">
+            <Field label="Review Date *" hint="System will send an alert notification to the VET when due">
               <Input type="date" value={reviewDate} onChange={(e) => setReviewDate(e.target.value)} required />
             </Field>
 
-            <Field label="Lý do khóa huấn luyện *" hint="Tối thiểu 10 ký tự, nêu rõ nguyên nhân y tế">
+            <Field label="Lock Reason *" hint="Min 10 characters, state clear veterinary diagnosis">
               <Textarea
                 rows={3}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="VD: Chấn thương cơ đùi sau buổi tập, nghi ngờ rách vi sợi..."
+                placeholder="e.g., Superficial digital flexor tendon strain post-exercise, suspected micro-tear..."
                 required
               />
             </Field>
 
-            <Field label="Điều kiện dỡ bỏ khóa" hint="Tiêu chí để xem xét gỡ">
+            <Field label="Unlock Conditions" hint="Clinical criteria required before lifting lock">
               <Input
                 value={unlockConditions}
                 onChange={(e) => setUnlockConditions(e.target.value)}
-                placeholder="VD: Hết đau khi vận động, có xác nhận siêu âm..."
+                placeholder="e.g., Zero lameness upon palpation and flexion, ultrasound clearance..."
               />
             </Field>
           </>
@@ -165,7 +165,7 @@ export function TrainingLockModal({
 
         {mode === "lift" && (
           <>
-            <Field label="Trạng thái sức khỏe sau khi gỡ *">
+            <Field label="Post-Lift Health Status *">
               <Select
                 options={RESTORE_STATUS_OPTIONS}
                 value={restoreStatus}
@@ -173,12 +173,12 @@ export function TrainingLockModal({
               />
             </Field>
 
-            <Field label="Lý do gỡ khóa *" hint="Ghi nhận đánh giá thú y trước khi giải phóng ngựa">
+            <Field label="Reason for Lifting Lock *" hint="Veterinary evaluation notes prior to releasing horse">
               <Textarea
                 rows={3}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="VD: Tái khám ngày hôm nay khớp gối đã hoàn toàn ổn định, biên độ vận động tốt..."
+                placeholder="e.g., Re-examination today confirms joint stability, full range of motion, normal gait..."
                 required
               />
             </Field>
@@ -189,20 +189,20 @@ export function TrainingLockModal({
           <>
             {currentReviewDate && (
               <div style={{ fontSize: "13px", color: "var(--muted)" }}>
-                Ngày xem xét hiện tại: <strong>{new Date(currentReviewDate).toLocaleDateString("vi-VN")}</strong>
+                Current review date: <strong>{new Date(currentReviewDate).toLocaleDateString("en-US")}</strong>
               </div>
             )}
 
-            <Field label="Ngày xem xét mới *">
+            <Field label="New Review Date *">
               <Input type="date" value={newReviewDate} onChange={(e) => setNewReviewDate(e.target.value)} required />
             </Field>
 
-            <Field label="Lý do gia hạn *" hint="Nêu lý do ngựa cần thêm thời gian hồi phục">
+            <Field label="Reason for Extension *" hint="State clinical reasons for extending rehabilitation">
               <Textarea
                 rows={3}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="VD: Vết thương chưa lành hẳn, cần thêm 7 ngày vật lý trị liệu..."
+                placeholder="e.g., Lesion not fully resolved, requires 7 more days of physical therapy..."
                 required
               />
             </Field>

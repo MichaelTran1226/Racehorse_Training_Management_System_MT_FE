@@ -78,7 +78,7 @@ export function Sidebar({ user, pathname, note, open, onNavigate }: SidebarProps
 
       <div className={styles.foot}>
         <span className={styles.footDot} />
-        Thiên Mã Equestrian Club
+        EquiFlow Equestrian Club
       </div>
     </nav>
   );

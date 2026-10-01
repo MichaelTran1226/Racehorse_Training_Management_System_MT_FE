@@ -25,7 +25,7 @@ export function AddFollowUpModal({ onClose, onSubmit }: AddFollowUpModalProps) {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!progressNotes.trim()) {
-      setError("Vui lòng nhập ghi chú diễn biến lâm sàng.");
+      setError("Please enter clinical progress notes.");
       return;
     }
 
@@ -42,7 +42,7 @@ export function AddFollowUpModal({ onClose, onSubmit }: AddFollowUpModalProps) {
       });
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Lỗi khi lưu lần tái khám.");
+      setError(err instanceof Error ? err.message : "Failed to record follow-up examination.");
     } finally {
       setBusy(false);
     }
@@ -50,17 +50,17 @@ export function AddFollowUpModal({ onClose, onSubmit }: AddFollowUpModalProps) {
 
   return (
     <Modal
-      title="Thêm lần tái khám (DL-3.07)"
-      subtitle="Ghi nhận chỉ số sinh tồn mới nhất, đánh giá tiến triển và điều chỉnh phác đồ điều trị."
+      title="Add Follow-up Examination (DL-3.07)"
+      subtitle="Record latest vital signs, evaluate clinical progression, and adjust treatment protocol."
       width={520}
       onClose={onClose}
       foot={
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, width: "100%" }}>
           <Button tone="ghost" onClick={onClose} disabled={busy}>
-            Hủy
+            Cancel
           </Button>
           <Button tone="primary" onClick={handleSubmit} disabled={busy}>
-            Lưu tái khám
+            Save Follow-up
           </Button>
         </div>
       }
@@ -72,7 +72,7 @@ export function AddFollowUpModal({ onClose, onSubmit }: AddFollowUpModalProps) {
           </div>
         )}
 
-        <Field label="Ngày giờ tái khám *">
+        <Field label="Follow-up Date & Time *">
           <Input
             type="datetime-local"
             value={followUpDate}
@@ -82,7 +82,7 @@ export function AddFollowUpModal({ onClose, onSubmit }: AddFollowUpModalProps) {
         </Field>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-          <Field label="Nhiệt độ (°C) *" hint="Chuẩn: 37.2 - 38.6">
+          <Field label="Temperature (°C) *" hint="Normal: 37.2 - 38.6">
             <Input
               type="number"
               step="0.1"
@@ -93,7 +93,7 @@ export function AddFollowUpModal({ onClose, onSubmit }: AddFollowUpModalProps) {
               required
             />
           </Field>
-          <Field label="Nhịp tim (bpm) *" hint="Chuẩn: 28 - 44">
+          <Field label="Heart Rate (bpm) *" hint="Normal: 28 - 44">
             <Input
               type="number"
               min={20}
@@ -103,7 +103,7 @@ export function AddFollowUpModal({ onClose, onSubmit }: AddFollowUpModalProps) {
               required
             />
           </Field>
-          <Field label="Nhịp thở (lần/phút) *" hint="Chuẩn: 8 - 16">
+          <Field label="Respiratory Rate (breaths/min) *" hint="Normal: 8 - 16">
             <Input
               type="number"
               min={4}
@@ -115,22 +115,22 @@ export function AddFollowUpModal({ onClose, onSubmit }: AddFollowUpModalProps) {
           </Field>
         </div>
 
-        <Field label="Diễn biến lâm sàng *" hint="Đánh giá phản ứng của ngựa với phác đồ hiện tại">
+        <Field label="Clinical Progress *" hint="Evaluate horse response to current treatment">
           <Textarea
             rows={3}
             value={progressNotes}
             onChange={(e) => setProgressNotes(e.target.value)}
-            placeholder="Mô tả mức độ sưng đau, dáng đi, tình trạng ăn uống và tinh thần..."
+            placeholder="Describe swelling, heat, gait lameness score, appetite, and attitude..."
             required
           />
         </Field>
 
-        <Field label="Điều chỉnh phác đồ / Ghi chú bổ sung" hint="Các thay đổi về vận động hoặc thuốc nếu có">
+        <Field label="Protocol Adjustments / Additional Notes" hint="Changes to exercise restrictions or medication">
           <Textarea
             rows={2}
             value={adjustments}
             onChange={(e) => setAdjustments(e.target.value)}
-            placeholder="VD: Chuyển sang cho đi bộ nhẹ 15 phút, duy trì thuốc thêm 3 ngày..."
+            placeholder="e.g., Transition to 15-min hand walking, continue cold hosing for 3 more days..."
           />
         </Field>
       </form>

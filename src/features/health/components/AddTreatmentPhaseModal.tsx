@@ -10,10 +10,10 @@ import { Modal } from "@/shared/components/ui/Modal";
 import type { CareInstructionItem, TreatmentPhaseInput } from "../types";
 
 const ACTIVITY_OPTIONS = [
-  { value: "Nghỉ hoàn toàn", label: "Nghỉ hoàn toàn (Strict stall rest)" },
-  { value: "Đi bộ nhẹ", label: "Đi bộ nhẹ (Hand walk 10-15 mins)" },
-  { value: "Tập nhẹ", label: "Tập nhẹ (Light trotting / lunging)" },
-  { value: "Tập bình thường", label: "Tập bình thường (Full training)" },
+  { value: "Strict stall rest", label: "Strict stall rest" },
+  { value: "Hand walk 10-15 mins", label: "Hand walk 10-15 mins" },
+  { value: "Light exercise", label: "Light exercise (Trotting / lunging)" },
+  { value: "Full training", label: "Full training" },
 ];
 
 interface AddTreatmentPhaseModalProps {
@@ -28,15 +28,15 @@ export function AddTreatmentPhaseModal({ onClose, onSubmit }: AddTreatmentPhaseM
     new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
   );
   const [target, setTarget] = useState("");
-  const [allowedActivity, setAllowedActivity] = useState("Nghỉ hoàn toàn");
+  const [allowedActivity, setAllowedActivity] = useState("Strict stall rest");
   const [instructions, setInstructions] = useState<CareInstructionItem[]>([
-    { activity: "Ngâm chân nước đá", frequency: "2 lần/ngày" },
+    { activity: "Cold water hosing 20 mins", frequency: "2 times/day" },
   ]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function addInstruction() {
-    setInstructions([...instructions, { activity: "", frequency: "1 lần/ngày" }]);
+    setInstructions([...instructions, { activity: "", frequency: "1 time/day" }]);
   }
 
   function removeInstruction(index: number) {
@@ -52,11 +52,11 @@ export function AddTreatmentPhaseModal({ onClose, onSubmit }: AddTreatmentPhaseM
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!phaseName.trim()) {
-      setError("Vui lòng nhập tên giai đoạn điều trị.");
+      setError("Please enter treatment phase name.");
       return;
     }
     if (!target.trim()) {
-      setError("Vui lòng nhập mục tiêu điều trị.");
+      setError("Please enter phase objective.");
       return;
     }
 
@@ -73,7 +73,7 @@ export function AddTreatmentPhaseModal({ onClose, onSubmit }: AddTreatmentPhaseM
       });
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Lỗi khi lưu giai đoạn điều trị.");
+      setError(err instanceof Error ? err.message : "Failed to save treatment phase.");
     } finally {
       setBusy(false);
     }
@@ -81,17 +81,17 @@ export function AddTreatmentPhaseModal({ onClose, onSubmit }: AddTreatmentPhaseM
 
   return (
     <Modal
-      title="Thêm giai đoạn điều trị (DL-3.04)"
-      subtitle="Thiết lập mục tiêu, mức vận động cho phép và hướng dẫn chăm sóc cho Groom."
+      title="Add Treatment Phase (DL-3.04)"
+      subtitle="Define phase objectives, allowed activity level, and care instructions for Grooms."
       width={560}
       onClose={onClose}
       foot={
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, width: "100%" }}>
           <Button tone="ghost" onClick={onClose} disabled={busy}>
-            Hủy
+            Cancel
           </Button>
           <Button tone="primary" onClick={handleSubmit} disabled={busy}>
-            Lưu giai đoạn
+            Save Phase
           </Button>
         </div>
       }
@@ -103,25 +103,25 @@ export function AddTreatmentPhaseModal({ onClose, onSubmit }: AddTreatmentPhaseM
           </div>
         )}
 
-        <Field label="Tên giai đoạn *" hint="VD: Giai đoạn 1: Giảm viêm cấp tính">
+        <Field label="Phase Name *" hint="e.g., Phase 1: Acute inflammation reduction">
           <Input
             value={phaseName}
             onChange={(e) => setPhaseName(e.target.value)}
-            placeholder="Giai đoạn 1: Giảm sưng và kháng viêm..."
+            placeholder="Phase 1: Swelling reduction & anti-inflammatory..."
             required
           />
         </Field>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Field label="Từ ngày *">
+          <Field label="Start Date *">
             <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
           </Field>
-          <Field label="Đến ngày *">
+          <Field label="End Date *">
             <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
           </Field>
         </div>
 
-        <Field label="Mức vận động cho phép *">
+        <Field label="Allowed Activity Level *">
           <Select
             options={ACTIVITY_OPTIONS}
             value={allowedActivity}
@@ -129,21 +129,21 @@ export function AddTreatmentPhaseModal({ onClose, onSubmit }: AddTreatmentPhaseM
           />
         </Field>
 
-        <Field label="Mục tiêu giai đoạn *" hint="Tiêu chí để chuyển giai đoạn kế tiếp">
+        <Field label="Phase Objective *" hint="Clinical criteria required to progress to next phase">
           <Textarea
             rows={2}
             value={target}
             onChange={(e) => setTarget(e.target.value)}
-            placeholder="Hạ nhiệt khớp gối, đi lại không còn khập khiễng..."
+            placeholder="Reduce fetlock heat, zero lameness upon walking, normal flexion..."
             required
           />
         </Field>
 
         <div style={{ borderTop: "1px solid var(--border)", paddingTop: 10 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <span style={{ fontSize: "13px", fontWeight: 600 }}>Hướng dẫn chăm sóc hàng ngày (cho Groom)</span>
+            <span style={{ fontSize: "13px", fontWeight: 600 }}>Daily Care Instructions (for Groom)</span>
             <Button size="sm" tone="ghost" icon="plus" onClick={addInstruction}>
-              Thêm việc
+              Add Task
             </Button>
           </div>
 
@@ -153,19 +153,19 @@ export function AddTreatmentPhaseModal({ onClose, onSubmit }: AddTreatmentPhaseM
                 <Input
                   value={item.activity}
                   onChange={(e) => updateInstruction(idx, "activity", e.target.value)}
-                  placeholder="Hoạt động chăm sóc (VD: Băng lạnh)"
+                  placeholder="Care activity (e.g., Ice boot therapy)"
                 />
                 <Input
                   value={item.frequency}
                   onChange={(e) => updateInstruction(idx, "frequency", e.target.value)}
-                  placeholder="Tần suất (VD: 2 lần/ngày)"
+                  placeholder="Frequency (e.g., 2 times/day)"
                 />
                 {instructions.length > 1 && (
                   <button
                     type="button"
                     onClick={() => removeInstruction(idx)}
                     style={{ border: "none", background: "transparent", color: "var(--danger)", cursor: "pointer", padding: "4px" }}
-                    title="Xóa dòng"
+                    title="Delete row"
                   >
                     <Icon name="trash" size={16} />
                   </button>

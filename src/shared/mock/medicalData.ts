@@ -6,11 +6,25 @@ import type {
   TreatmentPhase,
   FollowUpItem,
 } from "@/features/health/types";
+import { getHorseById, getInjuriesForHorse, getStoredHorses } from "./horsesData";
 
 export interface MockMedicalStore {
   records: MedicalRecord[];
   observations: ObservationNote[];
 }
+
+const MOCK_STORAGE_KEY = "equiflow.mock.medical.v4";
+
+if (typeof window !== "undefined") {
+  try {
+    localStorage.removeItem("equiflow.mock.medical.v1");
+    localStorage.removeItem("equiflow.mock.medical.v2");
+    localStorage.removeItem("equiflow.mock.medical.v3");
+  } catch {
+    // ignore
+  }
+}
+
 
 const INITIAL_RECORDS: MedicalRecord[] = [
   {
@@ -22,47 +36,47 @@ const INITIAL_RECORDS: MedicalRecord[] = [
     stallCode: "STALL-A02",
     status: "OPEN",
     examinationDate: "2026-09-28T08:30:00Z",
-    examinationType: "Khám chấn thương",
-    examinationReason: "Ngựa có dấu hiệu khập khiễng chân trước bên trái sau buổi chạy thử tốc độ",
-    symptoms: "Khớp gối chân trước trái sưng nề nhẹ, ấn nhiệt độ cao hơn bình thường, co duỗi đau",
-    discoverySource: "Dấu hiệu bất thường sau buổi tập",
+    examinationType: "Injury Examination",
+    examinationReason: "Horse exhibits signs of left forelimb lameness following a high-speed gallop trial",
+    symptoms: "Mild swelling at left fore fetlock/knee, localized heat, pain upon flexion and extension",
+    discoverySource: "Post-workout abnormal signs",
     vitals: {
       temperature: 38.4,
       restingHeartRate: 42,
       respiratoryRate: 15,
       weightKg: 495,
-      clinicalNotes: "Khám lâm sàng: dáng đi gượng, tránh dồn trọng lượng lên chân trước trái.",
+      clinicalNotes: "Clinical exam: guarded gait, unweighting the left forelimb.",
     },
     labTests: [
       {
         id: "lab-1",
-        testType: "Siêu âm",
+        testType: "Ultrasound",
         testDate: "2026-09-28",
-        result: "Phát hiện vùng tổn thương sợi gân gấp nông (SDFT) độ 1, chưa rách hoàn toàn.",
+        result: "Identified grade 1 lesion on superficial digital flexor tendon (SDFT), partial fiber disruption without complete tear.",
       },
       {
         id: "lab-2",
-        testType: "Xét nghiệm máu",
+        testType: "Blood Panel",
         testDate: "2026-09-28",
-        result: "Chỉ số viêm CRP tăng nhẹ (14 mg/L), các chỉ số sinh hóa gan thận bình thường.",
+        result: "Mildly elevated CRP (14 mg/L); renal and hepatic panels within normal limits.",
       },
     ],
-    diagnosis: "Viêm gân gấp nông chi trước bên trái (SDFT Desmitis - Độ 1)",
+    diagnosis: "Superficial digital flexor tendon desmitis - Left forelimb (Grade 1 SDFT)",
     severity: "MODERATE",
     proposedStatus: "INJURED",
     proposeMedicalLock: true,
     treatmentPhases: [
       {
         id: "phase-1",
-        phaseName: "Giai đoạn 1: Giảm viêm & Bất động",
+        phaseName: "Phase 1: Anti-inflammatory & Stall Rest",
         startDate: "2026-09-28",
         endDate: "2026-10-05",
-        target: "Hạ nhiệt độ tại ổ viêm, giảm sưng và kiểm soát cơn đau cấp tính",
-        allowedActivity: "Nghỉ hoàn toàn",
+        target: "Reduce localized heat, alleviate edema, and manage acute pain",
+        allowedActivity: "Strict Stall Rest",
         careInstructions: [
-          { activity: "Ngâm chân nước đá 20 phút", frequency: "2 lần/ngày" },
-          { activity: "Băng ép hỗ trợ cổ chân", frequency: "Liên tục trong chuồng" },
-          { activity: "Đệm rơm dày, hạn chế di chuyển", frequency: "Hàng ngày" },
+          { activity: "Cold water/ice hosing 20 minutes", frequency: "Twice daily" },
+          { activity: "Support compression bandage on lower leg", frequency: "Continuous in stall" },
+          { activity: "Deep straw bedding, restricted movement", frequency: "Daily" },
         ],
       },
     ],
@@ -72,13 +86,13 @@ const INITIAL_RECORDS: MedicalRecord[] = [
         medicationName: "Phenylbutazone Paste 20%",
         dosage: 2.2,
         unit: "g",
-        route: "Uống",
+        route: "Oral",
         frequencyPerDay: 2,
         startDate: "2026-09-28",
         daysCount: 5,
         withdrawalDays: 7,
         withdrawalUntil: "2026-10-10",
-        notes: "Trộn cùng khẩu phần cám sau bữa ăn sáng và tối",
+        notes: "Mix into feed ration following morning and evening meals",
         status: "ACTIVE",
       },
     ],
@@ -89,8 +103,8 @@ const INITIAL_RECORDS: MedicalRecord[] = [
         temperature: 38.0,
         restingHeartRate: 38,
         respiratoryRate: 12,
-        progressNotes: "Vùng sưng đã giảm khoảng 40%, nhiệt độ tại khớp mát hơn, ngựa đứng tỳ chân thoải mái hơn.",
-        adjustments: "Tiếp tục ngâm đá thêm 3 ngày, bắt đầu dắt đi bộ nhẹ 5 phút từ ngày 02/10.",
+        progressNotes: "Swelling reduced by ~40%, localized temperature cooler, horse bearing weight more comfortably.",
+        adjustments: "Continue cold therapy for 3 more days, initiate 5-minute hand-walking from Oct 02.",
         vetName: "Dr. Sarah Connor",
       },
     ],
@@ -107,19 +121,19 @@ const INITIAL_RECORDS: MedicalRecord[] = [
     stallCode: "STALL-A01",
     status: "CLOSED",
     examinationDate: "2026-08-15T09:00:00Z",
-    examinationType: "Khám định kỳ",
-    examinationReason: "Kiểm tra tổng quát định kỳ quý 3 và đánh giá thể lực trước giải đua mùa thu",
+    examinationType: "Routine Checkup",
+    examinationReason: "Quarterly general health check and fitness evaluation prior to autumn race meet",
     vitals: {
       temperature: 37.8,
       restingHeartRate: 34,
       respiratoryRate: 11,
       weightKg: 480,
-      clinicalNotes: "Thể trạng tuyệt vời, tim phổi thanh, cơ bắp săn chắc, móng khỏe.",
+      clinicalNotes: "Excellent body condition score, clear bronchovesicular sounds, firm musculature, sound hooves.",
     },
-    diagnosis: "Sức khỏe bình thường, không ghi nhận bất thường",
+    diagnosis: "Normal physical status, no abnormalities detected",
     severity: "MILD",
-    conclusion: "Ngựa đạt chuẩn thể lực thi đấu, các chỉ số sinh lý trong ngưỡng tối ưu.",
-    treatmentResult: "Khỏi hoàn toàn",
+    conclusion: "Horse meets competitive racing criteria, physiological parameters within optimal ranges.",
+    treatmentResult: "Full Recovery",
     closedAt: "2026-08-15T10:30:00Z",
     vetId: "vet",
     vetName: "Dr. Sarah Connor",
@@ -131,36 +145,34 @@ const INITIAL_OBSERVATIONS: ObservationNote[] = [
   {
     id: "obs-1",
     horseId: "horse-2",
-    shift: "Ca sáng (06:00 - 14:00)",
+    shift: "Morning Shift (06:00 - 14:00)",
     observedAt: "2026-09-30T07:15:00Z",
     groomId: "groom",
     groomName: "John Smith",
     urgency: "ATTENTION",
-    content: "Ngựa ăn hết 90% khẩu phần cám, khi dọn chuồng thấy đứng tỳ chân nhẹ, không có phản xạ cắn gắt.",
+    content: "Horse consumed 90% of grain ration; favored left fore slightly while stall was cleaned, calm temperament.",
   },
   {
     id: "obs-2",
     horseId: "horse-2",
-    shift: "Ca chiều (14:00 - 22:00)",
+    shift: "Afternoon Shift (14:00 - 22:00)",
     observedAt: "2026-09-29T16:30:00Z",
     groomId: "groom",
     groomName: "John Smith",
     urgency: "URGENT",
-    content: "Chân trước trái hơi ấm lên sau khi đi lại trong chuồng, đã chườm đá bổ sung theo đúng hướng dẫn của BS.",
+    content: "Left forelimb slightly warm after pacing stall; applied extra cold therapy per veterinarian instructions.",
   },
   {
     id: "obs-3",
     horseId: "horse-1",
-    shift: "Ca sáng (06:00 - 14:00)",
+    shift: "Morning Shift (06:00 - 14:00)",
     observedAt: "2026-09-30T06:30:00Z",
     groomId: "groom",
     groomName: "John Smith",
     urgency: "NORMAL",
-    content: "Ngựa ăn uống tốt, phân khuôn bình thường, tinh thần tỉnh táo, sẵn sàng cho bài tập sáng.",
+    content: "Appetite strong, normal manure consistency, alert and bright, ready for morning training session.",
   },
 ];
-
-const MOCK_STORAGE_KEY = "equiflow.mock.medical.v1";
 
 export function getMockMedicalStore(): MockMedicalStore {
   try {
@@ -169,9 +181,10 @@ export function getMockMedicalStore(): MockMedicalStore {
   } catch {
     // fallback
   }
+  const horses = getStoredHorses();
   const fresh: MockMedicalStore = {
-    records: INITIAL_RECORDS,
-    observations: INITIAL_OBSERVATIONS,
+    records: horses.length === 0 ? [] : INITIAL_RECORDS.filter((r) => horses.some((h) => h.id === r.horseId)),
+    observations: horses.length === 0 ? [] : INITIAL_OBSERVATIONS.filter((o) => horses.some((h) => h.id === o.horseId)),
   };
   saveMockMedicalStore(fresh);
   return fresh;
@@ -190,148 +203,108 @@ export function buildMockProfile(horseId: string, role?: string): HorseMedicalPr
   const horseRecords = store.records.filter((r) => r.horseId === horseId);
   const horseObs = store.observations.filter((o) => o.horseId === horseId);
 
-  const isHorse2 = horseId === "horse-2";
-  const horseName = isHorse2 ? "Northern Dancer Legacy" : "Thunderbolt Swift";
-  const rfid = isHorse2 ? "RFID-985141002342" : "RFID-985141002341";
-  const stall = isHorse2 ? "STALL-A02" : "STALL-A01";
-  const status = isHorse2 ? "INJURED" : "FIT";
+  const found = getHorseById(horseId);
+  const horseName = found ? found.name : `Horse ${horseId}`;
+  const rfid = found ? found.code : `RFID-${horseId}`;
+  const stall = found ? found.stall : "Stall A-01";
+  const status: import("@/shared/types/enums").HealthStatus =
+    found?.healthGroup === "WATCH"
+      ? "UNDER_OBSERVATION"
+      : (found?.healthGroup as any) || "FIT";
+  const isLocked = Boolean(found?.isLocked);
+  const lockReason = found?.lockReason || "Under protective clinical hold";
 
   // Filter out medications for Owner / Groom per FR-3.18
   const hideMeds = role === "HORSE_OWNER" || role === "GROOM";
+
+  // Get isolated injuries specifically created on this horse's 2D map
+  const horseInjuries = getInjuriesForHorse(horseId);
 
   return {
     horse: {
       id: horseId,
       name: horseName,
       microchipRfid: rfid,
-      breed: "Thoroughbred",
-      dob: "2021-04-12",
-      gender: "Colt",
-      color: "Bay Dark",
+      breed: found?.breed || "Thoroughbred",
+      dob: found?.dob || "2021-04-12",
+      gender: found?.gender || "Stallion",
+      color: found?.color || "Bay",
       stallCode: stall,
       healthStatus: status,
-      isMedicalLocked: isHorse2,
-      activeLock: isHorse2
+      isMedicalLocked: isLocked,
+      activeLock: isLocked
         ? {
-            id: "lock-1",
-            lockCode: "KH-000012",
+            id: `lock-${horseId}`,
+            lockCode: `LK-${rfid.slice(-6)}`,
             horseId,
-            appliedMedicalStatus: "INJURED",
-            lockedAt: "2026-09-28T09:00:00Z",
-            lockedBy: "Dr. Sarah Connor",
-            lockReason: "Viêm gân gấp chi trước trái cần nghỉ hoàn toàn",
-            reviewDate: "2026-10-05T09:00:00Z",
+            appliedMedicalStatus: status,
+            lockedAt: new Date().toISOString(),
+            lockedBy: "Lead Veterinarian",
+            lockReason,
+            reviewDate: new Date(Date.now() + 14 * 86400000).toISOString(),
             status: "ACTIVE",
           }
         : null,
     },
     overview: {
-      allowedActivity: isHorse2 ? "Nghỉ hoàn toàn" : "Tập bình thường",
-      careInstructions: isHorse2
+      allowedActivity: isLocked ? "Strict Stall Rest" : status === "UNDER_OBSERVATION" ? "Light Walking Only" : "Full Training",
+      careInstructions: isLocked
         ? [
-            { activity: "Ngâm chân nước đá 20 phút", frequency: "2 lần/ngày" },
-            { activity: "Băng ép hỗ trợ", frequency: "Liên tục trong chuồng" },
+            { activity: "Cold hydrotherapy / ice application 20 minutes", frequency: "Twice daily" },
+            { activity: "Protective support compression wrap", frequency: "Continuous in stall" },
           ]
         : [],
       activeMedications: hideMeds
         ? []
-        : isHorse2
+        : isLocked
         ? [
             {
-              id: "rx-1",
+              id: `rx-${horseId}-1`,
               medicationName: "Phenylbutazone Paste 20%",
               dosage: 2.2,
               unit: "g",
-              route: "Uống",
+              route: "Oral",
               frequencyPerDay: 2,
-              startDate: "2026-09-28",
+              startDate: new Date().toISOString().split("T")[0],
               daysCount: 5,
               withdrawalDays: 7,
-              withdrawalUntil: "2026-10-10",
-              notes: "Trộn cùng cám",
+              withdrawalUntil: new Date(Date.now() + 12 * 86400000).toISOString().split("T")[0],
+              notes: "Mix with feed",
               status: "ACTIVE",
             },
           ]
         : [],
       latestVitals: {
-        temperature: isHorse2 ? 38.4 : 37.8,
-        restingHeartRate: isHorse2 ? 42 : 34,
-        respiratoryRate: isHorse2 ? 15 : 11,
-        weightKg: isHorse2 ? 495 : 480,
-        clinicalNotes: isHorse2 ? "Khớp gối còn ấm nhẹ" : "Thể trạng tốt",
-        recordedAt: "2026-09-30T09:00:00Z",
+        temperature: found?.temp ?? 37.8,
+        restingHeartRate: found?.restingHeartRate ?? 36,
+        respiratoryRate: 12,
+        weightKg: 490,
+        clinicalNotes: found?.statusText || "Normal condition",
+        recordedAt: new Date().toISOString(),
       },
       vitalsHistory: [
-        { recordedAt: "2026-09-30T09:00:00Z", temperature: 38.0, restingHeartRate: 38, respiratoryRate: 12, weightKg: 495 },
-        { recordedAt: "2026-09-29T09:00:00Z", temperature: 38.2, restingHeartRate: 40, respiratoryRate: 14, weightKg: 494 },
-        { recordedAt: "2026-09-28T09:00:00Z", temperature: 38.4, restingHeartRate: 42, respiratoryRate: 15, weightKg: 495 },
+        { recordedAt: new Date().toISOString(), temperature: found?.temp ?? 37.8, restingHeartRate: found?.restingHeartRate ?? 36, respiratoryRate: 12, weightKg: 490 },
       ],
-      upcomingPreventive: [
-        {
-          id: "prev-1",
-          horseId,
-          type: "Tiêm phòng Cúm ngựa (Equine Influenza)",
-          category: "VACCINATION",
-          lastAdministeredDate: "2026-04-10",
-          dueDate: "2026-10-10",
-          status: "DUE_SOON",
-        },
-      ],
+      upcomingPreventive: [],
     },
     records: horseRecords,
-    injuries: isHorse2
+    injuries: horseInjuries,
+    locks: isLocked
       ? [
           {
-            id: "inj-1",
+            id: `lock-${horseId}`,
+            lockCode: `LK-${rfid.slice(-6)}`,
             horseId,
-            region: "Khớp cổ chân trước trái (Fetlock)",
-            view: "LEFT",
-            layer: "MUSCLE",
-            injuryType: "Viêm gân gấp",
-            severity: "MODERATE",
-            stage: "ACUTE",
-            detectedDate: "2026-09-28",
-            notes: "Gân sưng nề 2cm",
-          },
-        ]
-      : [],
-    locks: isHorse2
-      ? [
-          {
-            id: "lock-1",
-            lockCode: "KH-000012",
-            horseId,
-            appliedMedicalStatus: "INJURED",
-            lockedAt: "2026-09-28T09:00:00Z",
-            lockedBy: "Dr. Sarah Connor",
-            lockReason: "Viêm gân gấp chi trước trái",
-            reviewDate: "2026-10-05T09:00:00Z",
+            appliedMedicalStatus: status,
+            lockedAt: new Date().toISOString(),
+            lockedBy: "Lead Veterinarian",
+            lockReason,
+            reviewDate: new Date(Date.now() + 14 * 86400000).toISOString(),
             status: "ACTIVE",
           },
         ]
       : [],
-    preventive: [
-      {
-        id: "prev-1",
-        horseId,
-        type: "Tiêm phòng Cúm ngựa",
-        category: "VACCINATION",
-        lastAdministeredDate: "2026-04-10",
-        administeredBy: "Dr. Sarah Connor",
-        dueDate: "2026-10-10",
-        status: "DUE_SOON",
-      },
-      {
-        id: "prev-2",
-        horseId,
-        type: "Tẩy giun định kỳ",
-        category: "DEWORMING",
-        lastAdministeredDate: "2026-07-01",
-        administeredBy: "John Smith",
-        dueDate: "2026-10-01",
-        status: "DUE_SOON",
-      },
-    ],
+    preventive: [],
     observations: horseObs,
   };
 }

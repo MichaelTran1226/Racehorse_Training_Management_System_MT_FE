@@ -12,17 +12,17 @@ const UNIT_OPTIONS = [
   { value: "g", label: "g" },
   { value: "mg", label: "mg" },
   { value: "ml", label: "ml" },
-  { value: "viên", label: "viên" },
-  { value: "gói", label: "gói" },
+  { value: "tablets", label: "tablets" },
+  { value: "sachets", label: "sachets" },
 ];
 
 const ROUTE_OPTIONS = [
-  { value: "Uống", label: "Uống (Oral)" },
-  { value: "Tiêm bắp", label: "Tiêm bắp (IM)" },
-  { value: "Tiêm tĩnh mạch", label: "Tiêm tĩnh mạch (IV)" },
-  { value: "Tiêm dưới da", label: "Tiêm dưới da (SC)" },
-  { value: "Bôi ngoài da", label: "Bôi ngoài da (Topical)" },
-  { value: "Nhỏ mắt", label: "Nhỏ mắt (Ophthalmic)" },
+  { value: "Oral", label: "Oral (PO)" },
+  { value: "Intramuscular", label: "Intramuscular (IM)" },
+  { value: "Intravenous", label: "Intravenous (IV)" },
+  { value: "Subcutaneous", label: "Subcutaneous (SC)" },
+  { value: "Topical", label: "Topical" },
+  { value: "Ophthalmic", label: "Ophthalmic" },
 ];
 
 interface AddPrescriptionModalProps {
@@ -34,7 +34,7 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
   const [medicationName, setMedicationName] = useState("");
   const [dosage, setDosage] = useState(1);
   const [unit, setUnit] = useState("g");
-  const [route, setRoute] = useState("Uống");
+  const [route, setRoute] = useState("Oral");
   const [frequencyPerDay, setFrequencyPerDay] = useState(2);
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
   const [daysCount, setDaysCount] = useState(5);
@@ -45,7 +45,7 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
 
   const totalAmount = dosage * frequencyPerDay * daysCount;
 
-  // Tính ngày hết hạn rút thuốc
+  // Calculate withdrawal clearance date
   const startD = new Date(startDate);
   const endD = new Date(startD.getTime() + (daysCount - 1) * 86400000);
   const withdrawalEndD = new Date(endD.getTime() + withdrawalDays * 86400000);
@@ -53,11 +53,11 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!medicationName.trim()) {
-      setError("Vui lòng nhập tên thuốc.");
+      setError("Please enter medication name.");
       return;
     }
     if (dosage <= 0 || frequencyPerDay <= 0 || daysCount <= 0) {
-      setError("Liều, tần suất và số ngày dùng phải lớn hơn 0.");
+      setError("Dose, frequency, and treatment days must be greater than 0.");
       return;
     }
 
@@ -77,7 +77,7 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
       });
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Lỗi khi kê đơn thuốc.");
+      setError(err instanceof Error ? err.message : "Failed to record prescription.");
     } finally {
       setBusy(false);
     }
@@ -85,17 +85,17 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
 
   return (
     <Modal
-      title="Kê đơn thuốc chi tiết (DL-3.05)"
-      subtitle="Quản lý liều lượng, đường dùng và tính toán tự động thời gian ngưng thuốc trước thi đấu."
+      title="Detailed Prescription (DL-3.05)"
+      subtitle="Manage dosage, administration route, and automated pre-race withdrawal clearance calculation."
       width={540}
       onClose={onClose}
       foot={
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, width: "100%" }}>
           <Button tone="ghost" onClick={onClose} disabled={busy}>
-            Hủy
+            Cancel
           </Button>
           <Button tone="primary" onClick={handleSubmit} disabled={busy}>
-            Kê đơn thuốc
+            Save Prescription
           </Button>
         </div>
       }
@@ -107,17 +107,17 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
           </div>
         )}
 
-        <Field label="Tên thuốc *" hint="Chọn hoặc nhập tên biệt dược/hoạt chất">
+        <Field label="Medication Name *" hint="Select or enter active ingredient / commercial drug name">
           <Input
             value={medicationName}
             onChange={(e) => setMedicationName(e.target.value)}
-            placeholder="VD: Phenylbutazone, Dexamethasone, Banamine..."
+            placeholder="e.g., Phenylbutazone Paste, Dexamethasone, Flunixin Meglumine..."
             required
           />
         </Field>
 
         <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1.5fr", gap: 10 }}>
-          <Field label="Liều mỗi lần *">
+          <Field label="Dose per Intake *">
             <Input
               type="number"
               step="any"
@@ -127,16 +127,16 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
               required
             />
           </Field>
-          <Field label="Đơn vị *">
+          <Field label="Unit *">
             <Select options={UNIT_OPTIONS} value={unit} onChange={(e) => setUnit(e.target.value)} />
           </Field>
-          <Field label="Đường dùng *">
+          <Field label="Route *">
             <Select options={ROUTE_OPTIONS} value={route} onChange={(e) => setRoute(e.target.value)} />
           </Field>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-          <Field label="Tần suất (lần/ngày) *">
+          <Field label="Frequency (times/day) *">
             <Input
               type="number"
               min={1}
@@ -146,10 +146,10 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
               required
             />
           </Field>
-          <Field label="Từ ngày *">
+          <Field label="Start Date *">
             <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
           </Field>
-          <Field label="Số ngày dùng *">
+          <Field label="Duration (days) *">
             <Input
               type="number"
               min={1}
@@ -173,16 +173,16 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
           }}
         >
           <span>
-            Tổng lượng thuốc đợt này: <strong>{totalAmount} {unit}</strong>
+            Total medication required: <strong>{totalAmount} {unit}</strong>
           </span>
           <span>
-            Đến ngày: <strong>{endD.toLocaleDateString("vi-VN")}</strong>
+            Through: <strong>{endD.toLocaleDateString("en-US")}</strong>
           </span>
         </div>
 
         <Field
-          label="Thời gian ngưng thuốc trước thi đấu (ngày)"
-          hint="Quy định chống Doping thi đấu; dùng để cảnh báo khi ngựa đăng ký giải đua."
+          label="Pre-Race Withdrawal Period (days)"
+          hint="Anti-doping clearance protocol; triggers alerts upon race registration if violated."
         >
           <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 10, alignItems: "center" }}>
             <Input
@@ -193,17 +193,17 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
               onChange={(e) => setWithdrawalDays(Number(e.target.value))}
             />
             <span style={{ fontSize: "12px", color: "var(--muted)" }}>
-              Hết thời hạn ngưng thuốc vào: <strong>{withdrawalEndD.toLocaleDateString("vi-VN")}</strong>
+              Clearance date: <strong>{withdrawalEndD.toLocaleDateString("en-US")}</strong>
             </span>
           </div>
         </Field>
 
-        <Field label="Chỉ dẫn sử dụng" hint="Ghi chú cho Groom hoặc nhân viên y tế">
+        <Field label="Administration Instructions" hint="Notes for Groom or stable care technicians">
           <Textarea
             rows={2}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="VD: Trộn vào khẩu phần cám sáng và tối sau ăn..."
+            placeholder="e.g., Mix into morning and evening grain rations after feeding..."
           />
         </Field>
       </form>

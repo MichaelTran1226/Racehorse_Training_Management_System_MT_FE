@@ -27,7 +27,7 @@ export function isRespiratoryWarning(rr?: number): boolean {
 
 export function VitalsDisplay({ vitals, history, recordedAt }: VitalsDisplayProps) {
   if (!vitals) {
-    return <div className={styles.notes}>Chưa có thông số sinh tồn nào được ghi nhận.</div>;
+    return <div className={styles.notes}>No vital signs recorded yet.</div>;
   }
 
   const tempWarn = isTempWarning(vitals.temperature);
@@ -39,73 +39,73 @@ export function VitalsDisplay({ vitals, history, recordedAt }: VitalsDisplayProp
       {recordedAt && (
         <div style={{ fontSize: "12px", color: "var(--muted)", display: "flex", alignItems: "center", gap: 6 }}>
           <Icon name="clock" size={14} />
-          Ghi nhận lúc: {new Date(recordedAt).toLocaleString("vi-VN")}
+          Recorded at: {new Date(recordedAt).toLocaleString("en-US")}
         </div>
       )}
 
       <div className={styles.grid}>
-        {/* Nhiệt độ */}
+        {/* Temperature */}
         <div className={cx(styles.vitalCard, tempWarn && styles.warning)}>
           <div className={styles.headerRow}>
-            <span className={styles.vitalLabel}>Nhiệt độ</span>
+            <span className={styles.vitalLabel}>Temperature</span>
             <Badge tone={tempWarn ? "danger" : "ok"} dot>
-              {tempWarn ? "Ngoài ngưỡng" : "Bình thường"}
+              {tempWarn ? "Abnormal" : "Normal"}
             </Badge>
           </div>
           <div className={styles.valueRow}>
             <span className={styles.value}>{vitals.temperature !== undefined ? vitals.temperature.toFixed(1) : "—"}</span>
             <span className={styles.unit}>°C</span>
           </div>
-          <span className={styles.reference}>Tham chiếu: 37.2 – 38.6 °C</span>
+          <span className={styles.reference}>Reference: 37.2 – 38.6 °C</span>
         </div>
 
-        {/* Nhịp tim */}
+        {/* Resting Heart Rate */}
         <div className={cx(styles.vitalCard, hrWarn && styles.warning)}>
           <div className={styles.headerRow}>
-            <span className={styles.vitalLabel}>Nhịp tim lúc nghỉ</span>
+            <span className={styles.vitalLabel}>Resting Heart Rate</span>
             <Badge tone={hrWarn ? "danger" : "ok"} dot>
-              {hrWarn ? "Ngoài ngưỡng" : "Bình thường"}
+              {hrWarn ? "Abnormal" : "Normal"}
             </Badge>
           </div>
           <div className={styles.valueRow}>
             <span className={styles.value}>{vitals.restingHeartRate ?? "—"}</span>
             <span className={styles.unit}>bpm</span>
           </div>
-          <span className={styles.reference}>Tham chiếu: 28 – 44 bpm</span>
+          <span className={styles.reference}>Reference: 28 – 44 bpm</span>
         </div>
 
-        {/* Nhịp thở */}
+        {/* Respiratory Rate */}
         <div className={cx(styles.vitalCard, rrWarn && styles.warning)}>
           <div className={styles.headerRow}>
-            <span className={styles.vitalLabel}>Nhịp thở</span>
+            <span className={styles.vitalLabel}>Respiratory Rate</span>
             <Badge tone={rrWarn ? "danger" : "ok"} dot>
-              {rrWarn ? "Ngoài ngưỡng" : "Bình thường"}
+              {rrWarn ? "Abnormal" : "Normal"}
             </Badge>
           </div>
           <div className={styles.valueRow}>
             <span className={styles.value}>{vitals.respiratoryRate ?? "—"}</span>
-            <span className={styles.unit}>lần/phút</span>
+            <span className={styles.unit}>breaths/min</span>
           </div>
-          <span className={styles.reference}>Tham chiếu: 8 – 16 lần/phút</span>
+          <span className={styles.reference}>Reference: 8 – 16 breaths/min</span>
         </div>
 
-        {/* Cân nặng */}
+        {/* Weight */}
         <div className={styles.vitalCard}>
           <div className={styles.headerRow}>
-            <span className={styles.vitalLabel}>Cân nặng</span>
-            <Badge tone="neutral">Định kỳ</Badge>
+            <span className={styles.vitalLabel}>Body Weight</span>
+            <Badge tone="neutral">Routine</Badge>
           </div>
           <div className={styles.valueRow}>
             <span className={styles.value}>{vitals.weightKg ?? "—"}</span>
             <span className={styles.unit}>kg</span>
           </div>
-          <span className={styles.reference}>Chuẩn: 400 – 600 kg</span>
+          <span className={styles.reference}>Standard: 400 – 600 kg</span>
         </div>
       </div>
 
       {vitals.clinicalNotes && (
         <div className={styles.notes}>
-          <strong>Ghi chú lâm sàng:</strong> {vitals.clinicalNotes}
+          <strong>Clinical Notes:</strong> {vitals.clinicalNotes}
         </div>
       )}
 
@@ -113,22 +113,22 @@ export function VitalsDisplay({ vitals, history, recordedAt }: VitalsDisplayProp
         <div className={styles.historySection}>
           <div className={styles.historyTitle}>
             <Icon name="trend" size={16} />
-            Lịch sử 5 lần đo gần nhất
+            History of 5 Most Recent Readings
           </div>
           <table className={styles.historyTable}>
             <thead>
               <tr>
-                <th>Thời điểm</th>
-                <th>Nhiệt độ (°C)</th>
-                <th>Nhịp tim (bpm)</th>
-                <th>Nhịp thở (lần/phút)</th>
-                <th>Cân nặng (kg)</th>
+                <th>Recorded At</th>
+                <th>Temperature (°C)</th>
+                <th>Heart Rate (bpm)</th>
+                <th>Respiratory Rate (breaths/min)</th>
+                <th>Weight (kg)</th>
               </tr>
             </thead>
             <tbody>
               {history.map((h, i) => (
                 <tr key={i}>
-                  <td>{new Date(h.recordedAt).toLocaleDateString("vi-VN")}</td>
+                  <td>{new Date(h.recordedAt).toLocaleDateString("en-US")}</td>
                   <td className={isTempWarning(h.temperature) ? styles.abnormal : undefined}>
                     {h.temperature?.toFixed(1) ?? "—"}
                   </td>
