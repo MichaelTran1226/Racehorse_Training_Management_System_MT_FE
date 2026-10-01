@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate, Outlet, useParams } from "react-router-dom";
+import { createBrowserRouter, Navigate, Outlet, useParams, useRouteError } from "react-router-dom";
 import AuditLogPage from "@/features/dashboard/pages/AuditLogPage";
 import AccountListPage from "@/features/accounts/pages/AccountListPage";
 import AcceptInvitePage from "@/features/auth/pages/AcceptInvitePage";
@@ -39,6 +39,53 @@ import { RoleGuard } from "./RoleGuard";
 // BẢNG ROUTE DUY NHẤT của ứng dụng: đường dẫn URL → trang thật nằm trong features/*/pages.
 // Thêm màn hình mới = thêm một dòng { path, element } vào đây (xem CONTRIBUTING.md).
 
+// Bắt lỗi phát sinh từ các tuyến đường hoặc xung đột DOM do tiện ích dịch tự động
+function RouteErrorBoundary() {
+  const error = useRouteError();
+  console.error("Route error captured:", error);
+  return (
+    <div style={{ padding: "4rem 1.5rem", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
+      <h2 style={{ fontSize: "1.5rem", fontWeight: 700, margin: 0, color: "var(--ink, #0f172a)" }}>
+        Unexpected Display Conflict
+      </h2>
+      <p style={{ color: "var(--muted, #64748b)", maxWidth: 520, margin: 0, fontSize: "0.9375rem", lineHeight: 1.6 }}>
+        The browser encountered a DOM reconciliation conflict (often caused by auto-translation extensions). Please reload or navigate back to the dashboard.
+      </p>
+      <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.5rem" }}>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          style={{
+            padding: "0.625rem 1.25rem",
+            background: "var(--brand, #16a34a)",
+            color: "#fff",
+            border: "none",
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontWeight: 600,
+          }}
+        >
+          Reload Page
+        </button>
+        <a
+          href="/herd"
+          style={{
+            padding: "0.625rem 1.25rem",
+            background: "var(--surface, #f8fafc)",
+            color: "var(--ink, #0f172a)",
+            border: "1px solid var(--border, #cbd5e1)",
+            borderRadius: "6px",
+            textDecoration: "none",
+            fontWeight: 600,
+          }}
+        >
+          Back to Herd Health
+        </a>
+      </div>
+    </div>
+  );
+}
+
 // Bọc mọi trang bằng các provider toàn cục (toast, trạng thái đăng nhập).
 function RootLayout() {
   return (
@@ -75,6 +122,7 @@ function ComingSoonRoute() {
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       { path: "/", element: <Navigate to="/login" replace /> },
 

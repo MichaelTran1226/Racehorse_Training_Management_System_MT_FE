@@ -238,7 +238,8 @@ export default function InjuryMapPage() {
           </Button>
           <div>
             <h1 style={{ fontSize: "20px", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
-              2D Anatomical Injury Map {horse ? `· ${horse.name} (${horse.code})` : ""}
+              <span>2D Anatomical Injury Map</span>
+              {horse && <span>{` · ${horse.name} (${horse.code})`}</span>}
             </h1>
             <span style={{ fontSize: "13px", color: "var(--muted)" }}>
               {horse
@@ -311,6 +312,7 @@ export default function InjuryMapPage() {
           {/* Active Mode Prompts */}
           {repositioningId && (
             <div
+              className="notranslate"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -338,6 +340,7 @@ export default function InjuryMapPage() {
 
           {markingMode && (
             <div
+              className="notranslate"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -378,7 +381,7 @@ export default function InjuryMapPage() {
               {visibleInjuries.map((inj, idx) => (
                 <div
                   key={inj.id}
-                  className={cx(styles.pin, inj.id === activeSelectedId && styles.selected)}
+                  className={cx(styles.pin, inj.id === activeSelectedId && styles.selected, "notranslate")}
                   style={{
                     left: `${inj.x}%`,
                     top: `${inj.y}%`,
@@ -390,7 +393,7 @@ export default function InjuryMapPage() {
                   }}
                   title={`${inj.region}: ${inj.injuryType} (${STAGE_LABELS[inj.stage]})`}
                 >
-                  {idx + 1}
+                  <span>{idx + 1}</span>
                 </div>
               ))}
             </div>
