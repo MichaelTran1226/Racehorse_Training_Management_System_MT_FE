@@ -16,12 +16,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MinhMQ1711/Horse-Training-Club.git"
+    "url": "git+https://github.com/MichaelTran1226/Racehorse_Training_Management_System_MT_FE.git"
   },
   "bugs": {
-    "url": "https://github.com/MinhMQ1711/Horse-Training-Club/issues"
+    "url": "https://github.com/MichaelTran1226/Racehorse_Training_Management_System_MT_FE/issues"
   },
-  "homepage": "https://github.com/MinhMQ1711/Horse-Training-Club#readme",
+  "homepage": "https://github.com/MichaelTran1226/Racehorse_Training_Management_System_MT_FE#readme",
   "engines": {
     "node": ">=20.19"
   },
@@ -31,6 +31,7 @@
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "lint": "oxlint",
+    "test": "playwright test",
     "test:e2e": "playwright test"
   },
   "dependencies": {
