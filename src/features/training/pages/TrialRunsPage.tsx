@@ -58,7 +58,7 @@ export default function TrialRunsPage() {
           { horseId: "horse-3", horseName: "Hắc Báo (Black Panther)", jockeyName: "Đỗ Tuấn Kiệt", gateNumber: 2 },
         ],
       });
-      toast.show("Đã tạo lượt chạy thử thành công (DL-2.06)", "ok");
+      toast.show("Đã tạo lượt chạy thử thành công", "ok");
       setIsOpenModal(false);
       void loadTrials();
     } catch {
@@ -71,9 +71,9 @@ export default function TrialRunsPage() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Điều Phối Lượt Chạy Thử (SC-2.05 · DL-2.06)</h1>
+          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Điều Phối Lượt Chạy Thử</h1>
           <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
-            Sắp xếp thứ tự chạy thử theo mặt sân cỏ/cát, phân bổ cổng xuất phát và điều phối nài đua (P2-08)
+            Sắp xếp thứ tự chạy thử theo mặt sân cỏ/cát, phân bổ cổng xuất phát và điều phối nài đua
           </p>
         </div>
 
@@ -83,7 +83,7 @@ export default function TrialRunsPage() {
           </Link>
           {isTrainer && (
             <Button tone="primary" onClick={() => setIsOpenModal(true)}>
-              + Thêm lượt chạy thử (DL-2.06)
+              + Thêm lượt chạy thử
             </Button>
           )}
         </div>
@@ -179,7 +179,7 @@ export default function TrialRunsPage() {
 
       {/* Modal create */}
       {isOpenModal && (
-        <Modal onClose={() => setIsOpenModal(false)} title="Thêm Lượt Chạy Thử Mới (DL-2.06)">
+        <Modal onClose={() => setIsOpenModal(false)} title="Thêm Lượt Chạy Thử Mới">
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
               <Field label="Ngày chạy thử" required>

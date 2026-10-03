@@ -4,6 +4,7 @@ import { BRAND } from "@/shared/lib/brand";
 import { cx } from "@/shared/lib/cx";
 import { initials } from "@/shared/lib/format";
 import { isNavItemActive, navFor, ROLE_LABEL } from "@/shared/lib/permissions";
+import { getStoredLocks } from "@/shared/mock/horsesData";
 import type { AuthUser } from "@/shared/types/auth";
 import type { SidebarNote } from "./useSidebarInfo";
 import styles from "./Sidebar.module.css";
@@ -20,6 +21,7 @@ interface SidebarProps {
 // thu hồi quyền => mục tương ứng biến mất ở lần tải trang kế tiếp.
 export function Sidebar({ user, pathname, note, open, onNavigate }: SidebarProps) {
   const groups = navFor(user.role, user.permissions);
+  const hasActiveLocks = getStoredLocks().some((l) => l.status === "ACTIVE");
 
   return (
     <nav aria-label="Main navigation" className={cx(styles.nav, open && styles.open)}>
@@ -47,6 +49,7 @@ export function Sidebar({ user, pathname, note, open, onNavigate }: SidebarProps
             <p className={styles.groupLabel}>{g.label}</p>
             {g.items.map((it) => {
               const active = isNavItemActive(it, pathname);
+              const showAlertDot = (it.id === "locks" && hasActiveLocks) || (it.id !== "locks" && Boolean(it.alert));
               return (
                 <Link
                   key={it.id}
@@ -57,8 +60,7 @@ export function Sidebar({ user, pathname, note, open, onNavigate }: SidebarProps
                 >
                   <Icon name={it.icon} size={18} />
                   <span className={styles.itemLabel}>{it.label}</span>
-                  {active && <span className={styles.dot} />}
-                  {!active && it.alert && <span className={cx(styles.dot, styles.alertDot)} aria-label="Work waiting" />}
+                  {showAlertDot && <span className={cx(styles.dot, styles.alertDot)} aria-label="Action required" />}
                 </Link>
               );
             })}

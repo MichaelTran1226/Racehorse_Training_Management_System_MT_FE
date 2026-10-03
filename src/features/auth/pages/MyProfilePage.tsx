@@ -117,6 +117,17 @@ export default function MyProfilePage() {
                   </div>
                 );
               })}
+              <div style={{ paddingTop: "0.5rem", borderTop: "1px dashed var(--border)" }}>
+                <Button
+                  tone="ghost"
+                  size="sm"
+                  block
+                  icon="settings"
+                  onClick={() => navigate("/notifications/settings")}
+                >
+                  Manage advanced notification preferences (Push, Email, SMS) →
+                </Button>
+              </div>
             </div>
           </Card>
         </div>

@@ -58,7 +58,7 @@ export function FinalizeRecordModal({
 
   return (
     <Modal
-      title={`Finalize Medical Record ${recordNumber} (DL-3.08)`}
+      title={`Finalize Medical Record ${recordNumber}`}
       subtitle="Transitions medical record to In-Treatment status. Examination and diagnostic sections will be locked against editing."
       width={520}
       onClose={onClose}

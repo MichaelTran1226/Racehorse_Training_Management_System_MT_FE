@@ -79,7 +79,7 @@ export default function SessionMetricsPage() {
           "danger",
         );
       } else {
-        toast.show("Đã ghi nhận kết quả buổi tập thành công (SC-2.06)", "ok");
+        toast.show("Đã ghi nhận kết quả buổi tập thành công", "ok");
       }
 
       void loadData();
@@ -96,9 +96,9 @@ export default function SessionMetricsPage() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Kết Quả Buổi Tập & Biểu Đồ Thể Lực (SC-2.06 · SC-2.07)</h1>
+          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Kết Quả Buổi Tập & Biểu Đồ Thể Lực</h1>
           <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
-            Nhập chỉ số vận động, chấm điểm phong độ, kích hoạt cảnh báo thú y và theo dõi tiến trình hồi phục (P2-09)
+            Nhập chỉ số vận động, chấm điểm phong độ, kích hoạt cảnh báo thú y và theo dõi tiến trình hồi phục
           </p>
         </div>
 
@@ -116,8 +116,8 @@ export default function SessionMetricsPage() {
       <Card pad={16}>
         <Tabs
           items={[
-            { id: "RECORD", label: "Ghi nhận kết quả (SC-2.06)" },
-            { id: "CHART", label: "Biểu đồ xu hướng thể lực (SC-2.07)" },
+            { id: "RECORD", label: "Ghi nhận kết quả" },
+            { id: "CHART", label: "Biểu đồ xu hướng thể lực" },
           ]}
           active={activeTab}
           onChange={setActiveTab}
@@ -128,7 +128,7 @@ export default function SessionMetricsPage() {
       {activeTab === "RECORD" && (
         <Card pad={24}>
           <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-            <h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 700 }}>Nhập Chỉ Số Vận Động Buổi Tập (SC-2.06)</h3>
+            <h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 700 }}>Nhập Chỉ Số Vận Động Buổi Tập</h3>
 
             <Field label="Chọn buổi tập cần ghi kết quả" required>
               <Select
@@ -268,7 +268,7 @@ export default function SessionMetricsPage() {
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "0.5rem" }}>
             {isTrainer && (
               <Button tone="primary" onClick={() => void handleSubmitResult()} disabled={submitting}>
-                {submitting ? "Đang lưu..." : "Lưu kết quả buổi tập (SC-2.06)"}
+                {submitting ? "Đang lưu..." : "Lưu kết quả buổi tập"}
               </Button>
             )}
           </div>
@@ -309,7 +309,7 @@ export default function SessionMetricsPage() {
           {/* Visual bar progression table */}
           <Card pad={24}>
             <h3 style={{ margin: "0 0 1rem", fontSize: "1.125rem", fontWeight: 700 }}>
-              Tiến Trình 5 Buổi Huấn Luyện Gần Nhất (SC-2.07)
+              Tiến Trình 5 Buổi Huấn Luyện Gần Nhất
             </h3>
 
             <div style={{ overflowX: "auto" }}>

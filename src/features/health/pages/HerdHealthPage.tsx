@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/shared/components/ui/Button";
 import { Card } from "@/shared/components/ui/Card";
@@ -34,6 +34,8 @@ export default function HerdHealthPage() {
   const [horses, setHorses] = useState<HerdHorse[]>([]);
   const [filterGroup, setFilterGroup] = useState<string>("ALL");
   const [search, setSearch] = useState<string>("");
+  const [searchSuggestionsOpen, setSearchSuggestionsOpen] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   // Add Horse Modal
   const [showAddModal, setShowAddModal] = useState(false);
@@ -56,6 +58,16 @@ export default function HerdHealthPage() {
     setHorses(getStoredHorses());
   }, []);
 
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setSearchSuggestionsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   function handleCreateHorse() {
     if (!horseName.trim() || !horseCode.trim()) {
       toast.show("Please enter horse name and code.", "warn");
@@ -75,6 +87,7 @@ export default function HerdHealthPage() {
     };
     addStoredHorse(newHorse);
     setHorses(getStoredHorses());
+    window.dispatchEvent(new Event("horsesUpdated"));
     setShowAddModal(false);
     resetForm();
     toast.show(`Horse "${newHorse.name}" created successfully.`, "ok");
@@ -84,6 +97,7 @@ export default function HerdHealthPage() {
     if (!deleteHorseTarget) return;
     deleteStoredHorse(deleteHorseTarget.id);
     setHorses(getStoredHorses());
+    window.dispatchEvent(new Event("horsesUpdated"));
     toast.show(`Horse "${deleteHorseTarget.name}" removed from stable.`, "ok");
     setDeleteHorseTarget(null);
   }
@@ -91,6 +105,7 @@ export default function HerdHealthPage() {
   function handleClearAll() {
     clearAllStoredHorses();
     setHorses([]);
+    window.dispatchEvent(new Event("horsesUpdated"));
     setShowClearAllModal(false);
     toast.show("All horses and injury records cleared from database.", "ok");
   }
@@ -155,10 +170,7 @@ export default function HerdHealthPage() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Herd Health Status Matrix (SC-3.01)</h1>
-          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
-            4-color clinical classification: Fit for Training, Under Observation, Injured, and Quarantined
-          </p>
+          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Herd Health Status Matrix</h1>
         </div>
 
         <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
@@ -211,8 +223,19 @@ export default function HerdHealthPage() {
         </div>
       </div>
 
-      {/* Filters */}
-      <Card pad={16}>
+      {/* Filters & Search Container (overflow visible ensures suggestion dropdown floats naturally) */}
+      <div
+        style={{
+          background: "var(--surface)",
+          border: "1px solid var(--border-soft)",
+          borderRadius: "var(--r-lg)",
+          padding: "16px",
+          boxShadow: "var(--shadow-sm)",
+          position: "relative",
+          zIndex: 35,
+          overflow: "visible",
+        }}
+      >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
           <Tabs
             items={[
@@ -226,14 +249,313 @@ export default function HerdHealthPage() {
             onChange={setFilterGroup}
           />
 
-          <Input
-            placeholder="Search by horse name, code, stall..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ width: 300 }}
-          />
+          {/* Search Input (Clean design without magnifying glass icon, with interactive suggestions popover) */}
+          <div style={{ position: "relative", display: "flex", alignItems: "center" }} ref={searchContainerRef}>
+            <input
+              type="text"
+              placeholder="Search horse name, stall, or code..."
+              value={search}
+              onFocus={() => setSearchSuggestionsOpen(true)}
+              onClick={() => setSearchSuggestionsOpen(true)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setSearchSuggestionsOpen(true);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") setSearchSuggestionsOpen(false);
+              }}
+              style={{
+                width: 310,
+                height: 38,
+                padding: "0 34px 0 14px",
+                borderRadius: 10,
+                border: "1px solid #e2ddd7",
+                background: "#ffffff",
+                fontSize: "0.82rem",
+                color: "#1a1615",
+                outline: "none",
+                transition: "border-color 0.15s ease",
+              }}
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                style={{
+                  position: "absolute",
+                  right: 9,
+                  background: "none",
+                  border: "none",
+                  color: "#8c827a",
+                  cursor: "pointer",
+                  padding: 2,
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                <Icon name="x" size={13} />
+              </button>
+            )}
+
+            {/* Quick Suggestions Popover */}
+            {searchSuggestionsOpen && (
+              <div
+                style={{
+                  position: "absolute",
+                  right: 0,
+                  top: "calc(100% + 6px)",
+                  width: 330,
+                  maxWidth: "92vw",
+                  background: "#ffffff",
+                  border: "1px solid #ede8e3",
+                  borderRadius: 14,
+                  boxShadow: "0 18px 40px rgba(0, 0, 0, 0.16)",
+                  zIndex: 100,
+                  overflow: "hidden",
+                  animation: "fadeIn 0.15s ease",
+                }}
+              >
+                <div
+                  style={{
+                    padding: "8px 14px",
+                    background: "#faf7f4",
+                    borderBottom: "1px solid #f0eae4",
+                    fontSize: "0.72rem",
+                    fontWeight: 700,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 12,
+                  }}
+                >
+                  <span style={{ textTransform: "uppercase", letterSpacing: "0.04em", color: "#786e68" }}>
+                    Quick Suggestions
+                  </span>
+                  <span style={{ fontSize: "0.68rem", color: "#a89f97", fontWeight: 500 }}>Click to filter</span>
+                </div>
+
+                <div style={{ padding: "6px 0", maxHeight: 360, overflowY: "auto" }}>
+                  {(() => {
+                    if (horses.length === 0) {
+                      return (
+                        <div style={{ padding: "1.75rem 1rem", textAlign: "center", color: "#8c827a", fontSize: "0.82rem" }}>
+                          <div style={{ fontSize: "1.6rem", marginBottom: 6 }}>🐴</div>
+                          <div style={{ fontWeight: 700, color: "#1a1615", fontSize: "0.9rem" }}>
+                            No horses in stable database
+                          </div>
+                          <div style={{ fontSize: "0.74rem", color: "#a89f97", marginTop: 4, lineHeight: 1.45 }}>
+                            All search suggestions are strictly derived from active horses and clinical care. Click &quot;Add Horse&quot; to register horses.
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    const q = search.trim().toLowerCase();
+
+                    // 1. Horses matching name, code, stall, health group, status text, or lock reason
+                    const matchingHorses = horses.filter((h) => {
+                      if (!q) return true;
+                      return (
+                        h.name.toLowerCase().includes(q) ||
+                        h.code.toLowerCase().includes(q) ||
+                        (h.stall && h.stall.toLowerCase().includes(q)) ||
+                        (h.healthGroup && h.healthGroup.toLowerCase().includes(q)) ||
+                        (h.statusText && h.statusText.toLowerCase().includes(q)) ||
+                        (h.lockReason && h.lockReason.toLowerCase().includes(q))
+                      );
+                    });
+
+                    // 2. Stalls matching query or housing a matching horse
+                    const allStalls = Array.from(new Set(horses.map((h) => h.stall).filter(Boolean)));
+                    const matchingStalls = allStalls.filter((s) => {
+                      if (!q) return true;
+                      const stallMatches = s.toLowerCase().includes(q);
+                      const horseInStallMatches = horses.some(
+                        (h) => h.stall === s && (h.name.toLowerCase().includes(q) || h.code.toLowerCase().includes(q))
+                      );
+                      return stallMatches || horseInStallMatches;
+                    });
+
+                    // 3. Health status shortcuts - ONLY for statuses that actually have existing horses
+                    const healthShortcuts = [
+                      { label: "Injured Horses", val: "Injured", count: horses.filter((h) => h.healthGroup === "INJURED").length },
+                      { label: "Training Locked", val: "Lock", count: horses.filter((h) => h.isLocked).length },
+                      { label: "Under Observation", val: "Observation", count: horses.filter((h) => h.healthGroup === "WATCH").length },
+                      { label: "Quarantine Isolation", val: "Quarantine", count: horses.filter((h) => h.healthGroup === "QUARANTINED").length },
+                      { label: "Fit for Work", val: "Fit", count: horses.filter((h) => h.healthGroup === "FIT").length },
+                    ].filter((item) => {
+                      if (item.count === 0) return false;
+                      if (!q) return true;
+                      return item.label.toLowerCase().includes(q) || item.val.toLowerCase().includes(q);
+                    });
+
+                    const totalMatches = matchingHorses.length + matchingStalls.length + healthShortcuts.length;
+
+                    if (totalMatches === 0) {
+                      return (
+                        <div style={{ padding: "1.75rem 1rem", textAlign: "center", color: "#8c827a", fontSize: "0.82rem" }}>
+                          <div style={{ fontSize: "1.5rem", marginBottom: 6 }}>🔍</div>
+                          <div style={{ fontWeight: 700, color: "#1a1615", fontSize: "0.9rem" }}>
+                            No results for &quot;<strong>{search}</strong>&quot;
+                          </div>
+                          <div style={{ fontSize: "0.74rem", color: "#a89f97", marginTop: 4 }}>
+                            Try searching by letter, horse code (EQ-), stall, or status
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <>
+                        {/* Matching Horses */}
+                        {matchingHorses.length > 0 && (
+                          <div>
+                            <div style={{ padding: "4px 14px 2px", fontSize: "0.68rem", fontWeight: 700, color: "#8c827a", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                              Horses ({matchingHorses.length})
+                            </div>
+                            {matchingHorses.map((horse) => (
+                              <div
+                                key={horse.id}
+                                onClick={() => {
+                                  setSearch(horse.name);
+                                  setSearchSuggestionsOpen(false);
+                                }}
+                                style={{
+                                  padding: "7px 14px",
+                                  cursor: "pointer",
+                                  fontSize: "0.79rem",
+                                  color: "#1a1615",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  transition: "background 0.12s ease",
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.background = "#fbf5ee")}
+                                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                              >
+                                <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
+                                  <span style={{ color: "#731b24", fontSize: "0.9rem" }}>🐴</span>
+                                  <div style={{ minWidth: 0 }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                      <span style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        {horse.name}
+                                      </span>
+                                      <span style={{ fontSize: "0.73rem", color: "#8c827a", flexShrink: 0 }}>
+                                        ({horse.code})
+                                      </span>
+                                    </div>
+                                    <div style={{ fontSize: "0.7rem", color: "#8c827a" }}>
+                                      {horse.stall}
+                                      {horse.statusText && horse.healthGroup !== "FIT" ? ` • ${horse.statusText}` : ""}
+                                    </div>
+                                  </div>
+                                </div>
+                                <span
+                                  style={{
+                                    fontSize: "0.7rem",
+                                    fontWeight: 600,
+                                    padding: "2px 6px",
+                                    borderRadius: 6,
+                                    background: GROUP_CONFIG[horse.healthGroup]?.bg || "#f3f4f6",
+                                    color: GROUP_CONFIG[horse.healthGroup]?.color || "#4b5563",
+                                    flexShrink: 0,
+                                    marginLeft: 6,
+                                  }}
+                                >
+                                  {horse.isLocked ? "LOCK" : GROUP_CONFIG[horse.healthGroup]?.label || horse.healthGroup}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Matching Stalls */}
+                        {matchingStalls.length > 0 && (
+                          <div>
+                            <div style={{ padding: "8px 14px 2px", fontSize: "0.68rem", fontWeight: 700, color: "#8c827a", textTransform: "uppercase", letterSpacing: "0.03em", borderTop: "1px solid #f6f2ef", marginTop: 4 }}>
+                              Stalls & Barns ({matchingStalls.length})
+                            </div>
+                            {matchingStalls.map((stallName) => {
+                              const count = horses.filter((h) => h.stall === stallName).length;
+                              return (
+                                <div
+                                  key={stallName}
+                                  onClick={() => {
+                                    setSearch(stallName);
+                                    setSearchSuggestionsOpen(false);
+                                  }}
+                                  style={{
+                                    padding: "7px 14px",
+                                    cursor: "pointer",
+                                    fontSize: "0.79rem",
+                                    color: "#1a1615",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    transition: "background 0.12s ease",
+                                  }}
+                                  onMouseEnter={(e) => (e.currentTarget.style.background = "#fbf5ee")}
+                                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                                >
+                                  <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                                    <span style={{ color: "#731b24", fontSize: "0.9rem" }}>🏠</span>
+                                    <span style={{ fontWeight: 600 }}>{stallName}</span>
+                                  </div>
+                                  <span style={{ fontSize: "0.72rem", color: "#8c827a" }}>
+                                    {count} {count === 1 ? "horse" : "horses"}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* Health Status Shortcuts */}
+                        {healthShortcuts.length > 0 && (
+                          <div>
+                            <div style={{ padding: "8px 14px 2px", fontSize: "0.68rem", fontWeight: 700, color: "#8c827a", textTransform: "uppercase", letterSpacing: "0.03em", borderTop: "1px solid #f6f2ef", marginTop: 4 }}>
+                              Health & Status Filters
+                            </div>
+                            {healthShortcuts.map((sc) => (
+                              <div
+                                key={sc.val}
+                                onClick={() => {
+                                  setSearch(sc.val);
+                                  setSearchSuggestionsOpen(false);
+                                }}
+                                style={{
+                                  padding: "7px 14px",
+                                  cursor: "pointer",
+                                  fontSize: "0.79rem",
+                                  color: "#1a1615",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  transition: "background 0.12s ease",
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.background = "#fbf5ee")}
+                                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                              >
+                                <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                                  <span style={{ color: "#731b24", fontSize: "0.9rem" }}>🩺</span>
+                                  <span>{sc.label}</span>
+                                </div>
+                                <span style={{ fontSize: "0.72rem", color: "#8c827a", background: "#f3f4f6", padding: "1px 6px", borderRadius: 10 }}>
+                                  {sc.count}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      </Card>
+      </div>
 
       {/* Empty State when no horses exist */}
       {filtered.length === 0 ? (

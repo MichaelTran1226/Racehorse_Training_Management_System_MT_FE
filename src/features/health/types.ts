@@ -139,6 +139,8 @@ export interface TrainingLockHistoryItem {
   id: string;
   lockCode: string;
   horseId: string;
+  horseName?: string;
+  horseCode?: string;
   appliedMedicalStatus: string;
   lockedAt: string;
   lockedBy: string;
