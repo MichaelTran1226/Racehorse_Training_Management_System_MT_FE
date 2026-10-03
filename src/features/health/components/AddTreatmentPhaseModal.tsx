@@ -81,7 +81,7 @@ export function AddTreatmentPhaseModal({ onClose, onSubmit }: AddTreatmentPhaseM
 
   return (
     <Modal
-      title="Add Treatment Phase (DL-3.04)"
+      title="Add Treatment Phase"
       subtitle="Define phase objectives, allowed activity level, and care instructions for Grooms."
       width={560}
       onClose={onClose}

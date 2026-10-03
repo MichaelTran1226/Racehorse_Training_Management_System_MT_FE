@@ -81,7 +81,7 @@ export default function PlanWizardPage() {
     }
     if (activate && isHorseLocked) {
       toast.show(
-        "Không thể kích hoạt! Ngựa đang bị Khóa huấn luyện y tế (P2-07). Chỉ có thể Lưu nháp.",
+        "Không thể kích hoạt! Ngựa đang bị Khóa huấn luyện y tế. Chỉ có thể Lưu nháp.",
         "danger",
       );
       return;
@@ -125,9 +125,9 @@ export default function PlanWizardPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem", maxWidth: 900, margin: "0 auto" }}>
       {/* Header */}
       <div>
-        <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Thiết Lập Giáo Án Huấn Luyện (SC-2.03)</h1>
+        <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Thiết Lập Giáo Án Huấn Luyện</h1>
         <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
-          Lập kế hoạch phân kỳ tập luyện, mục tiêu thể lực và tự động kiểm tra khóa y tế (P2-06, P2-07)
+          Lập kế hoạch phân kỳ tập luyện, mục tiêu thể lực và tự động kiểm tra an toàn y tế
         </p>
       </div>
 
@@ -333,10 +333,10 @@ export default function PlanWizardPage() {
               }}
             >
               <div style={{ fontWeight: 700, fontSize: "1rem", marginBottom: "0.25rem" }}>
-                🔒 CẢNH BÁO KHÓA HUẤN LUYỆN Y TẾ (P2-07)
+                🔒 CẢNH BÁO KHÓA HUẤN LUYỆN Y TẾ
               </div>
               <div style={{ fontSize: "0.875rem" }}>
-                Ngựa <strong>Bạch Mã Hoàng Tử (Silver Arrow)</strong> hiện đang bị Khóa huấn luyện thú y do chấn thương gân. Theo quy định tại FR-2.06 & FR-2.07:
+                Ngựa <strong>Bạch Mã Hoàng Tử (Silver Arrow)</strong> hiện đang bị Khóa huấn luyện thú y do chấn thương gân:
                 <ul style={{ margin: "0.5rem 0 0", paddingLeft: "1.25rem" }}>
                   <li>Không được phép kích hoạt giáo án này sang trạng thái Đang áp dụng.</li>
                   <li>Bạn chỉ có thể <strong>Lưu bản nháp</strong> để chuẩn bị trước khi Bác sĩ thú y gỡ khóa.</li>
@@ -380,7 +380,7 @@ export default function PlanWizardPage() {
                 onClick={() => void handleSave(true)}
                 disabled={submitting || isHorseLocked}
               >
-                Lưu & Kích hoạt giáo án (DL-2.02)
+                Lưu & Kích hoạt giáo án
               </Button>
             </div>
           </div>

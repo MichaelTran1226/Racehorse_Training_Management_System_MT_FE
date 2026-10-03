@@ -36,12 +36,12 @@ export default function ComingSoonPage({ slug }: { slug: string }) {
 
   return (
     <>
-      <PageHeader eyebrow={`${ROLE_WORKSPACE[user.role]} · ${capitalize(found.group.label)}`.toUpperCase()} title={`${found.item.label} arrives in a later phase.`} />
+      <PageHeader title={found.item.label} />
       <Card>
         <EmptyState
           icon={found.item.icon}
-          title={`${found.item.label} is not built yet.`}
-          description="Your permissions already allow this screen. It opens here as soon as its priority is built."
+          title={`${found.item.label} Management`}
+          description="This section is currently under development."
         />
       </Card>
     </>

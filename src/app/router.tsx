@@ -18,6 +18,8 @@ import SignUpPage from "@/features/auth/pages/SignUpPage";
 import VerifyEmailPage from "@/features/auth/pages/VerifyEmailPage";
 import ComingSoonPage from "@/features/dashboard/pages/ComingSoonPage";
 import DashboardPage from "@/features/dashboard/pages/DashboardPage";
+import NotificationsPage from "@/features/dashboard/pages/NotificationsPage";
+import NotificationSettingsPage from "@/features/dashboard/pages/NotificationSettingsPage";
 import MedicalRecordPage from "@/features/health/pages/MedicalRecordPage";
 import RecordListPage from "@/features/health/pages/RecordListPage";
 import RecordDetailPage from "@/features/health/pages/RecordDetailPage";
@@ -151,6 +153,9 @@ export const router = createBrowserRouter([
           { path: "/my-horses", element: <HorseListPage /> },
           { path: "/profile", element: <MyProfilePage /> },
           { path: "/profile/password", element: <ChangePasswordPage /> },
+          { path: "/notifications", element: <NotificationsPage /> },
+          { path: "/notifications/settings", element: <NotificationSettingsPage /> },
+          { path: "/settings/notifications", element: <NotificationSettingsPage /> },
           { path: "/forbidden", element: <Forbidden403Page /> },
           { path: "/session-expired", element: <SessionExpiredPage /> },
 
@@ -168,6 +173,7 @@ export const router = createBrowserRouter([
           { path: "/locks", element: <TrainingLockPage /> },
           { path: "/medical/preventive", element: <CareSchedulePage /> },
           { path: "/catalogs/preventive-types", element: <CareSchedulePage /> },
+          { path: "/vaccine", element: <CareSchedulePage /> },
           { path: "/medical/herd", element: <HerdHealthPage /> },
           { path: "/herd", element: <HerdHealthPage /> },
 

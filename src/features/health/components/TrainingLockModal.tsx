@@ -21,9 +21,11 @@ const RESTORE_STATUS_OPTIONS = [
 interface TrainingLockModalProps {
   mode: "place" | "lift" | "extend";
   horseName: string;
+  horseId?: string;
+  horseOptions?: { value: string; label: string }[];
   currentReviewDate?: string;
   onClose: () => void;
-  onPlaceLock?: (dto: { reason: string; reviewDate: string; appliedStatus: string; unlockConditions?: string }) => Promise<void>;
+  onPlaceLock?: (dto: { horseId?: string; reason: string; reviewDate: string; appliedStatus: string; unlockConditions?: string }) => Promise<void>;
   onLiftLock?: (dto: { reason: string; restoreStatus: string }) => Promise<void>;
   onExtendLock?: (dto: { newReviewDate: string; reason: string }) => Promise<void>;
 }
@@ -31,12 +33,17 @@ interface TrainingLockModalProps {
 export function TrainingLockModal({
   mode,
   horseName,
+  horseId,
+  horseOptions,
   currentReviewDate,
   onClose,
   onPlaceLock,
   onLiftLock,
   onExtendLock,
 }: TrainingLockModalProps) {
+  const [selectedHorseId, setSelectedHorseId] = useState(
+    horseId || (horseOptions && horseOptions.length > 0 ? horseOptions[0].value : "")
+  );
   const [reason, setReason] = useState("");
   const [appliedStatus, setAppliedStatus] = useState("INJURED");
   const [reviewDate, setReviewDate] = useState(() =>
@@ -52,10 +59,13 @@ export function TrainingLockModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const activeHorseLabel =
+    horseOptions?.find((h) => h.value === selectedHorseId)?.label || horseName;
+
   const titles = {
-    place: `Place Training Lock: ${horseName} (DL-3.01)`,
-    lift: `Lift Training Lock: ${horseName} (DL-3.02)`,
-    extend: `Extend Lock Review Date: ${horseName} (DL-3.03)`,
+    place: `Place Training Lock: ${activeHorseLabel}`,
+    lift: `Lift Training Lock: ${horseName}`,
+    extend: `Extend Lock Review Date: ${horseName}`,
   };
 
   const subtitles = {
@@ -76,6 +86,7 @@ export function TrainingLockModal({
     try {
       if (mode === "place" && onPlaceLock) {
         await onPlaceLock({
+          horseId: selectedHorseId || horseId,
           reason: reason.trim(),
           reviewDate,
           appliedStatus,
@@ -131,6 +142,16 @@ export function TrainingLockModal({
 
         {mode === "place" && (
           <>
+            {horseOptions && horseOptions.length > 0 && (
+              <Field label="Target Horse *">
+                <Select
+                  options={horseOptions}
+                  value={selectedHorseId}
+                  onChange={(e) => setSelectedHorseId(e.target.value)}
+                />
+              </Field>
+            )}
+
             <Field label="Applied Health Status *">
               <Select
                 options={APPLIED_STATUS_OPTIONS}

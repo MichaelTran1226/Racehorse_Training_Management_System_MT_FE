@@ -47,7 +47,18 @@
 .dot { width: 5px; height: 5px; border-radius: 999px; background: var(--nav-item-active-dot); }
 .alertDot { background: var(--danger); }
 
-.note { margin: 0 16px 12px; padding: 12px 13px; border-radius: var(--r); background: var(--nav-item-active-bg); display: flex; align-items: flex-start; gap: 9px; color: var(--nav-item-active-dot); }
+.note {
+  margin: 10px 16px 14px;
+  padding: 11px 13px;
+  border-radius: var(--r);
+  background: var(--nav-item-active-bg);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: var(--nav-item-active-dot);
+}
 .note div { flex: 1; min-width: 0; }
 .note strong { display: block; font-size: 11px; font-weight: 700; color: var(--nav-item-active-text); }
 .note span { font-size: 10px; color: var(--nav-text); }

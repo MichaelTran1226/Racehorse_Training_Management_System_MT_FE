@@ -92,7 +92,7 @@ export default function LiveMonitorPage() {
                 boxShadow: "0 0 8px var(--ok)",
               }}
             />
-            <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Giám Sát Trực Tiếp Telemetry (SC-2.08)</h1>
+            <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Giám Sát Trực Tiếp Telemetry</h1>
           </div>
           <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
             Theo dõi thời gian thực cảm biến nhịp tim, tốc độ GPS và phát hiện vượt ngưỡng an toàn trên đường chạy

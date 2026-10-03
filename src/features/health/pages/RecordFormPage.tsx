@@ -214,7 +214,7 @@ export default function RecordFormPage() {
         <div className={styles.headerTop}>
           <div className={styles.titleArea}>
             <h1 className={styles.horseTitle}>
-              {isEdit ? "Edit Medical Record (Draft)" : "New Electronic Medical Record (SC-3.03)"}
+              {isEdit ? "Edit Medical Record (Draft)" : "New Electronic Medical Record"}
             </h1>
             <span style={{ fontSize: "14px", color: "var(--muted)" }}>
               Record clinical exam findings, vital signs, and initialize the treatment plan.

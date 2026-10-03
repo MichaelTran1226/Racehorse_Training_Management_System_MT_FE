@@ -85,7 +85,7 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
 
   return (
     <Modal
-      title="Detailed Prescription (DL-3.05)"
+      title="Detailed Prescription"
       subtitle="Manage dosage, administration route, and automated pre-race withdrawal clearance calculation."
       width={540}
       onClose={onClose}

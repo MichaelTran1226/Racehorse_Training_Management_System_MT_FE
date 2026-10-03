@@ -1,5 +1,11 @@
 import { api } from "@/shared/lib/api";
-import { getStoredHorses } from "@/shared/mock/horsesData";
+import {
+  getStoredHorses,
+  getStoredLocks,
+  placeHorseTrainingLock,
+  extendHorseTrainingLock,
+  liftHorseTrainingLock,
+} from "@/shared/mock/horsesData";
 import type {
   CloseRecordInput,
   CreateMedicalRecordInput,
@@ -120,29 +126,60 @@ export const reopenRecord = (recordId: string, input: ReopenRecordInput) =>
 
 // P2-04: Khóa huấn luyện (SC-3.06, FR-3.10, FR-3.11, FR-3.12, FR-3.19)
 export const getLocks = async (): Promise<import("./types").TrainingLockHistoryItem[]> => {
-  const horses = getStoredHorses();
-  const lockedHorses = horses.filter((h) => h.isLocked);
-  return lockedHorses.map((h, idx) => ({
-    id: `lock-${h.id}`,
-    lockCode: `LOCK-${h.code}-${String(idx + 1).padStart(3, "0")}`,
-    horseId: `${h.name} (${h.code})`,
-    appliedMedicalStatus: h.healthGroup,
-    lockedAt: new Date().toISOString().split("T")[0],
-    lockedBy: "Chief Veterinarian",
-    lockReason: h.lockReason || "Under protective clinical training suspension",
-    reviewDate: new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0],
-    status: "ACTIVE",
+  const storedLocks = getStoredLocks();
+  return storedLocks.map((l) => ({
+    id: l.id,
+    lockCode: l.lockCode,
+    horseId: l.horseId,
+    horseName: l.horseName,
+    horseCode: l.horseCode,
+    appliedMedicalStatus: l.appliedMedicalStatus,
+    lockedAt: l.lockedAt,
+    lockedBy: l.lockedBy,
+    lockReason: l.lockReason,
+    reviewDate: l.reviewDate,
+    releasedAt: l.releasedAt,
+    releasedBy: l.releasedBy,
+    releaseReason: l.releaseReason,
+    durationDays: l.durationDays,
+    status: l.status,
   }));
 };
 
-export const applyTrainingLock = (horseId: string, input: { appliedMedicalStatus: string; lockReason: string; reviewDate: string }) =>
-  api<{ ok: true }>("POST", `/medical/horses/${horseId}/lock`, input);
+export const applyTrainingLock = async (
+  horseId: string,
+  input: { appliedMedicalStatus: string; lockReason: string; reviewDate: string; unlockConditions?: string },
+) => {
+  placeHorseTrainingLock(horseId, {
+    appliedStatus: input.appliedMedicalStatus,
+    reviewDate: input.reviewDate,
+    reason: input.lockReason,
+    unlockConditions: input.unlockConditions,
+  });
+  return { ok: true as const };
+};
 
-export const releaseTrainingLock = (horseId: string, input: { releaseReason: string; targetStatus: string }) =>
-  api<{ ok: true }>("POST", `/medical/horses/${horseId}/unlock`, input);
+export const releaseTrainingLock = async (
+  horseId: string,
+  input: { releaseReason: string; targetStatus: string },
+) => {
+  liftHorseTrainingLock(horseId, {
+    restoreStatus: input.targetStatus,
+    reason: input.releaseReason,
+  });
+  return { ok: true as const };
+};
 
-export const extendTrainingLock = (horseId: string, input: { newReviewDate: string; reason: string }) =>
-  api<{ ok: true }>("POST", `/medical/horses/${horseId}/lock/extend`, input);
+export const extendTrainingLock = async (
+  horseId: string,
+  input: { newReviewDate: string; reason: string },
+) => {
+  extendHorseTrainingLock(horseId, {
+    newReviewDate: input.newReviewDate,
+    reason: input.reason,
+  });
+  return { ok: true as const };
+};
 
 // P2-05: Preventive care & catalogue (SC-3.07, SC-3.08, FR-3.13 -> FR-3.16)
 export const getCareSchedules = async (): Promise<import("./types").PreventiveCareItem[]> => {
