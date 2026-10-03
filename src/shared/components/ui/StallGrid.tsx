@@ -8,10 +8,15 @@ import styles from "./StallGrid.module.css";
 export type StallStatus = HealthStatus | "EMPTY";
 
 const STATE: Record<StallStatus, { cls: string; label: string }> = {
+  ACTIVE: { cls: styles.fit, label: "Active" },
   FIT: { cls: styles.fit, label: "Fit" },
+  IN_TRAINING: { cls: styles.fit, label: "In Training" },
   UNDER_OBSERVATION: { cls: styles.watch, label: "Under Observation" },
   INJURED: { cls: styles.injured, label: "Injured" },
+  ISOLATED: { cls: styles.quarantine, label: "Isolated" },
   QUARANTINED: { cls: styles.quarantine, label: "Quarantined" },
+  RESTING: { cls: styles.watch, label: "Resting" },
+  RETIRED: { cls: styles.empty, label: "Retired" },
   EMPTY: { cls: styles.empty, label: "Empty stall" },
 };
 

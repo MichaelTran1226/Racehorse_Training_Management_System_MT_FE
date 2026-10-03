@@ -1,6 +1,8 @@
 import { createBrowserRouter, Navigate, Outlet, useParams, useRouteError } from "react-router-dom";
 import AuditLogPage from "@/features/dashboard/pages/AuditLogPage";
 import AccountListPage from "@/features/accounts/pages/AccountListPage";
+import StaffDirectoryPage from "@/features/master-data/pages/StaffDirectoryPage";
+import HorseListPage from "@/features/horses/pages/HorseListPage";
 import AcceptInvitePage from "@/features/auth/pages/AcceptInvitePage";
 import PermissionMatrix from "@/features/accounts/pages/PermissionMatrix";
 import ChangePasswordPage from "@/features/auth/pages/ChangePasswordPage";
@@ -144,6 +146,9 @@ export const router = createBrowserRouter([
           { path: "/audit", element: <AuditLogPage /> },
           { path: "/accounts", element: <AccountListPage /> },
           { path: "/accounts/:id/permissions", element: <PermissionMatrixRoute /> },
+          { path: "/staff", element: <StaffDirectoryPage /> },
+          { path: "/horses", element: <HorseListPage /> },
+          { path: "/my-horses", element: <HorseListPage /> },
           { path: "/profile", element: <MyProfilePage /> },
           { path: "/profile/password", element: <ChangePasswordPage /> },
           { path: "/forbidden", element: <Forbidden403Page /> },

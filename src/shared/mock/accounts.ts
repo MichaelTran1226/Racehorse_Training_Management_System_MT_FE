@@ -7,7 +7,7 @@ import type { Account } from "@/shared/types/auth";
 // Tăng số này mỗi khi sửa danh sách bên dưới (thêm/xóa/đổi tài khoản).
 // db.ts so số này với bản lưu trong localStorage của trình duyệt: khác nhau
 // là coi như hỏng, xóa hết và gieo lại — người test không cần tự tay xóa localStorage.
-export const SEED_VERSION = 6;
+export const SEED_VERSION = 7;
 
 type Seed = Pick<Account, "id" | "fullName" | "email" | "role" | "status"> & Partial<Account>;
 
@@ -92,6 +92,26 @@ export function seedAccounts(): Account[] {
     make({
       id: "minh", fullName: "Mai Quang Minh", email: "Minhmaiki@gmail.com", role: "CLUB_MANAGER", status: "ACTIVE",
       password: "123456",
+    }),
+    make({
+      id: "seed-manager", fullName: "Michael Tran (Club Manager)", email: "manager@gmail.com", role: "CLUB_MANAGER", status: "ACTIVE",
+      password: "EquiFlow@2026",
+    }),
+    make({
+      id: "seed-trainer", fullName: "David Nguyen (Head Trainer)", email: "trainer@gmail.com", role: "HEAD_TRAINER", status: "ACTIVE",
+      password: "EquiFlow@2026",
+    }),
+    make({
+      id: "seed-vet", fullName: "Dr. Sarah Connor (Veterinarian)", email: "vet@gmail.com", role: "VETERINARIAN", status: "ACTIVE",
+      password: "EquiFlow@2026",
+    }),
+    make({
+      id: "seed-groom", fullName: "John Smith (Groom Hand)", email: "groom@gmail.com", role: "GROOM", status: "ACTIVE",
+      password: "EquiFlow@2026",
+    }),
+    make({
+      id: "seed-owner", fullName: "Robert Sterling (Horse Owner)", email: "owner@gmail.com", role: "HORSE_OWNER", status: "ACTIVE",
+      password: "EquiFlow@2026",
     }),
   ];
 }
