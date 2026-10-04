@@ -48,7 +48,7 @@ export function StopPrescriptionModal({ medicationName, onClose, onSubmit }: Sto
 
   return (
     <Modal
-      title={`Discontinue Medication: ${medicationName} (DL-3.06)`}
+      title={`Discontinue Medication: ${medicationName}`}
       subtitle="Marks medication status as Discontinued. Discontinued prescriptions cannot be reactivated."
       width={480}
       tone="warn"

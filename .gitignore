@@ -36,3 +36,5 @@ CLAUDE.md
 .claude/
 playwright-report/
 test-results/
+src/shared/components/testing/
+tests/e2e/veterinary-workflow.spec.ts

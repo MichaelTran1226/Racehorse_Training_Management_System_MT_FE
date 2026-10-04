@@ -50,7 +50,7 @@ export function AddFollowUpModal({ onClose, onSubmit }: AddFollowUpModalProps) {
 
   return (
     <Modal
-      title="Add Follow-up Examination (DL-3.07)"
+      title="Add Follow-up Examination"
       subtitle="Record latest vital signs, evaluate clinical progression, and adjust treatment protocol."
       width={520}
       onClose={onClose}

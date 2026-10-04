@@ -63,7 +63,7 @@ export function CloseRecordModal({
 
   return (
     <Modal
-      title={isClosed ? `Reopen Medical Record ${recordNumber} (DL-3.09)` : `Close Treatment Record ${recordNumber} (DL-3.09)`}
+      title={isClosed ? `Reopen Medical Record ${recordNumber}` : `Close Treatment Record ${recordNumber}`}
       subtitle={
         isClosed
           ? "May only be reopened within 7 days of closure for supplemental treatment."
