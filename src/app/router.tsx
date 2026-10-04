@@ -3,6 +3,8 @@ import AuditLogPage from "@/features/dashboard/pages/AuditLogPage";
 import AccountListPage from "@/features/accounts/pages/AccountListPage";
 import StaffDirectoryPage from "@/features/master-data/pages/StaffDirectoryPage";
 import HorseListPage from "@/features/horses/pages/HorseListPage";
+import HorseDetailPage from "@/features/horses/pages/HorseDetailPage";
+import HorseFormPage from "@/features/horses/pages/HorseFormPage";
 import AcceptInvitePage from "@/features/auth/pages/AcceptInvitePage";
 import PermissionMatrix from "@/features/accounts/pages/PermissionMatrix";
 import ChangePasswordPage from "@/features/auth/pages/ChangePasswordPage";
@@ -148,6 +150,9 @@ export const router = createBrowserRouter([
           { path: "/accounts/:id/permissions", element: <PermissionMatrixRoute /> },
           { path: "/staff", element: <StaffDirectoryPage /> },
           { path: "/horses", element: <HorseListPage /> },
+          { path: "/horses/new", element: <HorseFormPage /> },
+          { path: "/horses/:id", element: <HorseDetailPage /> },
+          { path: "/horses/:id/edit", element: <HorseFormPage /> },
           { path: "/my-horses", element: <HorseListPage /> },
           { path: "/profile", element: <MyProfilePage /> },
           { path: "/profile/password", element: <ChangePasswordPage /> },
