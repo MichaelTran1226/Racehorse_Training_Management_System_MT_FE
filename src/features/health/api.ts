@@ -56,6 +56,19 @@ export const getHorseObservations = (
   );
 };
 
+// P2-03: Chấn thương 2D (API-007)
+export const getHorseInjuries = (horseId: string) =>
+  api<{ injuries: any[] } | any[]>("GET", `/medical/horses/${horseId}/injuries`);
+
+export const createInjury = (payload: any) =>
+  api("POST", "/medical/injuries", payload);
+
+export const updateInjury = (id: string, payload: any) =>
+  api("PUT", `/medical/injuries/${id}`, payload);
+
+export const deleteInjury = (id: string) =>
+  api("DELETE", `/medical/injuries/${id}`);
+
 // P2-02: Danh sách bệnh án (FR-3.03)
 export const listRecords = async (params?: ListRecordsParams): Promise<ListRecordsResponse> => {
   const query = new URLSearchParams();

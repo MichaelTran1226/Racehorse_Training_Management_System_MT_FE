@@ -12,7 +12,6 @@ import { useToast } from "@/shared/components/ui/Toast";
 import { createRecord, getRecordDetail, updateRecord } from "../api";
 import { isHeartRateWarning, isRespiratoryWarning, isTempWarning } from "../components/VitalsDisplay";
 import type { LabTestItem, SeverityLevel } from "../types";
-import { getStoredHorses } from "@/shared/mock/horsesData";
 import styles from "./MedicalRecordPage.module.css";
 
 
@@ -47,6 +46,8 @@ const PROPOSED_STATUS_OPTIONS = [
   { value: "FIT", label: "Fit" },
 ];
 
+import { getHorses } from "@/features/horses/api";
+
 export default function RecordFormPage() {
   const { id } = useParams(); // If id exists, it's edit mode
   const [searchParams] = useSearchParams();
@@ -55,21 +56,44 @@ export default function RecordFormPage() {
   const navigate = useNavigate();
   const toast = useToast();
 
-  const storedHorses = getStoredHorses();
-  const horseOptions = storedHorses.length > 0
-    ? storedHorses.map((h) => ({
-        value: h.id,
-        label: `${h.name} (${h.code}) · ${h.stall}`,
-      }))
-    : [{ value: "", label: "-- No horses available (Add horse in Herd first) --" }];
-
   const isEdit = Boolean(id);
 
   // Block 1: Exam info
-  const [horseId, setHorseId] = useState(() => {
-    if (horseIdParam && storedHorses.some((h) => h.id === horseIdParam)) return horseIdParam;
-    return storedHorses[0]?.id || "";
-  });
+  const [horseId, setHorseId] = useState(horseIdParam);
+  const [horseOptions, setHorseOptions] = useState<{ value: string; label: string }[]>([]);
+  const [loadingHorses, setLoadingHorses] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    getHorses({ limit: 1000 })
+      .then((res: any) => {
+        if (!active) return;
+        const data = res.items || res.data || [];
+        if (data.length > 0) {
+          setHorseOptions(
+            data.map((h: any) => ({
+              value: h.id,
+              label: `${h.name} (${h.horseCode || h.id})`,
+            }))
+          );
+          if (!isEdit && (!horseIdParam || !data.some((h: any) => h.id === horseIdParam))) {
+            setHorseId(data[0].id);
+          }
+        } else {
+          setHorseOptions([{ value: "", label: "-- No horses available --" }]);
+        }
+      })
+      .catch(() => {
+        // Fallback or error state
+        if (active) setHorseOptions([{ value: "", label: "-- Error loading horses --" }]);
+      })
+      .finally(() => {
+        if (active) setLoadingHorses(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [horseIdParam, isEdit]);
   const [examinationDate, setExaminationDate] = useState(new Date().toISOString().slice(0, 16));
   const [examinationType, setExaminationType] = useState("Routine Clinical");
   const [examinationReason, setExaminationReason] = useState("");
@@ -242,7 +266,7 @@ export default function RecordFormPage() {
               options={horseOptions}
               value={horseId}
               onChange={(e) => setHorseId(e.target.value)}
-              disabled={isEdit}
+              disabled={isEdit || loadingHorses}
             />
           </Field>
 
