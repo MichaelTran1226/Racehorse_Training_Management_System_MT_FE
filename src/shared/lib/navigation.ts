@@ -16,6 +16,9 @@ export function breadcrumbFor(user: AuthUser, pathname: string, accountName?: st
   }
   if (pathname === "/forbidden") return [workspace, "Access denied"];
   if (pathname === "/session-expired") return [workspace, "Session expired"];
+  if (pathname === "/records" || pathname.startsWith("/medical/records") || pathname.startsWith("/records/")) {
+    return [workspace, "Medical", "Medical Records"];
+  }
 
   const access = screenAccess(user.role, user.permissions, pathname);
   if (access.group && access.label) return [workspace, capitalize(access.group), access.label];
