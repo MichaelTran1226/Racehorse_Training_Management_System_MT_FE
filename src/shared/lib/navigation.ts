@@ -44,10 +44,10 @@ export function breadcrumbFor(user: AuthUser, pathname: string, accountName?: st
       { label: accountName ?? "Account Permissions" },
     ];
   }
-
   // 5. Trang lỗi hệ thống
   if (pathname === "/forbidden") return [homeSegment, { label: "Access denied" }];
   if (pathname === "/session-expired") return [homeSegment, { label: "Session expired" }];
+
 
   // 6. Chi tiết ngựa & hồ sơ bệnh án (các trang lồng cấp)
   if (pathname.startsWith("/medical/horses/") || pathname.startsWith("/records/horse/")) {

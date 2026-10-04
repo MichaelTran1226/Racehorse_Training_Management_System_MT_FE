@@ -58,6 +58,10 @@ export default function RecordListPage() {
         <div className={styles.headerTop}>
           <div className={styles.titleArea}>
             <h1 className={styles.horseTitle}>Electronic Medical Records</h1>
+            <span style={{ fontSize: "14px", color: "var(--muted)" }}>
+              Manage clinical diagnoses, treatment protocols, prescriptions, and follow-up history for the entire herd.
+            </span>
+
           </div>
 
           {isVet && (
