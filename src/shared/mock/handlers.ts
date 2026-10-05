@@ -14,6 +14,10 @@ import type { Db, OtpPurpose, OtpRecord } from "@/shared/mock/db";
 import type { Account, NotifyKey, PermissionKey, PermissionMap, Role } from "@/shared/types/auth";
 import { buildMockProfile, getMockMedicalStore, saveMockMedicalStore } from "@/shared/mock/medicalData";
 import {
+  getStoredHorses,
+  addStoredHorse,
+  deleteStoredHorse,
+  saveStoredHorses,
   getStoredLocks,
   placeHorseTrainingLock,
   liftHorseTrainingLock,
@@ -1046,6 +1050,289 @@ const routes: Route[] = [
         reason,
       });
       return { ok: true, lock: extended };
+    },
+  },
+
+  // ---- Flow 1: Horse Profile Mock Routes (P1-07)
+  {
+    method: "GET",
+    pattern: /^\/horses$/,
+    handler({ db, url }) {
+      const user = currentUser(db);
+      const stored = getStoredHorses();
+      const search = url.searchParams.get("search")?.toLowerCase().trim() || "";
+      const status = url.searchParams.get("status") || "ALL";
+      const isLocked = url.searchParams.get("isMedicalLocked");
+      const breed = url.searchParams.get("breed");
+      const gender = url.searchParams.get("gender");
+      const page = parseInt(url.searchParams.get("page") || "1", 10);
+      const limit = parseInt(url.searchParams.get("limit") || "20", 10);
+
+      let list = stored.map((h: any) => {
+        let st = h.statusText || h.status;
+        if (h.healthGroup === "FIT") st = "ACTIVE";
+        else if (h.healthGroup === "WATCH") st = "UNDER_OBSERVATION";
+        else if (h.healthGroup === "QUARANTINED") st = "ISOLATED";
+        else if (h.healthGroup === "INJURED") st = "INJURED";
+        else if (!st) st = "RESTING";
+
+        let microchip = h.microchip || h.code;
+        let microchipRfid = h.code || h.microchip || "985141002341001";
+        if (user.role === "GROOM") {
+          if (microchip && microchip.length > 4) {
+            microchip = "*".repeat(microchip.length - 4) + microchip.slice(-4);
+          }
+          if (microchipRfid && microchipRfid.length > 4) {
+            microchipRfid = "*".repeat(microchipRfid.length - 4) + microchipRfid.slice(-4);
+          }
+        }
+
+        return {
+          id: h.id,
+          horseCode: h.horseCode || (h.id.startsWith("horse-") ? `HR-${h.id.slice(-6)}` : `HR-000001`),
+          name: h.name,
+          microchip,
+          rfid: h.rfid || null,
+          microchipRfid,
+          breed: h.breed || "Thoroughbred",
+          dob: h.dob || "2021-04-12",
+          gender: h.gender || "Colt",
+          color: h.color || "Bay Dark",
+          status: st,
+          isMedicalLocked: Boolean(h.isLocked),
+          ownerId: h.ownerId || "owner-1",
+          ownerName: h.ownerName || "Robert Sterling (Horse Owner)",
+          owner: { id: h.ownerId || "owner-1", fullName: h.ownerName || "Robert Sterling (Horse Owner)", email: "owner@gmail.com" },
+          stallCode: user.role === "HORSE_OWNER" ? null : (h.stall || "STALL-A01"),
+          zone: user.role === "HORSE_OWNER" ? null : "Zone A - Barn 1",
+          primaryGroom: user.role === "HORSE_OWNER" ? null : "Michael Groom",
+          createdAt: h.createdAt || new Date().toISOString(),
+          updatedAt: h.updatedAt || new Date().toISOString(),
+        };
+      });
+
+      // Role scoping: Owner chỉ xem ngựa sở hữu
+      if (user.role === "HORSE_OWNER") {
+        list = list.filter((h) => h.ownerId === user.id);
+      }
+
+      if (status && status !== "ALL") {
+        list = list.filter((h) => h.status === status);
+      }
+      if (isLocked !== null && isLocked !== undefined && isLocked !== "") {
+        const lockBool = isLocked === "true";
+        list = list.filter((h) => h.isMedicalLocked === lockBool);
+      }
+      if (breed && breed !== "ALL") {
+        list = list.filter((h) => h.breed.toLowerCase() === breed.toLowerCase());
+      }
+      if (gender && gender !== "ALL") {
+        list = list.filter((h) => h.gender.toLowerCase() === gender.toLowerCase());
+      }
+      if (search) {
+        list = list.filter(
+          (h) =>
+            h.name.toLowerCase().includes(search) ||
+            (h.horseCode && h.horseCode.toLowerCase().includes(search)) ||
+            (h.microchip && h.microchip.toLowerCase().includes(search)) ||
+            (h.rfid && h.rfid.toLowerCase().includes(search)) ||
+            h.breed.toLowerCase().includes(search),
+        );
+      }
+
+      const total = list.length;
+      const skip = (page - 1) * limit;
+      const items = list.slice(skip, skip + limit);
+
+      return {
+        items,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/horses\/([^/]+)$/,
+    handler({ db, params }) {
+      const user = currentUser(db);
+      const stored = getStoredHorses();
+      const h: any = stored.find((item) => item.id === params[0]);
+      if (!h) throw new ApiError(404, "HORSE_NOT_FOUND", "Không tìm thấy hồ sơ ngựa hoặc bạn không có quyền xem.");
+
+      if (user.role === "HORSE_OWNER" && h.ownerId && h.ownerId !== user.id) {
+        throw new ApiError(404, "HORSE_NOT_FOUND", "Không tìm thấy hồ sơ ngựa hoặc bạn không có quyền xem.");
+      }
+
+      let st = h.statusText || h.status;
+      if (h.healthGroup === "FIT") st = "ACTIVE";
+      else if (h.healthGroup === "WATCH") st = "UNDER_OBSERVATION";
+      else if (h.healthGroup === "QUARANTINED") st = "ISOLATED";
+      else if (h.healthGroup === "INJURED") st = "INJURED";
+      else if (!st) st = "RESTING";
+
+      let microchip = h.microchip || h.code;
+      let microchipRfid = h.code || h.microchip || "985141002341001";
+      if (user.role === "GROOM") {
+        if (microchip && microchip.length > 4) {
+          microchip = "*".repeat(microchip.length - 4) + microchip.slice(-4);
+        }
+        if (microchipRfid && microchipRfid.length > 4) {
+          microchipRfid = "*".repeat(microchipRfid.length - 4) + microchipRfid.slice(-4);
+        }
+      }
+
+      return {
+        id: h.id,
+        horseCode: h.horseCode || (h.id.startsWith("horse-") ? `HR-${h.id.slice(-6)}` : `HR-000001`),
+        name: h.name,
+        microchip,
+        rfid: h.rfid || null,
+        microchipRfid,
+        breed: h.breed || "Thoroughbred",
+        dob: h.dob || "2021-04-12",
+        gender: h.gender || "Colt",
+        color: h.color || "Bay Dark",
+        status: st,
+        isMedicalLocked: Boolean(h.isLocked),
+        ownerId: h.ownerId || "owner-1",
+        ownerName: h.ownerName || "Robert Sterling (Horse Owner)",
+        owner: { id: h.ownerId || "owner-1", fullName: h.ownerName || "Robert Sterling (Horse Owner)", email: "owner@gmail.com" },
+        stallCode: user.role === "HORSE_OWNER" ? null : (h.stall || "STALL-A01"),
+        zone: user.role === "HORSE_OWNER" ? null : "Zone A - Barn 1",
+        primaryGroom: user.role === "HORSE_OWNER" ? null : "Michael Groom",
+        createdAt: h.createdAt || new Date().toISOString(),
+        updatedAt: h.updatedAt || new Date().toISOString(),
+      };
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/horses$/,
+    handler({ db, body }) {
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") {
+        throw new ApiError(403, "FORBIDDEN", "Chỉ Club Manager mới có quyền tạo hồ sơ ngựa.");
+      }
+
+      const name = String(body.name || "").trim();
+      const microchip = String(body.microchip || "").trim();
+      const rfid = body.rfid ? String(body.rfid).trim().toUpperCase() : undefined;
+
+      if (!name) throw new ApiError(400, "VALIDATION", "Tên ngựa là bắt buộc.");
+      if (!microchip || !/^\d{15}$/.test(microchip)) {
+        throw new ApiError(400, "VALIDATION", "Số microchip phải gồm đúng 15 chữ số.");
+      }
+
+      const stored = getStoredHorses();
+      if (stored.some((h) => h.name.toLowerCase() === name.toLowerCase())) {
+        throw new ApiError(409, "DUPLICATE_NAME", "Tên ngựa đã tồn tại trong hệ thống.");
+      }
+      if (stored.some((h) => (h as any).microchip === microchip || h.code === microchip)) {
+        throw new ApiError(409, "DUPLICATE_MICROCHIP", "Số microchip đã được gán cho ngựa khác.");
+      }
+      if (rfid && stored.some((h) => (h as any).rfid === rfid)) {
+        throw new ApiError(409, "DUPLICATE_RFID", "Mã thẻ RFID đã được gán cho ngựa khác.");
+      }
+
+      const id = `horse-${Date.now()}`;
+      const horseCode = `HR-${String(stored.length + 1).padStart(6, "0")}`;
+      const newHorse: any = {
+        id,
+        horseCode,
+        name,
+        code: microchip,
+        microchip,
+        rfid: rfid || null,
+        stall: body.stallCode || "STALL-A01",
+        healthGroup: "FIT",
+        status: body.status || "RESTING",
+        statusText: body.status || "RESTING",
+        isLocked: false,
+        restingHeartRate: 38,
+        temp: 38.0,
+        breed: body.breed || "Thoroughbred",
+        dob: body.dob || "2021-04-12",
+        gender: body.gender || "Colt",
+        color: body.color || "Bay Dark",
+        ownerId: body.ownerId || null,
+      };
+
+      addStoredHorse(newHorse);
+      audit(db, user.fullName, "HORSE_CREATED", `Tạo mới hồ sơ ngựa ${name} (${horseCode})`);
+      return newHorse;
+    },
+  },
+  {
+    method: "PUT",
+    pattern: /^\/horses\/([^/]+)$/,
+    handler({ db, params, body }) {
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") {
+        throw new ApiError(403, "FORBIDDEN", "Chỉ Club Manager mới có quyền cập nhật hồ sơ ngựa.");
+      }
+
+      const stored = getStoredHorses();
+      const existing = stored.find((h) => h.id === params[0]);
+      if (!existing) throw new ApiError(404, "HORSE_NOT_FOUND", "Không tìm thấy hồ sơ ngựa.");
+
+      if ((existing as any).status === "RETIRED") {
+        throw new ApiError(400, "HORSE_RETIRED", "Ngựa đã ngừng quản lý. Vui lòng kích hoạt lại trước khi thao tác.");
+      }
+
+      if (body.name) {
+        const name = String(body.name).trim();
+        if (stored.some((h) => h.id !== params[0] && h.name.toLowerCase() === name.toLowerCase())) {
+          throw new ApiError(409, "DUPLICATE_NAME", "Tên ngựa đã tồn tại trong hệ thống.");
+        }
+        existing.name = name;
+      }
+      if (body.microchip) {
+        const chip = String(body.microchip).trim();
+        if (stored.some((h) => h.id !== params[0] && ((h as any).microchip === chip || h.code === chip))) {
+          throw new ApiError(409, "DUPLICATE_MICROCHIP", "Số microchip đã được gán cho ngựa khác.");
+        }
+        (existing as any).microchip = chip;
+        existing.code = chip;
+      }
+      if (body.rfid) {
+        const rfid = String(body.rfid).trim().toUpperCase();
+        if (stored.some((h) => h.id !== params[0] && (h as any).rfid === rfid)) {
+          throw new ApiError(409, "DUPLICATE_RFID", "Mã thẻ RFID đã được gán cho ngựa khác.");
+        }
+        (existing as any).rfid = rfid;
+      }
+      if (body.breed) existing.breed = String(body.breed);
+      if (body.dob) existing.dob = String(body.dob);
+      if (body.gender) existing.gender = String(body.gender);
+      if (body.color) existing.color = String(body.color);
+      if (body.status) (existing as any).status = body.status;
+
+      saveStoredHorses(stored);
+      audit(db, user.fullName, "HORSE_UPDATED", `Cập nhật hồ sơ ngựa ${existing.name}`);
+      return existing;
+    },
+  },
+  {
+    method: "DELETE",
+    pattern: /^\/horses\/([^/]+)$/,
+    handler({ db, params }) {
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") {
+        throw new ApiError(403, "FORBIDDEN", "Chỉ Club Manager mới có quyền xóa hồ sơ ngựa.");
+      }
+      const stored = getStoredHorses();
+      const existing = stored.find((h) => h.id === params[0]);
+      if (!existing) throw new ApiError(404, "HORSE_NOT_FOUND", "Không tìm thấy hồ sơ ngựa.");
+      if (existing.isLocked) {
+        throw new ApiError(400, "HORSE_LOCKED", "Không thể xóa hồ sơ ngựa đang trong thời gian Khóa huấn luyện.");
+      }
+
+      deleteStoredHorse(params[0]);
+      audit(db, user.fullName, "HORSE_DELETED", `Xóa hồ sơ ngựa ${existing.name}`);
+      return { success: true, message: `Đã xóa hồ sơ ngựa ${existing.name}.` };
     },
   },
 ];

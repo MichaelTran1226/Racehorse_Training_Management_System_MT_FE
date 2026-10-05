@@ -14,11 +14,7 @@ import { useToast } from "@/shared/components/ui/Toast";
 import { cx } from "@/shared/lib/cx";
 import { HorseAnatomyGraphic } from "../components/HorseAnatomyGraphic";
 import type { InjuryItem, InjuryStage, SeverityLevel } from "../types";
-import {
-  getHorseById,
-  getInjuriesForHorse,
-  saveInjuriesForHorse,
-} from "@/shared/mock/horsesData";
+
 import styles from "./InjuryMapPage.module.css";
 
 const STAGE_COLORS: Record<InjuryStage, string> = {
@@ -72,6 +68,10 @@ interface PointInjury extends InjuryItem {
   y: number;
 }
 
+import { getHorseInjuries, createInjury, deleteInjury } from "../api";
+import { getHorseById } from "@/features/horses/api";
+import type { Horse } from "@/features/horses/types";
+
 export default function InjuryMapPage() {
   const { id = "horse-1" } = useParams();
   const navigate = useNavigate();
@@ -79,32 +79,39 @@ export default function InjuryMapPage() {
   const toast = useToast();
 
   const isVet = user?.role === "VETERINARIAN" || user?.role === "CLUB_MANAGER";
-  const horse = getHorseById(id);
+  const [horse, setHorse] = useState<Horse | null>(null);
 
   const [view, setView] = useState<"LEFT" | "RIGHT">("LEFT");
   const [layer, setLayer] = useState<"MUSCLE" | "SKELETON">("MUSCLE");
   const [markingMode, setMarkingMode] = useState(false);
   const [showHealed, setShowHealed] = useState(false);
 
-  // Load and persist injuries specific to this horse ID
-  const [injuries, setInjuries] = useState<PointInjury[]>(() => {
-    return (getInjuriesForHorse(id) as PointInjury[]) || [];
-  });
-  const [selectedId, setSelectedId] = useState<string | null>(() => {
-    const list = (getInjuriesForHorse(id) as PointInjury[]) || [];
-    return list[0]?.id || null;
-  });
+  const [injuries, setInjuries] = useState<PointInjury[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
-    const list = (getInjuriesForHorse(id) as PointInjury[]) || [];
-    setInjuries(list);
-    setSelectedId(list[0]?.id || null);
-  }, [id]);
+    let active = true;
+    if (id) {
+      getHorseById(id).then((res: any) => {
+        if (active) setHorse(res.data || res);
+      }).catch(console.error);
 
-  function updateAndPersistInjuries(newList: PointInjury[]) {
-    setInjuries(newList);
-    saveInjuriesForHorse(id, newList);
-  }
+      getHorseInjuries(id).then((res: any) => {
+        if (!active) return;
+        const list = Array.isArray(res) ? res : (res.injuries || []);
+        const mappedList: PointInjury[] = list.map((item: any) => ({
+          ...item,
+          x: item.coordinateX ?? 0.5,
+          y: item.coordinateY ?? 0.5,
+          region: item.anatomicalZone || item.region,
+          view: item.viewSide || item.view,
+        }));
+        setInjuries(mappedList);
+        setSelectedId(mappedList[0]?.id || null);
+      }).catch(console.error);
+    }
+    return () => { active = false; };
+  }, [id]);
 
   // Dialogs & Actions
   const [addModalPoint, setAddModalPoint] = useState<{ x: number; y: number } | null>(null);
@@ -153,14 +160,23 @@ export default function InjuryMapPage() {
 
     // If currently relocating an existing pin
     if (repositioningId) {
-      const updated = injuries.map((inj) => (inj.id === repositioningId ? { ...inj, x, y } : inj));
-      updateAndPersistInjuries(updated);
-      const target = injuries.find((i) => i.id === repositioningId);
-      setRepositioningId(null);
-      toast.show(
-        `Pin "${target?.region || "lesion"}" relocated to new coordinates (${x}%, ${y}%).`,
-        "ok",
-      );
+      import("../api").then(({ updateInjury }) => {
+        updateInjury(repositioningId, { coordinateX: x, coordinateY: y })
+          .then(() => {
+            const updated = injuries.map((inj) => (inj.id === repositioningId ? { ...inj, x, y } : inj));
+            setInjuries(updated);
+            const target = injuries.find((i) => i.id === repositioningId);
+            setRepositioningId(null);
+            toast.show(
+              `Pin "${target?.region || "lesion"}" relocated to new coordinates (${x}%, ${y}%).`,
+              "ok",
+            );
+          })
+          .catch(error => {
+            toast.show("Failed to relocate injury point.", "danger");
+            console.error(error);
+          });
+      });
       return;
     }
 
@@ -171,61 +187,94 @@ export default function InjuryMapPage() {
     }
   }
 
-  function handleSaveNewInjury() {
+  async function handleSaveNewInjury() {
     if (!addModalPoint || !formType.trim()) return;
-    const newInj: PointInjury = {
-      id: `inj-${Date.now()}`,
-      horseId: id,
-      region: formRegion,
-      view,
-      layer,
-      injuryType: formType.trim(),
-      severity: formSeverity,
-      stage: "ACUTE",
-      detectedDate: new Date().toISOString().split("T")[0],
-      x: addModalPoint.x,
-      y: addModalPoint.y,
-      notes: formNotes.trim() || undefined,
-    };
-    const updated = [...injuries, newInj];
-    updateAndPersistInjuries(updated);
-    setSelectedId(newInj.id);
-    setAddModalPoint(null);
-    setFormType("");
-    setFormNotes("");
-    toast.show("New anatomical injury point recorded successfully.", "ok");
-  }
-
-  function handleConfirmDelete() {
-    if (!deleteTargetId) return;
-    const target = injuries.find((i) => i.id === deleteTargetId);
-    const remaining = injuries.filter((i) => i.id !== deleteTargetId);
-    updateAndPersistInjuries(remaining);
-    if (selectedId === deleteTargetId) {
-      const nextVisible = remaining.filter((i) => i.view === view && i.layer === layer);
-      setSelectedId(nextVisible[0]?.id || null);
+    try {
+      const payload = {
+        horseId: id,
+        coordinateX: addModalPoint.x,
+        coordinateY: addModalPoint.y,
+        viewSide: view,
+        layer,
+        anatomicalZone: formRegion,
+        bodySide: view,
+        injuryType: formType.trim(),
+        severity: formSeverity,
+        stage: "ACUTE",
+        description: formNotes.trim() || undefined,
+        discoveryDate: new Date().toISOString()
+      };
+      const res: any = await createInjury(payload);
+      const newInj: PointInjury = {
+        ...res.injury,
+        x: res.injury.coordinateX,
+        y: res.injury.coordinateY,
+        region: res.injury.anatomicalZone,
+        view: res.injury.viewSide,
+      };
+      
+      const updated = [...injuries, newInj];
+      setInjuries(updated);
+      setSelectedId(newInj.id);
+      setAddModalPoint(null);
+      setFormType("");
+      setFormNotes("");
+      toast.show("New anatomical injury point recorded successfully.", "ok");
+    } catch (error) {
+      toast.show("Failed to create injury point.", "danger");
+      console.error(error);
     }
-    setDeleteTargetId(null);
-    toast.show(`Injury point "${target?.region || ""}" deleted successfully.`, "ok");
   }
 
-  function handleUpdateStage() {
-    if (!selectedInjury) return;
-    const updated = injuries.map((inj) => {
-      if (inj.id === selectedInjury.id) {
-        return {
-          ...inj,
-          stage: newStage,
-          updatedDate: new Date().toISOString().split("T")[0],
-          notes: stageNotes.trim() ? `${inj.notes || ""}\n- [${new Date().toLocaleDateString("en-US")}]: ${stageNotes.trim()}` : inj.notes,
-        };
+  async function handleConfirmDelete() {
+    if (!deleteTargetId) return;
+    try {
+      await deleteInjury(deleteTargetId);
+      const target = injuries.find((i) => i.id === deleteTargetId);
+      const remaining = injuries.filter((i) => i.id !== deleteTargetId);
+      setInjuries(remaining);
+      if (selectedId === deleteTargetId) {
+        const nextVisible = remaining.filter((i) => i.view === view && i.layer === layer);
+        setSelectedId(nextVisible[0]?.id || null);
       }
-      return inj;
-    });
-    updateAndPersistInjuries(updated);
-    setShowStageModal(false);
-    setStageNotes("");
-    toast.show(`Recovery stage updated to: ${STAGE_LABELS[newStage]}.`, "ok");
+      setDeleteTargetId(null);
+      toast.show(`Injury point "${target?.region || ""}" deleted successfully.`, "ok");
+    } catch (error) {
+      toast.show("Failed to delete injury point.", "danger");
+      console.error(error);
+    }
+  }
+
+  async function handleUpdateStage() {
+    if (!selectedInjury) return;
+    try {
+      const payload: any = { stage: newStage };
+      if (stageNotes.trim()) {
+        payload.description = `${selectedInjury.notes || ""}\n- [${new Date().toLocaleDateString("en-US")}]: ${stageNotes.trim()}`;
+      }
+      
+      const { updateInjury } = await import("../api");
+      await updateInjury(selectedInjury.id, payload);
+      
+      const updated = injuries.map((inj) => {
+        if (inj.id === selectedInjury.id) {
+          return {
+            ...inj,
+            stage: newStage,
+            updatedDate: new Date().toISOString().split("T")[0],
+            notes: payload.description || inj.notes,
+          };
+        }
+        return inj;
+      });
+      setInjuries(updated);
+      setShowStageModal(false);
+      setStageNotes("");
+      toast.show(`Recovery stage updated to: ${newStage}.`, "ok");
+    } catch (error) {
+      toast.show("Failed to update injury stage.", "danger");
+      console.error(error);
+    }
   }
 
   return (
@@ -239,11 +288,11 @@ export default function InjuryMapPage() {
           <div>
             <h1 style={{ fontSize: "20px", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
               <span>2D Anatomical Injury Map</span>
-              {horse && <span>{` · ${horse.name} (${horse.code})`}</span>}
+              {horse && <span>{` · ${horse.name} (${horse.horseCode || horse.id.slice(0,6)})`}</span>}
             </h1>
             <span style={{ fontSize: "13px", color: "var(--muted)" }}>
               {horse
-                ? `Pinpoint anatomical lesions and monitor clinical progression for ${horse.name} (${horse.stall}).`
+                ? `Pinpoint anatomical lesions and monitor clinical progression for ${horse.name}.`
                 : "Pinpoint anatomical lesions and monitor clinical progression across recovery phases."}
             </span>
           </div>
