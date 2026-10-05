@@ -51,3 +51,7 @@ export async function updateHorse(id: string, data: UpdateHorsePayload): Promise
 export async function deleteHorse(id: string): Promise<{ success: boolean; message: string }> {
   return await api<{ success: boolean; message: string }>("DELETE", `/horses/${id}`);
 }
+
+export async function changeHorseStatus(id: string, payload: { status: string; reason: string }): Promise<{ success: boolean; data: any; message: string }> {
+  return await api<{ success: boolean; data: any; message: string }>("PATCH", "/horses/" + id + "/status", payload);
+}

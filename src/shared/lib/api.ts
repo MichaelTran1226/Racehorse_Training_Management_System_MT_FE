@@ -7,7 +7,7 @@
 
 import { clearTokens, getTokens, saveTokens } from "@/shared/lib/tokens";
 
-export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
+export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
 export class ApiError extends Error {
   constructor(
