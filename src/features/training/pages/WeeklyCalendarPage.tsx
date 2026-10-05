@@ -63,7 +63,7 @@ export default function WeeklyCalendarPage() {
   const handleRestoreSession = async (sessionId: string) => {
     try {
       await trainingApi.restoreBlockedSession(sessionId);
-      toast.show("Đã khôi phục lịch tập sau khi gỡ khóa y tế (DL-2.07)", "ok");
+      toast.show("Đã khôi phục lịch tập sau khi gỡ khóa y tế", "ok");
       void loadSessions();
     } catch {
       toast.show("Lỗi khôi phục lịch tập", "danger");
@@ -96,7 +96,7 @@ export default function WeeklyCalendarPage() {
 
       if (created.status === "BLOCKED_BY_LOCK") {
         toast.show(
-          "Tự động chặn bài tập nặng: Ngựa đang có Khóa y tế (P2-07)!",
+          "Tự động chặn bài tập nặng: Ngựa đang có Khóa y tế!",
           "danger",
         );
       } else {
@@ -120,19 +120,19 @@ export default function WeeklyCalendarPage() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Lịch Huấn Luyện & Phân Công (SC-2.05)</h1>
+          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Lịch Huấn Luyện & Phân Công</h1>
           <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
-            Điều phối buổi tập theo khung giờ, phân công Groom/Jockey và tự động chặn bài tập nặng khi có Khóa y tế (P2-07, P2-08)
+            Điều phối buổi tập theo khung giờ, phân công Groom/Jockey và tự động chặn bài tập nặng khi có Khóa y tế
           </p>
         </div>
 
         <div style={{ display: "flex", gap: "0.75rem" }}>
           <Link to="/training/trials">
-            <Button tone="secondary">Điều phối Lượt Chạy Thử (SC-2.05)</Button>
+            <Button tone="secondary">Điều phối Lượt Chạy Thử</Button>
           </Link>
           {isTrainer && (
             <Button tone="primary" onClick={() => setIsCreateOpen(true)}>
-              + Xếp lịch tập mới (DL-2.01)
+              + Xếp lịch tập mới
             </Button>
           )}
         </div>
@@ -203,11 +203,11 @@ export default function WeeklyCalendarPage() {
                     }}
                   >
                     <div>
-                      <strong>🔒 BỊ CHẶN BỞI KHÓA HUẤN LUYỆN Y TẾ (P2-07):</strong> {session.blockedReason}
+                      <strong>🔒 BỊ CHẶN BỞI KHÓA HUẤN LUYỆN Y TẾ:</strong> {session.blockedReason}
                     </div>
                     {isTrainer && (
                       <Button tone="danger" onClick={() => void handleRestoreSession(session.id)}>
-                        Khôi phục lịch tập (DL-2.07)
+                        Khôi phục lịch tập
                       </Button>
                     )}
                   </div>
@@ -279,14 +279,14 @@ export default function WeeklyCalendarPage() {
                       <span style={{ color: "var(--accent)", fontWeight: 700 }}>{session.result.performanceScore}/10</span>
                     </div>
                     <Link to="/training/metrics">
-                      <Button tone="ghost">Xem biểu đồ thể lực (SC-2.07) →</Button>
+                      <Button tone="ghost">Xem biểu đồ thể lực →</Button>
                     </Link>
                   </div>
                 ) : (
                   !isBlocked && (
                     <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", marginTop: "0.25rem" }}>
                       <Link to="/training/metrics">
-                        <Button tone="primary">Ghi kết quả buổi tập (SC-2.06)</Button>
+                        <Button tone="primary">Ghi kết quả buổi tập</Button>
                       </Link>
                     </div>
                   )
@@ -297,9 +297,9 @@ export default function WeeklyCalendarPage() {
         )}
       </div>
 
-      {/* Create Session Modal (DL-2.01) */}
+      {/* Create Session Modal */}
       {isCreateOpen && (
-        <Modal onClose={() => setIsCreateOpen(false)} title="Xếp Lịch Tập Mới (DL-2.01)">
+        <Modal onClose={() => setIsCreateOpen(false)} title="Xếp Lịch Tập Mới">
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <Field label="Chọn ngựa huấn luyện" required>
               <Select

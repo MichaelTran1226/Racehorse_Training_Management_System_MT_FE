@@ -6,7 +6,7 @@ import type {
   TreatmentPhase,
   FollowUpItem,
 } from "@/features/health/types";
-import { getHorseById, getInjuriesForHorse, getStoredHorses } from "./horsesData";
+import { getHorseById, getInjuriesForHorse, getStoredHorses, getStoredLocks } from "./horsesData";
 
 export interface MockMedicalStore {
   records: MedicalRecord[];
@@ -211,8 +211,12 @@ export function buildMockProfile(horseId: string, role?: string): HorseMedicalPr
     found?.healthGroup === "WATCH"
       ? "UNDER_OBSERVATION"
       : (found?.healthGroup as any) || "FIT";
-  const isLocked = Boolean(found?.isLocked);
-  const lockReason = found?.lockReason || "Under protective clinical hold";
+
+  const allLocks = getStoredLocks().filter((l) => l.horseId === horseId);
+  const activeLockRecord = allLocks.find((l) => l.status === "ACTIVE");
+  const isLocked = Boolean(found?.isLocked || activeLockRecord);
+  const lockReason = activeLockRecord?.lockReason || found?.lockReason || "Under protective clinical hold";
+  const reviewDate = activeLockRecord?.reviewDate || found?.reviewDate || new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0];
 
   // Filter out medications for Owner / Groom per FR-3.18
   const hideMeds = role === "HORSE_OWNER" || role === "GROOM";
@@ -232,16 +236,28 @@ export function buildMockProfile(horseId: string, role?: string): HorseMedicalPr
       stallCode: stall,
       healthStatus: status,
       isMedicalLocked: isLocked,
-      activeLock: isLocked
+      activeLock: isLocked && activeLockRecord
+        ? {
+            id: activeLockRecord.id,
+            lockCode: activeLockRecord.lockCode,
+            horseId,
+            appliedMedicalStatus: activeLockRecord.appliedMedicalStatus,
+            lockedAt: activeLockRecord.lockedAt,
+            lockedBy: activeLockRecord.lockedBy,
+            lockReason: activeLockRecord.lockReason,
+            reviewDate: activeLockRecord.reviewDate,
+            status: "ACTIVE",
+          }
+        : isLocked
         ? {
             id: `lock-${horseId}`,
             lockCode: `LK-${rfid.slice(-6)}`,
             horseId,
             appliedMedicalStatus: status,
-            lockedAt: new Date().toISOString(),
-            lockedBy: "Lead Veterinarian",
+            lockedAt: found?.lockDate || new Date().toISOString(),
+            lockedBy: "Chief Veterinarian",
             lockReason,
-            reviewDate: new Date(Date.now() + 14 * 86400000).toISOString(),
+            reviewDate,
             status: "ACTIVE",
           }
         : null,
@@ -289,17 +305,33 @@ export function buildMockProfile(horseId: string, role?: string): HorseMedicalPr
     },
     records: horseRecords,
     injuries: horseInjuries,
-    locks: isLocked
+    locks: allLocks.length > 0
+      ? allLocks.map((l) => ({
+          id: l.id,
+          lockCode: l.lockCode,
+          horseId: l.horseId,
+          appliedMedicalStatus: l.appliedMedicalStatus,
+          lockedAt: l.lockedAt,
+          lockedBy: l.lockedBy,
+          lockReason: l.lockReason,
+          reviewDate: l.reviewDate,
+          releasedAt: l.releasedAt,
+          releasedBy: l.releasedBy,
+          releaseReason: l.releaseReason,
+          durationDays: l.durationDays,
+          status: l.status,
+        }))
+      : isLocked
       ? [
           {
             id: `lock-${horseId}`,
             lockCode: `LK-${rfid.slice(-6)}`,
             horseId,
             appliedMedicalStatus: status,
-            lockedAt: new Date().toISOString(),
-            lockedBy: "Lead Veterinarian",
+            lockedAt: found?.lockDate || new Date().toISOString(),
+            lockedBy: "Chief Veterinarian",
             lockReason,
-            reviewDate: new Date(Date.now() + 14 * 86400000).toISOString(),
+            reviewDate,
             status: "ACTIVE",
           },
         ]

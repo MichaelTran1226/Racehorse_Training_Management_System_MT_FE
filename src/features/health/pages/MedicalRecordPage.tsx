@@ -9,7 +9,13 @@ import { Tabs } from "@/shared/components/ui/Tabs";
 import { useAuth } from "@/shared/components/layout/AuthProvider";
 import { useToast } from "@/shared/components/ui/Toast";
 import { cx } from "@/shared/lib/cx";
-import { getHorseMedicalProfile, getHorseObservations } from "../api";
+import {
+  getHorseMedicalProfile,
+  getHorseObservations,
+  applyTrainingLock,
+  releaseTrainingLock,
+  extendTrainingLock,
+} from "../api";
 import { TrainingLockModal } from "../components/TrainingLockModal";
 import { VitalsDisplay } from "../components/VitalsDisplay";
 import type { HorseMedicalProfile, ObservationNote } from "../types";
@@ -566,18 +572,40 @@ export default function MedicalRecordPage() {
         <TrainingLockModal
           mode={lockModalMode}
           horseName={horse.name}
+          horseId={horse.id}
           currentReviewDate={horse.activeLock?.reviewDate}
           onClose={() => setLockModalMode(null)}
-          onPlaceLock={async () => {
-            toast.show("Training lock placed successfully.", "ok");
+          onPlaceLock={async (dto) => {
+            await applyTrainingLock(horse.id, {
+              appliedMedicalStatus: dto.appliedStatus,
+              lockReason: dto.reason,
+              reviewDate: dto.reviewDate,
+              unlockConditions: dto.unlockConditions,
+            });
+            toast.show("Training lock placed successfully", "ok");
             await loadData();
           }}
-          onLiftLock={async () => {
-            toast.show("Training lock lifted successfully.", "ok");
+          onLiftLock={async (dto) => {
+            const lockId = horse.activeLock?.id || horse.id;
+            await releaseTrainingLock(lockId, {
+              targetStatus: dto.restoreStatus,
+              releaseReason: dto.reason,
+              horseId: horse.id,
+            });
+            toast.show(
+              `Training lock lifted successfully. Status restored to ${dto.restoreStatus === "FIT" ? "Fit for Training" : "Under Observation"}`,
+              "ok",
+            );
             await loadData();
           }}
-          onExtendLock={async () => {
-            toast.show("Training lock review date extended successfully.", "ok");
+          onExtendLock={async (dto) => {
+            const lockId = horse.activeLock?.id || horse.id;
+            await extendTrainingLock(lockId, {
+              newReviewDate: dto.newReviewDate,
+              reason: dto.reason,
+              horseId: horse.id,
+            });
+            toast.show(`Training lock review date extended to ${dto.newReviewDate}`, "ok");
             await loadData();
           }}
         />

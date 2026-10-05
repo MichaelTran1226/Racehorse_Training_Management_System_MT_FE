@@ -216,7 +216,7 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
         item("herd", "Herd Health", "stethoscope", { requires: "viewMedical" }),
         item("records", "Medical Records", "file", { requires: "viewMedical" }),
         item("rx", "Prescriptions", "pill", { requires: "viewMedical" }),
-        item("locks", "Training Locks", "lock", { requires: "placeLock", alert: true }),
+        item("locks", "Training Locks", "lock", { requires: "placeLock" }),
         item("vaccine", "Vaccination Schedule", "syringe", { requires: "viewMedical" }),
       ],
     },
@@ -293,7 +293,7 @@ export interface ScreenAccess {
   inOwnRole: boolean; // màn hình có trong sidebar của vai trò hiện tại (nhưng chưa được cấp quyền)
 }
 
-const OPEN_PREFIXES = ["/dashboard", "/profile", "/forbidden", "/session-expired"];
+const OPEN_PREFIXES = ["/dashboard", "/profile", "/notifications", "/forbidden", "/session-expired"];
 
 function findByHref(groups: NavGroup[], href: string): { group: string; item: NavItem } | undefined {
   for (const g of groups) {

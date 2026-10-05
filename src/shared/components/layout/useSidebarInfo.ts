@@ -3,6 +3,7 @@ import { api } from "@/shared/lib/api";
 import { formatDate, padCount } from "@/shared/lib/format";
 import { ROLE_LABEL } from "@/shared/lib/permissions";
 import type { AuthUser, PublicAccount } from "@/shared/types/auth";
+import { getUnreadNotificationsCount } from "@/shared/lib/notifications";
 
 export interface SidebarNote {
   title: string;
@@ -41,17 +42,17 @@ export function useSidebarInfo(user: AuthUser | null, pathname: string): Sidebar
     };
   }, [canManage, pathname]);
 
+  const unreadCount = getUnreadNotificationsCount(user?.role);
+
   if (!user) return { note: null, notifications: 0 };
   if (user.role === "HEAD_TRAINER") {
-    return { note: { title: "04 sessions left today", body: "Barn A: 3 · Barn B: 1" }, notifications: 3 };
+    return { note: { title: "04 sessions left today", body: "Barn A: 3 · Barn B: 1" }, notifications: unreadCount };
   }
   if (canManage) {
     return {
       note: pending.count > 0 ? { title: `${padCount(pending.count)} ${pending.count === 1 ? "request" : "requests"} waiting`, body: pending.first ?? "" } : null,
-      notifications: pending.count,
+      notifications: pending.count || unreadCount,
     };
   }
-  if (user.role === "VETERINARIAN") return { note: null, notifications: 2 };
-  if (user.role === "GROOM") return { note: null, notifications: 1 };
-  return { note: null, notifications: 0 };
+  return { note: null, notifications: unreadCount };
 }

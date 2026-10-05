@@ -86,6 +86,7 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
   return (
     <Modal
       title="Prescribe Medication"
+
       subtitle="Manage dosage, administration route, and automated pre-race withdrawal clearance calculation."
       width={540}
       onClose={onClose}

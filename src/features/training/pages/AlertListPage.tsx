@@ -62,7 +62,7 @@ export default function AlertListPage() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Cảnh Báo Vận Động & Y Tế (SC-2.10)</h1>
+          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Cảnh Báo Vận Động & Y Tế</h1>
           <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
             Kết nối trực tiếp giữa Buổi tập (Flow 2) và Đội ngũ Bác sĩ Thú y (Flow 3) khi phát hiện dấu hiệu bất thường
           </p>

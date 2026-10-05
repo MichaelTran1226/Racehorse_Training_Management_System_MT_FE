@@ -608,10 +608,10 @@ export default function InjuryMapPage() {
         </div>
       </div>
 
-      {/* Modal Add Injury (DL-3.10) */}
+      {/* Modal Add Injury */}
       {addModalPoint && (
         <Modal
-          title="Mark New Injury Point (DL-3.10)"
+          title="Mark New Injury Point"
           subtitle={`Layer: ${layer === "MUSCLE" ? "Muscular Layer" : "Skeletal Layer"} · Orientation: ${view === "LEFT" ? "Left View" : "Right View"} · Coordinates (${addModalPoint.x}%, ${addModalPoint.y}%)`}
           width={480}
           onClose={() => setAddModalPoint(null)}
@@ -656,10 +656,10 @@ export default function InjuryMapPage() {
         </Modal>
       )}
 
-      {/* Modal Update Stage (DL-3.11) */}
+      {/* Modal Update Stage */}
       {showStageModal && selectedInjury && (
         <Modal
-          title={`Update Recovery Stage: ${selectedInjury.region} (DL-3.11)`}
+          title={`Update Recovery Stage: ${selectedInjury.region}`}
           subtitle={`Current Phase: ${STAGE_LABELS[selectedInjury.stage]}`}
           width={460}
           onClose={() => setShowStageModal(false)}

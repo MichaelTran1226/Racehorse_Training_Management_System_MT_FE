@@ -18,6 +18,7 @@ import { useToast } from "@/shared/components/ui/Toast";
 import { formatDate, formatDateTime, formatTime } from "@/shared/lib/format";
 import { messageFor } from "@/shared/lib/messages";
 import { ROLE_LABEL } from "@/shared/lib/permissions";
+import { getStoredHorses } from "@/shared/mock/horsesData";
 import { ACCOUNT_STATUS, tabOf } from "@/shared/lib/status";
 import type { AccountTab } from "@/shared/lib/status";
 import type { PublicAccount, Role } from "@/shared/types/auth";
@@ -66,6 +67,7 @@ export default function AccountListPage() {
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const horses = useMemo(() => getStoredHorses(), []);
 
   const load = useCallback(async () => {
     setAccounts(null);
@@ -165,7 +167,42 @@ export default function AccountListPage() {
         />
       ),
     },
-    { key: "role", header: "Role", width: 200, render: (r) => ROLE_LABEL[r.role] },
+    {
+      key: "role",
+      header: "Role",
+      width: 210,
+      render: (r) => {
+        const roleLabel = ROLE_LABEL[r.role];
+        if (r.role === "HORSE_OWNER") {
+          const owned = horses.filter(
+            (h) => h.ownerId === r.id || (h.ownerName && h.ownerName.toLowerCase().includes(r.fullName.toLowerCase()))
+          );
+          return (
+            <div>
+              <div style={{ fontWeight: 600 }}>{roleLabel}</div>
+              <Link
+                to="/horses"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  fontSize: "11px",
+                  color: owned.length > 0 ? "var(--brand)" : "var(--muted)",
+                  fontWeight: 600,
+                  marginTop: 2,
+                  textDecoration: "none",
+                }}
+                title={owned.length > 0 ? owned.map((h) => `${h.name} (${h.code})`).join(", ") : "No horses assigned yet"}
+              >
+                <span>🐴</span>
+                <span>{owned.length > 0 ? `${owned.length} horse${owned.length > 1 ? "s" : ""} at club` : "0 horses assigned"}</span>
+              </Link>
+            </div>
+          );
+        }
+        return <span style={{ fontWeight: 500 }}>{roleLabel}</span>;
+      },
+    },
     {
       key: "status",
       header: "Status",
@@ -237,18 +274,16 @@ export default function AccountListPage() {
               Reactivate
             </Button>
           )}
-          {r.status === "ACTIVE" && (
+          {r.status === "ACTIVE" && r.id !== me.id && (
             <Button
               tone="secondary"
               size="sm"
               icon="lock"
               disabled={busy}
               blockedReason={
-                r.id === me.id
-                  ? "You cannot lock your own account. Ask another Club Manager."
-                  : r.role === "CLUB_MANAGER" && activeManagers <= 1
-                    ? "The club must keep at least one active Club Manager."
-                    : undefined
+                r.role === "CLUB_MANAGER" && activeManagers <= 1
+                  ? "The club must keep at least one active Club Manager."
+                  : undefined
               }
               onClick={() => setDialog({ kind: "lock", target: r })}
             >
@@ -259,6 +294,7 @@ export default function AccountListPage() {
             Edit
           </Button>
           <Link to={`/accounts/${r.id}/permissions`} className={styles.link}>
+            <span style={{ fontSize: 13, marginRight: 2 }}>🛡️</span>
             Permissions
           </Link>
         </div>
@@ -285,8 +321,8 @@ export default function AccountListPage() {
     <>
       <PageHeader
         eyebrow="MANAGEMENT WORKSPACE"
-        title="Every account and what it may reach."
-        description="Approve requests, lock an account that must not sign in, and open the permission list of any account."
+        title="Account Management"
+        description="Manage club staff, horse owners, account approvals, and security access levels."
         showDate
       />
 

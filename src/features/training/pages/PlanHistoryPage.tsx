@@ -63,9 +63,9 @@ export default function PlanHistoryPage() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Lịch Sử Giáo Án & Tiến Trình Huấn Luyện (SC-2.09)</h1>
+          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Lịch Sử Giáo Án & Tiến Trình Huấn Luyện</h1>
           <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
-            Lưu trữ tổng kết các kỳ giáo án đã hoàn thành, so sánh chỉ số trước & sau chu kỳ huấn luyện (P2-06)
+            Lưu trữ tổng kết các kỳ giáo án đã hoàn thành, so sánh chỉ số trước & sau chu kỳ huấn luyện
           </p>
         </div>
 

@@ -127,15 +127,15 @@ export default function PlanListPage() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Danh Sách Giáo Án Huấn Luyện (SC-2.02)</h1>
+          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Danh Sách Giáo Án Huấn Luyện</h1>
           <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
-            Quản lý kế hoạch huấn luyện theo chu kỳ, giai đoạn bứt tốc và tích hợp kiểm tra khóa y tế (P2-06, P2-07)
+            Quản lý kế hoạch huấn luyện theo chu kỳ, giai đoạn bứt tốc và kiểm tra an toàn y tế
           </p>
         </div>
 
         {isTrainer && (
           <Button tone="primary" onClick={() => navigate("/training/plans/new")}>
-            + Lập giáo án mới (SC-2.03)
+            + Lập giáo án mới
           </Button>
         )}
       </div>
@@ -198,7 +198,7 @@ export default function PlanListPage() {
                       </div>
                       {plan.isLockedByMedical && (
                         <div style={{ fontSize: "0.75rem", color: "var(--danger)", marginTop: "0.25rem", fontWeight: 600 }}>
-                          🔒 Ngựa có Khóa y tế - Chặn bài tập nặng (P2-07)
+                          🔒 Ngựa có Khóa y tế - Chặn bài tập nặng
                         </div>
                       )}
                     </td>
