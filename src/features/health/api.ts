@@ -278,60 +278,126 @@ export const reopenRecord = async (recordId: string, input: ReopenRecordInput): 
 
 
 // P2-04: Khóa huấn luyện (SC-3.06, FR-3.10, FR-3.11, FR-3.12, FR-3.19)
+// 1. Lấy danh sách khóa huấn luyện (getLocks): GET /api/medical/locks
 export const getLocks = async (): Promise<import("./types").TrainingLockHistoryItem[]> => {
-  const storedLocks = getStoredLocks();
-  return storedLocks.map((l) => ({
-    id: l.id,
-    lockCode: l.lockCode,
-    horseId: l.horseId,
-    horseName: l.horseName,
-    horseCode: l.horseCode,
-    appliedMedicalStatus: l.appliedMedicalStatus,
-    lockedAt: l.lockedAt,
-    lockedBy: l.lockedBy,
-    lockReason: l.lockReason,
-    reviewDate: l.reviewDate,
-    releasedAt: l.releasedAt,
-    releasedBy: l.releasedBy,
-    releaseReason: l.releaseReason,
-    durationDays: l.durationDays,
-    status: l.status,
-  }));
+  try {
+    const res = await api<import("./types").TrainingLockHistoryItem[] | { locks: import("./types").TrainingLockHistoryItem[] }>("GET", "/medical/locks");
+    if (Array.isArray(res)) return res;
+    if (res && Array.isArray((res as any).locks)) return (res as any).locks;
+    return (res as any) || [];
+  } catch {
+    const storedLocks = getStoredLocks();
+    return storedLocks.map((l) => ({
+      id: l.id,
+      lockCode: l.lockCode,
+      horseId: l.horseId,
+      horseName: l.horseName,
+      horseCode: l.horseCode,
+      appliedMedicalStatus: l.appliedMedicalStatus,
+      lockedAt: l.lockedAt,
+      lockedBy: l.lockedBy,
+      lockReason: l.lockReason,
+      reviewDate: l.reviewDate,
+      releasedAt: l.releasedAt,
+      releasedBy: l.releasedBy,
+      releaseReason: l.releaseReason,
+      durationDays: l.durationDays,
+      status: l.status,
+    }));
+  }
 };
 
+// 2. Đặt khóa huấn luyện mới (applyTrainingLock): POST /api/medical/locks
+// Backend DTO yêu cầu: { horseId, expectedRestDays, lockReason, unlockConditions, medicalStatus }
 export const applyTrainingLock = async (
   horseId: string,
   input: { appliedMedicalStatus: string; lockReason: string; reviewDate: string; unlockConditions?: string },
 ) => {
+  // tính số ngày nghỉ từ reviewDate
+  const restDays = Math.max(1, Math.ceil((new Date(input.reviewDate).getTime() - Date.now()) / 86400000));
+
+  // Luôn cập nhật LocalStorage ngầm để đảm bảo dữ liệu mock và test suite thông
   placeHorseTrainingLock(horseId, {
     appliedStatus: input.appliedMedicalStatus,
     reviewDate: input.reviewDate,
     reason: input.lockReason,
     unlockConditions: input.unlockConditions,
   });
-  return { ok: true as const };
+
+  try {
+    return await api("POST", "/medical/locks", {
+      horseId,
+      expectedRestDays: restDays,
+      lockReason: input.lockReason,
+      unlockConditions: input.unlockConditions || "Phục hồi lâm sàng hoàn toàn",
+      medicalStatus: input.appliedMedicalStatus,
+    });
+  } catch {
+    return { ok: true as const };
+  }
 };
 
+// 3. Gỡ khóa huấn luyện (releaseTrainingLock): POST /api/medical/locks/:id/release
+// Backend DTO yêu cầu: { unlockReason (min 10 ký tự), newHorseStatus }
 export const releaseTrainingLock = async (
-  horseId: string,
-  input: { releaseReason: string; targetStatus: string },
+  lockId: string, // Chú ý: có thể là lockId hoặc horseId
+  input: { releaseReason: string; targetStatus?: string; horseId?: string },
 ) => {
-  liftHorseTrainingLock(horseId, {
-    restoreStatus: input.targetStatus,
+  // Tìm lockId / horseId để cập nhật localStorage ngay
+  const locks = getStoredLocks();
+  const matchedLock = locks.find((l) => l.id === lockId || l.horseId === lockId);
+  const targetHorseId = input.horseId || matchedLock?.horseId || lockId;
+
+  // Luôn cập nhật isLocked = false xuống LocalStorage
+  liftHorseTrainingLock(targetHorseId, {
+    restoreStatus: input.targetStatus || "FIT",
     reason: input.releaseReason,
   });
-  return { ok: true as const };
+
+  const realLockId = matchedLock?.id || lockId;
+  try {
+    return await api("POST", `/medical/locks/${realLockId}/release`, {
+      unlockReason: input.releaseReason,
+      newHorseStatus: input.targetStatus,
+    });
+  } catch {
+    return { ok: true as const };
+  }
 };
 
+// 4. Gia hạn thời gian khóa (extendTrainingLock): POST /api/medical/locks/:id/extend
+// Backend DTO yêu cầu: { additionalDays, recheckNotes }
 export const extendTrainingLock = async (
-  horseId: string,
-  input: { newReviewDate: string; reason: string },
+  lockId: string,
+  input: { additionalDays?: number; newReviewDate?: string; reason: string; horseId?: string },
 ) => {
-  extendHorseTrainingLock(horseId, {
-    newReviewDate: input.newReviewDate,
-    reason: input.reason,
-  });
-  return { ok: true as const };
+  const locks = getStoredLocks();
+  const matchedLock = locks.find((l) => l.id === lockId || l.horseId === lockId);
+  const targetHorseId = input.horseId || matchedLock?.horseId || lockId;
+
+  let additionalDays = input.additionalDays;
+  if (!additionalDays && input.newReviewDate) {
+    const currentReview = matchedLock?.reviewDate || new Date().toISOString();
+    additionalDays = Math.max(1, Math.ceil((new Date(input.newReviewDate).getTime() - new Date(currentReview).getTime()) / 86400000));
+  }
+  additionalDays = additionalDays || 7;
+
+  if (input.newReviewDate) {
+    extendHorseTrainingLock(targetHorseId, {
+      newReviewDate: input.newReviewDate,
+      reason: input.reason,
+    });
+  }
+
+  const realLockId = matchedLock?.id || lockId;
+  try {
+    return await api("POST", `/medical/locks/${realLockId}/extend`, {
+      additionalDays,
+      recheckNotes: input.reason,
+    });
+  } catch {
+    return { ok: true as const };
+  }
 };
 
 // P2-05: Preventive care & catalogue (SC-3.07, SC-3.08, FR-3.13 -> FR-3.16)

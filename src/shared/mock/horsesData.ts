@@ -23,9 +23,9 @@ export interface HerdHorse {
   assignedGroomId?: string;
 }
 
-const HORSES_STORAGE_KEY = "equiflow.herd.horses.v4";
-const INJURIES_STORAGE_PREFIX = "equiflow.injuries.v4.";
-const LOCKS_STORAGE_KEY = "equiflow.locks.v4";
+const HORSES_STORAGE_KEY = "equiflow.herd.horses.v5";
+const INJURIES_STORAGE_PREFIX = "equiflow.injuries.v5.";
+const LOCKS_STORAGE_KEY = "equiflow.locks.v5";
 
 export interface StoredTrainingLock {
   id: string;
@@ -46,16 +46,17 @@ export interface StoredTrainingLock {
   status: "ACTIVE" | "RELEASED";
 }
 
-// Purge old versions to ensure zero default horses
+// Purge all legacy and cached mock data to ensure zero default horses
 if (typeof window !== "undefined") {
   try {
-    localStorage.removeItem("equiflow.herd.horses.v1");
-    localStorage.removeItem("equiflow.herd.horses.v2");
-    localStorage.removeItem("equiflow.herd.horses.v3");
-    // Also clean up legacy injuries
     for (let i = localStorage.length - 1; i >= 0; i--) {
       const k = localStorage.key(i);
-      if (k && (k.startsWith("equiflow.injuries.v1.") || k.startsWith("equiflow.injuries.v2.") || k.startsWith("equiflow.injuries.v3."))) {
+      if (
+        k &&
+        (k.startsWith("equiflow.herd.") ||
+          k.startsWith("equiflow.locks.") ||
+          k.startsWith("equiflow.injuries."))
+      ) {
         localStorage.removeItem(k);
       }
     }
@@ -64,10 +65,15 @@ if (typeof window !== "undefined") {
   }
 }
 
+export const DEFAULT_HERD_HORSES: HerdHorse[] = [];
+
 export function getStoredHorses(): HerdHorse[] {
   try {
     const raw = localStorage.getItem(HORSES_STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as HerdHorse[];
+    if (raw) {
+      const parsed = JSON.parse(raw) as HerdHorse[];
+      if (Array.isArray(parsed)) return parsed;
+    }
   } catch {
     // fallback
   }
@@ -81,6 +87,7 @@ export function saveStoredHorses(horses: HerdHorse[]): void {
     // localStorage unavailable
   }
 }
+
 
 export function addStoredHorse(horse: HerdHorse): void {
   const current = getStoredHorses();
@@ -162,6 +169,7 @@ export function getInjuriesForHorse(horseId: string): any[] {
   }
   return [];
 }
+
 
 export function saveInjuriesForHorse(horseId: string, injuries: any[]): void {
   try {

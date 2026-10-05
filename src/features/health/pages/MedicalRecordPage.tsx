@@ -586,9 +586,11 @@ export default function MedicalRecordPage() {
             await loadData();
           }}
           onLiftLock={async (dto) => {
-            await releaseTrainingLock(horse.id, {
+            const lockId = horse.activeLock?.id || horse.id;
+            await releaseTrainingLock(lockId, {
               targetStatus: dto.restoreStatus,
               releaseReason: dto.reason,
+              horseId: horse.id,
             });
             toast.show(
               `Training lock lifted successfully. Status restored to ${dto.restoreStatus === "FIT" ? "Fit for Training" : "Under Observation"}`,
@@ -597,9 +599,11 @@ export default function MedicalRecordPage() {
             await loadData();
           }}
           onExtendLock={async (dto) => {
-            await extendTrainingLock(horse.id, {
+            const lockId = horse.activeLock?.id || horse.id;
+            await extendTrainingLock(lockId, {
               newReviewDate: dto.newReviewDate,
               reason: dto.reason,
+              horseId: horse.id,
             });
             toast.show(`Training lock review date extended to ${dto.newReviewDate}`, "ok");
             await loadData();

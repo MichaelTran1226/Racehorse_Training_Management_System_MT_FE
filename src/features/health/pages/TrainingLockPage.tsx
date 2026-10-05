@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/shared/components/ui/Button";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Icon } from "@/shared/components/ui/Icon";
@@ -42,12 +42,6 @@ export default function TrainingLockPage() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  const handleCopyCode = (e: React.MouseEvent, code: string) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(code);
-    toast.show(`Copied ${code} to clipboard`, "ok");
-  };
 
   const loadLocks = useCallback(async () => {
     try {
@@ -971,9 +965,10 @@ export default function TrainingLockPage() {
           }}
           onLiftLock={async (dto) => {
             if (!selectedLock) return;
-            await healthApi.releaseTrainingLock(selectedLock.horseId, {
+            await healthApi.releaseTrainingLock(selectedLock.id, {
               targetStatus: dto.restoreStatus,
               releaseReason: dto.reason,
+              horseId: selectedLock.horseId,
             });
             toast.show(
               `Training lock lifted successfully. Horse restored to ${dto.restoreStatus === "FIT" ? "Fit for Training" : "Under Observation"}`,
@@ -985,9 +980,10 @@ export default function TrainingLockPage() {
           }}
           onExtendLock={async (dto) => {
             if (!selectedLock) return;
-            await healthApi.extendTrainingLock(selectedLock.horseId, {
+            await healthApi.extendTrainingLock(selectedLock.id, {
               newReviewDate: dto.newReviewDate,
               reason: dto.reason,
+              horseId: selectedLock.horseId,
             });
             toast.show(`Training lock review date extended to ${dto.newReviewDate}`, "ok");
             setModalMode(null);

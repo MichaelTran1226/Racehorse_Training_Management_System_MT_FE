@@ -13,6 +13,12 @@ import { audit, getDb, saveDb, toPublic } from "@/shared/mock/db";
 import type { Db, OtpPurpose, OtpRecord } from "@/shared/mock/db";
 import type { Account, NotifyKey, PermissionKey, PermissionMap, Role } from "@/shared/types/auth";
 import { buildMockProfile, getMockMedicalStore, saveMockMedicalStore } from "@/shared/mock/medicalData";
+import {
+  getStoredLocks,
+  placeHorseTrainingLock,
+  liftHorseTrainingLock,
+  extendHorseTrainingLock,
+} from "@/shared/mock/horsesData";
 import type { FollowUpItem, MedicalRecord, PrescriptionItem, TreatmentPhase } from "@/features/health/types";
 
 const OTP_CODE = "123456";
@@ -960,6 +966,86 @@ const routes: Route[] = [
       rec.status = "OPEN";
       saveMockMedicalStore(store);
       return { record: rec };
+    },
+  },
+
+  // ===== TRAINING LOCKS ROUTES (TASK P2-04 / DL-3.01 -> DL-3.03) =====
+  {
+    method: "GET",
+    pattern: /^\/medical\/locks$/,
+    handler() {
+      const stored = getStoredLocks();
+      return stored.map((l) => ({
+        id: l.id,
+        lockCode: l.lockCode,
+        horseId: l.horseId,
+        horseName: l.horseName,
+        horseCode: l.horseCode,
+        appliedMedicalStatus: l.appliedMedicalStatus,
+        lockedAt: l.lockedAt,
+        lockedBy: l.lockedBy,
+        lockReason: l.lockReason,
+        reviewDate: l.reviewDate,
+        releasedAt: l.releasedAt,
+        releasedBy: l.releasedBy,
+        releaseReason: l.releaseReason,
+        durationDays: l.durationDays,
+        status: l.status,
+      }));
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/medical\/locks$/,
+    handler({ body }) {
+      const horseId = String(body.horseId);
+      const expectedDays = Number(body.expectedRestDays || 7);
+      const reviewDate = new Date(Date.now() + expectedDays * 86400000).toISOString().split("T")[0];
+      const lock = placeHorseTrainingLock(horseId, {
+        appliedStatus: String(body.medicalStatus || "INJURED"),
+        reviewDate,
+        reason: String(body.lockReason || "Under protective clinical training suspension"),
+        unlockConditions: body.unlockConditions ? String(body.unlockConditions) : undefined,
+      });
+      return { ok: true, lock };
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/medical\/locks\/([^/]+)\/release$/,
+    handler({ params, body }) {
+      const lockId = params[0];
+      const locks = getStoredLocks();
+      const matched = locks.find((l) => l.id === lockId || l.horseId === lockId);
+      const horseId = matched?.horseId || lockId;
+      const releaseReason = String(body.unlockReason || body.releaseReason || "Fit for normal activity");
+      const targetStatus = String(body.newHorseStatus || body.targetStatus || "FIT");
+
+      const releasedLock = liftHorseTrainingLock(horseId, {
+        restoreStatus: targetStatus,
+        reason: releaseReason,
+      });
+      return { ok: true, lock: releasedLock };
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/medical\/locks\/([^/]+)\/extend$/,
+    handler({ params, body }) {
+      const lockId = params[0];
+      const locks = getStoredLocks();
+      const matched = locks.find((l) => l.id === lockId || l.horseId === lockId);
+      const horseId = matched?.horseId || lockId;
+      const additionalDays = Number(body.additionalDays || 7);
+      const reason = String(body.recheckNotes || body.reason || "Extended recovery needed");
+      const currentReview = matched?.reviewDate || new Date().toISOString().split("T")[0];
+      const newReviewDate = new Date(new Date(currentReview).getTime() + additionalDays * 86400000).toISOString().split("T")[0];
+
+      const extended = extendHorseTrainingLock(horseId, {
+        newReviewDate,
+        reason,
+      });
+      return { ok: true, lock: extended };
     },
   },
 ];
