@@ -21,7 +21,6 @@ export default function SessionMetricsPage() {
 
   const [activeTab, setActiveTab] = useState<string>("RECORD");
   const [metrics, setMetrics] = useState<FitnessMetricPoint[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
 
   // Form Record Session Result (SC-2.06)
   const [selectedSessionId, setSelectedSessionId] = useState<string>("ses-102");
@@ -41,19 +40,31 @@ export default function SessionMetricsPage() {
 
   const loadData = useCallback(async () => {
     try {
-      setLoading(true);
       const data = await trainingApi.getFitnessMetrics("horse-1");
       setMetrics(data);
     } catch {
       toast.show("Không thể tải biểu đồ thể lực", "danger");
-    } finally {
-      setLoading(false);
     }
   }, [toast]);
 
   useEffect(() => {
-    void loadData();
-  }, [loadData]);
+    let ignore = false;
+    trainingApi
+      .getFitnessMetrics("horse-1")
+      .then((data) => {
+        if (!ignore) {
+          setMetrics(data);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          toast.show("Không thể tải biểu đồ thể lực", "danger");
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [toast]);
 
   const handleSubmitResult = async () => {
     try {

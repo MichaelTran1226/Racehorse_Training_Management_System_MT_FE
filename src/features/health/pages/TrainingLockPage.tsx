@@ -45,7 +45,6 @@ export default function TrainingLockPage() {
 
   const loadLocks = useCallback(async () => {
     try {
-      setLoading(true);
       const data = await healthApi.getLocks();
       setLocks(data);
     } catch {
@@ -56,8 +55,25 @@ export default function TrainingLockPage() {
   }, [toast]);
 
   useEffect(() => {
-    void loadLocks();
-  }, [loadLocks]);
+    let ignore = false;
+    healthApi
+      .getLocks()
+      .then((data) => {
+        if (!ignore) {
+          setLocks(data);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          toast.show("Failed to load training locks", "danger");
+          setLoading(false);
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [toast]);
 
   useEffect(() => {
     const handleSync = () => {

@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
-import { Card } from "@/shared/components/ui/Card";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Field } from "@/shared/components/form/Field";
 import { Modal } from "@/shared/components/ui/Modal";
@@ -27,7 +26,6 @@ export default function AlertListPage() {
 
   const loadAlerts = useCallback(async () => {
     try {
-      setLoading(true);
       const data = await trainingApi.getAlerts();
       setAlerts(data);
     } catch {
@@ -38,8 +36,25 @@ export default function AlertListPage() {
   }, [toast]);
 
   useEffect(() => {
-    void loadAlerts();
-  }, [loadAlerts]);
+    let ignore = false;
+    trainingApi
+      .getAlerts()
+      .then((data) => {
+        if (!ignore) {
+          setAlerts(data);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          toast.show("Không thể tải danh sách cảnh báo", "danger");
+          setLoading(false);
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [toast]);
 
   const handleConfirmAck = async () => {
     if (!selectedAlert || !vetNotes.trim()) return;

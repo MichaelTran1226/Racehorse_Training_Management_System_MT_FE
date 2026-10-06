@@ -129,7 +129,6 @@ export default function CareSchedulePage() {
 
   const loadData = useCallback(async () => {
     try {
-      setLoading(true);
       const data = await healthApi.getCareSchedules();
       setItems(data);
     } catch {
@@ -140,8 +139,25 @@ export default function CareSchedulePage() {
   }, [toast]);
 
   useEffect(() => {
-    void loadData();
-  }, [loadData]);
+    let ignore = false;
+    healthApi
+      .getCareSchedules()
+      .then((data) => {
+        if (!ignore) {
+          setItems(data);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          toast.show("Unable to load preventive care schedules", "danger");
+          setLoading(false);
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [toast]);
 
   useEffect(() => {
     const handleSync = () => {

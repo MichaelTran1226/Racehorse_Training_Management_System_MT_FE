@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/shared/components/ui/Button";
-import { Card } from "@/shared/components/ui/Card";
 import { Input } from "@/shared/components/form/Input";
 import { Tabs } from "@/shared/components/ui/Tabs";
 import { Modal } from "@/shared/components/ui/Modal";
@@ -31,7 +30,7 @@ export default function HerdHealthPage() {
   const toast = useToast();
   const isVet = user?.role === "VETERINARIAN" || user?.role === "CLUB_MANAGER";
 
-  const [horses, setHorses] = useState<HerdHorse[]>([]);
+  const [horses, setHorses] = useState<HerdHorse[]>(() => getStoredHorses());
   const [filterGroup, setFilterGroup] = useState<string>("ALL");
   const [search, setSearch] = useState<string>("");
   const [searchSuggestionsOpen, setSearchSuggestionsOpen] = useState(false);
@@ -55,7 +54,13 @@ export default function HerdHealthPage() {
   const [showClearAllModal, setShowClearAllModal] = useState(false);
 
   useEffect(() => {
-    setHorses(getStoredHorses());
+    const handleSync = () => setHorses(getStoredHorses());
+    window.addEventListener("horsesUpdated", handleSync);
+    window.addEventListener("storage", handleSync);
+    return () => {
+      window.removeEventListener("horsesUpdated", handleSync);
+      window.removeEventListener("storage", handleSync);
+    };
   }, []);
 
   useEffect(() => {

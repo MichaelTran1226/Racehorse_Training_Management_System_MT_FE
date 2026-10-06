@@ -60,7 +60,6 @@ export default function RecordDetailPage() {
 
   const fetchDetail = useCallback(async () => {
     if (!id) return;
-    setLoading(true);
     try {
       const res = await getRecordDetail(id);
       setRecord(res.record);
@@ -72,8 +71,25 @@ export default function RecordDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    void fetchDetail();
-  }, [fetchDetail]);
+    if (!id) return;
+    let ignore = false;
+    getRecordDetail(id)
+      .then((res) => {
+        if (!ignore) {
+          setRecord(res.record);
+          setLoading(false);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!ignore) {
+          setError(err instanceof Error ? err.message : "Unable to load medical record details.");
+          setLoading(false);
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [id]);
 
   async function handleDeleteDraft() {
     if (!record || !window.confirm(`Delete draft medical record ${record.recordNumber}? This action cannot be undone.`)) {

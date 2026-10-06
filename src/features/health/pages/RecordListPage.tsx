@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
@@ -30,27 +30,33 @@ export default function RecordListPage() {
 
   const isVet = user?.role === "VETERINARIAN" || user?.role === "CLUB_MANAGER";
 
-  const fetchRecords = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await listRecords({
-        search: search.trim() || undefined,
-        status: status || undefined,
-        page,
-        limit: 15,
-      });
-      setRecords(res.records);
-      setTotal(res.total);
-    } catch {
-      setRecords([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [search, status, page]);
+
 
   useEffect(() => {
-    void fetchRecords();
-  }, [fetchRecords]);
+    let ignore = false;
+    listRecords({
+      search: search.trim() || undefined,
+      status: status || undefined,
+      page,
+      limit: 15,
+    })
+      .then((res) => {
+        if (!ignore) {
+          setRecords(res.records);
+          setTotal(res.total);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setRecords([]);
+          setLoading(false);
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [search, status, page]);
 
   return (
     <div className={styles.container}>

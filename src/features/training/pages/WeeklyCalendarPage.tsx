@@ -46,7 +46,6 @@ export default function WeeklyCalendarPage() {
 
   const loadSessions = useCallback(async () => {
     try {
-      setLoading(true);
       const data = await trainingApi.getSessions();
       setSessions(data);
     } catch {
@@ -57,8 +56,25 @@ export default function WeeklyCalendarPage() {
   }, [toast]);
 
   useEffect(() => {
-    void loadSessions();
-  }, [loadSessions]);
+    let ignore = false;
+    trainingApi
+      .getSessions()
+      .then((data) => {
+        if (!ignore) {
+          setSessions(data);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          toast.show("Không thể tải lịch tập huấn luyện", "danger");
+          setLoading(false);
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [toast]);
 
   const handleRestoreSession = async (sessionId: string) => {
     try {

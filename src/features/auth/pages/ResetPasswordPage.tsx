@@ -20,7 +20,7 @@ import styles from "./AuthPages.module.css";
 // Cũng là bước cuối của Accept Invite (flow.kind = "invite"): nhân viên đặt mật khẩu lần đầu.
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
-  const [flow, setFlow] = useState<ResetFlow | null | undefined>(undefined);
+  const [flow] = useState<ResetFlow | null>(() => resetFlow.get());
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [errors, setErrors] = useState<{ password?: string; confirm?: string }>({});
@@ -29,11 +29,9 @@ export default function ResetPasswordPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    const stored = resetFlow.get();
-    setFlow(stored);
     // Chưa qua bước nhập OTP thì không vào được màn này.
-    if (!stored) navigate("/forgot-password", { replace: true });
-  }, [navigate]);
+    if (!flow) navigate("/forgot-password", { replace: true });
+  }, [flow, navigate]);
 
   if (!flow) return null;
   const invite = flow.kind === "invite";

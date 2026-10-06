@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
-import { Card } from "@/shared/components/ui/Card";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Field } from "@/shared/components/form/Field";
 import { Input } from "@/shared/components/form/Input";
@@ -31,7 +30,6 @@ export default function TrialRunsPage() {
 
   const loadTrials = useCallback(async () => {
     try {
-      setLoading(true);
       const data = await trainingApi.getTrialRuns();
       setTrials(data);
     } catch {
@@ -42,8 +40,25 @@ export default function TrialRunsPage() {
   }, [toast]);
 
   useEffect(() => {
-    void loadTrials();
-  }, [loadTrials]);
+    let ignore = false;
+    trainingApi
+      .getTrialRuns()
+      .then((data) => {
+        if (!ignore) {
+          setTrials(data);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          toast.show("Không thể tải danh sách chạy thử", "danger");
+          setLoading(false);
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [toast]);
 
   const handleCreateTrial = async () => {
     try {

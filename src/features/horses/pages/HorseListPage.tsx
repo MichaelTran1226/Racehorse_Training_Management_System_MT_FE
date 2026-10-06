@@ -102,7 +102,6 @@ export default function HorseListPage() {
   }
 
   const loadData = useCallback(() => {
-    setLoading(true);
     setError("");
 
     const [sortBy, sortOrder] = querySort.split("_") as [string, "asc" | "desc"];
@@ -131,8 +130,37 @@ export default function HorseListPage() {
   }, [querySearch, queryStatus, queryLock, queryGender, querySort, queryPage, queryLimit]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    let ignore = false;
+    const [sortBy, sortOrder] = querySort.split("_") as [string, "asc" | "desc"];
+    const filter: HorseListFilter = {
+      search: querySearch || undefined,
+      status: queryStatus !== "ALL" ? (queryStatus as HorseStatus) : undefined,
+      isMedicalLocked: queryLock !== "ALL" ? queryLock : undefined,
+      gender: queryGender !== "ALL" ? queryGender : undefined,
+      sortBy,
+      sortOrder,
+      page: queryPage,
+      limit: queryLimit,
+    };
+
+    getHorses(filter)
+      .then((res) => {
+        if (!ignore) {
+          setHorses(res.items);
+          setTotal(res.total);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!ignore) {
+          setError(err.message || "Không thể tải danh sách ngựa. Vui lòng thử lại.");
+          setLoading(false);
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [querySearch, queryStatus, queryLock, queryGender, querySort, queryPage, queryLimit]);
 
   function resetFilters() {
     setSearchInput("");

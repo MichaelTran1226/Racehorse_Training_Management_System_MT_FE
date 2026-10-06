@@ -43,7 +43,6 @@ export default function PlanListPage() {
 
   const loadPlans = useCallback(async () => {
     try {
-      setLoading(true);
       const data = await trainingApi.getPlans();
       setPlans(data);
     } catch {
@@ -54,8 +53,25 @@ export default function PlanListPage() {
   }, [toast]);
 
   useEffect(() => {
-    void loadPlans();
-  }, [loadPlans]);
+    let ignore = false;
+    trainingApi
+      .getPlans()
+      .then((data) => {
+        if (!ignore) {
+          setPlans(data);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          toast.show("Không thể tải danh sách giáo án huấn luyện", "danger");
+          setLoading(false);
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [toast]);
 
   const handleActivate = async (plan: TrainingPlan) => {
     try {

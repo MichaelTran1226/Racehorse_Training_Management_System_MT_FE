@@ -55,7 +55,6 @@ export default function MedicalRecordPage() {
 
   const loadData = useCallback(async () => {
     if (!id) return;
-    setLoading(true);
     setError(null);
     try {
       const res = await getHorseMedicalProfile(id);
@@ -69,8 +68,27 @@ export default function MedicalRecordPage() {
   }, [id]);
 
   useEffect(() => {
-    void loadData();
-  }, [loadData]);
+    if (!id) return;
+    let ignore = false;
+    getHorseMedicalProfile(id)
+      .then((res) => {
+        if (!ignore) {
+          setProfile(res);
+          setObservations(res.observations || []);
+          setError(null);
+          setLoading(false);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!ignore) {
+          setError(err instanceof Error ? err.message : "Unable to load horse medical profile.");
+          setLoading(false);
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [id]);
 
   // Load observations with filter
   async function handleFilterObservations(urgency: string) {

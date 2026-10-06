@@ -43,7 +43,6 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
   useBreadcrumbTail(account?.fullName);
 
   const load = useCallback(async () => {
-    setState("loading");
     try {
       const res = await getAccount(accountId);
       setAccount(res.account);
@@ -55,8 +54,24 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
   }, [accountId]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    let ignore = false;
+    getAccount(accountId)
+      .then((res) => {
+        if (!ignore) {
+          setAccount(res.account);
+          setDraft(res.account.permissions);
+          setState("ready");
+        }
+      })
+      .catch((err) => {
+        if (!ignore) {
+          setState(err instanceof ApiError && err.code === "NOT_FOUND" ? "missing" : "error");
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [accountId]);
 
   const changes = useMemo(() => {
     if (!account || !draft) return { granted: 0, revoked: 0 };

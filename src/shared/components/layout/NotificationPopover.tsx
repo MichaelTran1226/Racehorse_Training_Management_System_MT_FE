@@ -31,10 +31,7 @@ export function NotificationPopover({
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    if (!open) {
-      setMenuOpen(false);
-      return;
-    }
+    if (!open) return;
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as Node;
       if (triggerRef?.current && triggerRef.current.contains(target)) {

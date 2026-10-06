@@ -70,7 +70,6 @@ export default function AccountListPage() {
   const horses = useMemo(() => getStoredHorses(), []);
 
   const load = useCallback(async () => {
-    setAccounts(null);
     setLoadError(null);
     try {
       const res = await listAccounts();
@@ -82,8 +81,23 @@ export default function AccountListPage() {
   }, []);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    let ignore = false;
+    listAccounts()
+      .then((res) => {
+        if (!ignore) {
+          setAccounts(res.accounts);
+          setLoadError(null);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setLoadError(formatTime(Date.now()));
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const replace = (updated: PublicAccount) =>
     setAccounts((list) => (list ? list.map((a) => (a.id === updated.id ? updated : a)) : list));

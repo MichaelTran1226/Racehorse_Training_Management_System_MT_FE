@@ -31,7 +31,7 @@ export default function PlanWizardPage() {
   const [notes, setNotes] = useState<string>("");
 
   // Phases
-  const [phases, setPhases] = useState<TrainingPhase[]>([
+  const [phases, setPhases] = useState<TrainingPhase[]>(() => [
     {
       id: "ph-1",
       phaseOrder: 1,

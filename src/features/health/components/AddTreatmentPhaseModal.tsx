@@ -23,8 +23,8 @@ interface AddTreatmentPhaseModalProps {
 
 export function AddTreatmentPhaseModal({ onClose, onSubmit }: AddTreatmentPhaseModalProps) {
   const [phaseName, setPhaseName] = useState("");
-  const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
-  const [endDate, setEndDate] = useState(
+  const [startDate, setStartDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [endDate, setEndDate] = useState(() =>
     new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
   );
   const [target, setTarget] = useState("");

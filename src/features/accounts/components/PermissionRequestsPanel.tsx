@@ -21,17 +21,32 @@ export function PermissionRequestsPanel() {
   const [busyId, setBusyId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
-    setFailed(false);
     try {
       setRequests((await listPermissionRequests()).requests);
+      setFailed(false);
     } catch {
       setFailed(true);
     }
   }, []);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    let ignore = false;
+    listPermissionRequests()
+      .then((res) => {
+        if (!ignore) {
+          setRequests(res.requests);
+          setFailed(false);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setFailed(true);
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   async function resolve(request: PermissionRequest, status: "GRANTED" | "DISMISSED") {
     setBusyId(request.id);
