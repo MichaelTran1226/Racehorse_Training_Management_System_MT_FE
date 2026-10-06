@@ -125,6 +125,7 @@ export interface InjuryItem {
 
 export interface PreventiveCareItem {
   id: string;
+  typeCatalogId?: string;
   horseId: string;
   horseName?: string;
   horseCode?: string;

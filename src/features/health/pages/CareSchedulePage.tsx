@@ -193,6 +193,8 @@ export default function CareSchedulePage() {
         administeredBy: adminBy,
         nextDueDate: nextDue,
         notes,
+        typeCatalogId: selectedCare.typeCatalogId,
+        horseId: selectedCare.actualHorseId || getHorseId(selectedCare),
       });
       toast.show(`Recorded completion: ${selectedCare.type}`, "ok");
       setSelectedCare(null);

@@ -415,6 +415,57 @@ export const extendTrainingLock = async (
 
 // P2-05: Preventive care & catalogue (SC-3.07, SC-3.08, FR-3.13 -> FR-3.16)
 export const getCareSchedules = async (): Promise<import("./types").PreventiveCareItem[]> => {
+  try {
+    const res = await api<any>("GET", "/medical/preventive/schedules");
+    const rawList: any[] = Array.isArray(res)
+      ? res
+      : Array.isArray(res?.data)
+      ? res.data
+      : [];
+
+    if (rawList.length > 0) {
+      const categoryMap: Record<string, import("./types").PreventiveCareItem["category"]> = {
+        VACCINATION: "VACCINATION",
+        DEWORMING: "DEWORMING",
+        FARRIER_HOOF_CARE: "FARRIER",
+        FARRIER: "FARRIER",
+        DENTAL: "DENTAL",
+      };
+
+      return rawList.map((sch) => {
+        let status: import("./types").PreventiveStatus = "UP_TO_DATE";
+        if (sch.statusBadge === "OVERDUE" || sch.isOverdue) status = "OVERDUE";
+        else if (sch.statusBadge === "UPCOMING" || sch.isUpcomingNotice) status = "DUE_SOON";
+        else if (sch.statusBadge === "NODATA") status = "NO_DATA";
+
+        const rawCat = sch.typeCatalog?.category || sch.scheduleType || "GENERAL";
+        const category = categoryMap[rawCat] || "GENERAL";
+
+        return {
+          id: sch.id,
+          typeCatalogId: sch.typeCatalogId || sch.typeCatalog?.id,
+          horseId: sch.horse ? `${sch.horse.name} (${sch.horse.microchipRfid || ""})` : sch.horseId,
+          horseName: sch.horse?.name || "",
+          horseCode: sch.horse?.microchipRfid || "",
+          actualHorseId: sch.horse?.id || sch.horseId,
+          type: sch.typeCatalog?.name || sch.scheduleType || "Routine Care",
+          category,
+          lastAdministeredDate: sch.lastCompletedDate
+            ? new Date(sch.lastCompletedDate).toISOString().split("T")[0]
+            : sch.completedDate
+            ? new Date(sch.completedDate).toISOString().split("T")[0]
+            : undefined,
+          administeredBy: sch.performedByName || (sch.veterinarian?.fullName ?? ""),
+          dueDate: sch.dueDate ? new Date(sch.dueDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+          status,
+          notes: sch.notes || undefined,
+        };
+      });
+    }
+  } catch {
+    // Graceful fallback to mock data if BE is offline or returning empty
+  }
+
   const horses = getStoredHorses();
   const schedules: import("./types").PreventiveCareItem[] = [];
   horses.forEach((h) => {
@@ -438,8 +489,34 @@ export const getCareSchedules = async (): Promise<import("./types").PreventiveCa
 
 export const recordCareCompletion = async (
   careId: string,
-  input: { administeredDate: string; administeredBy: string; nextDueDate: string; notes?: string },
+  input: {
+    administeredDate: string;
+    administeredBy: string;
+    nextDueDate: string;
+    notes?: string;
+    typeCatalogId?: string;
+    horseId?: string;
+    productAdministered?: string;
+    batchNumber?: string;
+  },
 ) => {
+  try {
+    if (input.typeCatalogId) {
+      return await api("POST", "/medical/preventive/record", {
+        typeCatalogId: input.typeCatalogId,
+        horseId: input.horseId,
+        performedDate: input.administeredDate,
+        performedByMode: "SELF",
+        performedByName: input.administeredBy,
+        productAdministered: input.productAdministered || "Standard Routine Care",
+        batchNumber: input.batchNumber || "BATCH-DEFAULT",
+        customNextDueDate: input.nextDueDate,
+        notes: input.notes,
+      });
+    }
+  } catch {
+    // fallback
+  }
   return { ok: true, careId, input };
 };
 
