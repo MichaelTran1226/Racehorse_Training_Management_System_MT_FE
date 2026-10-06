@@ -126,6 +126,9 @@ export interface InjuryItem {
 export interface PreventiveCareItem {
   id: string;
   horseId: string;
+  horseName?: string;
+  horseCode?: string;
+  actualHorseId?: string;
   type: string;
   category: "VACCINATION" | "DEWORMING" | "FARRIER" | "DENTAL" | "GENERAL";
   lastAdministeredDate?: string;

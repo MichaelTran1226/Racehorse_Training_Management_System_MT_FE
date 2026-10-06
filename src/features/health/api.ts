@@ -421,6 +421,9 @@ export const getCareSchedules = async (): Promise<import("./types").PreventiveCa
     schedules.push({
       id: `care-${h.id}-vax`,
       horseId: `${h.name} (${h.code})`,
+      horseName: h.name,
+      horseCode: h.code,
+      actualHorseId: h.id,
       type: "Equine Influenza Vaccination",
       category: "VACCINATION",
       lastAdministeredDate: "2026-04-05",

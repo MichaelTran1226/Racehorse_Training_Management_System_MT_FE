@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { getStoredHorses } from "@/shared/mock/horsesData";
 import { Button } from "@/shared/components/ui/Button";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Field } from "@/shared/components/form/Field";
@@ -64,9 +65,25 @@ const STATUS_BADGES: Record<
 };
 
 export default function CareSchedulePage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const toast = useToast();
   const isVet = user?.role === "VETERINARIAN" || user?.role === "CLUB_MANAGER";
+
+  const getHorseId = (item: PreventiveCareItem): string => {
+    if (item.actualHorseId) return item.actualHorseId;
+    const match = item.id.match(/^care-(.+)-vax$/);
+    if (match) return match[1];
+    const horses = getStoredHorses();
+    const found = horses.find(
+      (h) =>
+        h.id === item.horseId ||
+        (item.horseName && h.name === item.horseName) ||
+        item.horseId.includes(h.name) ||
+        (h.code && item.horseId.includes(h.code))
+    );
+    return found ? found.id : item.horseId;
+  };
 
   const [activeTab, setActiveTab] = useState<string>("ALL");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
@@ -187,6 +204,8 @@ export default function CareSchedulePage() {
     const matchesSearch =
       !q ||
       item.horseId.toLowerCase().includes(q) ||
+      (item.horseName && item.horseName.toLowerCase().includes(q)) ||
+      (item.horseCode && item.horseCode.toLowerCase().includes(q)) ||
       item.type.toLowerCase().includes(q) ||
       (item.notes && item.notes.toLowerCase().includes(q));
 
@@ -1004,9 +1023,11 @@ export default function CareSchedulePage() {
                   return (
                     <tr
                       key={item.id}
+                      onClick={() => navigate(`/medical/horses/${getHorseId(item)}`)}
                       style={{
                         borderBottom: "1px solid #f2ede8",
                         transition: "background 0.12s ease",
+                        cursor: "pointer",
                       }}
                       onMouseEnter={(e) => (e.currentTarget.style.background = "#faf7f4")}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
@@ -1038,23 +1059,23 @@ export default function CareSchedulePage() {
                       </td>
 
                       {/* 2. Horse */}
-                      <td style={{ padding: "0.75rem 0.45rem", verticalAlign: "middle" }}>
-                        <Link
-                          to={`/medical/records`}
+                      <td style={{ padding: "0.75rem 0.45rem", verticalAlign: "middle", whiteSpace: "nowrap" }}>
+                        <span
                           style={{
-                            fontWeight: 600,
-                            fontSize: "0.82rem",
-                            color: "#731b24",
-                            textDecoration: "none",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 4,
+                            fontWeight: 700,
+                            fontSize: "0.84rem",
+                            color: "#7c1a22",
+                            display: "block",
+                            lineHeight: 1.25,
                           }}
-                          onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
-                          onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
                         >
-                          {item.horseId}
-                        </Link>
+                          {item.horseName || item.horseId.replace(/\s*\([^)]*\)/, "")}
+                        </span>
+                        {(item.horseCode || item.horseId.includes("(")) && (
+                          <div style={{ fontSize: "0.74rem", color: "#7a726d", marginTop: 2, fontWeight: 500 }}>
+                            {item.horseCode ? `(${item.horseCode})` : (item.horseId.match(/\([^)]*\)/)?.[0] || "")}
+                          </div>
+                        )}
                       </td>
 
                       {/* 3. Category */}
@@ -1164,15 +1185,20 @@ export default function CareSchedulePage() {
                       {/* 8. Actions */}
                       {isVet && (
                         <td
+                          onClick={(e) => e.stopPropagation()}
                           style={{
                             padding: "0.75rem 0.85rem 0.75rem 0.45rem",
                             verticalAlign: "middle",
                             whiteSpace: "nowrap",
+                            cursor: "default",
                           }}
                         >
                           <button
                             type="button"
-                            onClick={() => handleOpenCompleteModal(item)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenCompleteModal(item);
+                            }}
                             style={{
                               display: "inline-flex",
                               alignItems: "center",
