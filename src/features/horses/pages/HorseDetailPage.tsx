@@ -11,6 +11,7 @@ import { HEALTH_STATUS } from "@/shared/lib/status";
 import type { HealthStatus } from "@/shared/types/enums";
 import { getHorseById } from "../api";
 import type { Horse } from "../types";
+import { ChangeStatusDialog } from "../components/ChangeStatusDialog";
 
 export default function HorseDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -115,6 +116,11 @@ export default function HorseDetailPage() {
                 <Button tone="secondary">Sửa hồ sơ</Button>
               </Link>
             )}
+
+            <ChangeStatusDialog 
+              horse={horse} 
+              onSuccess={(updatedHorse: Horse) => setHorse({ ...horse, status: updatedHorse.status, isMedicalLocked: updatedHorse.isMedicalLocked })} 
+            />
 
             <Link to={`/medical/horses/${horse.id}`}>
               <Button tone="secondary">Bệnh án y tế</Button>
