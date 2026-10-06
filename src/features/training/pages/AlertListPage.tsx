@@ -144,11 +144,18 @@ export default function AlertListPage() {
                 </div>
               )}
 
-              {isVet && !alert.acknowledgedByVet && (
-                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "0.5rem" }}>
-                  <Button tone="primary" onClick={() => setSelectedAlert(alert)}>
-                    Bác sĩ phản hồi & khám sàng lọc
-                  </Button>
+              {isVet && (
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
+                  <Link to={`/medical/records/new?horseId=${alert.horseId}`}>
+                    <Button tone="secondary">
+                      + Mở Bệnh Án Khám Lâm Sàng
+                    </Button>
+                  </Link>
+                  {!alert.acknowledgedByVet && (
+                    <Button tone="primary" onClick={() => setSelectedAlert(alert)}>
+                      Bác sĩ phản hồi & can thiệp
+                    </Button>
+                  )}
                 </div>
               )}
             </div>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/shared/components/ui/Button";
 import { Card } from "@/shared/components/ui/Card";
 import { Field } from "@/shared/components/form/Field";
@@ -7,6 +7,7 @@ import { Input } from "@/shared/components/form/Input";
 import { Select } from "@/shared/components/form/Select";
 import { Textarea } from "@/shared/components/form/Textarea";
 import { useToast } from "@/shared/components/ui/Toast";
+import { getStoredHorses, getStoredLocks } from "@/shared/mock/horsesData";
 import { trainingApi } from "../api";
 import type { TrainingPhase } from "../types";
 
@@ -72,7 +73,23 @@ export default function PlanWizardPage() {
     setPhases(updated);
   };
 
-  const isHorseLocked = horseId === "horse-2"; // Horse-2 is locked
+  const storedHorses = getStoredHorses();
+  const activeLocks = getStoredLocks().filter((l) => l.status === "ACTIVE");
+
+  const defaultHorses = [
+    { id: "horse-1", name: "Thần Gió (Thunderbolt)", code: "EQ-001" },
+    { id: "horse-2", name: "Bạch Mã Hoàng Tử (Silver Arrow)", code: "EQ-002" },
+    { id: "horse-3", name: "Hắc Báo (Black Panther)", code: "EQ-003" },
+    { id: "horse-4", name: "Hỏa Tiễn (Rocket)", code: "EQ-004" },
+  ];
+
+  const availableHorses = storedHorses.length > 0 ? storedHorses : defaultHorses;
+  const currentHorse = availableHorses.find((h) => h.id === horseId) || availableHorses[0];
+
+  const activeLock = activeLocks.find(
+    (l) => l.horseId === horseId || (currentHorse && l.horseName === currentHorse.name)
+  );
+  const isHorseLocked = Boolean(activeLock);
 
   const handleSave = async (activate = false) => {
     if (!name.trim()) {
@@ -89,17 +106,10 @@ export default function PlanWizardPage() {
 
     try {
       setSubmitting(true);
-      const horseNames: Record<string, string> = {
-        "horse-1": "Thần Gió (Thunderbolt)",
-        "horse-2": "Bạch Mã Hoàng Tử (Silver Arrow)",
-        "horse-3": "Hắc Báo (Black Panther)",
-        "horse-4": "Hỏa Tiễn (Rocket)",
-      };
-
       const created = await trainingApi.createPlan({
         name,
         horseId,
-        horseName: horseNames[horseId] || "Ngựa đua",
+        horseName: currentHorse ? currentHorse.name : "Ngựa đua",
         target,
         targetDistanceMeters: targetDistance,
         startDate,
@@ -192,58 +202,111 @@ export default function PlanWizardPage() {
                 <Select
                   value={horseId}
                   onChange={(e) => setHorseId(e.target.value)}
-                  options={[
-                    { value: "horse-1", label: "Thần Gió (Thunderbolt) - Khỏe mạnh" },
-                    { value: "horse-2", label: "Bạch Mã Hoàng Tử (Silver Arrow) - Có Khóa Y Tế 🔒" },
-                    { value: "horse-3", label: "Hắc Báo (Black Panther) - Khỏe mạnh" },
-                    { value: "horse-4", label: "Hỏa Tiễn (Rocket) - Cần theo dõi" },
-                  ]}
+                  options={availableHorses.map((h) => {
+                    const hasLock = activeLocks.some(
+                      (l) => l.horseId === h.id || l.horseName === h.name
+                    );
+                    return {
+                      value: h.id,
+                      label: `${h.name} (${h.code || "H"}) ${hasLock ? "— Có Khóa Y Tế 🔒" : "— Khỏe mạnh"}`,
+                    };
+                  })}
                 />
               </Field>
 
-            <Field label="Cự ly thi đấu mục tiêu (mét)" required>
-              <Input
-                type="number"
-                value={targetDistance}
-                onChange={(e) => setTargetDistance(Number(e.target.value))}
-                min={600}
-                max={3200}
-                step={200}
+              <Field label="Cự ly thi đấu mục tiêu (mét)" required>
+                <Input
+                  type="number"
+                  value={targetDistance}
+                  onChange={(e) => setTargetDistance(Number(e.target.value))}
+                  min={600}
+                  max={3200}
+                  step={200}
+                />
+              </Field>
+            </div>
+
+            {/* LockBanner: Exception Path 2 */}
+            {activeLock && (
+              <div
+                style={{
+                  padding: "1rem",
+                  background: "rgba(239, 68, 68, 0.08)",
+                  border: "1px solid var(--danger)",
+                  borderRadius: 8,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.5rem",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--danger)", fontWeight: 700 }}>
+                  <span>⚠️ KHÓA HUẤN LUYỆN Y TẾ HIỆU LỰC (Training Lock — Full)</span>
+                </div>
+                <div style={{ fontSize: "0.875rem", color: "var(--text-main)" }}>
+                  Y lệnh ban hành bởi <strong>{activeLock.lockedBy}</strong> vào ngày {activeLock.lockedAt}.
+                </div>
+                <div style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>
+                  <strong>Lý do chỉ định lâm sàng:</strong> {activeLock.lockReason}
+                </div>
+                <div style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>
+                  <strong>Thời hạn xem xét:</strong> {activeLock.reviewDate} (Dự kiến nghỉ {activeLock.durationDays || 14} ngày)
+                </div>
+                <div style={{ marginTop: "0.25rem", display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+                  <Link to="/medical/locks">
+                    <Button tone="danger">Xem Hồ sơ Khóa Y Tế →</Button>
+                  </Link>
+                  <span style={{ fontSize: "0.8125rem", color: "var(--danger)", fontStyle: "italic" }}>
+                    * Hệ thống tự động vô hiệu hóa lập giáo án mới khi ngựa đang bị Khóa huấn luyện.
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <Field label="Mục tiêu huấn luyện cốt lõi" required>
+              <Textarea
+                rows={2}
+                value={target}
+                onChange={(e) => setTarget(e.target.value)}
+                placeholder="Ví dụ: Tối ưu nhịp tim nước rút dưới 175 bpm, tăng độ bền cơ bắp cự ly 1600m..."
               />
             </Field>
-          </div>
 
-          <Field label="Mục tiêu huấn luyện cốt lõi" required>
-            <Textarea
-              rows={2}
-              value={target}
-              onChange={(e) => setTarget(e.target.value)}
-              placeholder="Ví dụ: Tối ưu nhịp tim nước rút dưới 175 bpm, tăng độ bền cơ bắp cự ly 1600m..."
-            />
-          </Field>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+              <Field label="Ngày bắt đầu" required>
+                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              </Field>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-            <Field label="Ngày bắt đầu" required>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              <Field label="Ngày kết thúc" required>
+                <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              </Field>
+            </div>
+
+            <Field label="Ghi chú thêm">
+              <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ghi chú nội bộ cho Groom và Nài..." />
             </Field>
 
-            <Field label="Ngày kết thúc" required>
-              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-            </Field>
-          </div>
-
-          <Field label="Ghi chú thêm">
-            <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ghi chú nội bộ cho Groom và Nài..." />
-          </Field>
-
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "1rem" }}>
-            <Button tone="ghost" onClick={() => navigate("/training/plans")}>
-              Hủy
-            </Button>
-            <Button tone="primary" onClick={() => setStep(2)}>
-              Tiếp tục: Phân kỳ giai đoạn →
-            </Button>
-          </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "1rem", marginTop: "1rem" }}>
+              {isHorseLocked && (
+                <span style={{ fontSize: "0.8125rem", color: "var(--danger)", fontWeight: 600 }}>
+                  Chiến mã đang chịu Khóa huấn luyện. Vui lòng gỡ khóa trước khi tiếp tục.
+                </span>
+              )}
+              <Button tone="ghost" onClick={() => navigate("/training/plans")}>
+                Hủy
+              </Button>
+              <Button
+                tone="primary"
+                disabled={isHorseLocked}
+                title={
+                  isHorseLocked
+                    ? `${currentHorse?.name} đang chịu Khóa huấn luyện y tế do ${activeLock?.lockedBy} đặt. Bạn không thể lập giáo án khi chưa được Bác sĩ gỡ khóa!`
+                    : undefined
+                }
+                onClick={() => setStep(2)}
+              >
+                Tiếp tục: Phân kỳ giai đoạn →
+              </Button>
+            </div>
           </div>
         </Card>
       )}
@@ -322,7 +385,7 @@ export default function PlanWizardPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
             <h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 700 }}>Xác nhận & Kiểm tra Điều kiện Kích hoạt</h3>
 
-          {isHorseLocked ? (
+          {isHorseLocked && activeLock ? (
             <div
               style={{
                 padding: "1rem",
@@ -333,13 +396,14 @@ export default function PlanWizardPage() {
               }}
             >
               <div style={{ fontWeight: 700, fontSize: "1rem", marginBottom: "0.25rem" }}>
-                🔒 CẢNH BÁO KHÓA HUẤN LUYỆN Y TẾ
+                🔒 CẢNH BÁO KHÓA HUẤN LUYỆN Y TẾ TỪ BÁC SĨ THÚ Y
               </div>
               <div style={{ fontSize: "0.875rem" }}>
-                Ngựa <strong>Bạch Mã Hoàng Tử (Silver Arrow)</strong> hiện đang bị Khóa huấn luyện thú y do chấn thương gân:
+                Chiến mã <strong>{currentHorse?.name}</strong> hiện đang chịu lệnh Khóa huấn luyện do{" "}
+                <strong>{activeLock.lockedBy}</strong> ban hành ({activeLock.lockReason}):
                 <ul style={{ margin: "0.5rem 0 0", paddingLeft: "1.25rem" }}>
-                  <li>Không được phép kích hoạt giáo án này sang trạng thái Đang áp dụng.</li>
-                  <li>Bạn chỉ có thể <strong>Lưu bản nháp</strong> để chuẩn bị trước khi Bác sĩ thú y gỡ khóa.</li>
+                  <li>Nghiêm cấm kích hoạt giáo án này sang trạng thái Đang áp dụng.</li>
+                  <li>Bạn chỉ có thể <strong>Lưu bản nháp</strong> để phân kỳ trước trong thời gian chờ Bác sĩ gỡ khóa.</li>
                 </ul>
               </div>
             </div>

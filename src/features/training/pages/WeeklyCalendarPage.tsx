@@ -12,6 +12,7 @@ import { Tabs } from "@/shared/components/ui/Tabs";
 import { Textarea } from "@/shared/components/form/Textarea";
 import { useAuth } from "@/shared/components/layout/AuthProvider";
 import { useToast } from "@/shared/components/ui/Toast";
+import { getStoredHorses, getStoredLocks } from "@/shared/mock/horsesData";
 import { trainingApi } from "../api";
 import type { ExerciseIntensity, ExerciseSession, ExerciseType, TrackType } from "../types";
 
@@ -76,28 +77,39 @@ export default function WeeklyCalendarPage() {
     };
   }, [toast]);
 
+  const storedHorses = getStoredHorses();
+  const activeLocks = getStoredLocks().filter((l) => l.status === "ACTIVE");
+
+  const defaultHorses = [
+    { id: "horse-1", name: "Thần Gió (Thunderbolt)", code: "EQ-001" },
+    { id: "horse-2", name: "Bạch Mã Hoàng Tử (Silver Arrow)", code: "EQ-002" },
+    { id: "horse-3", name: "Hắc Báo (Black Panther)", code: "EQ-003" },
+    { id: "horse-4", name: "Hỏa Tiễn (Rocket)", code: "EQ-004" },
+  ];
+  const availableHorses = storedHorses.length > 0 ? storedHorses : defaultHorses;
+  const selectedHorse = availableHorses.find((h) => h.id === newHorseId) || availableHorses[0];
+  const selectedHorseLock = activeLocks.find(
+    (l) => l.horseId === newHorseId || (selectedHorse && l.horseName === selectedHorse.name)
+  );
+
+  const blockedCount = sessions.filter((s) => s.status === "BLOCKED_BY_LOCK").length;
+
   const handleRestoreSession = async (sessionId: string) => {
     try {
       await trainingApi.restoreBlockedSession(sessionId);
       toast.show("Đã khôi phục lịch tập sau khi gỡ khóa y tế", "ok");
       void loadSessions();
-    } catch {
-      toast.show("Lỗi khôi phục lịch tập", "danger");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Lỗi khôi phục lịch tập";
+      toast.show(msg, "danger");
     }
   };
 
   const handleCreateSession = async () => {
     try {
-      const horseNames: Record<string, string> = {
-        "horse-1": "Thần Gió (Thunderbolt)",
-        "horse-2": "Bạch Mã Hoàng Tử (Silver Arrow)",
-        "horse-3": "Hắc Báo (Black Panther)",
-        "horse-4": "Hỏa Tiễn (Rocket)",
-      };
-
       const created = await trainingApi.createSession({
         horseId: newHorseId,
-        horseName: horseNames[newHorseId] || "Ngựa đua",
+        horseName: selectedHorse ? selectedHorse.name : "Ngựa đua",
         sessionDate: activeDate,
         startTime: newStart,
         endTime: newEnd,
@@ -112,7 +124,7 @@ export default function WeeklyCalendarPage() {
 
       if (created.status === "BLOCKED_BY_LOCK") {
         toast.show(
-          "Tự động chặn bài tập nặng: Ngựa đang có Khóa y tế!",
+          "Tự động chặn bài tập nặng: Ngựa đang có Khóa y tế từ Bác sĩ!",
           "danger",
         );
       } else {
@@ -153,6 +165,30 @@ export default function WeeklyCalendarPage() {
           )}
         </div>
       </div>
+
+      {/* Safety Alert Banner (Exception Path 2) */}
+      {blockedCount > 0 && (
+        <div
+          style={{
+            padding: "0.85rem 1.25rem",
+            background: "rgba(239, 68, 68, 0.08)",
+            border: "1px solid var(--danger)",
+            borderRadius: "var(--radius-card)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: "0.75rem",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--danger)", fontWeight: 600, fontSize: "0.875rem" }}>
+            <span>⚠️ Dải Cảnh Báo An Toàn: Có <strong>{blockedCount}</strong> buổi tập tuần này bị chặn do Khóa huấn luyện y tế hiệu lực từ Bác sĩ.</span>
+          </div>
+          <Link to="/medical/locks">
+            <Button tone="danger">Quản lý Khóa Huấn Luyện Thú Y →</Button>
+          </Link>
+        </div>
+      )}
 
       {/* Control bar */}
       <Card pad={16}>
@@ -321,14 +357,32 @@ export default function WeeklyCalendarPage() {
               <Select
                 value={newHorseId}
                 onChange={(e) => setNewHorseId(e.target.value)}
-                options={[
-                  { value: "horse-1", label: "Thần Gió (Thunderbolt) - Sẵn sàng" },
-                  { value: "horse-2", label: "Bạch Mã Hoàng Tử (Silver Arrow) - Có Khóa y tế 🔒" },
-                  { value: "horse-3", label: "Hắc Báo (Black Panther) - Khỏe mạnh" },
-                  { value: "horse-4", label: "Hỏa Tiễn (Rocket) - Cần theo dõi" },
-                ]}
+                options={availableHorses.map((h) => {
+                  const hasLock = activeLocks.some(
+                    (l) => l.horseId === h.id || l.horseName === h.name
+                  );
+                  return {
+                    value: h.id,
+                    label: `${h.name} (${h.code || "H"}) ${hasLock ? "— Có Khóa Y Tế 🔒" : "— Sẵn sàng"}`,
+                  };
+                })}
               />
             </Field>
+
+            {selectedHorseLock && (
+              <div
+                style={{
+                  padding: "0.75rem 1rem",
+                  background: "rgba(239, 68, 68, 0.08)",
+                  border: "1px solid var(--danger)",
+                  borderRadius: 6,
+                  fontSize: "0.8125rem",
+                  color: "var(--danger)",
+                }}
+              >
+                <strong>🔒 Lưu ý y tế:</strong> {selectedHorse?.name} đang có Khóa huấn luyện thú y ({selectedHorseLock.lockReason}). Các bài tập cường độ cao (Nặng / Canter / Gallop) sẽ bị hệ thống tự động khóa để bảo vệ an toàn cho ngựa!
+              </div>
+            )}
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
               <Field label="Bài tập" required>

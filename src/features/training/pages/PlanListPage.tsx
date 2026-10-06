@@ -18,7 +18,9 @@ import type { PlanStatus, TrainingPlan } from "../types";
 const STATUS_CONFIG: Record<PlanStatus, { label: string; tone: "ok" | "warn" | "danger" | "neutral" | "info" }> = {
   DRAFT: { label: "Bản nháp", tone: "neutral" },
   ACTIVE: { label: "Đang áp dụng", tone: "ok" },
+  PAUSED: { label: "Tạm dừng", tone: "warn" },
   COMPLETED: { label: "Đã hoàn thành", tone: "info" },
+  SUSPENDED: { label: "Bị khóa y tế (Suspended)", tone: "danger" },
   CANCELLED: { label: "Đã hủy", tone: "danger" },
 };
 
@@ -80,6 +82,27 @@ export default function PlanListPage() {
       void loadPlans();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Lỗi khi kích hoạt giáo án";
+      toast.show(msg, "danger");
+    }
+  };
+
+  const handlePause = async (plan: TrainingPlan) => {
+    try {
+      await trainingApi.pausePlan(plan.id);
+      toast.show(`Đã tạm dừng giáo án ${plan.planCode}`, "warn");
+      void loadPlans();
+    } catch {
+      toast.show("Lỗi khi tạm dừng giáo án", "danger");
+    }
+  };
+
+  const handleResume = async (plan: TrainingPlan) => {
+    try {
+      await trainingApi.resumePlan(plan.id);
+      toast.show(`Đã tiếp tục áp dụng giáo án ${plan.planCode}`, "ok");
+      void loadPlans();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Lỗi khi tiếp tục giáo án";
       toast.show(msg, "danger");
     }
   };
@@ -163,6 +186,8 @@ export default function PlanListPage() {
             items={[
               { id: "ALL", label: `Tất cả (${plans.length})` },
               { id: "ACTIVE", label: `Đang áp dụng (${plans.filter((p) => p.status === "ACTIVE").length})` },
+              { id: "SUSPENDED", label: `Bị khóa y tế (${plans.filter((p) => p.status === "SUSPENDED").length})` },
+              { id: "PAUSED", label: `Tạm dừng (${plans.filter((p) => p.status === "PAUSED").length})` },
               { id: "DRAFT", label: `Bản nháp (${plans.filter((p) => p.status === "DRAFT").length})` },
               { id: "COMPLETED", label: `Đã hoàn thành (${plans.filter((p) => p.status === "COMPLETED").length})` },
               { id: "CANCELLED", label: `Đã hủy (${plans.filter((p) => p.status === "CANCELLED").length})` },
@@ -213,8 +238,20 @@ export default function PlanListPage() {
                         Mục tiêu: {plan.targetDistanceMeters}m · {plan.target}
                       </div>
                       {plan.isLockedByMedical && (
-                        <div style={{ fontSize: "0.75rem", color: "var(--danger)", marginTop: "0.25rem", fontWeight: 600 }}>
-                          🔒 Ngựa có Khóa y tế - Chặn bài tập nặng
+                        <div
+                          style={{
+                            fontSize: "0.75rem",
+                            color: "var(--danger)",
+                            marginTop: "0.35rem",
+                            padding: "0.25rem 0.5rem",
+                            background: "rgba(239, 68, 68, 0.08)",
+                            borderRadius: 4,
+                            borderLeft: "3px solid var(--danger)",
+                          }}
+                        >
+                          <strong>🔒 Khóa Y Tế Hiệu Lực:</strong>{" "}
+                          {plan.lockDetails?.reason || "Chặn bài tập nặng theo y lệnh Bác sĩ"}
+                          {plan.lockDetails?.reviewDate && ` · Xem xét: ${plan.lockDetails.reviewDate}`}
                         </div>
                       )}
                     </td>
@@ -235,17 +272,42 @@ export default function PlanListPage() {
                     </td>
                     <td style={{ padding: "0.75rem 1rem", textAlign: "right" }}>
                       <div style={{ display: "inline-flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                        {isTrainer && plan.status === "SUSPENDED" && (
+                          <>
+                            <Button
+                              tone="danger"
+                              blockedReason="Giáo án bị đình chỉ do Khóa huấn luyện y tế. Vui lòng liên hệ Bác sĩ thú y để gỡ khóa."
+                            >
+                              Khóa Y Tế 🔒
+                            </Button>
+                            <Link to="/medical/locks">
+                              <Button tone="secondary">
+                                Chi tiết khóa
+                              </Button>
+                            </Link>
+                          </>
+                        )}
                         {isTrainer && plan.status === "DRAFT" && (
                           <Button tone="primary" onClick={() => void handleActivate(plan)}>
                             Kích hoạt
                           </Button>
                         )}
-                        {isTrainer && plan.status === "ACTIVE" && (
-                          <Button tone="accent" onClick={() => void handleComplete(plan)}>
-                            Hoàn thành
+                        {isTrainer && plan.status === "PAUSED" && (
+                          <Button tone="primary" onClick={() => void handleResume(plan)}>
+                            Tiếp tục
                           </Button>
                         )}
-                        {isTrainer && (plan.status === "DRAFT" || plan.status === "ACTIVE") && (
+                        {isTrainer && plan.status === "ACTIVE" && (
+                          <>
+                            <Button tone="secondary" onClick={() => void handlePause(plan)}>
+                              Tạm dừng
+                            </Button>
+                            <Button tone="accent" onClick={() => void handleComplete(plan)}>
+                              Hoàn thành
+                            </Button>
+                          </>
+                        )}
+                        {isTrainer && plan.status !== "COMPLETED" && plan.status !== "CANCELLED" && (
                           <Button tone="danger" onClick={() => setCancellingPlan(plan)}>
                             Hủy
                           </Button>

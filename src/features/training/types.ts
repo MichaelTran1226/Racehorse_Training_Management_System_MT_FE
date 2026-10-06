@@ -1,4 +1,4 @@
-export type PlanStatus = "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED";
+export type PlanStatus = "DRAFT" | "ACTIVE" | "PAUSED" | "COMPLETED" | "SUSPENDED" | "CANCELLED";
 export type SessionStatus = "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "BLOCKED_BY_LOCK";
 export type ExerciseType = "WALK" | "TROT" | "CANTER" | "GALLOP" | "GATE_PRACTICE" | "TRIAL_RUN" | "RECOVERY";
 export type ExerciseIntensity = "LIGHT" | "MODERATE" | "HEAVY";
@@ -36,6 +36,12 @@ export interface TrainingPlan {
   createdAt: string;
   updatedAt: string;
   isLockedByMedical?: boolean;
+  lockDetails?: {
+    lockedBy: string;
+    lockedAt: string;
+    reason: string;
+    reviewDate: string;
+  };
 }
 
 export interface SessionResult {

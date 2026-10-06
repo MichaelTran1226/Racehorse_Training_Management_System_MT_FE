@@ -67,6 +67,10 @@ export default function SessionMetricsPage() {
   }, [toast]);
 
   const handleSubmitResult = async () => {
+    if (avgHeartRate > maxHeartRate) {
+      toast.show("Nhịp tim trung bình không được lớn hơn nhịp tim tối đa!", "warn");
+      return;
+    }
     try {
       setSubmitting(true);
       await trainingApi.saveSessionResult(selectedSessionId, {

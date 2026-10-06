@@ -1,3 +1,4 @@
+import { getStoredLocks } from "@/shared/mock/horsesData";
 import type {
   ExerciseSession,
   FitnessMetricPoint,
@@ -262,15 +263,46 @@ const MOCK_ALERTS: TrainingAlert[] = [
 export const trainingApi = {
   // Plans
   async getPlans(): Promise<TrainingPlan[]> {
-    return structuredClone(MOCK_PLANS);
+    const activeLocks = getStoredLocks().filter((l) => l.status === "ACTIVE");
+    return MOCK_PLANS.map((p) => {
+      const lock = activeLocks.find(
+        (l) => l.horseId === p.horseId || (p.horseName && l.horseName === p.horseName)
+      );
+      if (lock) {
+        return {
+          ...p,
+          isLockedByMedical: true,
+          status: p.status === "ACTIVE" ? ("SUSPENDED" as const) : p.status,
+          lockDetails: {
+            lockedBy: lock.lockedBy,
+            lockedAt: lock.lockedAt,
+            reason: lock.lockReason,
+            reviewDate: lock.reviewDate,
+          },
+        };
+      }
+      return {
+        ...p,
+        isLockedByMedical: false,
+        status: p.status === "SUSPENDED" ? ("ACTIVE" as const) : p.status,
+        lockDetails: undefined,
+      };
+    });
   },
 
   async getPlanById(id: string): Promise<TrainingPlan | null> {
-    const p = MOCK_PLANS.find((item) => item.id === id);
+    const plans = await this.getPlans();
+    const p = plans.find((item) => item.id === id);
     return p ? structuredClone(p) : null;
   },
 
   async createPlan(data: Partial<TrainingPlan>): Promise<TrainingPlan> {
+    const activeLocks = getStoredLocks().filter((l) => l.status === "ACTIVE");
+    const lock = activeLocks.find((l) => l.horseId === data.horseId);
+    if (lock && data.status === "ACTIVE") {
+      throw new Error(`Không thể kích hoạt: Ngựa đang bị Khóa huấn luyện y tế do ${lock.lockedBy} đặt (${lock.lockReason})!`);
+    }
+
     const newPlan: TrainingPlan = {
       id: `plan-${Date.now()}`,
       planCode: `GA-2026-${Math.floor(100 + Math.random() * 900)}`,
@@ -282,11 +314,20 @@ export const trainingApi = {
       targetDistanceMeters: data.targetDistanceMeters || 1600,
       startDate: data.startDate || new Date().toISOString().split("T")[0],
       endDate: data.endDate || new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
-      status: data.status || "DRAFT",
+      status: lock ? ("SUSPENDED" as const) : (data.status || "DRAFT"),
       phases: data.phases || [],
       headTrainerId: "usr-ht-1",
       headTrainerName: "Nguyễn Văn Huấn (HT)",
       notes: data.notes || "",
+      isLockedByMedical: Boolean(lock),
+      lockDetails: lock
+        ? {
+            lockedBy: lock.lockedBy,
+            lockedAt: lock.lockedAt,
+            reason: lock.lockReason,
+            reviewDate: lock.reviewDate,
+          }
+        : undefined,
       createdAt: new Date().toISOString().split("T")[0],
       updatedAt: new Date().toISOString().split("T")[0],
     };
@@ -297,8 +338,31 @@ export const trainingApi = {
   async activatePlan(id: string): Promise<TrainingPlan> {
     const p = MOCK_PLANS.find((item) => item.id === id);
     if (!p) throw new Error("Không tìm thấy giáo án");
-    if (p.isLockedByMedical) {
-      throw new Error("Không thể kích hoạt giáo án: Ngựa đang bị Khóa huấn luyện y tế!");
+    const activeLocks = getStoredLocks().filter((l) => l.status === "ACTIVE");
+    const lock = activeLocks.find((l) => l.horseId === p.horseId);
+    if (lock) {
+      throw new Error(`Không thể kích hoạt: Ngựa đang chịu Khóa huấn luyện y tế (${lock.lockReason}). Hãy liên hệ Bác sĩ thú y để gỡ khóa!`);
+    }
+    p.status = "ACTIVE";
+    p.updatedAt = new Date().toISOString().split("T")[0];
+    return structuredClone(p);
+  },
+
+  async pausePlan(id: string): Promise<TrainingPlan> {
+    const p = MOCK_PLANS.find((item) => item.id === id);
+    if (!p) throw new Error("Không tìm thấy giáo án");
+    p.status = "PAUSED";
+    p.updatedAt = new Date().toISOString().split("T")[0];
+    return structuredClone(p);
+  },
+
+  async resumePlan(id: string): Promise<TrainingPlan> {
+    const p = MOCK_PLANS.find((item) => item.id === id);
+    if (!p) throw new Error("Không tìm thấy giáo án");
+    const activeLocks = getStoredLocks().filter((l) => l.status === "ACTIVE");
+    const lock = activeLocks.find((l) => l.horseId === p.horseId);
+    if (lock) {
+      throw new Error(`Giáo án bị đình chỉ do Khóa y tế (${lock.lockReason}). Chỉ Bác sĩ thú y mới có quyền gỡ khóa!`);
     }
     p.status = "ACTIVE";
     p.updatedAt = new Date().toISOString().split("T")[0];
@@ -354,7 +418,9 @@ export const trainingApi = {
   },
 
   async createSession(session: Partial<ExerciseSession>): Promise<ExerciseSession> {
-    const isLocked = session.horseId === "horse-2"; // Mock check
+    const activeLocks = getStoredLocks().filter((l) => l.status === "ACTIVE");
+    const activeLock = activeLocks.find((l) => l.horseId === session.horseId);
+    const isLocked = Boolean(activeLock);
     const isHeavy = session.intensity === "HEAVY" || session.sessionType === "CANTER" || session.sessionType === "GALLOP";
 
     const newSession: ExerciseSession = {
@@ -368,7 +434,9 @@ export const trainingApi = {
       sessionType: session.sessionType || "TROT",
       intensity: session.intensity || "MODERATE",
       status: isLocked && isHeavy ? "BLOCKED_BY_LOCK" : "SCHEDULED",
-      blockedReason: isLocked && isHeavy ? "Ngựa có Khóa huấn luyện y tế hiệu lực. Tự động chặn bài tập nặng!" : undefined,
+      blockedReason: isLocked && isHeavy
+        ? `Ngựa có Khóa huấn luyện y tế hiệu lực (${activeLock?.lockReason || "Lệnh cấm tập nặng từ Bác sĩ"}). Tự động chặn bài tập nặng!`
+        : undefined,
       groomName: session.groomName,
       jockeyName: session.jockeyName,
       trackType: session.trackType || "TURF",
@@ -376,13 +444,18 @@ export const trainingApi = {
       targetDistanceMeters: session.targetDistanceMeters || 1200,
       notes: session.notes,
     };
-    MOCK_SESSIONS.push(newSession);
+    MOCK_SESSIONS.unshift(newSession);
     return structuredClone(newSession);
   },
 
   async restoreBlockedSession(sessionId: string): Promise<ExerciseSession> {
     const s = MOCK_SESSIONS.find((item) => item.id === sessionId);
     if (!s) throw new Error("Không tìm thấy buổi tập");
+    const activeLocks = getStoredLocks().filter((l) => l.status === "ACTIVE");
+    const isLocked = activeLocks.some((l) => l.horseId === s.horseId);
+    if (isLocked) {
+      throw new Error("Không thể khôi phục: Ngựa vẫn đang trong thời hạn Khóa huấn luyện y tế!");
+    }
     s.status = "SCHEDULED";
     s.blockedReason = undefined;
     return structuredClone(s);
