@@ -95,7 +95,7 @@ export default function SignUpPage() {
         <Field label="Full name" required error={errors.name}>
           <Input
             icon="user"
-            placeholder="Nguyễn Hoàng Anh"
+            placeholder="Jane Smith"
             autoComplete="name"
             value={name}
             onChange={(e) => {
