@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
-import { Card } from "@/shared/components/ui/Card";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Field } from "@/shared/components/form/Field";
 import { Modal } from "@/shared/components/ui/Modal";
@@ -31,7 +30,7 @@ export default function AlertListPage() {
       const data = await trainingApi.getAlerts();
       setAlerts(data);
     } catch {
-      toast.show("Không thể tải danh sách cảnh báo", "danger");
+      toast.show("Unable to load threshold alerts", "danger");
     } finally {
       setLoading(false);
     }
@@ -46,12 +45,12 @@ export default function AlertListPage() {
     try {
       setSubmitting(true);
       await trainingApi.acknowledgeAlert(selectedAlert.id, vetNotes);
-      toast.show("Bác sĩ thú y đã xác nhận xử lý cảnh báo", "ok");
+      toast.show("Veterinarian acknowledged and recorded clinical intervention", "ok");
       setSelectedAlert(null);
       setVetNotes("");
       void loadAlerts();
     } catch {
-      toast.show("Lỗi xác nhận cảnh báo", "danger");
+      toast.show("Error acknowledging alert", "danger");
     } finally {
       setSubmitting(false);
     }
@@ -62,25 +61,25 @@ export default function AlertListPage() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Cảnh Báo Vận Động & Y Tế</h1>
+          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Biomechanical & Medical Alerts</h1>
           <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
-            Kết nối trực tiếp giữa Buổi tập (Flow 2) và Đội ngũ Bác sĩ Thú y (Flow 3) khi phát hiện dấu hiệu bất thường
+            Direct clinical bridge between Training Sessions (Flow 2) and Veterinary Team (Flow 3) when anomalies are flagged
           </p>
         </div>
 
         <Link to="/training/calendar">
-          <Button tone="secondary">← Lịch Tập</Button>
+          <Button tone="secondary">← Training Calendar</Button>
         </Link>
       </div>
 
       {/* Alert list */}
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
         {loading ? (
-          <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Đang tải cảnh báo...</div>
+          <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Loading threshold alerts...</div>
         ) : alerts.length === 0 ? (
           <EmptyState
-            title="Không có cảnh báo nào"
-            description="Hiện không có dấu hiệu bất thường nào được ghi nhận từ các buổi huấn luyện."
+            title="No Active Alerts"
+            description="No clinical abnormalities or metric threshold spikes recorded from recent training sessions."
           />
         ) : (
           alerts.map((alert) => (
@@ -100,7 +99,7 @@ export default function AlertListPage() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                   <Badge tone={alert.severity === "HIGH" || alert.severity === "CRITICAL" ? "danger" : "warn"}>
-                    Mức độ {alert.severity}
+                    Severity: {alert.severity}
                   </Badge>
                   <span style={{ fontWeight: 700, fontSize: "1.125rem" }}>
                     <Link to={`/medical/horses/${alert.horseId}`} style={{ color: "inherit", textDecoration: "none" }}>
@@ -111,7 +110,7 @@ export default function AlertListPage() {
                 </div>
 
                 <Badge tone={alert.acknowledgedByVet ? "ok" : "danger"}>
-                  {alert.acknowledgedByVet ? "BS thú y đã xử lý" : "Chờ BS thú y phản hồi"}
+                  {alert.acknowledgedByVet ? "Vet Acknowledged" : "Pending Vet Review"}
                 </Badge>
               </div>
 
@@ -120,19 +119,19 @@ export default function AlertListPage() {
               </div>
 
               <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>
-                Người báo cáo: <strong>{alert.reportedBy}</strong> · Ngày tập: <strong>{alert.sessionDate}</strong>
+                Reported by: <strong>{alert.reportedBy}</strong> · Session Date: <strong>{alert.sessionDate}</strong>
               </div>
 
               {alert.vetNotes && (
                 <div style={{ background: "var(--surface-sunken)", padding: "0.75rem", borderRadius: 6, fontSize: "0.875rem" }}>
-                  <strong>Phản hồi từ Bác sĩ thú y:</strong> {alert.vetNotes}
+                  <strong>Veterinarian Clinical Response:</strong> {alert.vetNotes}
                 </div>
               )}
 
               {isVet && !alert.acknowledgedByVet && (
                 <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "0.5rem" }}>
                   <Button tone="primary" onClick={() => setSelectedAlert(alert)}>
-                    Bác sĩ phản hồi & khám sàng lọc
+                    Clinical Review & Intervention
                   </Button>
                 </div>
               )}
@@ -143,31 +142,31 @@ export default function AlertListPage() {
 
       {/* Acknowledge Modal */}
       {selectedAlert && (
-        <Modal onClose={() => setSelectedAlert(null)} title={`Phản hồi y tế cho ${selectedAlert.horseName}`}>
+        <Modal onClose={() => setSelectedAlert(null)} title={`Clinical Feedback for ${selectedAlert.horseName}`}>
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div style={{ background: "var(--surface-sunken)", padding: "0.75rem", borderRadius: 6, fontSize: "0.875rem" }}>
-              <strong>Dấu hiệu báo cáo:</strong> {selectedAlert.message}
+              <strong>Reported Anomaly:</strong> {selectedAlert.message}
             </div>
 
-            <Field label="Ghi chú khám & Biện pháp can thiệp của Bác sĩ thú y" required>
+            <Field label="Clinical Notes & Veterinary Intervention Protocol" required>
               <Textarea
                 rows={3}
                 value={vetNotes}
                 onChange={(e) => setVetNotes(e.target.value)}
-                placeholder="Ví dụ: Đã siêu âm khớp gối, ghi nhận viêm nhẹ. Đã chỉ định chườm đá và đặt Khóa huấn luyện y tế 7 ngày..."
+                placeholder="e.g. Ultrasound examination completed on left carpus, minor inflammation noted. Prescribed cold therapy and issued 7-day Medical Lock..."
               />
             </Field>
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
               <Button tone="ghost" onClick={() => setSelectedAlert(null)}>
-                Hủy
+                Cancel
               </Button>
               <Button
                 tone="primary"
                 onClick={() => void handleConfirmAck()}
                 disabled={submitting || !vetNotes.trim()}
               >
-                Xác nhận phản hồi
+                Confirm Clinical Response
               </Button>
             </div>
           </div>
