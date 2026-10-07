@@ -12,6 +12,8 @@ import type { HealthStatus } from "@/shared/types/enums";
 import { getHorseById } from "../api";
 import type { Horse } from "../types";
 import { ChangeStatusDialog } from "../components/ChangeStatusDialog";
+import { AssignOwnerModal } from "../components/AssignOwnerModal";
+import { DeleteHorseModal } from "../components/DeleteHorseModal";
 
 export default function HorseDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +22,8 @@ export default function HorseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("info");
+  const [isOwnerModalOpen, setIsOwnerModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -38,6 +42,13 @@ export default function HorseDetailPage() {
       active = false;
     };
   }, [id]);
+
+  const refreshHorse = () => {
+    if (!id) return;
+    getHorseById(id)
+      .then((data) => setHorse(data))
+      .catch(() => {});
+  };
 
   if (loading) {
     return (
@@ -117,6 +128,12 @@ export default function HorseDetailPage() {
               </Link>
             )}
 
+            {isManager && horse.status !== "RETIRED" && (
+              <Button tone="secondary" onClick={() => setIsOwnerModalOpen(true)}>
+                Transfer Owner
+              </Button>
+            )}
+
             <ChangeStatusDialog 
               horse={horse} 
               onSuccess={(updatedHorse: Horse) => setHorse({ ...horse, status: updatedHorse.status, isMedicalLocked: updatedHorse.isMedicalLocked })} 
@@ -129,6 +146,12 @@ export default function HorseDetailPage() {
             <Link to={`/medical/horses/${horse.id}/injuries`}>
               <Button tone="secondary">2D Injury Map</Button>
             </Link>
+
+            {isManager && (
+              <Button tone="danger" onClick={() => setIsDeleteModalOpen(true)}>
+                {horse.status === "RETIRED" ? "Delete Record" : "Retire / Delete"}
+              </Button>
+            )}
           </div>
         }
       />
@@ -313,9 +336,16 @@ export default function HorseDetailPage() {
       {/* Tab 3: Ownership */}
       {activeTab === "owner" && (
         <Card pad={24}>
-          <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "1.125rem", fontWeight: 700 }}>
-            Ownership & Custody Details
-          </h3>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem", flexWrap: "wrap", gap: "0.75rem" }}>
+            <h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 700 }}>
+              Ownership & Custody Details
+            </h3>
+            {isManager && horse.status !== "RETIRED" && (
+              <Button size="sm" tone="secondary" onClick={() => setIsOwnerModalOpen(true)}>
+                Transfer Ownership
+              </Button>
+            )}
+          </div>
           {horse.owner ? (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
               <div>
@@ -392,6 +422,21 @@ export default function HorseDetailPage() {
           </div>
         </Card>
       )}
+
+      {/* Governance Modals for Club Manager */}
+      <AssignOwnerModal
+        horse={horse}
+        isOpen={isOwnerModalOpen}
+        onClose={() => setIsOwnerModalOpen(false)}
+        onSuccess={refreshHorse}
+      />
+
+      <DeleteHorseModal
+        horse={horse}
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onSuccess={refreshHorse}
+      />
     </div>
   );
 }

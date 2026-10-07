@@ -1327,12 +1327,50 @@ const routes: Route[] = [
       const existing = stored.find((h) => h.id === params[0]);
       if (!existing) throw new ApiError(404, "HORSE_NOT_FOUND", "Không tìm thấy hồ sơ ngựa.");
       if (existing.isLocked) {
-        throw new ApiError(400, "HORSE_LOCKED", "Không thể xóa hồ sơ ngựa đang trong thời gian Khóa huấn luyện.");
+        throw new ApiError(400, "HORSE_LOCKED", "Cannot delete horse profile while an active Medical Lock is in effect.");
       }
 
       deleteStoredHorse(params[0]);
-      audit(db, user.fullName, "HORSE_DELETED", `Xóa hồ sơ ngựa ${existing.name}`);
-      return { success: true, message: `Đã xóa hồ sơ ngựa ${existing.name}.` };
+      audit(db, user.fullName, "HORSE_DELETED", `Deleted horse profile ${existing.name}`);
+      return { success: true, message: `Successfully deleted horse ${existing.name}.` };
+    },
+  },
+  {
+    method: "PATCH",
+    pattern: /^\/horses\/([^/]+)\/transfer-owner$/,
+    handler({ db, params, body }) {
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") {
+        throw new ApiError(403, "FORBIDDEN", "Only Club Manager can transfer horse ownership.");
+      }
+      const stored = getStoredHorses();
+      const existing = stored.find((h) => h.id === params[0]);
+      if (!existing) throw new ApiError(404, "HORSE_NOT_FOUND", "Horse profile not found.");
+      if ((existing as any).status === "RETIRED") {
+        throw new ApiError(400, "HORSE_RETIRED", "Cannot transfer ownership of a retired horse.");
+      }
+
+      const newOwnerId = String(body.newOwnerId || "");
+      if (!newOwnerId) throw new ApiError(400, "VALIDATION", "New owner ID is required.");
+      if (existing.ownerId === newOwnerId) {
+        throw new ApiError(400, "ALREADY_OWNED", "Horse is already assigned to this owner.");
+      }
+
+      const accounts = db.accounts;
+      const newOwner = accounts.find((a) => a.id === newOwnerId) || {
+        id: newOwnerId,
+        fullName: newOwnerId === "usr-owner-002" ? "Alexander Hamilton (Equine Syndicate)" : "Robert Sterling (Horse Owner)",
+        email: "owner@gmail.com",
+      };
+
+      existing.ownerId = newOwner.id;
+      existing.ownerName = newOwner.fullName;
+      saveStoredHorses(stored);
+      audit(db, user.fullName, "HORSE_OWNERSHIP_TRANSFERRED", `Transferred ownership of ${existing.name} to ${newOwner.fullName}. Reason: ${body.reason || "None"}`);
+      return {
+        ...existing,
+        owner: { id: newOwner.id, fullName: newOwner.fullName, email: newOwner.email },
+      };
     },
   },
   {
@@ -1342,14 +1380,14 @@ const routes: Route[] = [
       const user = currentUser(db);
       const stored = getStoredHorses();
       const existing = stored.find((h) => h.id === params[0]);
-      if (!existing) throw new ApiError(404, "HORSE_NOT_FOUND", "Không tìm thấy hồ sơ ngựa.");
+      if (!existing) throw new ApiError(404, "HORSE_NOT_FOUND", "Horse profile not found.");
       
       const newStatus = String(body.status);
       (existing as any).status = newStatus;
       
       saveStoredHorses(stored);
-      audit(db, user.fullName, "HORSE_STATUS_CHANGED", `Đổi trạng thái ngựa ${existing.name} thành ${newStatus}`);
-      return { success: true, message: `Đã cập nhật trạng thái thành ${newStatus}`, data: existing };
+      audit(db, user.fullName, "HORSE_STATUS_CHANGED", `Changed status of ${existing.name} to ${newStatus}`);
+      return { success: true, message: `Status updated to ${newStatus}`, data: existing };
     },
   },
   // ===== FLOW 2: TRAINING PLANS =====
