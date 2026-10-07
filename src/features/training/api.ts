@@ -259,17 +259,59 @@ const MOCK_ALERTS: TrainingAlert[] = [
   },
 ];
 
+const TRAINING_PLANS_KEY = "equiflow.training.plans.v1";
+
+function getStoredPlans(): TrainingPlan[] {
+  if (typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem(TRAINING_PLANS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as TrainingPlan[];
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // fallback
+    }
+  }
+  return MOCK_PLANS;
+}
+
+function saveStoredPlans(plans: TrainingPlan[]): void {
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(TRAINING_PLANS_KEY, JSON.stringify(plans));
+    } catch {
+      // ignore
+    }
+  }
+}
+
 export const trainingApi = {
   // Plans
   async getPlans(): Promise<TrainingPlan[]> {
-    return await api<TrainingPlan[]>("GET", "/training/plans");
+    try {
+      const res = await api<TrainingPlan[]>("GET", "/training/plans");
+      if (Array.isArray(res) && res.length > 0) return res;
+      return structuredClone(getStoredPlans());
+    } catch {
+      return structuredClone(getStoredPlans());
+    }
   },
 
   async getPlanById(id: string): Promise<TrainingPlan | null> {
-    return await api<TrainingPlan>("GET", `/training/plans/${id}`);
+    try {
+      const res = await api<TrainingPlan>("GET", `/training/plans/${id}`);
+      if (res) return res;
+    } catch {
+      // fallback to mock
+    }
+    const plans = getStoredPlans();
+    const p = plans.find((item) => item.id === id);
+    return p ? structuredClone(p) : null;
   },
 
   async createPlan(data: Partial<TrainingPlan>): Promise<TrainingPlan> {
+    const plans = getStoredPlans();
     const newPlan: TrainingPlan = {
       id: `plan-${Date.now()}`,
       planCode: `PLAN-2026-${Math.floor(100 + Math.random() * 900)}`,
@@ -289,41 +331,49 @@ export const trainingApi = {
       createdAt: new Date().toISOString().split("T")[0],
       updatedAt: new Date().toISOString().split("T")[0],
     };
-    MOCK_PLANS.unshift(newPlan);
+    plans.unshift(newPlan);
+    saveStoredPlans(plans);
     return structuredClone(newPlan);
   },
 
   async activatePlan(id: string): Promise<TrainingPlan> {
-    const p = MOCK_PLANS.find((item) => item.id === id);
+    const plans = getStoredPlans();
+    const p = plans.find((item) => item.id === id);
     if (!p) throw new Error("Training plan not found");
     if (p.isLockedByMedical) {
       throw new Error("Cannot activate plan: Horse is currently under protective Medical Lock!");
     }
     p.status = "ACTIVE";
     p.updatedAt = new Date().toISOString().split("T")[0];
+    saveStoredPlans(plans);
     return structuredClone(p);
   },
 
   async cancelPlan(id: string, reason: string): Promise<TrainingPlan> {
-    const p = MOCK_PLANS.find((item) => item.id === id);
+    const plans = getStoredPlans();
+    const p = plans.find((item) => item.id === id);
     if (!p) throw new Error("Training plan not found");
     p.status = "CANCELLED";
     p.cancelledReason = reason;
     p.updatedAt = new Date().toISOString().split("T")[0];
+    saveStoredPlans(plans);
     return structuredClone(p);
   },
 
   async completePlan(id: string): Promise<TrainingPlan> {
-    const p = MOCK_PLANS.find((item) => item.id === id);
+    const plans = getStoredPlans();
+    const p = plans.find((item) => item.id === id);
     if (!p) throw new Error("Training plan not found");
     p.status = "COMPLETED";
     p.completedAt = new Date().toISOString().split("T")[0];
     p.updatedAt = new Date().toISOString().split("T")[0];
+    saveStoredPlans(plans);
     return structuredClone(p);
   },
 
   async clonePlan(id: string, targetHorseId: string, targetHorseName: string): Promise<TrainingPlan> {
-    const source = MOCK_PLANS.find((item) => item.id === id);
+    const plans = getStoredPlans();
+    const source = plans.find((item) => item.id === id);
     if (!source) throw new Error("Original training plan not found");
     const cloned: TrainingPlan = {
       ...structuredClone(source),
@@ -336,7 +386,8 @@ export const trainingApi = {
       createdAt: new Date().toISOString().split("T")[0],
       updatedAt: new Date().toISOString().split("T")[0],
     };
-    MOCK_PLANS.unshift(cloned);
+    plans.unshift(cloned);
+    saveStoredPlans(plans);
     return structuredClone(cloned);
   },
 
@@ -451,7 +502,7 @@ export const trainingApi = {
       startTime: data.startTime || "07:00",
       status: "PENDING",
       horses: data.horses || [],
-      coordinatorName: "Nguyễn Văn Huấn (HT)",
+      coordinatorName: "David Nguyen (Head Trainer)",
       notes: data.notes || "",
     };
     MOCK_TRIAL_RUNS.push(item);
@@ -470,7 +521,7 @@ export const trainingApi = {
 
   async acknowledgeAlert(alertId: string, vetNotes: string): Promise<TrainingAlert> {
     const alert = MOCK_ALERTS.find((a) => a.id === alertId);
-    if (!alert) throw new Error("Không tìm thấy cảnh báo");
+    if (!alert) throw new Error("Training alert not found");
     alert.acknowledgedByVet = true;
     alert.vetNotes = vetNotes;
     return structuredClone(alert);
