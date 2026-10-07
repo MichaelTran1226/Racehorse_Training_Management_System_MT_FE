@@ -29,7 +29,7 @@ const GROUP_CONFIG = {
 export default function HerdHealthPage() {
   const { user } = useAuth();
   const toast = useToast();
-  const isVet = user?.role === "VETERINARIAN" || user?.role === "CLUB_MANAGER";
+  const isVet = user?.role === "VETERINARIAN";
 
   const [horses, setHorses] = useState<HerdHorse[]>([]);
   const [filterGroup, setFilterGroup] = useState<string>("ALL");
