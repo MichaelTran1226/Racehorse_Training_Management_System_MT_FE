@@ -151,15 +151,26 @@ const routes: Route[] = [
           (from && !Number.isFinite(Date.parse(from))) || (to && !Number.isFinite(Date.parse(to))) ||
           (from && to && Date.parse(from) > Date.parse(to))) throw new ApiError(400, "VALIDATION", "Invalid audit filters");
       const logs = db.audit.map((entry, index) => {
-        const user = db.accounts.find(a => a.fullName === entry.actor);
-        return { id: `demo-${entry.at}-${db.audit.length - index}`, userId: user?.id ?? null, action: entry.action,
+        const user = db.accounts.find(a => a.fullName === entry.actor || (entry.actor.includes("Tran") && a.id === "viet"));
+        return { id: `demo-${entry.at}-${db.audit.length - index}`, userId: user?.id ?? null, actor: entry.actor, action: entry.action,
           entityName: "DemoActivity", entityId: null, oldValuesJson: null,
           newValuesJson: JSON.stringify({ actor: entry.actor, detail: entry.detail }), ipAddress: null, userAgent: null,
           timestamp: entry.at, user: user ? { id: user.id, fullName: user.fullName } : null };
-      }).filter(entry => (!q.get("actor") || !!entry.user?.fullName.toLowerCase().includes(q.get("actor")!.toLowerCase())) &&
-        (!q.get("userId") || entry.userId === q.get("userId")) && (!q.get("action") || entry.action === q.get("action")) &&
-        (!q.get("entityName") || entry.entityName === q.get("entityName")) &&
-        (!from || Date.parse(entry.timestamp) >= Date.parse(from)) && (!to || Date.parse(entry.timestamp) <= Date.parse(to)))
+      }).filter(entry => {
+        const actorFilter = q.get("actor")?.toLowerCase().trim();
+        if (actorFilter) {
+          const nameMatch = entry.user?.fullName.toLowerCase().includes(actorFilter);
+          const rawActorMatch = entry.actor.toLowerCase().includes(actorFilter);
+          const legacyMatch = (actorFilter === "việt" || actorFilter === "viet") && (entry.user?.id === "viet" || entry.actor.toLowerCase().includes("tran"));
+          if (!nameMatch && !rawActorMatch && !legacyMatch) return false;
+        }
+        if (q.get("userId") && entry.userId !== q.get("userId")) return false;
+        if (q.get("action") && entry.action !== q.get("action")) return false;
+        if (q.get("entityName") && entry.entityName !== q.get("entityName")) return false;
+        if (from && Date.parse(entry.timestamp) < Date.parse(from)) return false;
+        if (to && Date.parse(entry.timestamp) > Date.parse(to)) return false;
+        return true;
+      })
         .sort((a, b) => b.timestamp.localeCompare(a.timestamp) || b.id.localeCompare(a.id));
       return { logs: logs.slice((page - 1) * pageSize, page * pageSize), total: logs.length, page, pageSize };
     },
@@ -1004,7 +1015,7 @@ const routes: Route[] = [
     handler({ body }) {
       const horseId = String(body.horseId);
       const expectedDays = Number(body.expectedRestDays || 7);
-      const reviewDate = new Date(Date.now() + expectedDays * 86400000).toISOString().split("T")[0];
+      const reviewDate = body.reviewDate ? String(body.reviewDate) : new Date(Date.now() + expectedDays * 86400000).toISOString().split("T")[0];
       const lock = placeHorseTrainingLock(horseId, {
         appliedStatus: String(body.medicalStatus || "INJURED"),
         reviewDate,
@@ -1160,10 +1171,10 @@ const routes: Route[] = [
       const user = currentUser(db);
       const stored = getStoredHorses();
       const h: any = stored.find((item) => item.id === params[0]);
-      if (!h) throw new ApiError(404, "HORSE_NOT_FOUND", "Không tìm thấy hồ sơ ngựa hoặc bạn không có quyền xem.");
+      if (!h) throw new ApiError(404, "HORSE_NOT_FOUND", "Horse profile not found or permission denied.");
 
       if (user.role === "HORSE_OWNER" && h.ownerId && h.ownerId !== user.id) {
-        throw new ApiError(404, "HORSE_NOT_FOUND", "Không tìm thấy hồ sơ ngựa hoặc bạn không có quyền xem.");
+        throw new ApiError(404, "HORSE_NOT_FOUND", "Horse profile not found or permission denied.");
       }
 
       let st = h.statusText || h.status;
@@ -1214,27 +1225,27 @@ const routes: Route[] = [
     handler({ db, body }) {
       const user = currentUser(db);
       if (user.role !== "CLUB_MANAGER") {
-        throw new ApiError(403, "FORBIDDEN", "Chỉ Club Manager mới có quyền tạo hồ sơ ngựa.");
+        throw new ApiError(403, "FORBIDDEN", "Only Club Manager can create horse profiles.");
       }
 
       const name = String(body.name || "").trim();
       const microchip = String(body.microchip || "").trim();
       const rfid = body.rfid ? String(body.rfid).trim().toUpperCase() : undefined;
 
-      if (!name) throw new ApiError(400, "VALIDATION", "Tên ngựa là bắt buộc.");
+      if (!name) throw new ApiError(400, "VALIDATION", "Horse name is required.");
       if (!microchip || !/^\d{15}$/.test(microchip)) {
-        throw new ApiError(400, "VALIDATION", "Số microchip phải gồm đúng 15 chữ số.");
+        throw new ApiError(400, "VALIDATION", "Microchip must be exactly 15 digits.");
       }
 
       const stored = getStoredHorses();
       if (stored.some((h) => h.name.toLowerCase() === name.toLowerCase())) {
-        throw new ApiError(409, "DUPLICATE_NAME", "Tên ngựa đã tồn tại trong hệ thống.");
+        throw new ApiError(409, "DUPLICATE_NAME", "A horse with this name already exists in the system.");
       }
       if (stored.some((h) => (h as any).microchip === microchip || h.code === microchip)) {
-        throw new ApiError(409, "DUPLICATE_MICROCHIP", "Số microchip đã được gán cho ngựa khác.");
+        throw new ApiError(409, "DUPLICATE_MICROCHIP", "Microchip number is already registered to another horse.");
       }
       if (rfid && stored.some((h) => (h as any).rfid === rfid)) {
-        throw new ApiError(409, "DUPLICATE_RFID", "Mã thẻ RFID đã được gán cho ngựa khác.");
+        throw new ApiError(409, "DUPLICATE_RFID", "RFID code is already registered to another horse.");
       }
 
       const id = `horse-${Date.now()}`;
@@ -1261,7 +1272,7 @@ const routes: Route[] = [
       };
 
       addStoredHorse(newHorse);
-      audit(db, user.fullName, "HORSE_CREATED", `Tạo mới hồ sơ ngựa ${name} (${horseCode})`);
+      audit(db, user.fullName, "HORSE_CREATED", `Created horse profile ${name} (${horseCode})`);
       return newHorse;
     },
   },
@@ -1271,28 +1282,28 @@ const routes: Route[] = [
     handler({ db, params, body }) {
       const user = currentUser(db);
       if (user.role !== "CLUB_MANAGER") {
-        throw new ApiError(403, "FORBIDDEN", "Chỉ Club Manager mới có quyền cập nhật hồ sơ ngựa.");
+        throw new ApiError(403, "FORBIDDEN", "Only Club Manager can update horse profiles.");
       }
 
       const stored = getStoredHorses();
       const existing = stored.find((h) => h.id === params[0]);
-      if (!existing) throw new ApiError(404, "HORSE_NOT_FOUND", "Không tìm thấy hồ sơ ngựa.");
+      if (!existing) throw new ApiError(404, "HORSE_NOT_FOUND", "Horse profile not found.");
 
       if ((existing as any).status === "RETIRED") {
-        throw new ApiError(400, "HORSE_RETIRED", "Ngựa đã ngừng quản lý. Vui lòng kích hoạt lại trước khi thao tác.");
+        throw new ApiError(400, "HORSE_RETIRED", "Horse is retired. Reactivate horse before modifying.");
       }
 
       if (body.name) {
         const name = String(body.name).trim();
         if (stored.some((h) => h.id !== params[0] && h.name.toLowerCase() === name.toLowerCase())) {
-          throw new ApiError(409, "DUPLICATE_NAME", "Tên ngựa đã tồn tại trong hệ thống.");
+          throw new ApiError(409, "DUPLICATE_NAME", "A horse with this name already exists in the system.");
         }
         existing.name = name;
       }
       if (body.microchip) {
         const chip = String(body.microchip).trim();
         if (stored.some((h) => h.id !== params[0] && ((h as any).microchip === chip || h.code === chip))) {
-          throw new ApiError(409, "DUPLICATE_MICROCHIP", "Số microchip đã được gán cho ngựa khác.");
+          throw new ApiError(409, "DUPLICATE_MICROCHIP", "Microchip number is already registered to another horse.");
         }
         (existing as any).microchip = chip;
         existing.code = chip;
@@ -1300,7 +1311,7 @@ const routes: Route[] = [
       if (body.rfid) {
         const rfid = String(body.rfid).trim().toUpperCase();
         if (stored.some((h) => h.id !== params[0] && (h as any).rfid === rfid)) {
-          throw new ApiError(409, "DUPLICATE_RFID", "Mã thẻ RFID đã được gán cho ngựa khác.");
+          throw new ApiError(409, "DUPLICATE_RFID", "RFID code is already registered to another horse.");
         }
         (existing as any).rfid = rfid;
       }
@@ -1311,7 +1322,7 @@ const routes: Route[] = [
       if (body.status) (existing as any).status = body.status;
 
       saveStoredHorses(stored);
-      audit(db, user.fullName, "HORSE_UPDATED", `Cập nhật hồ sơ ngựa ${existing.name}`);
+      audit(db, user.fullName, "HORSE_UPDATED", `Updated horse profile ${existing.name}`);
       return existing;
     },
   },
@@ -1321,11 +1332,11 @@ const routes: Route[] = [
     handler({ db, params }) {
       const user = currentUser(db);
       if (user.role !== "CLUB_MANAGER") {
-        throw new ApiError(403, "FORBIDDEN", "Chỉ Club Manager mới có quyền xóa hồ sơ ngựa.");
+        throw new ApiError(403, "FORBIDDEN", "Only Club Manager can delete horse profiles.");
       }
       const stored = getStoredHorses();
       const existing = stored.find((h) => h.id === params[0]);
-      if (!existing) throw new ApiError(404, "HORSE_NOT_FOUND", "Không tìm thấy hồ sơ ngựa.");
+      if (!existing) throw new ApiError(404, "HORSE_NOT_FOUND", "Horse profile not found.");
       if (existing.isLocked) {
         throw new ApiError(400, "HORSE_LOCKED", "Cannot delete horse profile while an active Medical Lock is in effect.");
       }
@@ -1405,7 +1416,7 @@ const routes: Route[] = [
     handler({ params }) {
       const { getStoredPlans } = require("@/shared/mock/trainingData");
       const p = getStoredPlans().find((x: any) => x.id === params[0]);
-      if (!p) throw new ApiError(404, "NOT_FOUND", "Không tìm thấy giáo án");
+      if (!p) throw new ApiError(404, "NOT_FOUND", "Training plan not found");
       return p;
     },
   },
@@ -1417,11 +1428,11 @@ const routes: Route[] = [
       const plans = getStoredPlans();
       const newPlan = {
         id: `plan-${Date.now()}`,
-        planCode: `GA-2026-${Math.floor(100 + Math.random() * 900)}`,
-        name: body.name || "Giáo án mới",
+        planCode: `PLAN-2026-${Math.floor(100 + Math.random() * 900)}`,
+        name: body.name || "New Training Plan",
         horseId: body.horseId || "horse-1",
-        horseName: body.horseName || "Thần Gió",
-        horseCode: body.horseCode || "EQ-001",
+        horseName: body.horseName || "Thunderbolt Swift",
+        horseCode: body.horseCode || "HR-000001",
         target: body.target || "",
         targetDistanceMeters: body.targetDistanceMeters || 1600,
         startDate: body.startDate || new Date().toISOString().split("T")[0],
@@ -1429,7 +1440,7 @@ const routes: Route[] = [
         status: body.status || "DRAFT",
         phases: body.phases || [],
         headTrainerId: "usr-ht-1",
-        headTrainerName: "Nguyễn Văn Huấn (HT)",
+        headTrainerName: "David Nguyen (HT)",
         notes: body.notes || "",
         createdAt: new Date().toISOString().split("T")[0],
         updatedAt: new Date().toISOString().split("T")[0],
@@ -1446,9 +1457,9 @@ const routes: Route[] = [
       const { getStoredPlans, saveStoredPlans } = require("@/shared/mock/trainingData");
       const plans = getStoredPlans();
       const p = plans.find((x: any) => x.id === params[0]);
-      if (!p) throw new ApiError(404, "NOT_FOUND", "Không tìm thấy giáo án");
+      if (!p) throw new ApiError(404, "NOT_FOUND", "Training plan not found");
       if (body.status === "ACTIVE" && p.isLockedByMedical) {
-        throw new ApiError(400, "LOCKED", "Không thể kích hoạt giáo án: Ngựa đang bị Khóa huấn luyện y tế!");
+        throw new ApiError(400, "LOCKED", "Cannot activate training plan: Horse is under active Veterinary Medical Lock!");
       }
       p.status = String(body.status);
       if (body.status === "CANCELLED") p.cancelledReason = body.reason;
@@ -1465,12 +1476,12 @@ const routes: Route[] = [
       const { getStoredPlans, saveStoredPlans } = require("@/shared/mock/trainingData");
       const plans = getStoredPlans();
       const source = plans.find((x: any) => x.id === params[0]);
-      if (!source) throw new ApiError(404, "NOT_FOUND", "Không tìm thấy giáo án gốc");
+      if (!source) throw new ApiError(404, "NOT_FOUND", "Source training plan not found");
       const cloned = {
         ...JSON.parse(JSON.stringify(source)),
         id: `plan-${Date.now()}`,
-        planCode: `GA-2026-${Math.floor(100 + Math.random() * 900)}`,
-        name: `${source.name} (Bản sao)`,
+        planCode: `PLAN-2026-${Math.floor(100 + Math.random() * 900)}`,
+        name: `${source.name} (Copy)`,
         horseId: String(body.targetHorseId),
         horseName: String(body.targetHorseName),
         status: "DRAFT",

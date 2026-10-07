@@ -63,7 +63,7 @@ export function CreateAccountModal({ onClose, onCreated }: CreateAccountModalPro
       <form onSubmit={onSubmit} noValidate style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {errors.form && <span style={{ color: "var(--danger)", fontSize: 11.5 }}>{errors.form}</span>}
         <Field label="Full name" required error={errors.name}>
-          <Input icon="user" placeholder="Trần Văn Nam" value={fullName} data-autofocus onChange={(e) => setFullName(e.target.value)} />
+          <Input icon="user" placeholder="John Doe" value={fullName} data-autofocus onChange={(e) => setFullName(e.target.value)} />
         </Field>
         <Field label="Club email" required error={errors.email}>
           <Input type="email" icon="mail" placeholder={EMAIL_PLACEHOLDER} value={email} onChange={(e) => setEmail(e.target.value)} />

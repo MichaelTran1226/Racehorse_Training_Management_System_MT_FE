@@ -33,7 +33,7 @@ export default function StallCatalogPage() {
       loadStalls();
     } catch (e) {
       console.error(e);
-      alert("Xóa ô chuồng thất bại.");
+      alert("Failed to delete stall.");
     }
   };
 
@@ -42,22 +42,22 @@ export default function StallCatalogPage() {
   return (
     <div className="flex flex-col h-full bg-slate-50">
       <PageHeader
-        title="Danh mục Ô chuồng"
+        title="Stall & Barn Directory"
         action={
           isClubManager && (
-            <Button tone="primary" onClick={() => {}}>Thêm ô chuồng</Button>
+            <Button tone="primary" onClick={() => {}}>Add Stall</Button>
           )
         }
       />
       
       <div className="p-6 flex-1 flex flex-col md:flex-row gap-6">
         <div className="md:w-64 flex-shrink-0 space-y-2">
-          <h3 className="font-semibold text-slate-900 mb-4 px-2">Khu chuồng</h3>
+          <h3 className="font-semibold text-slate-900 mb-4 px-2">Barn Zones</h3>
           <button
             onClick={() => setSelectedZone("")}
             className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${selectedZone === "" ? "bg-green-100 text-green-800" : "hover:bg-slate-100 text-slate-700"}`}
           >
-            Tất cả
+            All Zones
           </button>
           {zones.map((z: string) => (
             <button
@@ -72,49 +72,49 @@ export default function StallCatalogPage() {
 
         <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
           <DataTable<Stall>
-            caption="Danh sách ô chuồng"
+            caption="List of barn stalls"
             rowKey={(row: Stall) => row.id}
             columns={[
-              { key: "code", header: "Mã ô", render: (row: Stall) => row.code },
-              { key: "zone", header: "Khu chuồng", render: (row: Stall) => row.zone },
+              { key: "code", header: "Stall Code", render: (row: Stall) => row.code },
+              { key: "zone", header: "Barn Zone", render: (row: Stall) => row.zone },
               { 
                 key: "status", 
-                header: "Trạng thái ô",
+                header: "Status",
                 render: (row: Stall) => {
                   const tone = row.status === "AVAILABLE" ? "ok" : row.status === "OCCUPIED" ? "warn" : "neutral";
                   return (
                     <Badge tone={tone}>
-                      {row.status === "AVAILABLE" ? "Trống" : row.status === "OCCUPIED" ? "Có ngựa" : "Bảo trì"}
+                      {row.status === "AVAILABLE" ? "Available" : row.status === "OCCUPIED" ? "Occupied" : "Maintenance"}
                     </Badge>
                   );
                 }
               },
-              {
+              { 
                 key: "allocations",
-                header: "Ngựa đang ở",
+                header: "Occupant Horse",
                 render: (row: Stall) => {
                   const alloc = row.allocations.find((a: StallAllocation) => a.isActive);
-                  return alloc ? <span>{alloc.horse.name}</span> : <span className="text-slate-400">Trống</span>;
+                  return alloc ? <span>{alloc.horse.name}</span> : <span className="text-slate-400">Vacant</span>;
                 }
               },
-              { key: "notes", header: "Ghi chú", render: (row: Stall) => row.notes || "" },
+              { key: "notes", header: "Notes", render: (row: Stall) => row.notes || "" },
               ...(isClubManager ? [{
                 key: "actions",
                 header: "",
                 align: "right" as const,
                 render: (row: Stall) => (
                   <div className="flex justify-end gap-2">
-                    <Button tone="ghost" size="sm" onClick={() => {}}>Sửa</Button>
+                    <Button tone="ghost" size="sm" onClick={() => {}}>Edit</Button>
                     <Button 
                       tone="danger" 
                       size="sm"
                       onClick={() => {
-                        if (confirm(`Xóa ô chuồng ${row.code}?`)) {
+                        if (confirm(`Delete stall ${row.code}?`)) {
                           handleDelete(row.id);
                         }
                       }}
                     >
-                      Xóa
+                      Delete
                     </Button>
                   </div>
                 )
@@ -122,7 +122,7 @@ export default function StallCatalogPage() {
             ]}
             rows={stalls}
             loading={isLoading}
-            empty={<div className="p-8 text-center text-slate-400">Không có ô chuồng nào trong khu vực này.</div>}
+            empty={<div className="p-8 text-center text-slate-400">No stalls found in this barn zone.</div>}
           />
         </div>
       </div>

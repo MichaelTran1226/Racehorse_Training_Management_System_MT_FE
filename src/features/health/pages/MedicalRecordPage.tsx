@@ -18,6 +18,7 @@ import {
 } from "../api";
 import { TrainingLockModal } from "../components/TrainingLockModal";
 import { VitalsDisplay } from "../components/VitalsDisplay";
+import { HorseAnatomyGraphic } from "../components/HorseAnatomyGraphic";
 import type { HorseMedicalProfile, ObservationNote } from "../types";
 import styles from "./MedicalRecordPage.module.css";
 
@@ -347,9 +348,99 @@ export default function MedicalRecordPage() {
         </div>
       )}
 
-      {/* Tab 3: Injury Map */}
+      {/* Tab 3: Injury Map & 2D Model */}
       {activeTab === "injuries" && (
-        <div className={styles.tabContent}>
+        <div className={styles.tabContent} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          {/* 2D Model Interactive Hero Card */}
+          <div
+            style={{
+              padding: "1.5rem",
+              background: "var(--surface)",
+              borderRadius: "var(--radius-card)",
+              border: "1px solid var(--border)",
+              display: "grid",
+              gridTemplateColumns: "minmax(280px, 400px) 1fr",
+              gap: "1.5rem",
+              alignItems: "center",
+            }}
+          >
+            <div
+              style={{
+                height: 220,
+                background: "var(--surface-sunken)",
+                borderRadius: 12,
+                overflow: "hidden",
+                border: "1px solid var(--border)",
+                cursor: "pointer",
+                position: "relative",
+              }}
+              onClick={() => navigate(`/medical/horses/${horse.id}/injuries`)}
+              title="Click to open full 2D Interactive Musculoskeletal Canvas"
+            >
+              <HorseAnatomyGraphic view="LEFT" layer="MUSCLE" />
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: 8,
+                  right: 8,
+                  background: "rgba(0, 0, 0, 0.75)",
+                  color: "#ffffff",
+                  fontSize: "0.72rem",
+                  padding: "4px 8px",
+                  borderRadius: 6,
+                  fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                <Icon name="search" size={12} />
+                Click to explore 2D map
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: injuries.some((i) => i.stage !== "HEALED") ? "var(--danger)" : "var(--ok)",
+                    display: "inline-block",
+                  }}
+                />
+                <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 700 }}>
+                  2D Musculoskeletal Anatomical Model (SC-3.05)
+                </h3>
+              </div>
+              <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
+                Interactive dual-layer biomechanical mapping (Skeletal & Muscular systems) supporting coordinate-precise lesion tagging, progressive staging (Acute → Healed), and veterinary clinical evaluation.
+              </p>
+
+              <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginTop: "0.25rem" }}>
+                <div style={{ padding: "0.5rem 0.85rem", background: "var(--surface-sunken)", borderRadius: 8, fontSize: "0.8rem" }}>
+                  Active Lesions: <strong>{injuries.filter((i) => i.stage !== "HEALED").length}</strong>
+                </div>
+                <div style={{ padding: "0.5rem 0.85rem", background: "var(--surface-sunken)", borderRadius: 8, fontSize: "0.8rem" }}>
+                  Healed Lesions: <strong>{injuries.filter((i) => i.stage === "HEALED").length}</strong>
+                </div>
+                <div style={{ padding: "0.5rem 0.85rem", background: "var(--surface-sunken)", borderRadius: 8, fontSize: "0.8rem" }}>
+                  Total Documented: <strong>{injuries.length}</strong>
+                </div>
+              </div>
+
+              <div style={{ marginTop: "0.5rem" }}>
+                <Button
+                  tone="primary"
+                  onClick={() => navigate(`/medical/horses/${horse.id}/injuries`)}
+                >
+                  Open Full 2D Anatomical Canvas →
+                </Button>
+              </div>
+            </div>
+          </div>
+
           <div className={styles.sectionCard}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <h2 className={styles.sectionTitle}>
@@ -362,7 +453,17 @@ export default function MedicalRecordPage() {
             </div>
 
             {injuries.length === 0 ? (
-              <EmptyState title="No injuries recorded" description="No musculoskeletal lesions currently documented for this horse." />
+              <EmptyState
+                title="No injuries recorded"
+                description="No musculoskeletal lesions currently documented for this horse."
+                action={
+                  isVet ? (
+                    <Button tone="primary" onClick={() => navigate(`/medical/horses/${horse.id}/injuries`)}>
+                      Open 2D Canvas to Pin Lesion
+                    </Button>
+                  ) : undefined
+                }
+              />
             ) : (
               <div className={styles.tableContainer}>
                 <table className={styles.dataTable}>
@@ -378,7 +479,12 @@ export default function MedicalRecordPage() {
                   </thead>
                   <tbody>
                     {injuries.map((inj) => (
-                      <tr key={inj.id}>
+                      <tr
+                        key={inj.id}
+                        onClick={() => navigate(`/medical/horses/${horse.id}/injuries`)}
+                        style={{ cursor: "pointer" }}
+                        title="Click to inspect this pin on the 2D anatomical model"
+                      >
                         <td><strong>{inj.region}</strong> ({inj.view === "LEFT" ? "Left View" : "Right View"})</td>
                         <td>{inj.injuryType}</td>
                         <td>

@@ -57,7 +57,7 @@ export const HorseAnatomyGraphic: React.FC<HorseAnatomyGraphicProps> = ({
         {/* Blueprint Grid Canvas */}
         <rect width="1024" height="682" fill="url(#vetGridPattern)" rx="8" />
 
-        {/* Horse Anatomy Image (Lớp Cơ: horse_muscle.png | Lớp Xương: horse_anatomy.png) */}
+        {/* Horse Anatomy Image (Muscle Layer: horse_muscle.png | Skeleton Layer: horse_anatomy.png) */}
         <g
           style={{
             transform: isRight ? "scaleX(-1)" : "none",

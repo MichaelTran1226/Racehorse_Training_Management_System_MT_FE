@@ -57,25 +57,25 @@ export default function StableMapPage() {
     return (
       <div className="w-80 bg-white border-l border-slate-200 flex flex-col fixed right-0 top-16 bottom-0 shadow-xl overflow-y-auto z-10">
         <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-          <h3 className="font-semibold text-slate-900">Chi tiết ô chuồng</h3>
+          <h3 className="font-semibold text-slate-900">Stall Details</h3>
           <button onClick={() => setSelectedStallId(null)} className="text-slate-400 hover:text-slate-600">
             <Icon name="x" size={20} />
           </button>
         </div>
         <div className="p-4 space-y-4">
           <div>
-            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Mã ô chuồng</div>
+            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Stall Code</div>
             <div className="font-semibold text-lg">{selectedStall.code}</div>
           </div>
           <div>
-            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Trạng thái ô</div>
+            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Stall Status</div>
             <div className="font-medium">
-              {selectedStall.status === "MAINTENANCE" ? "Bảo trì" : selectedStall.status === "OCCUPIED" ? "Có ngựa" : "Trống"}
+              {selectedStall.status === "MAINTENANCE" ? "Maintenance" : selectedStall.status === "OCCUPIED" ? "Occupied" : "Available"}
             </div>
           </div>
           {selectedStall.notes && (
             <div>
-              <div className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Ghi chú ô</div>
+              <div className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Stall Notes</div>
               <div className="text-sm">{selectedStall.notes}</div>
             </div>
           )}
@@ -85,23 +85,23 @@ export default function StableMapPage() {
           {activeAlloc ? (
             <div className="space-y-4">
               <div>
-                <div className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Ngựa đang ở</div>
+                <div className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Occupant Horse</div>
                 <div className="font-medium text-slate-900">{activeAlloc.horse.name}</div>
                 <div className="text-sm text-slate-500">{activeAlloc.horse.code}</div>
               </div>
               <div className="flex flex-col gap-2 pt-2">
                 <Link to={`/horses/${activeAlloc.horse.id}`}>
-                  <Button tone="secondary" block>Xem hồ sơ ngựa</Button>
+                  <Button tone="secondary" block>View Horse Profile</Button>
                 </Link>
-                <Button tone="ghost" block>Chuyển ô</Button>
-                <Button tone="danger" block>Trả ô</Button>
+                <Button tone="ghost" block>Reassign Stall</Button>
+                <Button tone="danger" block>Deallocate Stall</Button>
               </div>
             </div>
           ) : (
             <div className="pt-2">
-              <div className="text-sm text-slate-500 mb-4">Ô chuồng này đang trống.</div>
+              <div className="text-sm text-slate-500 mb-4">This stall is currently vacant.</div>
               {selectedStall.status !== "MAINTENANCE" && (
-                <Button tone="primary" block>Gán ngựa vào ô</Button>
+                <Button tone="primary" block>Assign Horse to Stall</Button>
               )}
             </div>
           )}
@@ -113,7 +113,7 @@ export default function StableMapPage() {
   return (
     <div className="flex flex-col h-full bg-slate-50 relative">
       <PageHeader
-        title="Sơ đồ chuồng trại"
+        title="Barn & Stable Map"
         action={
           <div className="flex items-center gap-4">
             <select
@@ -121,7 +121,7 @@ export default function StableMapPage() {
               onChange={(e) => setSelectedZone(e.target.value)}
               className="px-3 py-2 border border-slate-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             >
-              {zones.length === 0 && <option value="">(Không có khu chuồng)</option>}
+              {zones.length === 0 && <option value="">(No barn zones available)</option>}
               {zones.map((z: string) => (
                 <option key={z} value={z}>{z}</option>
               ))}
@@ -130,7 +130,7 @@ export default function StableMapPage() {
               <Icon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="Tìm mã ô, tên ngựa..."
+                placeholder="Search stall code, horse name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 pr-3 py-2 border border-slate-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500 w-64"
@@ -145,10 +145,10 @@ export default function StableMapPage() {
           <StallLegend />
           
           {isLoading ? (
-            <div className="flex items-center justify-center h-64 text-slate-400">Đang tải sơ đồ...</div>
+            <div className="flex items-center justify-center h-64 text-slate-400">Loading stable map...</div>
           ) : stalls.length === 0 ? (
             <div className="flex items-center justify-center h-64 text-slate-400 border-2 border-dashed border-slate-200 rounded-xl">
-              Không có ô chuồng nào phù hợp.
+              No stalls match the selected criteria.
             </div>
           ) : (
             <StallGrid columns={6}>
