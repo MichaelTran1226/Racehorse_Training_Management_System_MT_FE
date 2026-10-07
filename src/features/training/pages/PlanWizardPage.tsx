@@ -10,8 +10,6 @@ import { useToast } from "@/shared/components/ui/Toast";
 import { getStoredHorses } from "@/shared/mock/horsesData";
 import { trainingApi } from "../api";
 import type { TrainingPhase } from "../types";
-import { getHorses } from "@/features/horses/api";
-import type { Horse } from "@/features/horses/types";
 
 export default function PlanWizardPage() {
   const navigate = useNavigate();
@@ -19,15 +17,6 @@ export default function PlanWizardPage() {
 
   const [step, setStep] = useState<number>(1);
   const [submitting, setSubmitting] = useState<boolean>(false);
-  const [horses, setHorses] = useState<Horse[]>([]);
-
-  useEffect(() => {
-    getHorses({ limit: 100 }).then((res: any) => {
-      const list = Array.isArray(res) ? res : res.items || [];
-      setHorses(list);
-      if (list.length > 0) setHorseId(list[0].id);
-    }).catch(console.error);
-  }, []);
 
   // Available horses from canonical store
   const horses = useMemo(() => getStoredHorses(), []);
