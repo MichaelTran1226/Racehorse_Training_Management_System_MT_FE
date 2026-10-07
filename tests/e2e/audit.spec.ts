@@ -12,12 +12,13 @@ test('audit filters, pagination, detail and date validation', async ({ page }, t
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await signIn(page);
-  await page.evaluate(() => {
+  const actorName = await page.evaluate(() => {
     const key = 'equiflow.mock.db.v1';
     const db = JSON.parse(localStorage.getItem(key)!);
     const actor = db.accounts.find((a: { email: string }) => a.email === 'viet.do@gmail.com').fullName;
     db.audit = Array.from({ length: 25 }, (_, n) => ({ at: new Date(Date.UTC(2026, 8, 30, 12, n)).toISOString(), actor, action: n % 2 ? 'AUTH_LOGIN' : 'ACCOUNT_EDITED', detail: `Event ${n}` }));
     localStorage.setItem(key, JSON.stringify(db));
+    return actor as string;
   });
   await page.goto('/audit');
   await expect(page.locator('span[role=status]')).toContainText('25 events');
@@ -33,8 +34,8 @@ test('audit filters, pagination, detail and date validation', async ({ page }, t
   await expect(page.getByRole('dialog')).toContainText('Event 23');
   await page.screenshot({ path: testInfo.outputPath('audit-detail.png'), fullPage: true });
   await page.keyboard.press('Escape');
-  const actorQuery = actor.toLowerCase().includes('tran') ? 'tran' : 'việt';
-  await page.getByLabel('Actor', { exact: true }).fill(actorQuery);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.getByLabel('Actor', { exact: true }).fill(actorName);
   await page.getByRole('button', { name: 'Apply filters' }).click();
   await expect(page.locator('span[role=status]')).toContainText('12 events');
   await page.getByLabel('Actor', { exact: true }).fill('no-matching-actor');
