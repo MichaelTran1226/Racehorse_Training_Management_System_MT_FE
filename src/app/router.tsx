@@ -38,6 +38,8 @@ import TrialRunsPage from "@/features/training/pages/TrialRunsPage";
 import SessionMetricsPage from "@/features/training/pages/SessionMetricsPage";
 import LiveMonitorPage from "@/features/training/pages/LiveMonitorPage";
 import AlertListPage from "@/features/training/pages/AlertListPage";
+import StableMapPage from "@/features/stable/pages/StableMapPage";
+import StallCatalogPage from "@/features/stable/pages/StallCatalogPage";
 import { AppShell } from "@/shared/components/layout/AppShell";
 import { Providers } from "@/shared/components/layout/Providers";
 import { RoleGuard } from "./RoleGuard";
@@ -199,9 +201,14 @@ export const router = createBrowserRouter([
           { path: "/training/alerts", element: <AlertListPage /> },
           { path: "/alerts", element: <AlertListPage /> },
 
+          // ---- Phân hệ Chuồng trại (Flow 4 & P1-09)
+          { path: "/stables/map", element: <StableMapPage /> },
+          { path: "/catalogs/stalls", element: <StallCatalogPage /> },
+
           { path: "*", element: <ComingSoonRoute /> },
         ],
       },
     ],
   },
 ]);
+
