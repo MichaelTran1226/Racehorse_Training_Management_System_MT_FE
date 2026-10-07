@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/shared/components/ui/Button";
-import { Card } from "@/shared/components/ui/Card";
 import { Input } from "@/shared/components/form/Input";
 import { Tabs } from "@/shared/components/ui/Tabs";
 import { Modal } from "@/shared/components/ui/Modal";

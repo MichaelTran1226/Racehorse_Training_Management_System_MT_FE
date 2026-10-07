@@ -11,82 +11,82 @@ import type {
 const MOCK_PLANS: TrainingPlan[] = [
   {
     id: "plan-1",
-    planCode: "GA-2026-001",
-    name: "Giáo án Tăng cường Sức bền - Derby Mùa Thu",
+    planCode: "PLAN-2026-001",
+    name: "Endurance & Speed Conditioning - Autumn Derby",
     horseId: "horse-1",
-    horseName: "Thần Gió (Thunderbolt)",
-    horseCode: "EQ-001",
-    target: "Nâng cao sức bền cơ bắp và ổn định nhịp tim giai đoạn nước rút 2000m",
+    horseName: "Thunderbolt Swift",
+    horseCode: "HR-000001",
+    target: "Enhance muscular endurance and stabilize heart rate during 2000m sprint phase",
     targetDistanceMeters: 2000,
     startDate: "2026-09-15",
     endDate: "2026-10-31",
     status: "ACTIVE",
-    headTrainerId: "usr-ht-1",
-    headTrainerName: "Nguyễn Văn Huấn (HT)",
-    notes: "Tập trung phân kỳ tập nhẹ vào đầu tuần và tăng tốc cuối tuần",
+    headTrainerId: "trainer-1",
+    headTrainerName: "David Nguyen (Head Trainer)",
+    notes: "Focus on light aerobic intervals early in the week and progressive pacing on weekends",
     createdAt: "2026-09-10",
     updatedAt: "2026-09-28",
     phases: [
       {
         id: "phase-1",
         phaseOrder: 1,
-        name: "Giai đoạn 1: Làm quen & Tăng thể tích",
+        name: "Phase 1: Volume Building & Aerobic Base",
         startDate: "2026-09-15",
         endDate: "2026-09-30",
         targetHeartRateMax: 140,
         targetSpeedKmh: 35,
-        focus: "Đi bộ dốc, trot đều đặn và canter cự ly dài tốc độ ổn định",
+        focus: "Hill walks, steady trot, and extended canter at controlled pace",
       },
       {
         id: "phase-2",
         phaseOrder: 2,
-        name: "Giai đoạn 2: Tăng tốc & Nước rút",
+        name: "Phase 2: Speed Work & Sprint Conditioning",
         startDate: "2026-10-01",
         endDate: "2026-10-20",
         targetHeartRateMax: 175,
         targetSpeedKmh: 58,
-        focus: "Bài tập ngắt quãng (Intervals), bứt tốc 400m cuối",
+        focus: "Interval workouts and final 400m acceleration runs",
       },
       {
         id: "phase-3",
         phaseOrder: 3,
-        name: "Giai đoạn 3: Giảm tải & Tinh chỉnh trước giải",
+        name: "Phase 3: Tapering & Gate Rehearsal",
         startDate: "2026-10-21",
         endDate: "2026-10-31",
         targetHeartRateMax: 150,
         targetSpeedKmh: 45,
-        focus: "Duy trì nhịp điệu, kiểm tra phản xạ cổng xuất phát",
+        focus: "Rhythm maintenance and barrier break reaction practice",
       },
     ],
   },
   {
     id: "plan-2",
-    planCode: "GA-2026-002",
-    name: "Phục hồi thể lực nhẹ sau chấn thương dây chằng",
+    planCode: "PLAN-2026-002",
+    name: "Post-Injury Gentle Recovery Protocol",
     horseId: "horse-2",
-    horseName: "Bạch Mã Hoàng Tử (Silver Arrow)",
-    horseCode: "EQ-002",
-    target: "Phục hồi cơ đùi và gân bàn chân, kiểm soát nhịp tim dưới 120 bpm",
+    horseName: "Northern Dancer Legacy",
+    horseCode: "HR-000002",
+    target: "Musculoskeletal rehabilitation and low cardiovascular strain capped below 120 bpm",
     targetDistanceMeters: 800,
     startDate: "2026-10-01",
     endDate: "2026-11-15",
     status: "DRAFT",
-    headTrainerId: "usr-ht-1",
-    headTrainerName: "Nguyễn Văn Huấn (HT)",
+    headTrainerId: "trainer-1",
+    headTrainerName: "David Nguyen (Head Trainer)",
     isLockedByMedical: true,
-    notes: "Đang bị khóa huấn luyện y tế. Không được xếp bài tập nặng (Canter, Gallop)!",
+    notes: "Under active Medical Lock: High-intensity workouts (Gallop, Fast Canter) strictly suspended!",
     createdAt: "2026-09-29",
     updatedAt: "2026-09-29",
     phases: [
       {
         id: "phase-2-1",
         phaseOrder: 1,
-        name: "Giai đoạn Phục hồi Vận động Khớp",
+        name: "Phase 1: Controlled Walk & Joint Mobilization",
         startDate: "2026-10-01",
         endDate: "2026-10-20",
         targetHeartRateMax: 110,
         targetSpeedKmh: 15,
-        focus: "Đi bộ tay 30 phút/ngày và bơi hồ phục hồi",
+        focus: "Hand walking 30 min/day and gentle equine hydrotherapy",
       },
     ],
   },
@@ -96,22 +96,22 @@ const MOCK_SESSIONS: ExerciseSession[] = [
   {
     id: "ses-101",
     planId: "plan-1",
-    planName: "Giáo án Tăng cường Sức bền - Derby Mùa Thu",
+    planName: "Endurance & Speed Conditioning - Autumn Derby",
     horseId: "horse-1",
-    horseName: "Thần Gió (Thunderbolt)",
-    horseCode: "EQ-001",
+    horseName: "Thunderbolt Swift",
+    horseCode: "HR-000001",
     sessionDate: "2026-09-30",
     startTime: "06:30",
     endTime: "07:30",
     sessionType: "CANTER",
     intensity: "MODERATE",
     status: "COMPLETED",
-    groomName: "Trần Văn Chăm (Groom)",
-    jockeyName: "Lê Hoàng Nài (Jockey)",
+    groomName: "John Smith (Groom Hand)",
+    jockeyName: "Alex Turner (Jockey)",
     trackType: "TURF",
     lane: 2,
     targetDistanceMeters: 1600,
-    notes: "Mặt sân cỏ khô ráo, gió nhẹ",
+    notes: "Dry turf track conditions, light headwind",
     result: {
       id: "res-1",
       sessionId: "ses-101",
@@ -126,135 +126,134 @@ const MOCK_SESSIONS: ExerciseSession[] = [
       performanceScore: 8.5,
       hasAbnormalSigns: false,
       alertSentToVet: false,
-      headTrainerFeedback: "Ngựa giữ nhịp tốt, thở đều sau khi dừng bài tập.",
+      headTrainerFeedback: "Horse maintained steady rhythm with calm post-session respiration.",
       recordedAt: "2026-09-30 07:40",
-      recordedBy: "Nguyễn Văn Huấn (HT)",
+      recordedBy: "David Nguyen (Head Trainer)",
     },
   },
   {
     id: "ses-102",
     planId: "plan-1",
-    planName: "Giáo án Tăng cường Sức bền - Derby Mùa Thu",
+    planName: "Endurance & Speed Conditioning - Autumn Derby",
     horseId: "horse-1",
-    horseName: "Thần Gió (Thunderbolt)",
-    horseCode: "EQ-001",
+    horseName: "Thunderbolt Swift",
+    horseCode: "HR-000001",
     sessionDate: "2026-10-01",
     startTime: "06:00",
     endTime: "07:15",
     sessionType: "GALLOP",
     intensity: "HEAVY",
     status: "SCHEDULED",
-    groomName: "Trần Văn Chăm (Groom)",
-    jockeyName: "Lê Hoàng Nài (Jockey)",
+    groomName: "John Smith (Groom Hand)",
+    jockeyName: "Alex Turner (Jockey)",
     trackType: "TURF",
     lane: 1,
     targetDistanceMeters: 1800,
-    notes: "Tập trung bứt tốc 400m cuối",
+    notes: "Focus on final 400m speed acceleration",
   },
   {
     id: "ses-103",
     planId: "plan-2",
-    planName: "Phục hồi thể lực nhẹ sau chấn thương dây chằng",
+    planName: "Post-Injury Gentle Recovery Protocol",
     horseId: "horse-2",
-    horseName: "Bạch Mã Hoàng Tử (Silver Arrow)",
-    horseCode: "EQ-002",
+    horseName: "Northern Dancer Legacy",
+    horseCode: "HR-000002",
     sessionDate: "2026-10-01",
     startTime: "08:00",
     endTime: "08:45",
     sessionType: "CANTER",
     intensity: "HEAVY",
     status: "BLOCKED_BY_LOCK",
-    blockedReason: "Khóa huấn luyện y tế hiệu lực: Viêm gân gấp chi trước. Nghiêm cấm tập nặng!",
-    groomName: "Phạm Văn Dưỡng (Groom)",
+    blockedReason: "Medical Lock Active: Acute suspensory ligament strain. Heavy training strictly prohibited!",
+    groomName: "John Smith (Groom Hand)",
     targetDistanceMeters: 1200,
-    notes: "Đã tự động chặn bài tập nặng do phát hiện Khóa y tế",
+    notes: "Automatically blocked by system due to active Medical Lock",
   },
   {
     id: "ses-104",
     horseId: "horse-2",
-    horseName: "Bạch Mã Hoàng Tử (Silver Arrow)",
-    horseCode: "EQ-002",
+    horseName: "Northern Dancer Legacy",
+    horseCode: "HR-000002",
     sessionDate: "2026-10-01",
     startTime: "16:00",
     endTime: "16:30",
     sessionType: "WALK",
     intensity: "LIGHT",
     status: "SCHEDULED",
-    groomName: "Phạm Văn Dưỡng (Groom)",
+    groomName: "John Smith (Groom Hand)",
     targetDistanceMeters: 600,
-    notes: "Đi dạo cỏ mềm phục hồi khớp, tuân thủ phác đồ BS thú y",
+    notes: "Gentle soft-ground walking for joint rehabilitation; compliant with Vet protocol",
   },
 ];
 
 const MOCK_TRIAL_RUNS: TrialRunSchedule[] = [
   {
     id: "trial-1",
-    runCode: "CT-2026-W40-01",
+    runCode: "TR-2026-W40-01",
     runDate: "2026-10-03",
     trackType: "TURF",
     orderNumber: 1,
     distanceMeters: 1200,
     startTime: "07:00",
     status: "PENDING",
-    coordinatorName: "Nguyễn Văn Huấn (HT)",
-    notes: "Chạy thử xuất phát từ Barrier chuẩn bị Cúp Mùa Thu",
+    coordinatorName: "David Nguyen (Head Trainer)",
+    notes: "Barrier break trial in preparation for Autumn Cup",
     horses: [
-      { horseId: "horse-1", horseName: "Thần Gió (Thunderbolt)", jockeyName: "Lê Hoàng Nài", gateNumber: 1 },
-      { horseId: "horse-3", horseName: "Hắc Báo (Black Panther)", jockeyName: "Đỗ Tuấn Kiệt", gateNumber: 2 },
-      { horseId: "horse-4", horseName: "Hỏa Tiễn (Rocket)", jockeyName: "Vũ Tiến Đạt", gateNumber: 3 },
+      { horseId: "horse-1", horseName: "Thunderbolt Swift", jockeyName: "Alex Turner", gateNumber: 1 },
+      { horseId: "horse-3", horseName: "Shadowfax Wonder", jockeyName: "Kyle Bennett", gateNumber: 2 },
     ],
   },
   {
     id: "trial-2",
-    runCode: "CT-2026-W40-02",
+    runCode: "TR-2026-W40-02",
     runDate: "2026-10-03",
     trackType: "SAND",
     orderNumber: 2,
     distanceMeters: 1400,
     startTime: "07:45",
     status: "PENDING",
-    coordinatorName: "Nguyễn Văn Huấn (HT)",
-    notes: "Chạy mặt sân cát đánh giá thích ứng",
+    coordinatorName: "David Nguyen (Head Trainer)",
+    notes: "Sand track trial for surface adaptation and conditioning",
     horses: [
-      { horseId: "horse-5", horseName: "Phi Yến", jockeyName: "Trương Minh", gateNumber: 1 },
-      { horseId: "horse-6", horseName: "Đại Bàng Vàng", jockeyName: "Nguyễn Hùng", gateNumber: 2 },
+      { horseId: "horse-1", horseName: "Thunderbolt Swift", jockeyName: "Alex Turner", gateNumber: 1 },
+      { horseId: "horse-3", horseName: "Shadowfax Wonder", jockeyName: "Kyle Bennett", gateNumber: 2 },
     ],
   },
 ];
 
 const MOCK_FITNESS_METRICS: FitnessMetricPoint[] = [
-  { date: "2026-09-16", sessionName: "Trot cơ bản", avgSpeedKmh: 24, maxSpeedKmh: 32, avgHeartRate: 110, maxHeartRate: 135, recoveryScore: 88, staminaScore: 72, performanceScore: 7.0, hasAlert: false },
+  { date: "2026-09-16", sessionName: "Basic Trot", avgSpeedKmh: 24, maxSpeedKmh: 32, avgHeartRate: 110, maxHeartRate: 135, recoveryScore: 88, staminaScore: 72, performanceScore: 7.0, hasAlert: false },
   { date: "2026-09-19", sessionName: "Canter 1200m", avgSpeedKmh: 32, maxSpeedKmh: 42, avgHeartRate: 125, maxHeartRate: 148, recoveryScore: 84, staminaScore: 75, performanceScore: 7.5, hasAlert: false },
   { date: "2026-09-22", sessionName: "Canter 1600m", avgSpeedKmh: 35, maxSpeedKmh: 46, avgHeartRate: 130, maxHeartRate: 154, recoveryScore: 82, staminaScore: 78, performanceScore: 8.0, hasAlert: false },
-  { date: "2026-09-26", sessionName: "Intervals bứt tốc", avgSpeedKmh: 38, maxSpeedKmh: 52, avgHeartRate: 142, maxHeartRate: 170, recoveryScore: 79, staminaScore: 82, performanceScore: 8.2, hasAlert: false },
-  { date: "2026-09-30", sessionName: "Canter tốc độ cao", avgSpeedKmh: 37.8, maxSpeedKmh: 48.2, avgHeartRate: 138, maxHeartRate: 162, recoveryScore: 86, staminaScore: 85, performanceScore: 8.5, hasAlert: false },
+  { date: "2026-09-26", sessionName: "Interval Sprints", avgSpeedKmh: 38, maxSpeedKmh: 52, avgHeartRate: 142, maxHeartRate: 170, recoveryScore: 79, staminaScore: 82, performanceScore: 8.2, hasAlert: false },
+  { date: "2026-09-30", sessionName: "High-speed Canter", avgSpeedKmh: 37.8, maxSpeedKmh: 48.2, avgHeartRate: 138, maxHeartRate: 162, recoveryScore: 86, staminaScore: 85, performanceScore: 8.5, hasAlert: false },
 ];
 
 const MOCK_ALERTS: TrainingAlert[] = [
   {
     id: "alt-1",
     horseId: "horse-2",
-    horseName: "Bạch Mã Hoàng Tử (Silver Arrow)",
+    horseName: "Northern Dancer Legacy",
     sessionId: "ses-99",
     sessionDate: "2026-09-28",
     severity: "HIGH",
     alertType: "LAMENESS_OBSERVED",
-    message: "Groom báo cáo bước đi tập tễnh sau lượt Trot nhẹ, chân trước bên trái phản xạ đau.",
-    reportedBy: "Phạm Văn Dưỡng (Groom)",
+    message: "Groom reported limping after light trot, left forelimb pain response.",
+    reportedBy: "John Smith (Groom Hand)",
     createdAt: "2026-09-28 08:15",
     acknowledgedByVet: true,
-    vetNotes: "Đã khám chẩn đoán viêm gân gấp nông (Desmitis). Đã đặt Khóa huấn luyện.",
+    vetNotes: "Examined and diagnosed with superficial digital flexor desmitis. Medical Lock placed.",
   },
   {
     id: "alt-2",
-    horseId: "horse-4",
-    horseName: "Hỏa Tiễn (Rocket)",
+    horseId: "horse-3",
+    horseName: "Shadowfax Wonder",
     sessionId: "ses-100",
     sessionDate: "2026-09-29",
     severity: "MEDIUM",
     alertType: "HEART_RATE_SPIKE",
-    message: "Nhịp tim sau tập phục hồi chậm (115 bpm sau 5 phút nghỉ).",
-    reportedBy: "Lê Hoàng Nài (Jockey)",
+    message: "Delayed heart rate recovery (115 bpm after 5 minutes of rest).",
+    reportedBy: "Kyle Bennett (Jockey)",
     createdAt: "2026-09-29 07:35",
     acknowledgedByVet: false,
   },
@@ -271,23 +270,74 @@ export const trainingApi = {
   },
 
   async createPlan(data: Partial<TrainingPlan>): Promise<TrainingPlan> {
-    return await api<TrainingPlan>("POST", "/training/plans", data);
+    const newPlan: TrainingPlan = {
+      id: `plan-${Date.now()}`,
+      planCode: `PLAN-2026-${Math.floor(100 + Math.random() * 900)}`,
+      name: data.name || "New Training Plan",
+      horseId: data.horseId || "horse-1",
+      horseName: data.horseName || "Thunderbolt Swift",
+      horseCode: data.horseCode || "HR-000001",
+      target: data.target || "",
+      targetDistanceMeters: data.targetDistanceMeters || 1600,
+      startDate: data.startDate || new Date().toISOString().split("T")[0],
+      endDate: data.endDate || new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
+      status: data.status || "DRAFT",
+      phases: data.phases || [],
+      headTrainerId: "trainer-1",
+      headTrainerName: "David Nguyen (Head Trainer)",
+      notes: data.notes || "",
+      createdAt: new Date().toISOString().split("T")[0],
+      updatedAt: new Date().toISOString().split("T")[0],
+    };
+    MOCK_PLANS.unshift(newPlan);
+    return structuredClone(newPlan);
   },
 
   async activatePlan(id: string): Promise<TrainingPlan> {
-    return await api<TrainingPlan>("PATCH", `/training/plans/${id}/status`, { status: "ACTIVE" });
+    const p = MOCK_PLANS.find((item) => item.id === id);
+    if (!p) throw new Error("Training plan not found");
+    if (p.isLockedByMedical) {
+      throw new Error("Cannot activate plan: Horse is currently under protective Medical Lock!");
+    }
+    p.status = "ACTIVE";
+    p.updatedAt = new Date().toISOString().split("T")[0];
+    return structuredClone(p);
   },
 
   async cancelPlan(id: string, reason: string): Promise<TrainingPlan> {
-    return await api<TrainingPlan>("PATCH", `/training/plans/${id}/status`, { status: "CANCELLED", reason });
+    const p = MOCK_PLANS.find((item) => item.id === id);
+    if (!p) throw new Error("Training plan not found");
+    p.status = "CANCELLED";
+    p.cancelledReason = reason;
+    p.updatedAt = new Date().toISOString().split("T")[0];
+    return structuredClone(p);
   },
 
   async completePlan(id: string): Promise<TrainingPlan> {
-    return await api<TrainingPlan>("PATCH", `/training/plans/${id}/status`, { status: "COMPLETED" });
+    const p = MOCK_PLANS.find((item) => item.id === id);
+    if (!p) throw new Error("Training plan not found");
+    p.status = "COMPLETED";
+    p.completedAt = new Date().toISOString().split("T")[0];
+    p.updatedAt = new Date().toISOString().split("T")[0];
+    return structuredClone(p);
   },
 
   async clonePlan(id: string, targetHorseId: string, targetHorseName: string): Promise<TrainingPlan> {
-    return await api<TrainingPlan>("POST", `/training/plans/${id}/clone`, { targetHorseId, targetHorseName });
+    const source = MOCK_PLANS.find((item) => item.id === id);
+    if (!source) throw new Error("Original training plan not found");
+    const cloned: TrainingPlan = {
+      ...structuredClone(source),
+      id: `plan-${Date.now()}`,
+      planCode: `PLAN-2026-${Math.floor(100 + Math.random() * 900)}`,
+      name: `${source.name} (Copy)`,
+      horseId: targetHorseId,
+      horseName: targetHorseName,
+      status: "DRAFT",
+      createdAt: new Date().toISOString().split("T")[0],
+      updatedAt: new Date().toISOString().split("T")[0],
+    };
+    MOCK_PLANS.unshift(cloned);
+    return structuredClone(cloned);
   },
 
   // Sessions
@@ -310,14 +360,14 @@ export const trainingApi = {
       id: `ses-${Date.now()}`,
       planId: session.planId,
       horseId: session.horseId || "horse-1",
-      horseName: session.horseName || "Thần Gió",
+      horseName: session.horseName || "Thunderbolt Swift",
       sessionDate: session.sessionDate || new Date().toISOString().split("T")[0],
       startTime: session.startTime || "07:00",
       endTime: session.endTime || "08:00",
       sessionType: session.sessionType || "TROT",
       intensity: session.intensity || "MODERATE",
       status: isLocked && isHeavy ? "BLOCKED_BY_LOCK" : "SCHEDULED",
-      blockedReason: isLocked && isHeavy ? "Ngựa có Khóa huấn luyện y tế hiệu lực. Tự động chặn bài tập nặng!" : undefined,
+      blockedReason: isLocked && isHeavy ? "Medical Lock Active: Heavy workouts automatically blocked by system!" : undefined,
       groomName: session.groomName,
       jockeyName: session.jockeyName,
       trackType: session.trackType || "TURF",
@@ -331,7 +381,7 @@ export const trainingApi = {
 
   async restoreBlockedSession(sessionId: string): Promise<ExerciseSession> {
     const s = MOCK_SESSIONS.find((item) => item.id === sessionId);
-    if (!s) throw new Error("Không tìm thấy buổi tập");
+    if (!s) throw new Error("Workout session not found");
     s.status = "SCHEDULED";
     s.blockedReason = undefined;
     return structuredClone(s);
@@ -339,7 +389,7 @@ export const trainingApi = {
 
   async saveSessionResult(sessionId: string, resultData: Partial<SessionResult>): Promise<SessionResult> {
     const s = MOCK_SESSIONS.find((item) => item.id === sessionId);
-    if (!s) throw new Error("Không tìm thấy buổi tập");
+    if (!s) throw new Error("Workout session not found");
 
     const result: SessionResult = {
       id: `res-${Date.now()}`,
@@ -358,7 +408,7 @@ export const trainingApi = {
       alertSentToVet: Boolean(resultData.hasAbnormalSigns),
       headTrainerFeedback: resultData.headTrainerFeedback,
       recordedAt: new Date().toISOString().replace("T", " ").substring(0, 16),
-      recordedBy: "Nguyễn Văn Huấn (HT)",
+      recordedBy: "David Nguyen (Head Trainer)",
     };
 
     s.result = result;
@@ -374,8 +424,8 @@ export const trainingApi = {
         sessionDate: s.sessionDate,
         severity: "HIGH",
         alertType: "LAMENESS_OBSERVED",
-        message: result.abnormalSignsDescription || "Ghi nhận dấu hiệu bất thường sau buổi tập",
-        reportedBy: "Nguyễn Văn Huấn (HT)",
+        message: result.abnormalSignsDescription || "Abnormal clinical symptoms observed post-workout",
+        reportedBy: "David Nguyen (Head Trainer)",
         createdAt: new Date().toISOString().replace("T", " ").substring(0, 16),
         acknowledgedByVet: false,
       });
@@ -383,6 +433,7 @@ export const trainingApi = {
 
     return structuredClone(result);
   },
+
 
   // Trial Runs
   async getTrialRuns(): Promise<TrialRunSchedule[]> {
