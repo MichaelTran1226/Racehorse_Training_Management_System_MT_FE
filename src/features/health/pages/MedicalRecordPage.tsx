@@ -49,7 +49,7 @@ export default function MedicalRecordPage() {
   // Lock modal states
   const [lockModalMode, setLockModalMode] = useState<"place" | "lift" | "extend" | null>(null);
 
-  const isVet = user?.role === "VETERINARIAN" || user?.role === "CLUB_MANAGER";
+  const isVet = user?.role === "VETERINARIAN";
   const isOwner = user?.role === "HORSE_OWNER";
   const isGroom = user?.role === "GROOM";
 

@@ -78,7 +78,7 @@ export default function InjuryMapPage() {
   const { user } = useAuth();
   const toast = useToast();
 
-  const isVet = user?.role === "VETERINARIAN" || user?.role === "CLUB_MANAGER";
+  const isVet = user?.role === "VETERINARIAN";
   const [horse, setHorse] = useState<Horse | null>(null);
 
   const [view, setView] = useState<"LEFT" | "RIGHT">("LEFT");

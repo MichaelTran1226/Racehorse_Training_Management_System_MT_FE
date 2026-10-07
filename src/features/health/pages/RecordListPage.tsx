@@ -28,7 +28,7 @@ export default function RecordListPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
 
-  const isVet = user?.role === "VETERINARIAN" || user?.role === "CLUB_MANAGER";
+  const isVet = user?.role === "VETERINARIAN";
 
   const fetchRecords = useCallback(async () => {
     setLoading(true);
