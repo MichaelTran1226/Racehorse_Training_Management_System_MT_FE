@@ -48,6 +48,7 @@ export function breadcrumbFor(user: AuthUser, pathname: string, accountName?: st
   if (pathname === "/forbidden") return [homeSegment, { label: "Access denied" }];
   if (pathname === "/session-expired") return [homeSegment, { label: "Session expired" }];
   if (pathname === "/alerts" || pathname === "/training/alerts") return [homeSegment, { label: "Threshold Alerts" }];
+  if (pathname === "/monitor" || pathname === "/training/monitor") return [homeSegment, { label: "Session Telemetry" }];
 
 
   // 6. Chi tiết ngựa & hồ sơ bệnh án & 2D Map (các trang lồng cấp)

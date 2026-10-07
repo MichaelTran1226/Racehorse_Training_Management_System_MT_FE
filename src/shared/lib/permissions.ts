@@ -202,7 +202,7 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
     },
     {
       label: "MONITORING",
-      items: [item("monitor", "Live Monitor", "activity"), item("alerts", "Threshold Alerts", "alert", { requires: "ackAlerts", alert: true })],
+      items: [item("monitor", "Session Telemetry", "activity"), item("alerts", "Threshold Alerts", "alert", { requires: "ackAlerts", alert: true })],
     },
     { label: "RACING", items: [item("races", "Race Entries", "trophy")] },
     { label: "REPORTS", items: [item("progress", "Training Progress", "chart")] },
