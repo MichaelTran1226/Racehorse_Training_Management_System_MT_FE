@@ -32,14 +32,14 @@ export function ChangeStatusDialog({ horse, onSuccess }: ChangeStatusDialogProps
   } else if (isVeterinarian) {
     allowedStatuses = ["INJURED", "ISOLATED", "UNDER_OBSERVATION", "RESTING", "IN_TRAINING"];
   } else if (isManager) {
-    allowedStatuses = ["RETIRED"];
+    allowedStatuses = ["ACTIVE", "IN_TRAINING", "UNDER_OBSERVATION", "INJURED", "ISOLATED", "RESTING", "RETIRED"];
   }
 
   if (horse.isMedicalLocked) {
     if (isVeterinarian) {
       allowedStatuses = allowedStatuses.filter((s) => ["INJURED", "ISOLATED", "UNDER_OBSERVATION"].includes(s));
     } else if (isManager) {
-      allowedStatuses = ["RETIRED"];
+      allowedStatuses = ["ACTIVE", "IN_TRAINING", "UNDER_OBSERVATION", "INJURED", "ISOLATED", "RESTING", "RETIRED"];
     } else {
       allowedStatuses = [];
     }
