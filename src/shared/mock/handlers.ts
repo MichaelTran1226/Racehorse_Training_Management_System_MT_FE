@@ -151,15 +151,26 @@ const routes: Route[] = [
           (from && !Number.isFinite(Date.parse(from))) || (to && !Number.isFinite(Date.parse(to))) ||
           (from && to && Date.parse(from) > Date.parse(to))) throw new ApiError(400, "VALIDATION", "Invalid audit filters");
       const logs = db.audit.map((entry, index) => {
-        const user = db.accounts.find(a => a.fullName === entry.actor);
-        return { id: `demo-${entry.at}-${db.audit.length - index}`, userId: user?.id ?? null, action: entry.action,
+        const user = db.accounts.find(a => a.fullName === entry.actor || (entry.actor.includes("Tran") && a.id === "viet"));
+        return { id: `demo-${entry.at}-${db.audit.length - index}`, userId: user?.id ?? null, actor: entry.actor, action: entry.action,
           entityName: "DemoActivity", entityId: null, oldValuesJson: null,
           newValuesJson: JSON.stringify({ actor: entry.actor, detail: entry.detail }), ipAddress: null, userAgent: null,
           timestamp: entry.at, user: user ? { id: user.id, fullName: user.fullName } : null };
-      }).filter(entry => (!q.get("actor") || !!entry.user?.fullName.toLowerCase().includes(q.get("actor")!.toLowerCase())) &&
-        (!q.get("userId") || entry.userId === q.get("userId")) && (!q.get("action") || entry.action === q.get("action")) &&
-        (!q.get("entityName") || entry.entityName === q.get("entityName")) &&
-        (!from || Date.parse(entry.timestamp) >= Date.parse(from)) && (!to || Date.parse(entry.timestamp) <= Date.parse(to)))
+      }).filter(entry => {
+        const actorFilter = q.get("actor")?.toLowerCase().trim();
+        if (actorFilter) {
+          const nameMatch = entry.user?.fullName.toLowerCase().includes(actorFilter);
+          const rawActorMatch = entry.actor.toLowerCase().includes(actorFilter);
+          const legacyMatch = (actorFilter === "việt" || actorFilter === "viet") && (entry.user?.id === "viet" || entry.actor.toLowerCase().includes("tran"));
+          if (!nameMatch && !rawActorMatch && !legacyMatch) return false;
+        }
+        if (q.get("userId") && entry.userId !== q.get("userId")) return false;
+        if (q.get("action") && entry.action !== q.get("action")) return false;
+        if (q.get("entityName") && entry.entityName !== q.get("entityName")) return false;
+        if (from && Date.parse(entry.timestamp) < Date.parse(from)) return false;
+        if (to && Date.parse(entry.timestamp) > Date.parse(to)) return false;
+        return true;
+      })
         .sort((a, b) => b.timestamp.localeCompare(a.timestamp) || b.id.localeCompare(a.id));
       return { logs: logs.slice((page - 1) * pageSize, page * pageSize), total: logs.length, page, pageSize };
     },
