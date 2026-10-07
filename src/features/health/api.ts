@@ -415,29 +415,43 @@ export const extendTrainingLock = async (
 
 // P2-05: Preventive care & catalogue (SC-3.07, SC-3.08, FR-3.13 -> FR-3.16)
 export const getCareSchedules = async (): Promise<import("./types").PreventiveCareItem[]> => {
-  const horses = getStoredHorses();
-  const schedules: import("./types").PreventiveCareItem[] = [];
-  horses.forEach((h) => {
-    schedules.push({
-      id: `care-${h.id}-vax`,
-      horseId: `${h.name} (${h.code})`,
-      type: "Equine Influenza Vaccination",
-      category: "VACCINATION",
-      lastAdministeredDate: "2026-04-05",
-      administeredBy: "EquiFlow Veterinary Station",
-      dueDate: new Date(Date.now() + 10 * 86400000).toISOString().split("T")[0],
-      status: "DUE_SOON",
-      notes: "Bi-annual booster vaccination requirement",
+  try {
+    const res = await api<any>("GET", "/medical/preventive/schedules");
+    if (Array.isArray(res)) return res;
+    if (res && Array.isArray(res.items)) return res.items;
+    return [];
+  } catch {
+    const horses = getStoredHorses();
+    const schedules: import("./types").PreventiveCareItem[] = [];
+    horses.forEach((h) => {
+      schedules.push({
+        id: `care-${h.id}-vax`,
+        horseId: `${h.name} (${h.code})`,
+        type: "Equine Influenza Vaccination",
+        category: "VACCINATION",
+        lastAdministeredDate: "2026-04-05",
+        administeredBy: "EquiFlow Veterinary Station",
+        dueDate: new Date(Date.now() + 10 * 86400000).toISOString().split("T")[0],
+        status: "DUE_SOON",
+        notes: "Bi-annual booster vaccination requirement",
+      });
     });
-  });
-  return schedules;
+    return schedules;
+  }
 };
 
 export const recordCareCompletion = async (
   careId: string,
   input: { administeredDate: string; administeredBy: string; nextDueDate: string; notes?: string },
 ) => {
-  return { ok: true, careId, input };
+  try {
+    return await api("POST", "/medical/preventive/record", {
+      scheduleId: careId,
+      ...input
+    });
+  } catch {
+    return { ok: true, careId, input };
+  }
 };
 
 export const healthApi = {
