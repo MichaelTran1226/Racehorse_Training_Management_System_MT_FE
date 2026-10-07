@@ -143,8 +143,8 @@ export default function HorseFormPage() {
       errs.microchip = "Số microchip phải gồm đúng 15 chữ số.";
     }
 
-    if (rfid.trim() && !/^[A-Z0-9-]{4,32}$/.test(rfid.trim().toUpperCase())) {
-      errs.rfid = "Mã thẻ RFID phải từ 4 đến 32 ký tự, chỉ gồm chữ in hoa A-Z, chữ số và dấu gạch ngang.";
+    if (rfid.trim() && !/^RFID-[A-Z0-9-]{1,27}$/.test(rfid.trim().toUpperCase())) {
+      errs.rfid = "Mã thẻ RFID phải bắt đầu bằng 'RFID-' và dài từ 6 đến 32 ký tự, chỉ gồm chữ in hoa A-Z, chữ số và dấu gạch ngang.";
     }
 
     setErrors(errs);
@@ -343,7 +343,7 @@ export default function HorseFormPage() {
               />
             </Field>
 
-            <Field label="Mã thẻ RFID (Tùy chọn)" error={errors.rfid} hint="Từ 4 đến 32 ký tự, chỉ gồm A-Z, 0-9 và dấu gạch ngang">
+            <Field label="Mã thẻ RFID (Tùy chọn)" error={errors.rfid} hint="Bắt đầu bằng 'RFID-', dài từ 6-32 ký tự, ví dụ: RFID-985141002341">
               <Input
                 placeholder="Ví dụ: RFID-985141002341..."
                 value={rfid}
