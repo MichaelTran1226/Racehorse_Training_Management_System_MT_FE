@@ -50,7 +50,14 @@ export function breadcrumbFor(user: AuthUser, pathname: string, accountName?: st
   if (pathname === "/alerts" || pathname === "/training/alerts") return [homeSegment, { label: "Threshold Alerts" }];
 
 
-  // 6. Chi tiết ngựa & hồ sơ bệnh án (các trang lồng cấp)
+  // 6. Chi tiết ngựa & hồ sơ bệnh án & 2D Map (các trang lồng cấp)
+  if (pathname.includes("/injuries") || pathname.startsWith("/injuries")) {
+    return [
+      homeSegment,
+      { label: "Herd Health", href: "/herd" },
+      { label: "2D Musculoskeletal Map" },
+    ];
+  }
   if (pathname.startsWith("/medical/horses/") || pathname.startsWith("/records/horse/")) {
     return [
       homeSegment,

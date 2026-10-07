@@ -294,7 +294,7 @@ export interface ScreenAccess {
   inOwnRole: boolean; // màn hình có trong sidebar của vai trò hiện tại (nhưng chưa được cấp quyền)
 }
 
-const OPEN_PREFIXES = ["/dashboard", "/profile", "/notifications", "/forbidden", "/session-expired", "/alerts", "/training/alerts"];
+const OPEN_PREFIXES = ["/dashboard", "/profile", "/notifications", "/forbidden", "/session-expired", "/alerts", "/training/alerts", "/injuries"];
 
 function findByHref(groups: NavGroup[], href: string): { group: string; item: NavItem } | undefined {
   for (const g of groups) {
