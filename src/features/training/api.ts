@@ -1,4 +1,5 @@
 import { api } from "@/shared/lib/api";
+import { getStoredHorses } from "@/shared/mock/horsesData";
 import type {
   ExerciseSession,
   FitnessMetricPoint,
@@ -262,18 +263,32 @@ const MOCK_ALERTS: TrainingAlert[] = [
 const TRAINING_PLANS_KEY = "equiflow.training.plans.v1";
 
 function getStoredPlans(): TrainingPlan[] {
+  let plans: TrainingPlan[] = MOCK_PLANS;
   if (typeof window !== "undefined") {
     try {
       const raw = localStorage.getItem(TRAINING_PLANS_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as TrainingPlan[];
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) plans = parsed;
       }
     } catch {
       // fallback
     }
   }
-  return MOCK_PLANS;
+
+  // Reconcile dynamic medical lock status with canonical herd store
+  const horses = getStoredHorses();
+  return plans.map((p) => {
+    const horse = horses.find((h) => h.id === p.horseId);
+    if (horse) {
+      return {
+        ...p,
+        isLockedByMedical: Boolean(horse.isLocked),
+        medicalLockReason: horse.lockReason || p.medicalLockReason,
+      };
+    }
+    return p;
+  });
 }
 
 function saveStoredPlans(plans: TrainingPlan[]): void {
@@ -312,13 +327,24 @@ export const trainingApi = {
 
   async createPlan(data: Partial<TrainingPlan>): Promise<TrainingPlan> {
     const plans = getStoredPlans();
+    const horses = getStoredHorses();
+    const horse = horses.find((h) => h.id === data.horseId);
+    const isLocked = Boolean(horse?.isLocked);
+
+    // RULE-MED-01 Enforcement: Active plans cannot be created for locked horses
+    if (isLocked && data.status === "ACTIVE") {
+      throw new Error(
+        `Cannot activate training plan: Horse "${horse?.name}" is currently under Veterinary Medical Lock (RULE-MED-01). You may only save as Draft.`
+      );
+    }
+
     const newPlan: TrainingPlan = {
       id: `plan-${Date.now()}`,
       planCode: `PLAN-2026-${Math.floor(100 + Math.random() * 900)}`,
       name: data.name || "New Training Plan",
       horseId: data.horseId || "horse-1",
-      horseName: data.horseName || "Thunderbolt Swift",
-      horseCode: data.horseCode || "HR-000001",
+      horseName: data.horseName || horse?.name || "Thunderbolt Swift",
+      horseCode: data.horseCode || horse?.code || "HR-000001",
       target: data.target || "",
       targetDistanceMeters: data.targetDistanceMeters || 1600,
       startDate: data.startDate || new Date().toISOString().split("T")[0],
@@ -330,6 +356,8 @@ export const trainingApi = {
       notes: data.notes || "",
       createdAt: new Date().toISOString().split("T")[0],
       updatedAt: new Date().toISOString().split("T")[0],
+      isLockedByMedical: isLocked,
+      medicalLockReason: horse?.lockReason,
     };
     plans.unshift(newPlan);
     saveStoredPlans(plans);
@@ -340,8 +368,13 @@ export const trainingApi = {
     const plans = getStoredPlans();
     const p = plans.find((item) => item.id === id);
     if (!p) throw new Error("Training plan not found");
-    if (p.isLockedByMedical) {
-      throw new Error("Cannot activate plan: Horse is currently under protective Medical Lock!");
+
+    const horses = getStoredHorses();
+    const horse = horses.find((h) => h.id === p.horseId);
+    if (p.isLockedByMedical || horse?.isLocked) {
+      throw new Error(
+        `Cannot activate plan: Horse "${p.horseName}" is currently under protective Medical Lock (RULE-MED-01). Hold reason: "${horse?.lockReason || p.medicalLockReason || "Clinical injury suspension"}"`
+      );
     }
     p.status = "ACTIVE";
     p.updatedAt = new Date().toISOString().split("T")[0];

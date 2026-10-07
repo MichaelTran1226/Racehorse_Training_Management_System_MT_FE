@@ -164,6 +164,36 @@ export default function PlanListPage() {
         </div>
       </Card>
 
+      {/* Medical Lock Safety Banner (RULE-MED-01) */}
+      {plans.some((p) => p.isLockedByMedical) && (
+        <div
+          style={{
+            padding: "1rem 1.25rem",
+            background: "rgba(239, 68, 68, 0.08)",
+            border: "1px solid var(--danger)",
+            borderRadius: "var(--radius-card)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "1rem",
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <span style={{ fontSize: "1.25rem" }}>🔒</span>
+            <div>
+              <strong style={{ color: "var(--danger)" }}>Clinical Safety Enforcement (RULE-MED-01) Active</strong>
+              <p style={{ margin: "0.15rem 0 0", fontSize: "0.8125rem", color: "var(--text-muted)" }}>
+                {plans.filter((p) => p.isLockedByMedical).length} training plan(s) belong to horses currently suspended by Veterinary Medical Lock. Plan activations and high-intensity trial runs are strictly blocked.
+              </p>
+            </div>
+          </div>
+          <Link to="/medical/locks">
+            <Button tone="secondary">View Active Medical Locks →</Button>
+          </Link>
+        </div>
+      )}
+
       {/* Plan list */}
       <Card>
         {loading ? (
@@ -220,9 +250,24 @@ export default function PlanListPage() {
                     <td style={{ padding: "0.75rem 1rem", textAlign: "right" }}>
                       <div style={{ display: "inline-flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
                         {isTrainer && plan.status === "DRAFT" && (
-                          <Button tone="primary" onClick={() => void handleActivate(plan)}>
-                            Activate
-                          </Button>
+                          plan.isLockedByMedical ? (
+                            <Button
+                              tone="secondary"
+                              onClick={() =>
+                                toast.show(
+                                  `Activation blocked: ${plan.horseName} is under Veterinary Medical Lock (${plan.medicalLockReason || "Clinical hold"}).`,
+                                  "danger"
+                                )
+                              }
+                              title="Activation blocked by Veterinary Medical Lock"
+                            >
+                              🔒 Locked by Vet
+                            </Button>
+                          ) : (
+                            <Button tone="primary" onClick={() => void handleActivate(plan)}>
+                              Activate
+                            </Button>
+                          )
                         )}
                         {isTrainer && plan.status === "ACTIVE" && (
                           <Button tone="accent" onClick={() => void handleComplete(plan)}>

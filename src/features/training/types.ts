@@ -36,6 +36,7 @@ export interface TrainingPlan {
   createdAt: string;
   updatedAt: string;
   isLockedByMedical?: boolean;
+  medicalLockReason?: string;
 }
 
 export interface SessionResult {
