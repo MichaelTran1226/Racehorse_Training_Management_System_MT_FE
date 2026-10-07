@@ -55,3 +55,10 @@ export async function deleteHorse(id: string): Promise<{ success: boolean; messa
 export async function changeHorseStatus(id: string, payload: { status: string; reason: string }): Promise<{ success: boolean; data: any; message: string }> {
   return await api<{ success: boolean; data: any; message: string }>("PATCH", "/horses/" + id + "/status", payload);
 }
+
+export async function transferHorseOwner(
+  id: string,
+  payload: { newOwnerId: string; reason?: string },
+): Promise<Horse> {
+  return await api<Horse>("PATCH", `/horses/${id}/transfer-owner`, payload);
+}
