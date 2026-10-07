@@ -177,6 +177,7 @@ export const router = createBrowserRouter([
           { path: "/medical/horses/:id/injuries", element: <InjuryMapPage /> },
           { path: "/injuries/:id", element: <InjuryMapPage /> },
           { path: "/medical/locks", element: <TrainingLockPage /> },
+          { path: "/rx", element: <Navigate to="/records" replace /> },
           { path: "/locks", element: <TrainingLockPage /> },
           { path: "/medical/preventive", element: <CareSchedulePage /> },
           { path: "/catalogs/preventive-types", element: <CareSchedulePage /> },

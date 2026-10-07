@@ -320,7 +320,22 @@ export function screenAccess(role: Role, permissions: PermissionMap, pathname: s
     };
   }
 
-  const href = "/" + (pathname.split("/")[1] ?? "");
+  let href = "/" + (pathname.split("/")[1] ?? "");
+  
+  if (href === "/medical") {
+    const seg2 = pathname.split("/")[2];
+    if (seg2 === "locks") href = "/locks";
+    else if (seg2 === "records") href = "/records";
+    else if (seg2 === "horses" || seg2 === "herd") href = "/herd";
+    else if (seg2 === "preventive") href = "/vaccine";
+  } else if (href === "/catalogs") {
+    const seg2 = pathname.split("/")[2];
+    if (seg2 === "preventive-types") href = "/vaccine";
+    if (seg2 === "stalls") href = "/stalls";
+  } else if (href === "/records" && pathname.startsWith("/records/horse")) {
+    href = "/records"; // keep it as records
+  }
+
   const own = findByHref(ROLE_NAV[role], href);
   if (own) {
     const need = own.item.requires;
