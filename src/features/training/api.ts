@@ -1,3 +1,4 @@
+import { api } from "@/shared/lib/api";
 import type {
   ExerciseSession,
   FitnessMetricPoint,
@@ -262,83 +263,31 @@ const MOCK_ALERTS: TrainingAlert[] = [
 export const trainingApi = {
   // Plans
   async getPlans(): Promise<TrainingPlan[]> {
-    return structuredClone(MOCK_PLANS);
+    return await api<TrainingPlan[]>("GET", "/training/plans");
   },
 
   async getPlanById(id: string): Promise<TrainingPlan | null> {
-    const p = MOCK_PLANS.find((item) => item.id === id);
-    return p ? structuredClone(p) : null;
+    return await api<TrainingPlan>("GET", `/training/plans/${id}`);
   },
 
   async createPlan(data: Partial<TrainingPlan>): Promise<TrainingPlan> {
-    const newPlan: TrainingPlan = {
-      id: `plan-${Date.now()}`,
-      planCode: `GA-2026-${Math.floor(100 + Math.random() * 900)}`,
-      name: data.name || "Giáo án mới",
-      horseId: data.horseId || "horse-1",
-      horseName: data.horseName || "Thần Gió",
-      horseCode: data.horseCode || "EQ-001",
-      target: data.target || "",
-      targetDistanceMeters: data.targetDistanceMeters || 1600,
-      startDate: data.startDate || new Date().toISOString().split("T")[0],
-      endDate: data.endDate || new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
-      status: data.status || "DRAFT",
-      phases: data.phases || [],
-      headTrainerId: "usr-ht-1",
-      headTrainerName: "Nguyễn Văn Huấn (HT)",
-      notes: data.notes || "",
-      createdAt: new Date().toISOString().split("T")[0],
-      updatedAt: new Date().toISOString().split("T")[0],
-    };
-    MOCK_PLANS.unshift(newPlan);
-    return structuredClone(newPlan);
+    return await api<TrainingPlan>("POST", "/training/plans", data);
   },
 
   async activatePlan(id: string): Promise<TrainingPlan> {
-    const p = MOCK_PLANS.find((item) => item.id === id);
-    if (!p) throw new Error("Không tìm thấy giáo án");
-    if (p.isLockedByMedical) {
-      throw new Error("Không thể kích hoạt giáo án: Ngựa đang bị Khóa huấn luyện y tế!");
-    }
-    p.status = "ACTIVE";
-    p.updatedAt = new Date().toISOString().split("T")[0];
-    return structuredClone(p);
+    return await api<TrainingPlan>("PATCH", `/training/plans/${id}/status`, { status: "ACTIVE" });
   },
 
   async cancelPlan(id: string, reason: string): Promise<TrainingPlan> {
-    const p = MOCK_PLANS.find((item) => item.id === id);
-    if (!p) throw new Error("Không tìm thấy giáo án");
-    p.status = "CANCELLED";
-    p.cancelledReason = reason;
-    p.updatedAt = new Date().toISOString().split("T")[0];
-    return structuredClone(p);
+    return await api<TrainingPlan>("PATCH", `/training/plans/${id}/status`, { status: "CANCELLED", reason });
   },
 
   async completePlan(id: string): Promise<TrainingPlan> {
-    const p = MOCK_PLANS.find((item) => item.id === id);
-    if (!p) throw new Error("Không tìm thấy giáo án");
-    p.status = "COMPLETED";
-    p.completedAt = new Date().toISOString().split("T")[0];
-    p.updatedAt = new Date().toISOString().split("T")[0];
-    return structuredClone(p);
+    return await api<TrainingPlan>("PATCH", `/training/plans/${id}/status`, { status: "COMPLETED" });
   },
 
   async clonePlan(id: string, targetHorseId: string, targetHorseName: string): Promise<TrainingPlan> {
-    const source = MOCK_PLANS.find((item) => item.id === id);
-    if (!source) throw new Error("Không tìm thấy giáo án gốc");
-    const cloned: TrainingPlan = {
-      ...structuredClone(source),
-      id: `plan-${Date.now()}`,
-      planCode: `GA-2026-${Math.floor(100 + Math.random() * 900)}`,
-      name: `${source.name} (Bản sao)`,
-      horseId: targetHorseId,
-      horseName: targetHorseName,
-      status: "DRAFT",
-      createdAt: new Date().toISOString().split("T")[0],
-      updatedAt: new Date().toISOString().split("T")[0],
-    };
-    MOCK_PLANS.unshift(cloned);
-    return structuredClone(cloned);
+    return await api<TrainingPlan>("POST", `/training/plans/${id}/clone`, { targetHorseId, targetHorseName });
   },
 
   // Sessions

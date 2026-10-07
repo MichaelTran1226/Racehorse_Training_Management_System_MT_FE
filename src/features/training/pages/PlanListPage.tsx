@@ -14,6 +14,8 @@ import { useAuth } from "@/shared/components/layout/AuthProvider";
 import { useToast } from "@/shared/components/ui/Toast";
 import { trainingApi } from "../api";
 import type { PlanStatus, TrainingPlan } from "../types";
+import { getHorses } from "@/features/horses/api";
+import type { Horse } from "@/features/horses/types";
 
 const STATUS_CONFIG: Record<PlanStatus, { label: string; tone: "ok" | "warn" | "danger" | "neutral" | "info" }> = {
   DRAFT: { label: "Bản nháp", tone: "neutral" },
@@ -29,6 +31,7 @@ export default function PlanListPage() {
   const isTrainer = user?.role === "HEAD_TRAINER" || user?.role === "CLUB_MANAGER";
 
   const [plans, setPlans] = useState<TrainingPlan[]>([]);
+  const [horses, setHorses] = useState<Horse[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<string>("ALL");
   const [search, setSearch] = useState<string>("");
@@ -44,8 +47,13 @@ export default function PlanListPage() {
   const loadPlans = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await trainingApi.getPlans();
+      const [data, horseData] = await Promise.all([
+        trainingApi.getPlans(),
+        getHorses({ limit: 100 }),
+      ]);
       setPlans(data);
+      const list = Array.isArray(horseData) ? horseData : (horseData as any).items || [];
+      setHorses(list);
     } catch {
       toast.show("Không thể tải danh sách giáo án huấn luyện", "danger");
     } finally {
@@ -94,16 +102,11 @@ export default function PlanListPage() {
   const handleConfirmClone = async () => {
     if (!cloningPlan) return;
     try {
-      const horseNames: Record<string, string> = {
-        "horse-1": "Thần Gió (Thunderbolt)",
-        "horse-2": "Bạch Mã Hoàng Tử (Silver Arrow)",
-        "horse-3": "Hắc Báo (Black Panther)",
-        "horse-4": "Hỏa Tiễn (Rocket)",
-      };
+      const selectedHorse = horses.find(h => h.id === cloneTargetHorse);
       const cloned = await trainingApi.clonePlan(
         cloningPlan.id,
         cloneTargetHorse,
-        horseNames[cloneTargetHorse] || "Ngựa đua",
+        selectedHorse ? selectedHorse.name : "Ngựa đua",
       );
       toast.show(`Đã nhân bản giáo án thành công: ${cloned.planCode}`, "ok");
       setCloningPlan(null);
@@ -295,11 +298,10 @@ export default function PlanListPage() {
               <Select
                 value={cloneTargetHorse}
                 onChange={(e) => setCloneTargetHorse(e.target.value)}
-                options={[
-                  { value: "horse-1", label: "Thần Gió (Thunderbolt) - EQ-001" },
-                  { value: "horse-3", label: "Hắc Báo (Black Panther) - EQ-003" },
-                  { value: "horse-4", label: "Hỏa Tiễn (Rocket) - EQ-004" },
-                ]}
+                options={horses.map((h) => ({
+                  value: h.id,
+                  label: `${h.name} - ${h.horseCode}`,
+                }))}
               />
             </Field>
 

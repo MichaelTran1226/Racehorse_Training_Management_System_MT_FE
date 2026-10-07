@@ -1335,6 +1335,115 @@ const routes: Route[] = [
       return { success: true, message: `Đã xóa hồ sơ ngựa ${existing.name}.` };
     },
   },
+  {
+    method: "PATCH",
+    pattern: /^\/horses\/([^/]+)\/status$/,
+    handler({ db, params, body }) {
+      const user = currentUser(db);
+      const stored = getStoredHorses();
+      const existing = stored.find((h) => h.id === params[0]);
+      if (!existing) throw new ApiError(404, "HORSE_NOT_FOUND", "Không tìm thấy hồ sơ ngựa.");
+      
+      const newStatus = String(body.status);
+      (existing as any).status = newStatus;
+      
+      saveStoredHorses(stored);
+      audit(db, user.fullName, "HORSE_STATUS_CHANGED", `Đổi trạng thái ngựa ${existing.name} thành ${newStatus}`);
+      return { success: true, message: `Đã cập nhật trạng thái thành ${newStatus}`, data: existing };
+    },
+  },
+  // ===== FLOW 2: TRAINING PLANS =====
+  {
+    method: "GET",
+    pattern: /^\/training\/plans$/,
+    handler() {
+      const { getStoredPlans } = require("@/shared/mock/trainingData");
+      return getStoredPlans();
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/training\/plans\/([^/]+)$/,
+    handler({ params }) {
+      const { getStoredPlans } = require("@/shared/mock/trainingData");
+      const p = getStoredPlans().find((x: any) => x.id === params[0]);
+      if (!p) throw new ApiError(404, "NOT_FOUND", "Không tìm thấy giáo án");
+      return p;
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/training\/plans$/,
+    handler({ body }) {
+      const { getStoredPlans, saveStoredPlans } = require("@/shared/mock/trainingData");
+      const plans = getStoredPlans();
+      const newPlan = {
+        id: `plan-${Date.now()}`,
+        planCode: `GA-2026-${Math.floor(100 + Math.random() * 900)}`,
+        name: body.name || "Giáo án mới",
+        horseId: body.horseId || "horse-1",
+        horseName: body.horseName || "Thần Gió",
+        horseCode: body.horseCode || "EQ-001",
+        target: body.target || "",
+        targetDistanceMeters: body.targetDistanceMeters || 1600,
+        startDate: body.startDate || new Date().toISOString().split("T")[0],
+        endDate: body.endDate || new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
+        status: body.status || "DRAFT",
+        phases: body.phases || [],
+        headTrainerId: "usr-ht-1",
+        headTrainerName: "Nguyễn Văn Huấn (HT)",
+        notes: body.notes || "",
+        createdAt: new Date().toISOString().split("T")[0],
+        updatedAt: new Date().toISOString().split("T")[0],
+      };
+      plans.unshift(newPlan);
+      saveStoredPlans(plans);
+      return newPlan;
+    },
+  },
+  {
+    method: "PATCH",
+    pattern: /^\/training\/plans\/([^/]+)\/status$/,
+    handler({ params, body }) {
+      const { getStoredPlans, saveStoredPlans } = require("@/shared/mock/trainingData");
+      const plans = getStoredPlans();
+      const p = plans.find((x: any) => x.id === params[0]);
+      if (!p) throw new ApiError(404, "NOT_FOUND", "Không tìm thấy giáo án");
+      if (body.status === "ACTIVE" && p.isLockedByMedical) {
+        throw new ApiError(400, "LOCKED", "Không thể kích hoạt giáo án: Ngựa đang bị Khóa huấn luyện y tế!");
+      }
+      p.status = String(body.status);
+      if (body.status === "CANCELLED") p.cancelledReason = body.reason;
+      if (body.status === "COMPLETED") p.completedAt = new Date().toISOString().split("T")[0];
+      p.updatedAt = new Date().toISOString().split("T")[0];
+      saveStoredPlans(plans);
+      return p;
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/training\/plans\/([^/]+)\/clone$/,
+    handler({ params, body }) {
+      const { getStoredPlans, saveStoredPlans } = require("@/shared/mock/trainingData");
+      const plans = getStoredPlans();
+      const source = plans.find((x: any) => x.id === params[0]);
+      if (!source) throw new ApiError(404, "NOT_FOUND", "Không tìm thấy giáo án gốc");
+      const cloned = {
+        ...JSON.parse(JSON.stringify(source)),
+        id: `plan-${Date.now()}`,
+        planCode: `GA-2026-${Math.floor(100 + Math.random() * 900)}`,
+        name: `${source.name} (Bản sao)`,
+        horseId: String(body.targetHorseId),
+        horseName: String(body.targetHorseName),
+        status: "DRAFT",
+        createdAt: new Date().toISOString().split("T")[0],
+        updatedAt: new Date().toISOString().split("T")[0],
+      };
+      plans.unshift(cloned);
+      saveStoredPlans(plans);
+      return cloned;
+    },
+  },
 ];
 
 // Yêu cầu cấp quyền kèm thông tin người gửi (giống `include: { account }` của backend).
