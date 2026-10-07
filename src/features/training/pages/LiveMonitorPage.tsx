@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
-import { Card } from "@/shared/components/ui/Card";
 
 interface LiveHorseTrack {
   id: string;
@@ -20,9 +19,9 @@ export default function LiveMonitorPage() {
   const [horses, setHorses] = useState<LiveHorseTrack[]>([
     {
       id: "horse-1",
-      name: "Thần Gió (Thunderbolt)",
-      jockey: "Lê Hoàng Nài",
-      track: "Sân cỏ - Làn 1",
+      name: "Thunderbolt Swift",
+      jockey: "Alex Turner (Jockey)",
+      track: "Turf Track - Lane 1",
       speedKmh: 46.4,
       heartRate: 154,
       distanceCoveredMeters: 1250,
@@ -31,25 +30,14 @@ export default function LiveMonitorPage() {
     },
     {
       id: "horse-3",
-      name: "Hắc Báo (Black Panther)",
-      jockey: "Đỗ Tuấn Kiệt",
-      track: "Sân cát - Làn 2",
+      name: "Shadowfax Wonder",
+      jockey: "Kyle Bennett (Jockey)",
+      track: "Sand Track - Lane 2",
       speedKmh: 42.1,
       heartRate: 148,
       distanceCoveredMeters: 900,
       targetMeters: 1400,
       status: "NORMAL",
-    },
-    {
-      id: "horse-4",
-      name: "Hỏa Tiễn (Rocket)",
-      jockey: "Vũ Tiến Đạt",
-      track: "Sân cỏ - Làn 3",
-      speedKmh: 49.8,
-      heartRate: 182,
-      distanceCoveredMeters: 1400,
-      targetMeters: 1600,
-      status: "WARNING",
     },
   ]);
 
@@ -92,15 +80,15 @@ export default function LiveMonitorPage() {
                 boxShadow: "0 0 8px var(--ok)",
               }}
             />
-            <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Giám Sát Trực Tiếp Telemetry</h1>
+            <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Live Telemetry Monitor</h1>
           </div>
           <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
-            Theo dõi thời gian thực cảm biến nhịp tim, tốc độ GPS và phát hiện vượt ngưỡng an toàn trên đường chạy
+            Active session cardiac telemetry, GPS pacing, and safety envelope monitoring
           </p>
         </div>
 
         <Link to="/training/calendar">
-          <Button tone="secondary">← Lịch Huấn Luyện</Button>
+          <Button tone="secondary">← Master Calendar</Button>
         </Link>
       </div>
 
@@ -127,19 +115,19 @@ export default function LiveMonitorPage() {
                 <div>
                   <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 700 }}>{horse.name}</h3>
                   <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-                    Nài: <strong>{horse.jockey}</strong> · {horse.track}
+                    Jockey: <strong>{horse.jockey}</strong> · {horse.track}
                   </div>
                 </div>
 
                 <Badge tone={isWarning ? "danger" : "ok"}>
-                  {isWarning ? "⚠️ Nhịp tim cao" : "Hoạt động bình thường"}
+                  {isWarning ? "⚠️ High Heart Rate" : "Normal Conditioning"}
                 </Badge>
               </div>
 
               {/* Big gauges */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                 <div style={{ padding: "1rem", background: "var(--surface-sunken)", borderRadius: 8, textAlign: "center" }}>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase" }}>Tốc độ tức thời</div>
+                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase" }}>Instant Speed</div>
                   <div style={{ fontSize: "2rem", fontWeight: 800, color: "var(--accent)", marginTop: "0.25rem" }}>
                     {horse.speedKmh} <span style={{ fontSize: "0.875rem", fontWeight: 400 }}>km/h</span>
                   </div>
@@ -153,7 +141,7 @@ export default function LiveMonitorPage() {
                     textAlign: "center",
                   }}
                 >
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase" }}>Nhịp tim hiện tại</div>
+                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase" }}>Current Heart Rate</div>
                   <div
                     style={{
                       fontSize: "2rem",
@@ -170,7 +158,7 @@ export default function LiveMonitorPage() {
               {/* Progress bar */}
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8125rem", marginBottom: "0.25rem" }}>
-                  <span>Tiến độ cự ly: {horse.distanceCoveredMeters}m / {horse.targetMeters}m</span>
+                  <span>Distance Progress: {horse.distanceCoveredMeters}m / {horse.targetMeters}m</span>
                   <strong>{progressPercent}%</strong>
                 </div>
                 <div style={{ height: 8, width: "100%", background: "var(--surface-sunken)", borderRadius: 4 }}>
@@ -188,7 +176,7 @@ export default function LiveMonitorPage() {
 
               {isWarning && (
                 <div style={{ fontSize: "0.75rem", color: "var(--danger)", background: "rgba(239, 68, 68, 0.08)", padding: "0.5rem", borderRadius: 4 }}>
-                  Cảnh báo: Nhịp tim vượt mức khuyến cáo 180 bpm! Đã gửi tín hiệu giảm tốc tới bộ đàm Nài ngựa.
+                  Warning: Heart rate exceeded recommended threshold (180 bpm)! Deceleration radio notice dispatched to Jockey.
                 </div>
               )}
             </div>

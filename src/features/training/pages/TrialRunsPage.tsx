@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
-import { Card } from "@/shared/components/ui/Card";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Field } from "@/shared/components/form/Field";
 import { Input } from "@/shared/components/form/Input";
@@ -21,12 +20,12 @@ export default function TrialRunsPage() {
   const [trials, setTrials] = useState<TrialRunSchedule[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // New Trial Modal (DL-2.06)
+  // Create Trial Modal
   const [isOpenModal, setIsOpenModal] = useState<boolean>(false);
   const [runDate, setRunDate] = useState<string>(() => new Date().toISOString().split("T")[0]);
+  const [startTime, setStartTime] = useState<string>("07:00");
   const [trackType, setTrackType] = useState<TrackType>("TURF");
   const [distance, setDistance] = useState<number>(1200);
-  const [startTime, setStartTime] = useState<string>("07:00");
   const [notes, setNotes] = useState<string>("");
 
   const loadTrials = useCallback(async () => {
@@ -35,7 +34,7 @@ export default function TrialRunsPage() {
       const data = await trainingApi.getTrialRuns();
       setTrials(data);
     } catch {
-      toast.show("Không thể tải danh sách chạy thử", "danger");
+      toast.show("Unable to load trial runs", "danger");
     } finally {
       setLoading(false);
     }
@@ -54,15 +53,15 @@ export default function TrialRunsPage() {
         startTime,
         notes,
         horses: [
-          { horseId: "horse-1", horseName: "Thần Gió (Thunderbolt)", jockeyName: "Lê Hoàng Nài", gateNumber: 1 },
-          { horseId: "horse-3", horseName: "Hắc Báo (Black Panther)", jockeyName: "Đỗ Tuấn Kiệt", gateNumber: 2 },
+          { horseId: "horse-1", horseName: "Thunderbolt Swift", jockeyName: "Alex Turner", gateNumber: 1 },
+          { horseId: "horse-3", horseName: "Shadowfax Wonder", jockeyName: "Kyle Bennett", gateNumber: 2 },
         ],
       });
-      toast.show("Đã tạo lượt chạy thử thành công", "ok");
+      toast.show("Trial run scheduled successfully", "ok");
       setIsOpenModal(false);
       void loadTrials();
     } catch {
-      toast.show("Lỗi tạo lượt chạy thử", "danger");
+      toast.show("Failed to schedule trial run", "danger");
     }
   };
 
@@ -71,19 +70,19 @@ export default function TrialRunsPage() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Điều Phối Lượt Chạy Thử</h1>
+          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Trial Runs Coordination</h1>
           <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
-            Sắp xếp thứ tự chạy thử theo mặt sân cỏ/cát, phân bổ cổng xuất phát và điều phối nài đua
+            Schedule barrier break trial runs by surface, allocate starting gates, and coordinate jockeys
           </p>
         </div>
 
         <div style={{ display: "flex", gap: "0.75rem" }}>
           <Link to="/training/calendar">
-            <Button tone="secondary">← Lịch Tập Chung</Button>
+            <Button tone="secondary">← Master Calendar</Button>
           </Link>
           {isTrainer && (
             <Button tone="primary" onClick={() => setIsOpenModal(true)}>
-              + Thêm lượt chạy thử
+              + Schedule Trial Run
             </Button>
           )}
         </div>
@@ -92,11 +91,11 @@ export default function TrialRunsPage() {
       {/* Trial Run List */}
       <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
         {loading ? (
-          <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Đang tải danh sách chạy thử...</div>
+          <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Loading trial runs...</div>
         ) : trials.length === 0 ? (
           <EmptyState
-            title="Chưa có lượt chạy thử nào"
-            description="Bấm 'Thêm lượt chạy thử' để điều phối đợt kiểm tra phong độ."
+            title="No Trial Runs Scheduled"
+            description="Click 'Schedule Trial Run' to coordinate a performance evaluation heat."
           />
         ) : (
           trials.map((trial) => (
@@ -116,25 +115,25 @@ export default function TrialRunsPage() {
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                     <span style={{ fontSize: "1.125rem", fontWeight: 700 }}>
-                      Lượt #{trial.orderNumber} · {trial.runCode}
+                      Heat #{trial.orderNumber} · {trial.runCode}
                     </span>
                     <Badge tone={trial.trackType === "TURF" ? "ok" : "warn"}>
-                      {trial.trackType === "TURF" ? "Sân cỏ (Turf)" : "Sân cát (Sand)"}
+                      {trial.trackType === "TURF" ? "Turf Track (Grass)" : "Sand Track (Dirt)"}
                     </Badge>
                     <Badge tone="neutral">{trial.distanceMeters}m</Badge>
                     <Badge tone={trial.status === "PENDING" ? "info" : "ok"}>
-                      {trial.status === "PENDING" ? "Chờ xuất phát" : "Đã hoàn thành"}
+                      {trial.status === "PENDING" ? "Pending Start" : "Completed"}
                     </Badge>
                   </div>
                   <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-                    Ngày: <strong>{trial.runDate}</strong> · Giờ: <strong>{trial.startTime}</strong> · Điều phối:{" "}
+                    Date: <strong>{trial.runDate}</strong> · Time: <strong>{trial.startTime}</strong> · Coordinator:{" "}
                     <strong>{trial.coordinatorName}</strong>
                   </div>
                 </div>
 
                 {isTrainer && trial.status === "PENDING" && (
-                  <Button tone="primary" onClick={() => toast.show("Đã kích hoạt giờ xuất phát!", "ok")}>
-                    Bắt đầu chạy thử
+                  <Button tone="primary" onClick={() => toast.show("Trial heat started!", "ok")}>
+                    Start Trial Heat
                   </Button>
                 )}
               </div>
@@ -150,22 +149,22 @@ export default function TrialRunsPage() {
                 <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.875rem" }}>
                   <thead>
                     <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-sunken)" }}>
-                      <th style={{ padding: "0.5rem 0.75rem" }}>Cổng (Gate)</th>
-                      <th style={{ padding: "0.5rem 0.75rem" }}>Ngựa đua</th>
-                      <th style={{ padding: "0.5rem 0.75rem" }}>Nài ngựa (Jockey)</th>
-                      <th style={{ padding: "0.5rem 0.75rem" }}>Thời gian hoàn thành</th>
+                      <th style={{ padding: "0.5rem 0.75rem" }}>Gate</th>
+                      <th style={{ padding: "0.5rem 0.75rem" }}>Racehorse</th>
+                      <th style={{ padding: "0.5rem 0.75rem" }}>Jockey</th>
+                      <th style={{ padding: "0.5rem 0.75rem" }}>Finish Timing</th>
                     </tr>
                   </thead>
                   <tbody>
                     {trial.horses.map((entry) => (
                       <tr key={entry.horseId} style={{ borderBottom: "1px solid var(--border)" }}>
                         <td style={{ padding: "0.5rem 0.75rem", fontWeight: 700, color: "var(--accent)" }}>
-                          Cổng {entry.gateNumber}
+                          Gate {entry.gateNumber}
                         </td>
                         <td style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{entry.horseName}</td>
                         <td style={{ padding: "0.5rem 0.75rem" }}>{entry.jockeyName}</td>
                         <td style={{ padding: "0.5rem 0.75rem", color: "var(--text-muted)" }}>
-                          {entry.timingSeconds ? `${entry.timingSeconds} giây` : "Chưa có"}
+                          {entry.timingSeconds ? `${entry.timingSeconds}s` : "Pending"}
                         </td>
                       </tr>
                     ))}
@@ -179,31 +178,31 @@ export default function TrialRunsPage() {
 
       {/* Modal create */}
       {isOpenModal && (
-        <Modal onClose={() => setIsOpenModal(false)} title="Thêm Lượt Chạy Thử Mới">
+        <Modal onClose={() => setIsOpenModal(false)} title="Schedule New Trial Run">
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-              <Field label="Ngày chạy thử" required>
+              <Field label="Trial Date" required>
                 <Input type="date" value={runDate} onChange={(e) => setRunDate(e.target.value)} />
               </Field>
 
-              <Field label="Giờ xuất phát" required>
+              <Field label="Start Time" required>
                 <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
               </Field>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-              <Field label="Mặt sân chạy" required>
+              <Field label="Track Surface" required>
                 <Select
                   value={trackType}
                   onChange={(e) => setTrackType(e.target.value as TrackType)}
                   options={[
-                    { value: "TURF", label: "Sân cỏ tự nhiên (Turf)" },
-                    { value: "SAND", label: "Sân cát (Sand)" },
+                    { value: "TURF", label: "Natural Turf (Grass)" },
+                    { value: "SAND", label: "Sand Track (Dirt)" },
                   ]}
                 />
               </Field>
 
-              <Field label="Cự ly chạy (mét)" required>
+              <Field label="Distance (meters)" required>
                 <Input
                   type="number"
                   value={distance}
@@ -215,16 +214,16 @@ export default function TrialRunsPage() {
               </Field>
             </div>
 
-            <Field label="Ghi chú điều phối">
-              <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Mục đích đánh giá bứt tốc..." />
+            <Field label="Coordination Notes">
+              <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Trial objectives, pace targets..." />
             </Field>
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "0.5rem" }}>
               <Button tone="ghost" onClick={() => setIsOpenModal(false)}>
-                Hủy
+                Cancel
               </Button>
               <Button tone="primary" onClick={() => void handleCreateTrial()}>
-                Tạo lượt chạy thử
+                Schedule Heat
               </Button>
             </div>
           </div>

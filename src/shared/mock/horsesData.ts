@@ -4,14 +4,19 @@ export interface HerdHorse {
   id: string;
   name: string;
   code: string;
+  horseCode?: string;
+  rfid?: string;
+  microchip?: string;
+  microchipRfid?: string;
   stall: string;
+  zone?: string;
   healthGroup: "FIT" | "WATCH" | "INJURED" | "QUARANTINED";
   statusText: string;
   isLocked: boolean;
   lockReason?: string;
   primaryDiagnosis?: string;
-  restingHeartRate: number;
-  temp: number;
+  restingHeartRate?: number;
+  temp?: number;
   breed?: string;
   dob?: string;
   gender?: string;
@@ -21,6 +26,10 @@ export interface HerdHorse {
   ownerId?: string;
   ownerName?: string;
   assignedGroomId?: string;
+  primaryGroom?: string;
+  lastExamDate?: string;
+  unresolvedInjuriesCount?: number;
+  hasOverdueRoutine?: boolean;
 }
 
 const HORSES_STORAGE_KEY = "equiflow.herd.horses.v5";
@@ -65,20 +74,99 @@ if (typeof window !== "undefined") {
   }
 }
 
-export const DEFAULT_HERD_HORSES: HerdHorse[] = [];
+export const DEFAULT_HERD_HORSES: HerdHorse[] = [
+  {
+    id: "horse-1",
+    name: "Thunderbolt Swift",
+    code: "HR-000001",
+    horseCode: "HR-000001",
+    rfid: "RFID-985141002341",
+    microchip: "985141002341001",
+    microchipRfid: "RFID-985141002341",
+    breed: "Thoroughbred",
+    dob: "2021-04-12",
+    gender: "Colt",
+    color: "Bay Dark",
+    healthGroup: "FIT",
+    statusText: "ACTIVE",
+    isLocked: false,
+    stall: "STALL-A01",
+    zone: "Zone A - Barn 1",
+    ownerId: "owner-1",
+    ownerName: "Robert Sterling (Horse Owner)",
+    primaryGroom: "John Smith (Groom Hand)",
+    lastExamDate: "2026-10-02",
+    unresolvedInjuriesCount: 0,
+    hasOverdueRoutine: false,
+  },
+  {
+    id: "horse-2",
+    name: "Northern Dancer Legacy",
+    code: "HR-000002",
+    horseCode: "HR-000002",
+    rfid: "RFID-985141002342",
+    microchip: "985141002342002",
+    microchipRfid: "RFID-985141002342",
+    breed: "Thoroughbred",
+    dob: "2020-03-15",
+    gender: "Stallion",
+    color: "Chestnut",
+    healthGroup: "INJURED",
+    statusText: "INJURED",
+    isLocked: true,
+    lockReason: "Suspensory ligament acute desmitis during intense trial run",
+    lockDate: "2026-10-05",
+    reviewDate: new Date(Date.now() + 11 * 86400000).toISOString().split("T")[0],
+    stall: "STALL-A02",
+    zone: "Zone A - Barn 1",
+    ownerId: "owner-1",
+    ownerName: "Robert Sterling (Horse Owner)",
+    primaryGroom: "John Smith (Groom Hand)",
+    lastExamDate: "2026-10-05",
+    unresolvedInjuriesCount: 1,
+    hasOverdueRoutine: false,
+  },
+  {
+    id: "horse-3",
+    name: "Shadowfax Wonder",
+    code: "HR-000003",
+    horseCode: "HR-000003",
+    rfid: "RFID-985141002343",
+    microchip: "985141002343003",
+    microchipRfid: "RFID-985141002343",
+    breed: "Arabian Cross",
+    dob: "2022-01-20",
+    gender: "Filly",
+    color: "Gray Roaming",
+    healthGroup: "WATCH",
+    statusText: "UNDER_OBSERVATION",
+    isLocked: false,
+    stall: "STALL-B01",
+    zone: "Zone B - Barn 2",
+    ownerId: "owner-1",
+    ownerName: "Robert Sterling (Horse Owner)",
+    primaryGroom: "John Smith (Groom Hand)",
+    lastExamDate: "2026-09-28",
+    unresolvedInjuriesCount: 1,
+    hasOverdueRoutine: false,
+  },
+];
 
 export function getStoredHorses(): HerdHorse[] {
   try {
     const raw = localStorage.getItem(HORSES_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as HerdHorse[];
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     }
   } catch {
     // fallback
   }
-  return [];
+  // Initialize with the 3 canonical horses if empty
+  saveStoredHorses(DEFAULT_HERD_HORSES);
+  return DEFAULT_HERD_HORSES;
 }
+
 
 export function saveStoredHorses(horses: HerdHorse[]): void {
   try {
@@ -167,9 +255,52 @@ export function getInjuriesForHorse(horseId: string): any[] {
   } catch {
     // fallback
   }
+
+  // Auto-seed initial 2D musculoskeletal injury on horse-3
+  if (horseId === "horse-3") {
+    const defaultInjury = [
+      {
+        id: "inj-horse-3-01",
+        horseId: "horse-3",
+        x: 46,
+        y: 62,
+        coordinateX: 0.46,
+        coordinateY: 0.62,
+        view: "LEFT",
+        viewSide: "LEFT",
+        layer: "MUSCLE",
+        region: "Superficial Digital Flexor Tendon (SDFT)",
+        anatomicalZone: "Superficial Digital Flexor Tendon (SDFT)",
+        bodySide: "LEFT",
+        injuryType: "Tendon Strain & Mild Synovitis",
+        severity: "MODERATE",
+        stage: "RECOVERING",
+        status: "ACTIVE",
+        detectedDate: "2026-09-28",
+        notes: "Superficial flexor tendon strain observed after turf workout session.",
+        recoveryTimeline: [
+          {
+            date: "2026-09-28",
+            stage: "ACUTE",
+            severity: "MODERATE",
+            notes: "Initial acute heat and focal sensitivity along mid-metacarpal zone.",
+            evaluator: "Dr. Sarah Connor (Veterinarian)",
+          },
+          {
+            date: "2026-10-06",
+            stage: "RECOVERING",
+            severity: "MILD",
+            notes: "Reduced heat and improved weight-bearing; progressive trotting allowed.",
+            evaluator: "Dr. Sarah Connor (Veterinarian)",
+          },
+        ],
+      },
+    ];
+    saveInjuriesForHorse("horse-3", defaultInjury);
+    return defaultInjury;
+  }
   return [];
 }
-
 
 export function saveInjuriesForHorse(horseId: string, injuries: any[]): void {
   try {
@@ -199,10 +330,12 @@ export function getStoredLocks(): StoredTrainingLock[] {
       const parsed = JSON.parse(raw) as StoredTrainingLock[];
       // Filter out orphan locks whose horses have been deleted!
       const validLocks = parsed.filter((l) => existingHorseIds.has(l.horseId));
-      if (validLocks.length !== parsed.length) {
-        saveStoredLocks(validLocks);
+      if (validLocks.length > 0) {
+        if (validLocks.length !== parsed.length) {
+          saveStoredLocks(validLocks);
+        }
+        return validLocks;
       }
-      return validLocks;
     }
   } catch {
     // fallback
@@ -220,9 +353,10 @@ export function getStoredLocks(): StoredTrainingLock[] {
         horseCode: h.code,
         appliedMedicalStatus: h.healthGroup,
         lockedAt: h.lockDate || new Date().toISOString().split("T")[0],
-        lockedBy: "Chief Veterinarian (Dr. Lê Minh Châu)",
+        lockedBy: "Dr. Sarah Connor (Veterinarian)",
         lockReason: h.lockReason || "Under protective clinical training suspension",
-        reviewDate: h.reviewDate || new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0],
+        reviewDate: h.reviewDate || new Date(Date.now() + 11 * 86400000).toISOString().split("T")[0],
+        unlockConditions: "Complete clinical ultrasound resolution and soundness on flexion test",
         status: "ACTIVE",
       });
     }
@@ -233,6 +367,7 @@ export function getStoredLocks(): StoredTrainingLock[] {
   }
   return initialLocks;
 }
+
 
 export function saveStoredLocks(locks: StoredTrainingLock[]): void {
   try {
