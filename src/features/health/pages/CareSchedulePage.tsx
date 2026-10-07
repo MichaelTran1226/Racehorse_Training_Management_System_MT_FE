@@ -66,7 +66,7 @@ const STATUS_BADGES: Record<
 export default function CareSchedulePage() {
   const { user } = useAuth();
   const toast = useToast();
-  const isVet = user?.role === "VETERINARIAN" || user?.role === "CLUB_MANAGER";
+  const isVet = user?.role === "VETERINARIAN";
 
   const [activeTab, setActiveTab] = useState<string>("ALL");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");

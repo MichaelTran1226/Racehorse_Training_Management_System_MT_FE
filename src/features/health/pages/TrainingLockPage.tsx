@@ -14,7 +14,7 @@ export default function TrainingLockPage() {
   const { user } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
-  const isVet = user?.role === "VETERINARIAN" || user?.role === "CLUB_MANAGER";
+  const isVet = user?.role === "VETERINARIAN";
 
   const [activeTab, setActiveTab] = useState<string>("ACTIVE");
   const [locks, setLocks] = useState<TrainingLockHistoryItem[]>([]);
@@ -80,10 +80,10 @@ export default function TrainingLockPage() {
     const q = search.trim().toLowerCase();
     const matchesSearch =
       !q ||
-      item.horseId.toLowerCase().includes(q) ||
+      item.horseId?.toLowerCase().includes(q) ||
       (item.horseName && item.horseName.toLowerCase().includes(q)) ||
-      item.lockReason.toLowerCase().includes(q) ||
-      item.lockCode.toLowerCase().includes(q);
+      (item.lockReason && item.lockReason.toLowerCase().includes(q)) ||
+      (item.lockCode && item.lockCode.toLowerCase().includes(q));
     return matchesTab && matchesSearch;
   });
 
@@ -276,17 +276,17 @@ export default function TrainingLockPage() {
 
                       // Dynamic unique lock codes
                       const matchingCodes = Array.from(new Set(locks.map((l) => l.lockCode).filter(Boolean))).filter(
-                        (c) => !q || c.toLowerCase().includes(q)
+                        (c) => !q || (c && c.toLowerCase().includes(q))
                       );
 
                       // Dynamic unique horses under lock
                       const matchingHorses = Array.from(new Set(locks.map((l) => l.horseName || l.horseId).filter(Boolean))).filter(
-                        (h) => !q || h.toLowerCase().includes(q)
+                        (h) => !q || (h && h.toLowerCase().includes(q))
                       );
 
                       // Dynamic unique clinical reasons from real locks
                       const matchingReasons = Array.from(new Set(locks.map((l) => l.lockReason).filter(Boolean))).filter(
-                        (r) => !q || r.toLowerCase().includes(q)
+                        (r) => !q || (r && r.toLowerCase().includes(q))
                       );
 
                       const total = matchingCodes.length + matchingHorses.length + matchingReasons.length;

@@ -15,6 +15,8 @@ import { useToast } from "@/shared/components/ui/Toast";
 import { getStoredHorses } from "@/shared/mock/horsesData";
 import { trainingApi } from "../api";
 import type { PlanStatus, TrainingPlan } from "../types";
+import { getHorses } from "@/features/horses/api";
+import type { Horse } from "@/features/horses/types";
 
 const STATUS_CONFIG: Record<PlanStatus, { label: string; tone: "ok" | "warn" | "danger" | "neutral" | "info" }> = {
   DRAFT: { label: "Draft", tone: "neutral" },
@@ -30,6 +32,7 @@ export default function PlanListPage() {
   const isTrainer = user?.role === "HEAD_TRAINER" || user?.role === "CLUB_MANAGER";
 
   const [plans, setPlans] = useState<TrainingPlan[]>([]);
+  const [horses, setHorses] = useState<Horse[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<string>("ALL");
   const [search, setSearch] = useState<string>("");
@@ -48,8 +51,13 @@ export default function PlanListPage() {
   const loadPlans = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await trainingApi.getPlans();
+      const [data, horseData] = await Promise.all([
+        trainingApi.getPlans(),
+        getHorses({ limit: 100 }),
+      ]);
       setPlans(data);
+      const list = Array.isArray(horseData) ? horseData : (horseData as any).items || [];
+      setHorses(list);
     } catch {
       toast.show("Unable to load training plan list", "danger");
     } finally {

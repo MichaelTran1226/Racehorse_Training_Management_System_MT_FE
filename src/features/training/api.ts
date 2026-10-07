@@ -1,3 +1,4 @@
+import { api } from "@/shared/lib/api";
 import type {
   ExerciseSession,
   FitnessMetricPoint,
@@ -261,15 +262,15 @@ const MOCK_ALERTS: TrainingAlert[] = [
 export const trainingApi = {
   // Plans
   async getPlans(): Promise<TrainingPlan[]> {
-    return structuredClone(MOCK_PLANS);
+    return await api<TrainingPlan[]>("GET", "/training/plans");
   },
 
   async getPlanById(id: string): Promise<TrainingPlan | null> {
-    const p = MOCK_PLANS.find((item) => item.id === id);
-    return p ? structuredClone(p) : null;
+    return await api<TrainingPlan>("GET", `/training/plans/${id}`);
   },
 
   async createPlan(data: Partial<TrainingPlan>): Promise<TrainingPlan> {
+feat/p1-02-canonical-horses-mock-fe
     const newPlan: TrainingPlan = {
       id: `plan-${Date.now()}`,
       planCode: `PLAN-2026-${Math.floor(100 + Math.random() * 900)}`,
@@ -338,6 +339,25 @@ export const trainingApi = {
     };
     MOCK_PLANS.unshift(cloned);
     return structuredClone(cloned);
+
+    return await api<TrainingPlan>("POST", "/training/plans", data);
+  },
+
+  async activatePlan(id: string): Promise<TrainingPlan> {
+    return await api<TrainingPlan>("PATCH", `/training/plans/${id}/status`, { status: "ACTIVE" });
+  },
+
+  async cancelPlan(id: string, reason: string): Promise<TrainingPlan> {
+    return await api<TrainingPlan>("PATCH", `/training/plans/${id}/status`, { status: "CANCELLED", reason });
+  },
+
+  async completePlan(id: string): Promise<TrainingPlan> {
+    return await api<TrainingPlan>("PATCH", `/training/plans/${id}/status`, { status: "COMPLETED" });
+  },
+
+  async clonePlan(id: string, targetHorseId: string, targetHorseName: string): Promise<TrainingPlan> {
+    return await api<TrainingPlan>("POST", `/training/plans/${id}/clone`, { targetHorseId, targetHorseName });
+ main
   },
 
   // Sessions

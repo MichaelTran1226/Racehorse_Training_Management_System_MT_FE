@@ -55,7 +55,7 @@ export default function RecordDetailPage() {
   const [showFollowUpModal, setShowFollowUpModal] = useState(false);
   const [showCloseModal, setShowCloseModal] = useState(false);
 
-  const isVet = user?.role === "VETERINARIAN" || user?.role === "CLUB_MANAGER";
+  const isVet = user?.role === "VETERINARIAN";
   const isOwner = user?.role === "HORSE_OWNER";
 
   const fetchDetail = useCallback(async () => {
