@@ -118,10 +118,10 @@ export function permissionLock(role: Role, meta: PermissionMeta): PermissionLock
 
 const DEFAULT_ON: Record<Role, PermissionKey[]> = {
   HEAD_TRAINER: ["viewHorses", "editHorses", "createPlan", "assignSchedule", "recordMetrics", "ackAlerts", "viewMedical"],
-  VETERINARIAN: ["viewHorses", "viewMedical", "placeLock", "liftLock"],
+  VETERINARIAN: ["viewHorses", "viewMedical", "placeLock", "liftLock", "ackAlerts"],
   GROOM: ["viewHorses"],
   HORSE_OWNER: ["viewHorses"],
-  CLUB_MANAGER: ["viewHorses", "editHorses", "deleteHorses", "viewMedical", "manageAccounts", "viewAudit"],
+  CLUB_MANAGER: ["viewHorses", "editHorses", "deleteHorses", "viewMedical", "manageAccounts", "viewAudit", "ackAlerts"],
 };
 
 export function defaultPermissions(role: Role): PermissionMap {
@@ -217,6 +217,7 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
         item("records", "Medical Records", "file", { requires: "viewMedical" }),
         item("rx", "Prescriptions", "pill", { requires: "viewMedical" }),
         item("locks", "Training Locks", "lock", { requires: "placeLock" }),
+        item("alerts", "Biomechanical Alerts", "alert", { alert: true }),
         item("vaccine", "Vaccination Schedule", "syringe", { requires: "viewMedical" }),
       ],
     },
@@ -293,7 +294,7 @@ export interface ScreenAccess {
   inOwnRole: boolean; // màn hình có trong sidebar của vai trò hiện tại (nhưng chưa được cấp quyền)
 }
 
-const OPEN_PREFIXES = ["/dashboard", "/profile", "/notifications", "/forbidden", "/session-expired"];
+const OPEN_PREFIXES = ["/dashboard", "/profile", "/notifications", "/forbidden", "/session-expired", "/alerts", "/training/alerts"];
 
 function findByHref(groups: NavGroup[], href: string): { group: string; item: NavItem } | undefined {
   for (const g of groups) {

@@ -44,9 +44,10 @@ export function breadcrumbFor(user: AuthUser, pathname: string, accountName?: st
       { label: accountName ?? "Account Permissions" },
     ];
   }
-  // 5. Trang lỗi hệ thống
+  // 5. Trang lỗi hệ thống & Alerts
   if (pathname === "/forbidden") return [homeSegment, { label: "Access denied" }];
   if (pathname === "/session-expired") return [homeSegment, { label: "Session expired" }];
+  if (pathname === "/alerts" || pathname === "/training/alerts") return [homeSegment, { label: "Threshold Alerts" }];
 
 
   // 6. Chi tiết ngựa & hồ sơ bệnh án (các trang lồng cấp)

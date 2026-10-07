@@ -195,7 +195,7 @@ export function addStoredHorse(horse: HerdHorse): void {
         horseCode: horse.code,
         appliedMedicalStatus: horse.healthGroup,
         lockedAt: horse.lockDate || new Date().toISOString().split("T")[0],
-        lockedBy: "Chief Veterinarian (Dr. Lê Minh Châu)",
+        lockedBy: "Chief Veterinarian (Dr. Sarah Connor)",
         lockReason: horse.lockReason || "Under protective clinical training suspension",
         reviewDate: horse.reviewDate || new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
         status: "ACTIVE",
@@ -410,16 +410,27 @@ export function placeHorseTrainingLock(
   }
 
   const locks = getStoredLocks();
+  const existingActive = locks.find((l) => l.horseId === horseId && l.status === "ACTIVE");
+  if (existingActive) {
+    existingActive.appliedMedicalStatus = input.appliedStatus;
+    existingActive.lockReason = input.reason;
+    existingActive.reviewDate = input.reviewDate;
+    existingActive.unlockConditions = input.unlockConditions;
+    if (input.lockedBy) existingActive.lockedBy = input.lockedBy;
+    saveStoredLocks(locks);
+    return existingActive;
+  }
+
   const horseLocksCount = locks.filter((l) => l.horseId === horseId).length;
   const newLock: StoredTrainingLock = {
-    id: `lock-${horseId}-${Date.now()}`,
+    id: `lock-${horseId}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
     lockCode: `LOCK-${horse?.code || "H"}-${String(horseLocksCount + 1).padStart(3, "0")}`,
     horseId,
     horseName: horse?.name || `Horse ${horseId}`,
     horseCode: horse?.code || horseId,
     appliedMedicalStatus: input.appliedStatus,
     lockedAt: nowStr,
-    lockedBy: input.lockedBy || "Chief Veterinarian (Dr. Lê Minh Châu)",
+    lockedBy: input.lockedBy || "Chief Veterinarian (Dr. Sarah Connor)",
     lockReason: input.reason,
     reviewDate: input.reviewDate,
     unlockConditions: input.unlockConditions,
@@ -440,7 +451,7 @@ export function placeHorseTrainingLock(
       category: "LOCK",
       link: "/locks",
       targetRoles: ["VETERINARIAN", "HEAD_TRAINER", "CLUB_MANAGER"],
-      senderName: input.lockedBy || "Dr. Le Minh Chau (Lead Vet)",
+      senderName: input.lockedBy || "Dr. Sarah Connor (Lead Vet)",
     });
   } catch {
     // ignore

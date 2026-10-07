@@ -629,9 +629,9 @@ export default function TrainingLockPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredLocks.map((lock) => (
+                {filteredLocks.map((lock, idx) => (
                   <tr
-                    key={lock.id}
+                    key={`${lock.id || 'lock'}-${idx}`}
                     onClick={() => navigate(`/medical/horses/${lock.horseId}`)}
                     style={{
                       borderBottom: "1px solid #f2ede8",

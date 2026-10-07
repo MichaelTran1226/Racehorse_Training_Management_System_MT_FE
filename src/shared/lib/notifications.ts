@@ -12,8 +12,8 @@ export interface AppNotification {
   senderName?: string;
 }
 
-// Version v5 to automatically purge any legacy notifications and ensure full English
-const NOTIFICATIONS_STORAGE_KEY = "equiflow.notifications.v5";
+// Version v6 to automatically purge any legacy notifications and ensure full English
+const NOTIFICATIONS_STORAGE_KEY = "equiflow.notifications.v6";
 const NOTIFICATIONS_EVENT = "equiflow:notifications_updated";
 
 if (typeof window !== "undefined") {
@@ -22,6 +22,7 @@ if (typeof window !== "undefined") {
     localStorage.removeItem("equiflow.notifications.v2");
     localStorage.removeItem("equiflow.notifications.v3");
     localStorage.removeItem("equiflow.notifications.v4");
+    localStorage.removeItem("equiflow.notifications.v5");
   } catch {
     // ignore
   }
@@ -38,7 +39,7 @@ const INITIAL_ROLE_NOTIFICATIONS: AppNotification[] = [
     read: false,
     link: "/locks",
     targetRoles: ["VETERINARIAN", "HEAD_TRAINER"],
-    senderName: "Dr. Le Minh Chau (Lead Vet)",
+    senderName: "Dr. Sarah Connor (Lead Vet)",
   },
   {
     id: "notif-vet-2",
@@ -49,7 +50,7 @@ const INITIAL_ROLE_NOTIFICATIONS: AppNotification[] = [
     read: false,
     link: "/herd",
     targetRoles: ["VETERINARIAN"],
-    senderName: "Pham Thi Binh (Equine Groom)",
+    senderName: "Emma Watson (Equine Groom)",
   },
   {
     id: "notif-vet-3",
@@ -67,7 +68,7 @@ const INITIAL_ROLE_NOTIFICATIONS: AppNotification[] = [
   {
     id: "notif-mgr-1",
     title: "New Account Registration Request",
-    message: "Nguyễn Hoàng Anh (HORSE_OWNER) submitted membership application (REQ-2609-012).",
+    message: "Robert Chen (HORSE_OWNER) submitted membership application (REQ-2609-012).",
     category: "ACCOUNT",
     createdAt: new Date(Date.now() - 40 * 60000).toISOString(),
     read: false,
@@ -78,13 +79,13 @@ const INITIAL_ROLE_NOTIFICATIONS: AppNotification[] = [
   {
     id: "notif-mgr-2",
     title: "Permission Access Request",
-    message: "Trần Văn Nam requested access permission to screen: Audit Log (Ref: 403-2609-0071).",
+    message: "David Nguyen requested access permission to screen: Audit Log (Ref: 403-2609-0071).",
     category: "ACCOUNT",
     createdAt: new Date(Date.now() - 4 * 3600000).toISOString(),
     read: false,
     link: "/accounts",
     targetRoles: ["CLUB_MANAGER"],
-    senderName: "Trần Văn Nam (Head Trainer)",
+    senderName: "David Nguyen (Head Trainer)",
   },
   {
     id: "notif-mgr-3",
@@ -108,7 +109,7 @@ const INITIAL_ROLE_NOTIFICATIONS: AppNotification[] = [
     read: false,
     link: "/locks",
     targetRoles: ["HEAD_TRAINER"],
-    senderName: "Dr. Lê Minh Châu (Lead Vet)",
+    senderName: "Dr. Sarah Connor (Lead Vet)",
   },
   {
     id: "notif-trn-2",
