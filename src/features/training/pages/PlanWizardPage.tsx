@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/shared/components/ui/Button";
 import { Card } from "@/shared/components/ui/Card";
@@ -9,6 +9,8 @@ import { Textarea } from "@/shared/components/form/Textarea";
 import { useToast } from "@/shared/components/ui/Toast";
 import { trainingApi } from "../api";
 import type { TrainingPhase } from "../types";
+import { getHorses } from "@/features/horses/api";
+import type { Horse } from "@/features/horses/types";
 
 export default function PlanWizardPage() {
   const navigate = useNavigate();
@@ -16,10 +18,19 @@ export default function PlanWizardPage() {
 
   const [step, setStep] = useState<number>(1);
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [horses, setHorses] = useState<Horse[]>([]);
+
+  useEffect(() => {
+    getHorses({ limit: 100 }).then((res: any) => {
+      const list = Array.isArray(res) ? res : res.items || [];
+      setHorses(list);
+      if (list.length > 0) setHorseId(list[0].id);
+    }).catch(console.error);
+  }, []);
 
   // Form State
   const [name, setName] = useState<string>("");
-  const [horseId, setHorseId] = useState<string>("horse-1");
+  const [horseId, setHorseId] = useState<string>("");
   const [target, setTarget] = useState<string>("");
   const [targetDistance, setTargetDistance] = useState<number>(1600);
   const [startDate, setStartDate] = useState<string>(() => new Date().toISOString().split("T")[0]);
@@ -72,7 +83,8 @@ export default function PlanWizardPage() {
     setPhases(updated);
   };
 
-  const isHorseLocked = horseId === "horse-2"; // Horse-2 is locked
+  const selectedHorse = horses.find((h) => h.id === horseId);
+  const isHorseLocked = selectedHorse?.isMedicalLocked || false;
 
   const handleSave = async (activate = false) => {
     if (!name.trim()) {
@@ -89,17 +101,11 @@ export default function PlanWizardPage() {
 
     try {
       setSubmitting(true);
-      const horseNames: Record<string, string> = {
-        "horse-1": "Thần Gió (Thunderbolt)",
-        "horse-2": "Bạch Mã Hoàng Tử (Silver Arrow)",
-        "horse-3": "Hắc Báo (Black Panther)",
-        "horse-4": "Hỏa Tiễn (Rocket)",
-      };
-
       const created = await trainingApi.createPlan({
         name,
         horseId,
-        horseName: horseNames[horseId] || "Ngựa đua",
+        horseName: selectedHorse?.name || "Ngựa đua",
+        horseCode: selectedHorse?.horseCode || "EQ",
         target,
         targetDistanceMeters: targetDistance,
         startDate,
@@ -192,12 +198,10 @@ export default function PlanWizardPage() {
                 <Select
                   value={horseId}
                   onChange={(e) => setHorseId(e.target.value)}
-                  options={[
-                    { value: "horse-1", label: "Thần Gió (Thunderbolt) - Khỏe mạnh" },
-                    { value: "horse-2", label: "Bạch Mã Hoàng Tử (Silver Arrow) - Có Khóa Y Tế 🔒" },
-                    { value: "horse-3", label: "Hắc Báo (Black Panther) - Khỏe mạnh" },
-                    { value: "horse-4", label: "Hỏa Tiễn (Rocket) - Cần theo dõi" },
-                  ]}
+                  options={horses.map((h) => ({
+                    value: h.id,
+                    label: `${h.name} - ${h.isMedicalLocked ? "Có Khóa Y Tế 🔒" : "Khỏe mạnh"}`,
+                  }))}
                 />
               </Field>
 
@@ -336,7 +340,7 @@ export default function PlanWizardPage() {
                 🔒 CẢNH BÁO KHÓA HUẤN LUYỆN Y TẾ
               </div>
               <div style={{ fontSize: "0.875rem" }}>
-                Ngựa <strong>Bạch Mã Hoàng Tử (Silver Arrow)</strong> hiện đang bị Khóa huấn luyện thú y do chấn thương gân:
+                Ngựa <strong>{selectedHorse?.name}</strong> hiện đang bị Khóa huấn luyện thú y do y lệnh:
                 <ul style={{ margin: "0.5rem 0 0", paddingLeft: "1.25rem" }}>
                   <li>Không được phép kích hoạt giáo án này sang trạng thái Đang áp dụng.</li>
                   <li>Bạn chỉ có thể <strong>Lưu bản nháp</strong> để chuẩn bị trước khi Bác sĩ thú y gỡ khóa.</li>
