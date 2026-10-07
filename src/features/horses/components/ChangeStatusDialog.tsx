@@ -48,7 +48,7 @@ export function ChangeStatusDialog({ horse, onSuccess }: ChangeStatusDialogProps
   const handleOpen = () => {
     if (allowedStatuses.length === 0) {
       if (horse.isMedicalLocked && isHeadTrainer) {
-        toast.show("Ngựa đang bị Khóa huấn luyện y tế. Không thể chuyển sang trạng thái vận hành.", "danger");
+        toast.show("Horse is currently under Medical Lock. Cannot transition to operational status.", "danger");
       }
       return;
     }
@@ -61,18 +61,18 @@ export function ChangeStatusDialog({ horse, onSuccess }: ChangeStatusDialogProps
     e.preventDefault();
     if (!status) return;
     if (status === horse.status) {
-      toast.show("Trạng thái không thay đổi", "info");
+      toast.show("Status unchanged", "info");
       return;
     }
 
     setLoading(true);
     try {
       const res = await changeHorseStatus(horse.id, { status, reason });
-      toast.show(res.message || "Đã chuyển trạng thái", "ok");
+      toast.show(res.message || "Horse status updated successfully", "ok");
       setOpen(false);
       onSuccess({ ...horse, status: status as any });
     } catch (err: any) {
-      toast.show(err.message || "Không thể chuyển trạng thái", "danger");
+      toast.show(err.message || "Failed to update horse status", "danger");
     } finally {
       setLoading(false);
     }
@@ -86,22 +86,22 @@ export function ChangeStatusDialog({ horse, onSuccess }: ChangeStatusDialogProps
         tone="secondary" 
         onClick={handleOpen}
         disabled={allowedStatuses.length === 0}
-        title={horse.isMedicalLocked && isHeadTrainer ? "Bị khóa bởi Y tế" : ""}
+        title={horse.isMedicalLocked && isHeadTrainer ? "Blocked by Medical Lock" : ""}
       >
-        Đổi trạng thái
+        Change Status
       </Button>
 
       {open && (
         <Modal
-          title="Chuyển trạng thái ngựa"
+          title="Change Horse Status"
           onClose={() => setOpen(false)}
           foot={
             <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
               <Button tone="secondary" onClick={() => setOpen(false)}>
-                Hủy
+                Cancel
               </Button>
               <Button onClick={(e: any) => handleSubmit(e)} disabled={status === horse.status || loading}>
-                Xác nhận
+                Confirm
               </Button>
             </div>
           }
@@ -109,14 +109,14 @@ export function ChangeStatusDialog({ horse, onSuccess }: ChangeStatusDialogProps
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div>
               <label style={{ display: "block", marginBottom: "0.25rem", fontWeight: 500 }}>
-                Trạng thái hiện tại
+                Current Status
               </label>
               <Badge tone={currentStatusCfg.tone as any}>{currentStatusCfg.label}</Badge>
             </div>
 
             <div>
               <label style={{ display: "block", marginBottom: "0.25rem", fontWeight: 500 }}>
-                Trạng thái mới <span style={{ color: "red" }}>*</span>
+                New Status <span style={{ color: "red" }}>*</span>
               </label>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 {allowedStatuses.map((s) => {
@@ -139,7 +139,7 @@ export function ChangeStatusDialog({ horse, onSuccess }: ChangeStatusDialogProps
 
             <div>
               <label style={{ display: "block", marginBottom: "0.25rem", fontWeight: 500 }}>
-                Lý do thay đổi (Không bắt buộc)
+                Status Change Rationale (Optional)
               </label>
               <textarea
                 value={reason}
@@ -153,7 +153,7 @@ export function ChangeStatusDialog({ horse, onSuccess }: ChangeStatusDialogProps
                   background: "var(--bg-card)",
                   color: "var(--ink)",
                 }}
-                placeholder="Nhập lý do thay đổi trạng thái..."
+                placeholder="Enter clinical or operational rationale..."
               />
             </div>
           </form>

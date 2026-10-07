@@ -29,7 +29,7 @@ export default function HorseDetailPage() {
         if (active) setHorse(data);
       })
       .catch((err) => {
-        if (active) setError(err.message || "Không tìm thấy hồ sơ ngựa hoặc bạn không có quyền xem.");
+        if (active) setError(err.message || "Horse record not found or you do not have permission to view.");
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -42,9 +42,9 @@ export default function HorseDetailPage() {
   if (loading) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-        <PageHeader eyebrow="HỒ SƠ ĐỊNH DANH NGỰA" title="Chi tiết hồ sơ ngựa" />
+        <PageHeader eyebrow="HORSE PROFILE · FLOW 1" title="Horse Profile Details" />
         <Card pad={32}>
-          <p style={{ color: "var(--ink-muted, #64748b)" }}>Đang tải thông tin chi tiết ngựa...</p>
+          <p style={{ color: "var(--ink-muted, #64748b)" }}>Loading horse profile details...</p>
         </Card>
       </div>
     );
@@ -53,14 +53,14 @@ export default function HorseDetailPage() {
   if (error || !horse) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-        <PageHeader eyebrow="HỒ SƠ ĐỊNH DANH NGỰA" title="Không Tìm Thấy Hồ Sơ" />
+        <PageHeader eyebrow="HORSE PROFILE · FLOW 1" title="Profile Not Found" />
         <Card pad={24}>
-          <Alert tone="danger" title="Không tìm thấy hồ sơ ngựa">
-            {error || "Hồ sơ ngựa không tồn tại hoặc tài khoản của bạn không có quyền truy cập."}
+          <Alert tone="danger" title="Horse Record Not Found">
+            {error || "This horse profile does not exist or your account lacks authorization."}
           </Alert>
           <div style={{ marginTop: "1rem" }}>
             <Link to="/horses">
-              <Button tone="secondary">Về danh sách ngựa</Button>
+              <Button tone="secondary">Back to Horse Roster</Button>
             </Link>
           </div>
         </Card>
@@ -72,16 +72,16 @@ export default function HorseDetailPage() {
   const isGroom = currentUser.role === "GROOM";
   const isManager = currentUser.role === "CLUB_MANAGER";
 
-  // Tính tuổi
+  // Calculate age
   let ageText = "—";
   if (horse.dob) {
     const birthYear = new Date(horse.dob).getFullYear();
     const currentYear = new Date().getFullYear();
     const age = currentYear - birthYear;
-    ageText = `${age >= 0 ? age : 0} tuổi`;
+    ageText = `${age >= 0 ? age : 0} y/o`;
   }
 
-  // Microchip hiển thị
+  // Microchip display masking for grooms
   let displayMicrochip = horse.microchip || horse.microchipRfid || "—";
   if (isGroom && displayMicrochip !== "—" && displayMicrochip.length > 4) {
     displayMicrochip = "*".repeat(displayMicrochip.length - 4) + displayMicrochip.slice(-4);
@@ -89,31 +89,31 @@ export default function HorseDetailPage() {
 
   const statusCfg = HEALTH_STATUS[horse.status as HealthStatus] || { label: horse.status, tone: "neutral" };
 
-  // Danh sách các Tab theo SC-1.03 (Ẩn Tab Chuồng và Lịch sử ô chuồng với Owner)
+  // 6 Tabs according to SC-1.03 (Hide stable tabs for owners)
   const tabs = [
-    { id: "info", label: "1. Thông tin chung" },
-    ...(!isOwner ? [{ id: "stable", label: "2. Chuồng & Chăm sóc" }] : [{ id: "routine", label: "2. Lịch sinh hoạt" }]),
-    { id: "owner", label: "3. Chủ sở hữu" },
-    { id: "status-history", label: "4. Lịch sử trạng thái" },
-    ...(!isOwner ? [{ id: "stall-history", label: "5. Lịch sử ô chuồng" }] : []),
-    { id: "timeline", label: "6. Dòng thời gian" },
+    { id: "info", label: "1. General Information" },
+    ...(!isOwner ? [{ id: "stable", label: "2. Stabling & Care" }] : [{ id: "routine", label: "2. Daily Routine" }]),
+    { id: "owner", label: "3. Ownership & Custody" },
+    { id: "status-history", label: "4. Status History" },
+    ...(!isOwner ? [{ id: "stall-history", label: "5. Stall History" }] : []),
+    { id: "timeline", label: "6. Lifecycle Timeline" },
   ];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
-        eyebrow={`MÃ NGỰA: ${horse.horseCode || horse.id}`}
+        eyebrow={`HORSE ID: ${horse.horseCode || horse.id}`}
         title={horse.name}
         description={`${horse.breed} · ${horse.gender} · ${horse.color} · ${ageText}`}
         action={
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
             <Link to="/horses">
-              <Button tone="secondary">← Danh sách</Button>
+              <Button tone="secondary">← Roster</Button>
             </Link>
 
             {isManager && horse.status !== "RETIRED" && (
               <Link to={`/horses/${horse.id}/edit`}>
-                <Button tone="secondary">Sửa hồ sơ</Button>
+                <Button tone="secondary">Edit Profile</Button>
               </Link>
             )}
 
@@ -123,38 +123,36 @@ export default function HorseDetailPage() {
             />
 
             <Link to={`/medical/horses/${horse.id}`}>
-              <Button tone="secondary">Bệnh án y tế</Button>
+              <Button tone="secondary">Medical Records</Button>
             </Link>
 
             <Link to={`/medical/horses/${horse.id}/injuries`}>
-              <Button tone="secondary">Sơ đồ 2D</Button>
+              <Button tone="secondary">2D Injury Map</Button>
             </Link>
           </div>
         }
       />
 
-      {/* Banner Khóa huấn luyện (khi đang khóa) */}
+      {/* Banner Medical Lock */}
       {horse.isMedicalLocked && (
         <Alert
           tone="danger"
-          title="LỆNH KHÓA HUẤN LUYỆN Y TẾ ĐANG CÓ HIỆU LỰC"
+          title="VETERINARY MEDICAL LOCK ACTIVE"
         >
-          Ngựa đang chịu Khóa huấn luyện y tế. Không thể xếp lịch tập nặng hoặc tham gia thi đấu
-          cho đến khi Bác sĩ thú y chính thức dỡ bỏ khóa.
+          Horse is currently subject to a protective veterinary Medical Lock. Heavy training workouts and competitive trial runs are strictly prohibited until cleared by the attending Veterinarian.
           {horse.medicalLocks && horse.medicalLocks[0] && (
             <div style={{ marginTop: "0.5rem", fontSize: "0.875rem" }}>
-              <strong>Lý do khóa:</strong> {horse.medicalLocks[0].lockReason} (Khóa lúc:{" "}
-              {new Date(horse.medicalLocks[0].lockedAt).toLocaleString("vi-VN")})
+              <strong>Lock Reason:</strong> {horse.medicalLocks[0].lockReason} (Placed:{" "}
+              {new Date(horse.medicalLocks[0].lockedAt).toLocaleString("en-US")})
             </div>
           )}
         </Alert>
       )}
 
-      {/* Banner Ngừng quản lý */}
+      {/* Banner Retired */}
       {horse.status === "RETIRED" && (
-        <Alert tone="info" title="Hồ sơ đã ngừng quản lý">
-          Cá thể ngựa này hiện đã được đưa vào diện Ngừng quản lý (bán, giải nghệ hoặc qua đời).
-          Dữ liệu lịch sử vẫn được lưu trữ nguyên vẹn để phục vụ tra cứu.
+        <Alert tone="info" title="Horse Record Retired">
+          This racehorse is retired from active stable operations (sold, retired, or deceased). Historical identity, pedigree, and health logs remain archived for reference.
         </Alert>
       )}
 
@@ -188,23 +186,23 @@ export default function HorseDetailPage() {
 
           <div style={{ display: "flex", gap: "0.5rem" }}>
             <Badge tone={statusCfg.tone}>{statusCfg.label}</Badge>
-            {horse.isMedicalLocked && <Badge tone="danger">Khóa huấn luyện</Badge>}
+            {horse.isMedicalLocked && <Badge tone="danger">Medical Lock 🔒</Badge>}
           </div>
         </div>
       </Card>
 
-      {/* 6 Tabs điều hướng nội dung */}
+      {/* 6 Tabs */}
       <Tabs
         items={tabs}
         active={activeTab}
         onChange={setActiveTab}
       />
 
-      {/* Nội dung từng Tab */}
+      {/* Tab 1: General Info */}
       {activeTab === "info" && (
         <Card pad={24}>
           <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "1.125rem", fontWeight: 700 }}>
-            Thông Tin Định Danh & Lý Lịch
+            Identity & Pedigree Information
           </h3>
           <div
             style={{
@@ -215,150 +213,156 @@ export default function HorseDetailPage() {
             }}
           >
             <div>
-              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Mã ngựa (Horse ID)</div>
+              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Horse Code (ID)</div>
               <div style={{ fontWeight: 600 }}>{horse.horseCode || horse.id}</div>
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Tên ngựa</div>
+              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Registered Name</div>
               <div style={{ fontWeight: 600 }}>{horse.name}</div>
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Số microchip</div>
+              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Microchip Number (15 digits)</div>
               <div style={{ fontWeight: 600, fontFamily: "monospace" }}>{displayMicrochip}</div>
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Mã thẻ RFID</div>
+              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>RFID Tag Code</div>
               <div style={{ fontWeight: 600, fontFamily: "monospace" }}>{horse.rfid || "—"}</div>
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Giống ngựa</div>
+              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Breed</div>
               <div style={{ fontWeight: 600 }}>{horse.breed}</div>
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Ngày sinh / Tuổi</div>
+              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Date of Birth / Age</div>
               <div style={{ fontWeight: 600 }}>
-                {horse.dob ? new Date(horse.dob).toLocaleDateString("vi-VN") : "—"} ({ageText})
+                {horse.dob ? new Date(horse.dob).toLocaleDateString("en-US") : "—"} ({ageText})
               </div>
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Giới tính</div>
+              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Gender</div>
               <div style={{ fontWeight: 600 }}>{horse.gender}</div>
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Màu lông</div>
+              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Coat Color</div>
               <div style={{ fontWeight: 600 }}>{horse.color}</div>
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Trạng thái vận hành & y tế</div>
+              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Operational Status</div>
               <div>
                 <Badge tone={statusCfg.tone}>{statusCfg.label}</Badge>
               </div>
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Ngày tạo hồ sơ</div>
+              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Registration Date</div>
               <div style={{ fontWeight: 600 }}>
-                {horse.createdAt ? new Date(horse.createdAt).toLocaleString("vi-VN") : "—"}
+                {horse.createdAt ? new Date(horse.createdAt).toLocaleString("en-US") : "—"}
               </div>
             </div>
           </div>
         </Card>
       )}
 
+      {/* Tab 2: Stable & Care */}
       {activeTab === "stable" && !isOwner && (
         <Card pad={24}>
           <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "1.125rem", fontWeight: 700 }}>
-            Phân Bổ Chuồng Trại & Nhân Sự Chăm Sóc
+            Stabling & Assigned Caretakers
           </h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
             <div style={{ border: "1px solid var(--border, #e2e8f0)", borderRadius: 8, padding: 16 }}>
-              <h4 style={{ margin: "0 0 0.75rem 0" }}>Ô chuồng hiện tại</h4>
+              <h4 style={{ margin: "0 0 0.75rem 0" }}>Current Stall Assignment</h4>
               <p style={{ margin: "0 0 0.5rem 0" }}>
-                <strong>Mã ô chuồng:</strong> {horse.stallCode || "Chưa phân bổ ô chuồng"}
+                <strong>Stall Code:</strong> {horse.stallCode || "Unassigned"}
               </p>
               <p style={{ margin: 0 }}>
-                <strong>Khu vực:</strong> {horse.zone || "Chưa phân bổ khu chuồng"}
+                <strong>Barn Zone:</strong> {horse.zone || "Unassigned"}
               </p>
             </div>
 
             <div style={{ border: "1px solid var(--border, #e2e8f0)", borderRadius: 8, padding: 16 }}>
-              <h4 style={{ margin: "0 0 0.75rem 0" }}>Nhân viên chăm sóc phụ trách</h4>
+              <h4 style={{ margin: "0 0 0.75rem 0" }}>Assigned Groom Hand</h4>
               <p style={{ margin: 0 }}>
-                <strong>Người phụ trách chính:</strong> {horse.primaryGroom || "Chưa phân công groom"}
+                <strong>Primary Groom:</strong> {horse.primaryGroom || "Unassigned Groom"}
               </p>
             </div>
           </div>
         </Card>
       )}
 
+      {/* Tab 2 Routine (for owner or routine tab) */}
       {(activeTab === "routine" || (activeTab === "stable" && isOwner)) && (
         <Card pad={24}>
           <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "1.125rem", fontWeight: 700 }}>
-            Lịch Sinh Hoạt Hằng Ngày
+            Daily Routine Schedule
           </h3>
           <p style={{ color: "var(--ink-muted, #64748b)" }}>
-            Lịch sinh hoạt tiêu chuẩn: Cho ăn (06:00, 11:30, 17:00), Vệ sinh chuồng (07:00), Tập luyện thể lực (08:00 - 10:00), Tắm & ngâm chân nước đá (10:30).
+            Standard Stable Routine: Feed rations (06:00, 11:30, 17:00), Stall mucking & turnout (07:00), Training conditioning (08:00 - 10:00), Hydrotherapy & cryo leg hosing (10:30).
           </p>
         </Card>
       )}
 
+      {/* Tab 3: Ownership */}
       {activeTab === "owner" && (
         <Card pad={24}>
           <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "1.125rem", fontWeight: 700 }}>
-            Thông Tin Chủ Sở Hữu (Ownership)
+            Ownership & Custody Details
           </h3>
           {horse.owner ? (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
               <div>
-                <strong>Họ tên chủ ngựa:</strong> {horse.owner.fullName}
+                <strong>Horse Owner:</strong> {horse.owner.fullName}
               </div>
               <div>
-                <strong>Email liên hệ:</strong> {horse.owner.email}
+                <strong>Email Contact:</strong> {horse.owner.email}
               </div>
             </div>
           ) : (
             <p style={{ color: "var(--ink-muted, #64748b)" }}>
-              {horse.ownerName ? `Chủ sở hữu: ${horse.ownerName}` : "Chưa có thông tin chủ sở hữu được liên kết."}
+              {horse.ownerName ? `Registered Owner: ${horse.ownerName}` : "No registered horse owner associated."}
             </p>
           )}
         </Card>
       )}
 
+      {/* Tab 4: Status History */}
       {activeTab === "status-history" && (
         <Card pad={24}>
           <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "1.125rem", fontWeight: 700 }}>
-            Lịch Sử Chuyển Đổi Trạng Thái
+            Status Transition History
           </h3>
           <p style={{ color: "var(--ink-muted, #64748b)" }}>
-            Trạng thái hiện tại: <Badge tone={statusCfg.tone}>{statusCfg.label}</Badge> (Cập nhật lúc:{" "}
-            {horse.updatedAt ? new Date(horse.updatedAt).toLocaleString("vi-VN") : "—"})
+            Current Status: <Badge tone={statusCfg.tone}>{statusCfg.label}</Badge> (Last modified:{" "}
+            {horse.updatedAt ? new Date(horse.updatedAt).toLocaleString("en-US") : "—"})
           </p>
         </Card>
       )}
 
+      {/* Tab 5: Stall History */}
       {activeTab === "stall-history" && !isOwner && (
         <Card pad={24}>
           <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "1.125rem", fontWeight: 700 }}>
-            Lịch Sử Ô Chuồng
+            Stall Allocation History
           </h3>
           <p style={{ color: "var(--ink-muted, #64748b)" }}>
-            Ô chuồng đang ở: <strong>{horse.stallCode || "Chưa có"}</strong> ({horse.zone || "Chưa gán khu"})
+            Active Stall: <strong>{horse.stallCode || "Unassigned"}</strong> ({horse.zone || "Unassigned Zone"})
           </p>
         </Card>
       )}
 
+      {/* Tab 6: Lifecycle Timeline */}
       {activeTab === "timeline" && (
         <Card pad={24}>
           <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "1.125rem", fontWeight: 700 }}>
-            Dòng Thời Gian Toàn Vòng Đời Ngựa
+            Lifecycle Activity Timeline
           </h3>
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
@@ -366,9 +370,9 @@ export default function HorseDetailPage() {
                 📋
               </div>
               <div>
-                <strong>Hồ sơ khởi tạo thành công</strong>
+                <strong>Horse identity profile created</strong>
                 <div style={{ fontSize: "0.8125rem", color: "var(--ink-muted, #64748b)" }}>
-                  {horse.createdAt ? new Date(horse.createdAt).toLocaleString("vi-VN") : "Hệ thống"} · Mã định danh {horse.horseCode || horse.id}
+                  {horse.createdAt ? new Date(horse.createdAt).toLocaleString("en-US") : "System"} · Horse ID {horse.horseCode || horse.id}
                 </div>
               </div>
             </div>
@@ -378,9 +382,9 @@ export default function HorseDetailPage() {
                   🔒
                 </div>
                 <div>
-                  <strong>Áp dụng Khóa huấn luyện y tế</strong>
+                  <strong>Veterinary Medical Lock enforced</strong>
                   <div style={{ fontSize: "0.8125rem", color: "var(--ink-muted, #64748b)" }}>
-                    Đình chỉ mọi hoạt động tập nặng và thi đấu
+                    High-intensity conditioning and race trials suspended
                   </div>
                 </div>
               </div>
