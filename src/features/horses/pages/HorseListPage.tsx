@@ -16,45 +16,45 @@ import { getHorses } from "../api";
 import type { Horse, HorseListFilter } from "../types";
 
 const STATUS_FILTERS: Array<{ id: string; label: string }> = [
-  { id: "ALL", label: "Tất cả" },
-  { id: "ACTIVE", label: "Sẵn sàng thi đấu" },
-  { id: "IN_TRAINING", label: "Đang tập luyện" },
-  { id: "UNDER_OBSERVATION", label: "Cần theo dõi" },
-  { id: "INJURED", label: "Chấn thương" },
-  { id: "ISOLATED", label: "Cách ly" },
-  { id: "RESTING", label: "Nghỉ ngơi" },
-  { id: "RETIRED", label: "Ngừng quản lý" },
+  { id: "ALL", label: "All" },
+  { id: "ACTIVE", label: "Active / Fit" },
+  { id: "IN_TRAINING", label: "In Training" },
+  { id: "UNDER_OBSERVATION", label: "Under Observation" },
+  { id: "INJURED", label: "Injured" },
+  { id: "ISOLATED", label: "Isolated" },
+  { id: "RESTING", label: "Resting" },
+  { id: "RETIRED", label: "Retired" },
 ];
 
 const GENDER_OPTIONS = [
-  { value: "ALL", label: "Tất cả giới tính" },
-  { value: "Colt", label: "Colt (Đực non)" },
-  { value: "Stallion", label: "Stallion (Đực giống)" },
-  { value: "Gelding", label: "Gelding (Đực thiến)" },
-  { value: "Filly", label: "Filly (Cái non)" },
-  { value: "Mare", label: "Mare (Cái trưởng thành)" },
+  { value: "ALL", label: "All Genders" },
+  { value: "Colt", label: "Colt (Young male)" },
+  { value: "Stallion", label: "Stallion (Adult male)" },
+  { value: "Gelding", label: "Gelding" },
+  { value: "Filly", label: "Filly (Young female)" },
+  { value: "Mare", label: "Mare (Adult female)" },
 ];
 
 const LOCK_OPTIONS = [
-  { value: "ALL", label: "Tất cả khóa y tế" },
-  { value: "true", label: "Đang khóa huấn luyện" },
-  { value: "false", label: "Không khóa" },
+  { value: "ALL", label: "All Medical Locks" },
+  { value: "true", label: "Medical Lock Active 🔒" },
+  { value: "false", label: "Unlocked" },
 ];
 
 const SORT_OPTIONS = [
-  { value: "name_asc", label: "Tên ngựa (A → Z)" },
-  { value: "name_desc", label: "Tên ngựa (Z → A)" },
-  { value: "horseCode_asc", label: "Mã ngựa (Tăng dần)" },
-  { value: "status_asc", label: "Trạng thái sức khỏe" },
-  { value: "dob_desc", label: "Tuổi (Trẻ nhất trước)" },
-  { value: "dob_asc", label: "Tuổi (Lớn nhất trước)" },
+  { value: "name_asc", label: "Name (A → Z)" },
+  { value: "name_desc", label: "Name (Z → A)" },
+  { value: "horseCode_asc", label: "Horse ID (Ascending)" },
+  { value: "status_asc", label: "Health Status" },
+  { value: "dob_desc", label: "Age (Youngest first)" },
+  { value: "dob_asc", label: "Age (Oldest first)" },
 ];
 
 export default function HorseListPage() {
   const currentUser = useCurrentUser();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Đọc state từ URL
+  // Read state from URL
   const querySearch = searchParams.get("search") || "";
   const queryStatus = searchParams.get("status") || "ALL";
   const queryLock = searchParams.get("lock") || "ALL";
@@ -74,7 +74,7 @@ export default function HorseListPage() {
   const isGroom = currentUser.role === "GROOM";
   const canEdit = currentUser.permissions.editHorses || currentUser.role === "CLUB_MANAGER";
 
-  // Cập nhật URLSearchParams
+  // URLSearchParams updater
   const updateUrl = useCallback(
     (newParams: Record<string, string | number | undefined>) => {
       setSearchParams((prev) => {
@@ -92,7 +92,7 @@ export default function HorseListPage() {
     [setSearchParams],
   );
 
-  // Debounce tìm kiếm 400ms theo spec FR-1.03
+  // Debounced search (400ms per FR-1.03)
   function handleSearchChange(val: string) {
     setSearchInput(val);
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
@@ -123,7 +123,7 @@ export default function HorseListPage() {
         setTotal(res.total);
       })
       .catch((err) => {
-        setError(err.message || "Không thể tải danh sách ngựa. Vui lòng thử lại.");
+        setError(err.message || "Failed to load horse roster. Please try again.");
       })
       .finally(() => {
         setLoading(false);
@@ -142,20 +142,20 @@ export default function HorseListPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
-        eyebrow="HỒ SƠ ĐÀN NGỰA · FLOW 1"
-        title="Danh Sách Quản Lý Đàn Ngựa"
-        description="Quản lý toàn bộ hồ sơ định danh, thông tin giống, số microchip/RFID, phân bổ chuồng trại và trạng thái sức khỏe."
+        eyebrow="HORSE ROSTER · FLOW 1"
+        title="Racehorse Management Roster"
+        description="Manage horse identification, pedigree profiles, microchip/RFID tags, stabling assignments, and veterinary conditioning."
         action={
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
             <Link to="/herd">
               <Button tone="secondary" size="md">
-                Sơ Đồ Sức Khỏe Đàn Ngựa
+                Herd Health Map
               </Button>
             </Link>
             {canEdit && (
               <Link to="/horses/new">
                 <Button tone="primary" size="md">
-                  + Thêm Ngựa Mới
+                  + Register Racehorse
                 </Button>
               </Link>
             )}
@@ -163,10 +163,10 @@ export default function HorseListPage() {
         }
       />
 
-      {/* Thanh công cụ lọc & tìm kiếm */}
+      {/* Filter Toolbar */}
       <Card pad={16}>
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          {/* Hàng 1: Tabs trạng thái nhanh */}
+          {/* Row 1: Quick status filter tabs */}
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
             {STATUS_FILTERS.map((st) => (
               <Button
@@ -180,11 +180,11 @@ export default function HorseListPage() {
             ))}
           </div>
 
-          {/* Hàng 2: Ô tìm kiếm + Bộ lọc chi tiết */}
+          {/* Row 2: Search input + Select filters */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.75rem", alignItems: "center" }}>
             <div style={{ gridColumn: "span 2", minWidth: 260 }}>
               <Input
-                placeholder="Tìm theo tên ngựa, mã ngựa, microchip, RFID..."
+                placeholder="Search by horse name, ID, microchip, RFID..."
                 value={searchInput}
                 onChange={(e) => handleSearchChange(e.target.value)}
               />
@@ -211,7 +211,7 @@ export default function HorseListPage() {
             {(querySearch || queryStatus !== "ALL" || queryLock !== "ALL" || queryGender !== "ALL") && (
               <div>
                 <Button tone="secondary" size="sm" onClick={resetFilters}>
-                  Xóa bộ lọc
+                  Clear Filters
                 </Button>
               </div>
             )}
@@ -219,14 +219,14 @@ export default function HorseListPage() {
         </div>
       </Card>
 
-      {/* Hiển thị lỗi có nút Thử lại */}
+      {/* Error alert with retry */}
       {error && (
         <Alert
           tone="danger"
-          title="Không tải được dữ liệu"
+          title="Failed to Load Roster"
           action={
             <Button size="sm" tone="secondary" onClick={loadData}>
-              Thử lại
+              Retry
             </Button>
           }
         >
@@ -234,11 +234,11 @@ export default function HorseListPage() {
         </Alert>
       )}
 
-      {/* Nội dung danh sách */}
+      {/* List content */}
       {loading ? (
         <Card pad={32}>
           <p style={{ textAlign: "center", color: "var(--ink-muted, #64748b)" }}>
-            Đang tải danh sách ngựa...
+            Loading racehorse roster...
           </p>
         </Card>
       ) : horses.length === 0 ? (
@@ -246,28 +246,28 @@ export default function HorseListPage() {
           <EmptyState
             title={
               querySearch || queryStatus !== "ALL" || queryLock !== "ALL" || queryGender !== "ALL"
-                ? "Không có ngựa phù hợp với bộ lọc"
+                ? "No horses matching filter criteria"
                 : isOwner
-                  ? "Chưa có ngựa nào thuộc sở hữu của bạn"
+                  ? "No racehorses currently registered under your ownership"
                   : isGroom
-                    ? "Bạn chưa được phân công chăm sóc ngựa nào"
-                    : "Chưa có hồ sơ ngựa nào trong hệ thống"
+                    ? "You are not currently assigned to care for any horses"
+                    : "No racehorse profiles in the stable system"
             }
             description={
               querySearch || queryStatus !== "ALL"
-                ? "Hãy thử thay đổi từ khóa tìm kiếm hoặc điều chỉnh lại các tiêu chí bộ lọc."
+                ? "Try adjusting your search keywords or resetting filters."
                 : canEdit
-                  ? "Bấm vào nút '+ Thêm Ngựa Mới' ở góc trên để bắt đầu khởi tạo hồ sơ định danh đầu tiên."
-                  : "Vui lòng liên hệ Quản lý câu lạc bộ để được hỗ trợ phân bổ."
+                  ? "Click '+ Register Racehorse' above to initiate the first identity profile."
+                  : "Please contact the Club Manager for horse stabling allocation."
             }
             action={
               (querySearch || queryStatus !== "ALL" || queryLock !== "ALL") ? (
                 <Button tone="secondary" onClick={resetFilters}>
-                  Xóa bộ lọc
+                  Clear Filters
                 </Button>
               ) : canEdit ? (
                 <Link to="/horses/new">
-                  <Button tone="primary">+ Thêm Ngựa Mới</Button>
+                  <Button tone="primary">+ Register Racehorse</Button>
                 </Link>
               ) : undefined
             }
@@ -307,7 +307,7 @@ export default function HorseListPage() {
 
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.25rem" }}>
                         <Badge tone={statusCfg.tone}>{statusCfg.label}</Badge>
-                        {horse.isMedicalLocked && <Badge tone="danger">Khóa huấn luyện</Badge>}
+                        {horse.isMedicalLocked && <Badge tone="danger">Medical Lock 🔒</Badge>}
                       </div>
                     </div>
 
@@ -321,18 +321,18 @@ export default function HorseListPage() {
                         <span style={{ fontFamily: "monospace" }}>{horse.rfid || "—"}</span>
                       </div>
                       <div>
-                        <strong>Giới tính:</strong> {horse.gender}
+                        <strong>Gender:</strong> {horse.gender}
                       </div>
                       <div>
-                        <strong>Màu lông:</strong> {horse.color}
+                        <strong>Color:</strong> {horse.color}
                       </div>
                       {!isOwner && (
                         <div>
-                          <strong>Ô chuồng:</strong> {horse.stallCode || "Chưa gán"}
+                          <strong>Stall:</strong> {horse.stallCode || "Unassigned"}
                         </div>
                       )}
                       <div>
-                        <strong>Ngày sinh:</strong> {horse.dob ? horse.dob.split("T")[0] : "—"}
+                        <strong>DOB:</strong> {horse.dob ? horse.dob.split("T")[0] : "—"}
                       </div>
                     </div>
 
@@ -341,7 +341,7 @@ export default function HorseListPage() {
                         to={`/horses/${horse.id}`}
                         style={{ fontSize: "0.8125rem", color: "var(--brand, #16a34a)", fontWeight: 600, textDecoration: "none" }}
                       >
-                        Chi tiết hồ sơ →
+                        View Profile →
                       </Link>
 
                       <div style={{ display: "flex", gap: "0.75rem" }}>
@@ -349,14 +349,14 @@ export default function HorseListPage() {
                           to={`/medical/horses/${horse.id}`}
                           style={{ fontSize: "0.8125rem", color: "var(--accent, #2563eb)", textDecoration: "none" }}
                         >
-                          Bệnh án
+                          Medical Records
                         </Link>
                         {canEdit && horse.status !== "RETIRED" && (
                           <Link
                             to={`/horses/${horse.id}/edit`}
                             style={{ fontSize: "0.8125rem", color: "var(--ink-muted, #64748b)", textDecoration: "none" }}
                           >
-                            Sửa
+                            Edit
                           </Link>
                         )}
                       </div>
@@ -367,14 +367,14 @@ export default function HorseListPage() {
             })}
           </div>
 
-          {/* Phân trang */}
+          {/* Pagination */}
           {total > queryLimit && (
             <div style={{ marginTop: "1rem" }}>
               <Pagination
                 page={queryPage}
                 pageSize={queryLimit}
                 total={total}
-                noun="ngựa"
+                noun="horses"
                 onPage={(p) => updateUrl({ page: p })}
               />
             </div>

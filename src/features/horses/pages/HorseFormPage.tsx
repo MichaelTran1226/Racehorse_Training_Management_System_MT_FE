@@ -14,8 +14,8 @@ import { getHorseById, createHorse, updateHorse } from "../api";
 import type { Horse, CreateHorsePayload, UpdateHorsePayload } from "../types";
 
 const BREED_OPTIONS = [
-  { value: "Thoroughbred", label: "Thoroughbred (Thuần chủng)" },
-  { value: "Arabian", label: "Arabian (Ả Rập)" },
+  { value: "Thoroughbred", label: "Thoroughbred" },
+  { value: "Arabian", label: "Arabian" },
   { value: "Quarter Horse", label: "Quarter Horse" },
   { value: "Warmblood", label: "Warmblood" },
   { value: "Standardbred", label: "Standardbred" },
@@ -24,21 +24,21 @@ const BREED_OPTIONS = [
 ];
 
 const GENDER_OPTIONS = [
-  { value: "Colt", label: "Colt (Ngựa đực con < 4 tuổi)" },
-  { value: "Stallion", label: "Stallion (Ngựa đực giống trưởng thành)" },
-  { value: "Gelding", label: "Gelding (Ngựa đực thiến)" },
-  { value: "Filly", label: "Filly (Ngựa cái con < 4 tuổi)" },
-  { value: "Mare", label: "Mare (Ngựa cái trưởng thành)" },
+  { value: "Colt", label: "Colt (Young male < 4 yrs)" },
+  { value: "Stallion", label: "Stallion (Intact adult male)" },
+  { value: "Gelding", label: "Gelding (Castrated male)" },
+  { value: "Filly", label: "Filly (Young female < 4 yrs)" },
+  { value: "Mare", label: "Mare (Adult female)" },
 ];
 
 const COLOR_OPTIONS = [
-  { value: "Bay", label: "Bay (Hồng đào)" },
-  { value: "Bay Dark", label: "Bay Dark (Hồng đậm)" },
-  { value: "Chestnut", label: "Chestnut (Hạt dẻ)" },
-  { value: "Black", label: "Black (Ô / Đen tuyền)" },
-  { value: "Grey", label: "Grey (Bạch mã / Xám)" },
-  { value: "Roan", label: "Roan (Lông đốm phấn)" },
-  { value: "Palomino", label: "Palomino (Hoàng mã)" },
+  { value: "Bay", label: "Bay" },
+  { value: "Bay Dark", label: "Bay Dark" },
+  { value: "Chestnut", label: "Chestnut" },
+  { value: "Black", label: "Black" },
+  { value: "Grey", label: "Grey" },
+  { value: "Roan", label: "Roan" },
+  { value: "Palomino", label: "Palomino" },
 ];
 
 export default function HorseFormPage() {
@@ -88,7 +88,7 @@ export default function HorseFormPage() {
       })
       .catch((err) => {
         if (!active) return;
-        const msg = err instanceof ApiError ? err.message : "Không tìm thấy hồ sơ ngựa.";
+        const msg = err instanceof ApiError ? err.message : "Horse profile not found.";
         setGeneralError(msg);
       })
       .finally(() => {
@@ -103,19 +103,19 @@ export default function HorseFormPage() {
     const errs: Record<string, string> = {};
 
     if (!name.trim()) {
-      errs.name = "Tên ngựa là bắt buộc.";
+      errs.name = "Horse name is required.";
     } else if (name.trim().length < 2 || name.trim().length > 100) {
-      errs.name = "Tên ngựa phải từ 2 đến 100 ký tự.";
+      errs.name = "Horse name must be between 2 and 100 characters.";
     } else if (!/^[a-zA-Z0-9\s'.-]+$/.test(name.trim())) {
-      errs.name = "Tên ngựa chỉ được chứa chữ cái, chữ số, khoảng trắng và các ký tự ' - .";
+      errs.name = "Horse name can only contain letters, numbers, spaces, and ' - .";
     }
 
     if (!breed) {
-      errs.breed = "Vui lòng chọn giống ngựa.";
+      errs.breed = "Please select a horse breed.";
     }
 
     if (!dob) {
-      errs.dob = "Ngày sinh là bắt buộc.";
+      errs.dob = "Date of birth is required.";
     } else {
       const birth = new Date(dob);
       const now = new Date();
@@ -123,28 +123,28 @@ export default function HorseFormPage() {
       fortyYearsAgo.setFullYear(now.getFullYear() - 40);
 
       if (birth > now) {
-        errs.dob = "Ngày sinh không được sau ngày hiện tại.";
+        errs.dob = "Date of birth cannot be in the future.";
       } else if (birth < fortyYearsAgo) {
-        errs.dob = "Ngày sinh không được sớm hơn 40 năm tính đến ngày hiện tại.";
+        errs.dob = "Date of birth cannot exceed 40 years ago.";
       }
     }
 
     if (!gender) {
-      errs.gender = "Vui lòng chọn giới tính.";
+      errs.gender = "Please select a gender.";
     }
 
     if (!color) {
-      errs.color = "Vui lòng chọn màu lông.";
+      errs.color = "Please select a coat color.";
     }
 
     if (!microchip.trim()) {
-      errs.microchip = "Số microchip là bắt buộc.";
+      errs.microchip = "Microchip number is required.";
     } else if (!/^\d{15}$/.test(microchip.trim())) {
-      errs.microchip = "Số microchip phải gồm đúng 15 chữ số.";
+      errs.microchip = "Microchip number must consist of exactly 15 digits.";
     }
 
-    if (rfid.trim() && !/^RFID-[A-Z0-9-]{1,27}$/.test(rfid.trim().toUpperCase())) {
-      errs.rfid = "Mã thẻ RFID phải bắt đầu bằng 'RFID-' và dài từ 6 đến 32 ký tự, chỉ gồm chữ in hoa A-Z, chữ số và dấu gạch ngang.";
+    if (rfid.trim() && !/^RFID-[A-Z0-9-]{4,28}$/.test(rfid.trim().toUpperCase())) {
+      errs.rfid = "RFID tag must start with 'RFID-' prefix followed by 4-28 uppercase letters, digits, or hyphens.";
     }
 
     setErrors(errs);
@@ -168,7 +168,7 @@ export default function HorseFormPage() {
           rfid: rfid.trim() ? rfid.trim().toUpperCase() : undefined,
         };
         const saved = await updateHorse(id, payload);
-        toast.show(`Đã cập nhật hồ sơ ngựa ${saved.name}.`, "ok");
+        toast.show(`Horse profile ${saved.name} updated successfully.`, "ok");
         setIsDirty(false);
         navigate(`/horses/${saved.id}`);
       } else {
@@ -183,7 +183,7 @@ export default function HorseFormPage() {
           status: "RESTING",
         };
         const saved = await createHorse(payload);
-        toast.show(`Đã tạo hồ sơ ngựa ${saved.name}.`, "ok");
+        toast.show(`Horse profile ${saved.name} created successfully.`, "ok");
 
         if (andAddAnother) {
           setName("");
@@ -200,18 +200,18 @@ export default function HorseFormPage() {
     } catch (err: any) {
       if (err instanceof ApiError) {
         if (err.code === "DUPLICATE_NAME") {
-          setErrors((prev) => ({ ...prev, name: "Tên ngựa đã tồn tại trong hệ thống." }));
+          setErrors((prev) => ({ ...prev, name: "Horse name already exists in the stable system." }));
         } else if (err.code === "DUPLICATE_MICROCHIP") {
-          setErrors((prev) => ({ ...prev, microchip: "Số microchip đã được gán cho ngựa khác." }));
+          setErrors((prev) => ({ ...prev, microchip: "Microchip number is already registered to another horse." }));
         } else if (err.code === "DUPLICATE_RFID") {
-          setErrors((prev) => ({ ...prev, rfid: "Mã thẻ RFID đã được gán cho ngựa khác." }));
+          setErrors((prev) => ({ ...prev, rfid: "RFID tag code is already assigned to another horse." }));
         } else if (err.code === "INVALID_DOB") {
-          setErrors((prev) => ({ ...prev, dob: err.message || "Ngày sinh không hợp lệ." }));
+          setErrors((prev) => ({ ...prev, dob: err.message || "Invalid date of birth." }));
         } else {
-          setGeneralError(err.message || "Có lỗi xảy ra khi lưu hồ sơ ngựa.");
+          setGeneralError(err.message || "An error occurred while saving the horse profile.");
         }
       } else {
-        setGeneralError("Mất kết nối máy chủ. Vui lòng thử lại.");
+        setGeneralError("Server connection error. Please try again.");
       }
     } finally {
       setSubmitting(false);
@@ -230,17 +230,17 @@ export default function HorseFormPage() {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
         <PageHeader
-          eyebrow="QUẢN LÝ ĐÀN NGỰA"
-          title="Hồ Sơ Ngừng Quản Lý"
-          description="Ngựa đã ngừng quản lý. Vui lòng kích hoạt lại trước khi thao tác chỉnh sửa."
+          eyebrow="HORSE ROSTER · FLOW 1"
+          title="Retired Horse Record"
+          description="This horse has been retired. Please reactivate prior to performing profile edits."
         />
         <Card pad={24}>
-          <Alert tone="warn" title="Không thể chỉnh sửa">
-            Ngựa đã ngừng quản lý. Vui lòng kích hoạt lại trước khi thao tác.
+          <Alert tone="warn" title="Editing Restricted">
+            This horse is marked as Retired. Historical profiles cannot be modified without reactivation.
           </Alert>
           <div style={{ marginTop: "1rem" }}>
             <Link to={id ? `/horses/${id}` : "/horses"}>
-              <Button tone="secondary">Về hồ sơ</Button>
+              <Button tone="secondary">Back to Profile</Button>
             </Link>
           </div>
         </Card>
@@ -251,9 +251,9 @@ export default function HorseFormPage() {
   if (loading) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-        <PageHeader eyebrow="QUẢN LÝ ĐÀN NGỰA" title={isEdit ? "Cập Nhật Hồ Sơ Ngựa" : "Thêm Ngựa Mới"} />
+        <PageHeader eyebrow="HORSE ROSTER · FLOW 1" title={isEdit ? "Update Horse Profile" : "Register New Racehorse"} />
         <Card pad={32}>
-          <p style={{ color: "var(--ink-muted, #64748b)" }}>Đang tải dữ liệu hồ sơ ngựa...</p>
+          <p style={{ color: "var(--ink-muted, #64748b)" }}>Loading horse profile data...</p>
         </Card>
       </div>
     );
@@ -262,17 +262,17 @@ export default function HorseFormPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
-        eyebrow="QUẢN LÝ ĐÀN NGỰA · FLOW 1"
-        title={isEdit ? `Cập Nhật Hồ Sơ Ngựa: ${name || horseCode}` : "Tạo Hồ Sơ Định Danh Ngựa Mới"}
+        eyebrow="HORSE ROSTER · FLOW 1"
+        title={isEdit ? `Update Horse Profile: ${name || horseCode}` : "Register New Racehorse"}
         description={
           isEdit
-            ? "Cập nhật các thông tin định danh gốc cho cá thể ngựa."
-            : "Nhập thông tin định danh cơ bản của ngựa. Mã ngựa sẽ được hệ thống tự động sinh khi lưu."
+            ? "Update baseline pedigree and identity records for this racehorse."
+            : "Enter baseline identity credentials. System will automatically generate a HR-XXXXXX code upon save."
         }
         action={
           <div style={{ display: "flex", gap: "0.75rem" }}>
             <Button tone="secondary" onClick={handleCancel}>
-              Hủy
+              Cancel
             </Button>
             {!isEdit && (
               <Button
@@ -280,7 +280,7 @@ export default function HorseFormPage() {
                 disabled={submitting}
                 onClick={() => handleSave(true)}
               >
-                Lưu và thêm ngựa khác
+                Save & Add Another
               </Button>
             )}
             <Button
@@ -288,37 +288,37 @@ export default function HorseFormPage() {
               disabled={submitting}
               onClick={() => handleSave(false)}
             >
-              {submitting ? "Đang lưu..." : "Lưu hồ sơ"}
+              {submitting ? "Saving..." : "Save Profile"}
             </Button>
           </div>
         }
       />
 
       {generalError && (
-        <Alert tone="danger" title="Lỗi">
+        <Alert tone="danger" title="Error">
           {generalError}
         </Alert>
       )}
 
       <Card pad={24}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1.5rem" }}>
-          {/* Cột 1: Định danh cơ bản */}
+          {/* Column 1: Identity */}
           <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
             <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, borderBottom: "1px solid var(--border, #e2e8f0)", paddingBottom: "0.5rem" }}>
-              1. Thông Tin Định Danh
+              1. Identity Credentials
             </h3>
 
-            <Field label="Mã ngựa (Horse ID)" hint="Hệ thống tự động sinh mã dạng HR-XXXXXX khi lưu">
+            <Field label="Horse Code (ID)" hint="System auto-generates code formatted as HR-XXXXXX upon save">
               <Input
-                value={isEdit ? horseCode : "Tự động sinh khi lưu"}
+                value={isEdit ? horseCode : "Auto-generated on save"}
                 disabled
                 readOnly
               />
             </Field>
 
-            <Field label="Tên ngựa *" error={errors.name} hint="Từ 2 đến 100 ký tự (chữ cái, chữ số, khoảng trắng, ' - .)">
+            <Field label="Horse Name *" error={errors.name} hint="Between 2 and 100 characters (alphanumeric, spaces, ' - .)">
               <Input
-                placeholder="Nhập tên ngựa..."
+                placeholder="Enter horse name..."
                 value={name}
                 invalid={Boolean(errors.name)}
                 onChange={(e) => {
@@ -329,9 +329,9 @@ export default function HorseFormPage() {
               />
             </Field>
 
-            <Field label="Số microchip *" error={errors.microchip} hint="Đúng 15 chữ số định danh sinh học bắt buộc">
+            <Field label="Microchip Number *" error={errors.microchip} hint="Exact 15-digit biological ID">
               <Input
-                placeholder="Nhập 15 chữ số..."
+                placeholder="Enter 15 digits..."
                 value={microchip}
                 invalid={Boolean(errors.microchip)}
                 onChange={(e) => {
@@ -343,9 +343,9 @@ export default function HorseFormPage() {
               />
             </Field>
 
-            <Field label="Mã thẻ RFID (Tùy chọn)" error={errors.rfid} hint="Bắt đầu bằng 'RFID-', dài từ 6-32 ký tự, ví dụ: RFID-985141002341">
+            <Field label="RFID Tag Code (Optional)" error={errors.rfid} hint="Prefix RFID- followed by 4-28 uppercase letters/digits, e.g. RFID-985141002341">
               <Input
-                placeholder="Ví dụ: RFID-985141002341..."
+                placeholder="e.g. RFID-985141002341..."
                 value={rfid}
                 invalid={Boolean(errors.rfid)}
                 onChange={(e) => {
@@ -358,13 +358,13 @@ export default function HorseFormPage() {
             </Field>
           </div>
 
-          {/* Cột 2: Đặc tính sinh học */}
+          {/* Column 2: Traits & Pedigree */}
           <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
             <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, borderBottom: "1px solid var(--border, #e2e8f0)", paddingBottom: "0.5rem" }}>
-              2. Đặc Tính Sinh Học & Nguồn Gốc
+              2. Biological Traits & Pedigree
             </h3>
 
-            <Field label="Giống ngựa *" error={errors.breed}>
+            <Field label="Breed *" error={errors.breed}>
               <Select
                 value={breed}
                 options={BREED_OPTIONS}
@@ -375,7 +375,7 @@ export default function HorseFormPage() {
               />
             </Field>
 
-            <Field label="Ngày sinh *" error={errors.dob} hint="Không sau hôm nay, không sớm hơn 40 năm">
+            <Field label="Date of Birth *" error={errors.dob} hint="Must not be in the future or older than 40 years">
               <Input
                 type="date"
                 value={dob}
@@ -388,7 +388,7 @@ export default function HorseFormPage() {
               />
             </Field>
 
-            <Field label="Giới tính *" error={errors.gender}>
+            <Field label="Gender *" error={errors.gender}>
               <Select
                 value={gender}
                 options={GENDER_OPTIONS}
@@ -399,7 +399,7 @@ export default function HorseFormPage() {
               />
             </Field>
 
-            <Field label="Màu lông *" error={errors.color}>
+            <Field label="Coat Color *" error={errors.color}>
               <Select
                 value={color}
                 options={COLOR_OPTIONS}
@@ -414,7 +414,7 @@ export default function HorseFormPage() {
 
         <div style={{ marginTop: "2rem", paddingTop: "1rem", borderTop: "1px solid var(--border, #e2e8f0)", display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
           <Button tone="secondary" onClick={handleCancel}>
-            Hủy
+            Cancel
           </Button>
           {!isEdit && (
             <Button
@@ -422,7 +422,7 @@ export default function HorseFormPage() {
               disabled={submitting}
               onClick={() => handleSave(true)}
             >
-              Lưu và thêm ngựa khác
+              Save & Add Another
             </Button>
           )}
           <Button
@@ -430,17 +430,17 @@ export default function HorseFormPage() {
             disabled={submitting}
             onClick={() => handleSave(false)}
           >
-            {submitting ? "Đang lưu..." : "Lưu hồ sơ"}
+            {submitting ? "Saving..." : "Save Profile"}
           </Button>
         </div>
       </Card>
 
-      {/* Cảnh báo rời form khi có dữ liệu chưa lưu (FR-1.26 / DL-1.12) */}
+      {/* Discard changes modal */}
       {showCancelConfirm && (
         <ConfirmModal
-          title="Xác nhận rời khỏi trang"
-          confirmLabel="Rời khỏi"
-          cancelLabel="Tiếp tục chỉnh sửa"
+          title="Discard Unsaved Changes"
+          confirmLabel="Discard & Leave"
+          cancelLabel="Keep Editing"
           tone="danger"
           onConfirm={() => {
             setShowCancelConfirm(false);
@@ -450,7 +450,7 @@ export default function HorseFormPage() {
           onCancel={() => setShowCancelConfirm(false)}
         >
           <p style={{ margin: 0, color: "var(--ink-muted, #64748b)" }}>
-            Bạn có thay đổi chưa được lưu trên biểu mẫu. Nếu rời đi bây giờ, mọi dữ liệu vừa nhập sẽ bị mất. Bạn có chắc chắn muốn rời đi không?
+            You have unsaved changes on this form. If you leave now, all input will be lost. Are you sure you want to discard?
           </p>
         </ConfirmModal>
       )}
