@@ -8,7 +8,7 @@ import { useToast } from "@/shared/components/ui/Toast";
 import { healthApi } from "../api";
 import { TrainingLockModal } from "../components/TrainingLockModal";
 import type { TrainingLockHistoryItem } from "../types";
-import { getStoredHorses } from "@/shared/mock/horsesData";
+import { getHorses } from "@/features/horses/api";
 
 export default function TrainingLockPage() {
   const { user } = useAuth();
@@ -27,7 +27,11 @@ export default function TrainingLockPage() {
   const [selectedLock, setSelectedLock] = useState<TrainingLockHistoryItem | null>(null);
   const [modalMode, setModalMode] = useState<"place" | "extend" | "lift" | null>(null);
 
-  const horses = getStoredHorses();
+  const [horses, setHorses] = useState<any[]>([]);
+
+  useEffect(() => {
+    getHorses({ limit: 500 }).then((res) => setHorses(res.items || []));
+  }, []);
 
   // Close filter dropdown on click outside
   useEffect(() => {
