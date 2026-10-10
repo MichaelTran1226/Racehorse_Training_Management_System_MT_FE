@@ -42,6 +42,39 @@ export interface ListRecordsResponse {
   totalPages: number;
 }
 
+export interface HealthBoardHorse {
+  id: string;
+  name: string;
+  microchipRfid: string;
+  status: string;
+  healthGroup: "QUALIFIED" | "OBSERVATION" | "INJURED" | "ISOLATED";
+  isMedicalLocked: boolean;
+  stallCode?: string | null;
+  zone?: string | null;
+}
+
+export interface HealthBoardResponse {
+  summary: {
+    qualifiedCount: number;
+    observationCount: number;
+    injuredCount: number;
+    isolatedCount: number;
+    lockedCount: number;
+    total: number;
+  };
+  data: HealthBoardHorse[];
+}
+
+// P2-01: Sơ đồ sức khỏe đàn ngựa (Health Board)
+export const getHealthBoard = (params?: { healthGroup?: string; isLocked?: string; search?: string }) => {
+  const query = new URLSearchParams();
+  if (params?.healthGroup) query.set("healthGroup", params.healthGroup);
+  if (params?.isLocked) query.set("isLocked", params.isLocked);
+  if (params?.search) query.set("search", params.search);
+  const qStr = query.toString();
+  return api<HealthBoardResponse>("GET", `/medical/health-board${qStr ? `?${qStr}` : ""}`);
+};
+
 // P2-01: Hồ sơ y tế ngựa 6 tab (SC-3.02, API-004)
 export const getHorseMedicalProfile = (horseId: string) =>
   api<HorseMedicalProfile>("GET", `/medical/horses/${horseId}`);
@@ -69,11 +102,17 @@ export const getHorseInjuries = (horseId: string) =>
 export const createInjury = (payload: any) =>
   api("POST", "/medical/injuries", payload);
 
+export const getInjuryDetail = (id: string) =>
+  api("GET", `/medical/injuries/${id}`);
+
 export const updateInjury = (id: string, payload: any) =>
   api("PUT", `/medical/injuries/${id}`, payload);
 
 export const deleteInjury = (id: string) =>
   api("DELETE", `/medical/injuries/${id}`);
+
+export const updateRecoveryProgress = (id: string, payload: any) =>
+  api("POST", `/medical/injuries/${id}/recovery`, payload);
 
 // P2-02: Danh sách bệnh án (FR-3.03)
 export const listRecords = async (params?: ListRecordsParams): Promise<ListRecordsResponse> => {
@@ -221,6 +260,15 @@ export const addTreatmentPhase = async (recordId: string, input: TreatmentPhaseI
     careInstructions: input.careInstructions || [],
   };
   return { phase, record: res?.record };
+};
+
+// P2-02: Cập nhật giai đoạn điều trị (FR-3.06)
+export const updateTreatmentPhase = async (
+  recordId: string,
+  phaseId: string,
+  input: Partial<TreatmentPhaseInput>,
+): Promise<{ message: string; dto: any; record?: MedicalRecord }> => {
+  return api("PUT", `/medical/records/${recordId}/treatment-phases/${phaseId}`, input);
 };
 
 // P2-02: Kê đơn thuốc (FR-3.07)
@@ -406,40 +454,111 @@ export const extendTrainingLock = async (
 };
 
 // P2-05: Preventive care & catalogue (SC-3.07, SC-3.08, FR-3.13 -> FR-3.16)
+export interface PreventiveCatalogItem {
+  id: string;
+  code: string;
+  name: string;
+  category: "VACCINATION" | "DEWORMING" | "FARRIER_HOOF_CARE" | "DENTAL";
+  intervalDays: number;
+  advanceNoticeDays: number;
+  applyToNewHorses: boolean;
+  isActive: boolean;
+  description?: string;
+  monitoredHorsesCount?: number;
+}
+
+export const getPreventiveCatalogs = async (params?: { category?: string; isActive?: string }): Promise<PreventiveCatalogItem[]> => {
+  const query = new URLSearchParams();
+  if (params?.category) query.set("category", params.category);
+  if (params?.isActive !== undefined) query.set("isActive", params.isActive);
+  const qStr = query.toString();
+  return api<PreventiveCatalogItem[]>("GET", `/medical/preventive/catalogs${qStr ? `?${qStr}` : ""}`);
+};
+
+export const createPreventiveCatalog = async (payload: Partial<PreventiveCatalogItem>) => {
+  return api<PreventiveCatalogItem>("POST", "/medical/preventive/catalogs", payload);
+};
+
+export const updatePreventiveCatalog = async (id: string, payload: Partial<PreventiveCatalogItem>) => {
+  return api<PreventiveCatalogItem>("PUT", `/medical/preventive/catalogs/${id}`, payload);
+};
+
+export const togglePreventiveCatalogStatus = async (id: string) => {
+  return api<{ message: string; isActive: boolean }>("POST", `/medical/preventive/catalogs/${id}/toggle-status`);
+};
+
 export const getCareSchedules = async (): Promise<import("./types").PreventiveCareItem[]> => {
   try {
     const res = await api<any>("GET", "/medical/preventive/schedules");
-    if (Array.isArray(res)) return res;
-    if (res && Array.isArray(res.items)) return res.items;
-    return [];
-  } catch {
-    const horses = getStoredHorses();
-    const schedules: import("./types").PreventiveCareItem[] = [];
-    horses.forEach((h) => {
-      schedules.push({
-        id: `care-${h.id}-vax`,
-        horseId: `${h.name} (${h.code})`,
-        type: "Equine Influenza Vaccination",
-        category: "VACCINATION",
-        lastAdministeredDate: "2026-04-05",
-        administeredBy: "EquiFlow Veterinary Station",
-        dueDate: new Date(Date.now() + 10 * 86400000).toISOString().split("T")[0],
-        status: "DUE_SOON",
-        notes: "Bi-annual booster vaccination requirement",
+    const rawList = Array.isArray(res) ? res : (res?.data || res?.items || []);
+    if (Array.isArray(rawList) && rawList.length > 0) {
+      return rawList.map((item: any) => {
+        let cat: "VACCINATION" | "DEWORMING" | "FARRIER" | "DENTAL" | "GENERAL" = "VACCINATION";
+        const rawCat = item.scheduleType || item.category || item.typeCatalog?.category;
+        if (rawCat === "DEWORMING") cat = "DEWORMING";
+        else if (rawCat === "FARRIER_HOOF_CARE" || rawCat === "FARRIER") cat = "FARRIER";
+        else if (rawCat === "DENTAL") cat = "DENTAL";
+        else if (rawCat === "GENERAL") cat = "GENERAL";
+
+        let st: import("./types").PreventiveStatus = "UP_TO_DATE";
+        if (item.statusBadge === "OVERDUE" || item.isOverdue) st = "OVERDUE";
+        else if (item.statusBadge === "UPCOMING" || item.isUpcomingNotice) st = "DUE_SOON";
+        else if (item.statusBadge === "NODATA") st = "NO_DATA";
+
+        const horseNameDisplay = item.horse?.name
+          ? `${item.horse.name} (${item.horse.microchipRfid || item.horse.id.slice(0, 6)})`
+          : item.horseId;
+
+        return {
+          id: item.id,
+          horseId: horseNameDisplay,
+          type: item.typeCatalog?.name || item.type || "Routine Care",
+          category: cat,
+          lastAdministeredDate: item.lastCompletedDate ? String(item.lastCompletedDate).split("T")[0] : undefined,
+          administeredBy: item.performedByName || item.veterinarian?.fullName || "Veterinarian",
+          dueDate: item.dueDate ? String(item.dueDate).split("T")[0] : new Date().toISOString().split("T")[0],
+          status: st,
+          notes: item.notes || item.typeCatalog?.description,
+        };
       });
-    });
-    return schedules;
+    }
+  } catch (err) {
+    console.warn("Could not load care schedules from backend, using mock store", err);
   }
+
+  const horses = getStoredHorses();
+  const schedules: import("./types").PreventiveCareItem[] = [];
+  horses.forEach((h) => {
+    schedules.push({
+      id: `care-${h.id}-vax`,
+      horseId: `${h.name} (${h.code})`,
+      type: "Equine Influenza Vaccination",
+      category: "VACCINATION",
+      lastAdministeredDate: "2026-04-05",
+      administeredBy: "EquiFlow Veterinary Station",
+      dueDate: new Date(Date.now() + 10 * 86400000).toISOString().split("T")[0],
+      status: "DUE_SOON",
+      notes: "Bi-annual booster vaccination requirement",
+    });
+  });
+  return schedules;
 };
 
 export const recordCareCompletion = async (
   careId: string,
-  input: { administeredDate: string; administeredBy: string; nextDueDate: string; notes?: string },
+  input: { administeredDate: string; administeredBy: string; nextDueDate: string; notes?: string; typeCatalogId?: string; horseId?: string },
 ) => {
   try {
     return await api("POST", "/medical/preventive/record", {
       scheduleId: careId,
-      ...input
+      horseId: input.horseId,
+      typeCatalogId: input.typeCatalogId,
+      performedDate: input.administeredDate,
+      performedByMode: "EXTERNAL",
+      performedByName: input.administeredBy,
+      productAdministered: "Equi-Standard Care Formulation",
+      customNextDueDate: input.nextDueDate,
+      notes: input.notes,
     });
   } catch {
     return { ok: true, careId, input };
@@ -447,8 +566,15 @@ export const recordCareCompletion = async (
 };
 
 export const healthApi = {
+  getHealthBoard,
   getHorseMedicalProfile,
   getHorseObservations,
+  getHorseInjuries,
+  getInjuryDetail,
+  createInjury,
+  updateInjury,
+  deleteInjury,
+  updateRecoveryProgress,
   listRecords,
   getRecordDetail,
   createRecord,
@@ -456,6 +582,7 @@ export const healthApi = {
   deleteDraftRecord,
   finalizeRecord,
   addTreatmentPhase,
+  updateTreatmentPhase,
   addPrescription,
   stopPrescription,
   addFollowUp,
@@ -465,6 +592,10 @@ export const healthApi = {
   applyTrainingLock,
   releaseTrainingLock,
   extendTrainingLock,
+  getPreventiveCatalogs,
+  createPreventiveCatalog,
+  updatePreventiveCatalog,
+  togglePreventiveCatalogStatus,
   getCareSchedules,
   recordCareCompletion,
 };

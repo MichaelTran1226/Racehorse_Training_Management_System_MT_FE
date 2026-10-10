@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/shared/components/ui/Button";
 import { Input } from "@/shared/components/form/Input";
@@ -10,6 +10,7 @@ import { Checkbox } from "@/shared/components/form/Checkbox";
 import { useAuth } from "@/shared/components/layout/AuthProvider";
 import { useToast } from "@/shared/components/ui/Toast";
 import { Icon } from "@/shared/components/ui/Icon";
+import { healthApi } from "../api";
 import {
   getStoredHorses,
   addStoredHorse,
@@ -53,9 +54,43 @@ export default function HerdHealthPage() {
   // Clear All Modal
   const [showClearAllModal, setShowClearAllModal] = useState(false);
 
-  useEffect(() => {
+  const loadHorses = useCallback(async () => {
+    try {
+      const res = await healthApi.getHealthBoard();
+      if (res && Array.isArray(res.data) && res.data.length > 0) {
+        const mapped: HerdHorse[] = res.data.map((item) => {
+          let mappedGroup: "FIT" | "WATCH" | "INJURED" | "QUARANTINED" = "FIT";
+          if (item.healthGroup === "OBSERVATION") mappedGroup = "WATCH";
+          else if (item.healthGroup === "INJURED") mappedGroup = "INJURED";
+          else if (item.healthGroup === "ISOLATED") mappedGroup = "QUARANTINED";
+
+          return {
+            id: item.id,
+            name: item.name,
+            code: item.microchipRfid || item.id.toUpperCase(),
+            stall: item.stallCode || "Stall A-01",
+            zone: item.zone || "Zone A",
+            healthGroup: mappedGroup,
+            statusText: item.status || "Ready for training",
+            isLocked: item.isMedicalLocked,
+            restingHeartRate: 36,
+            temp: 37.8,
+          };
+        });
+        setHorses(mapped);
+        return;
+      }
+    } catch (err) {
+      console.warn("Could not load health board from API, falling back to local store", err);
+    }
     setHorses(getStoredHorses());
   }, []);
+
+  useEffect(() => {
+    void loadHorses();
+    window.addEventListener("horsesUpdated", loadHorses);
+    return () => window.removeEventListener("horsesUpdated", loadHorses);
+  }, [loadHorses]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {

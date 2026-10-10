@@ -568,3 +568,184 @@ export function liftHorseTrainingLock(
   return null;
 }
 
+// -------------------------------------------------------------
+// Preventive Care Storage & Catalogs (P2-05)
+// -------------------------------------------------------------
+
+export interface StoredPreventiveCatalog {
+  id: string;
+  code: string;
+  name: string;
+  category: "VACCINATION" | "DEWORMING" | "FARRIER_HOOF_CARE" | "DENTAL";
+  intervalDays: number;
+  advanceNoticeDays: number;
+  applyToNewHorses: boolean;
+  isActive: boolean;
+  description?: string;
+  monitoredHorsesCount?: number;
+}
+
+export interface StoredPreventiveSchedule {
+  id: string;
+  horseId: string;
+  typeCatalogId: string;
+  scheduleType: "VACCINATION" | "DEWORMING" | "FARRIER_HOOF_CARE" | "DENTAL";
+  dueDate: string;
+  lastCompletedDate?: string;
+  completedDate?: string;
+  productAdministered?: string;
+  batchNumber?: string;
+  performedByMode?: string;
+  performedByName?: string;
+  status: "PENDING" | "COMPLETED" | "OVERDUE";
+  notes?: string;
+}
+
+const PREVENTIVE_CATALOGS_KEY = "equiflow.preventive.catalogs.v1";
+const PREVENTIVE_SCHEDULES_KEY = "equiflow.preventive.schedules.v1";
+
+const INITIAL_PREVENTIVE_CATALOGS: StoredPreventiveCatalog[] = [
+  {
+    id: "cat-vac-01",
+    code: "VAC_TETANUS",
+    name: "Tiêm phòng uốn ván & cúm ngựa (Tetanus & Equine Influenza)",
+    category: "VACCINATION",
+    intervalDays: 180,
+    advanceNoticeDays: 14,
+    applyToNewHorses: true,
+    isActive: true,
+    description: "Phòng ngừa uốn ván Clostridium tetani và virus cúm ngựa định kỳ 6 tháng.",
+    monitoredHorsesCount: 2,
+  },
+  {
+    id: "cat-dew-01",
+    code: "DEWORM_BROAD",
+    name: "Tẩy giun định kỳ phổ rộng (Broad-spectrum Deworming)",
+    category: "DEWORMING",
+    intervalDays: 90,
+    advanceNoticeDays: 7,
+    applyToNewHorses: true,
+    isActive: true,
+    description: "Sử dụng Ivermectin / Praziquantel luân phiên mỗi quý.",
+    monitoredHorsesCount: 2,
+  },
+  {
+    id: "cat-far-01",
+    code: "FARRIER_TRIM",
+    name: "Cắt gọt và đóng móng định kỳ (Farrier Hoof Care)",
+    category: "FARRIER_HOOF_CARE",
+    intervalDays: 45,
+    advanceNoticeDays: 5,
+    applyToNewHorses: true,
+    isActive: true,
+    description: "Cắt tỉa móng, cân bằng góc chân và thay móng sắt thi đấu mỗi 6 tuần.",
+    monitoredHorsesCount: 2,
+  },
+  {
+    id: "cat-den-01",
+    code: "DENTAL_FLOAT",
+    name: "Khám và mài răng định kỳ (Equine Dental Float)",
+    category: "DENTAL",
+    intervalDays: 365,
+    advanceNoticeDays: 30,
+    applyToNewHorses: true,
+    isActive: true,
+    description: "Kiểm tra mài gờ răng nhọn hàm trên và hàm dưới hàng năm.",
+    monitoredHorsesCount: 1,
+  },
+];
+
+const INITIAL_PREVENTIVE_SCHEDULES: StoredPreventiveSchedule[] = [
+  {
+    id: "prev-vac-horse-1",
+    horseId: "horse-1",
+    typeCatalogId: "cat-vac-01",
+    scheduleType: "VACCINATION",
+    dueDate: new Date(Date.now() + 150 * 86400000).toISOString(),
+    lastCompletedDate: new Date(Date.now() - 30 * 86400000).toISOString(),
+    productAdministered: "Equi-Flu/Tetanus Duo 2ml",
+    batchNumber: "LOT-2026-TF09",
+    performedByMode: "SELF",
+    performedByName: "Dr. Sarah Connor",
+    status: "PENDING",
+    notes: "Đã tiêm phòng mũi định kỳ đầu mùa thi đấu, không phản ứng phụ.",
+  },
+  {
+    id: "prev-far-horse-1",
+    horseId: "horse-1",
+    typeCatalogId: "cat-far-01",
+    scheduleType: "FARRIER_HOOF_CARE",
+    dueDate: new Date(Date.now() + 10 * 86400000).toISOString(),
+    lastCompletedDate: new Date(Date.now() - 35 * 86400000).toISOString(),
+    performedByMode: "EXTERNAL",
+    performedByName: "Master Farrier Kenji Sato",
+    status: "PENDING",
+    notes: "Lịch gọt móng định kỳ chuẩn bị trước giải Derby.",
+  },
+  {
+    id: "prev-dew-horse-2",
+    horseId: "horse-2",
+    typeCatalogId: "cat-dew-01",
+    scheduleType: "DEWORMING",
+    dueDate: new Date(Date.now() + 80 * 86400000).toISOString(),
+    lastCompletedDate: new Date(Date.now() - 10 * 86400000).toISOString(),
+    completedDate: new Date(Date.now() - 10 * 86400000).toISOString(),
+    productAdministered: "Equimax Paste 14g",
+    batchNumber: "LOT-2026-DW03",
+    performedByMode: "SELF",
+    performedByName: "Dr. Sarah Connor",
+    status: "COMPLETED",
+    notes: "Đã cho uống thuốc tẩy giun đầy đủ liều lượng theo thể trọng.",
+  },
+  {
+    id: "prev-far-horse-2",
+    horseId: "horse-2",
+    typeCatalogId: "cat-far-01",
+    scheduleType: "FARRIER_HOOF_CARE",
+    dueDate: new Date(Date.now() - 5 * 86400000).toISOString(),
+    lastCompletedDate: new Date(Date.now() - 50 * 86400000).toISOString(),
+    performedByMode: "EXTERNAL",
+    performedByName: "Farrier Team",
+    status: "OVERDUE",
+    notes: "Quá hạn bảo dưỡng móng do đang nghỉ dưỡng thương (cần bảo dưỡng nhẹ tại chuồng).",
+  },
+];
+
+export function getStoredPreventiveCatalogs(): StoredPreventiveCatalog[] {
+  try {
+    const raw = localStorage.getItem(PREVENTIVE_CATALOGS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {
+    // fallback
+  }
+  saveStoredPreventiveCatalogs(INITIAL_PREVENTIVE_CATALOGS);
+  return INITIAL_PREVENTIVE_CATALOGS;
+}
+
+export function saveStoredPreventiveCatalogs(items: StoredPreventiveCatalog[]): void {
+  try {
+    localStorage.setItem(PREVENTIVE_CATALOGS_KEY, JSON.stringify(items));
+  } catch {
+    // localStorage unavailable
+  }
+}
+
+export function getStoredPreventiveSchedules(): StoredPreventiveSchedule[] {
+  try {
+    const raw = localStorage.getItem(PREVENTIVE_SCHEDULES_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {
+    // fallback
+  }
+  saveStoredPreventiveSchedules(INITIAL_PREVENTIVE_SCHEDULES);
+  return INITIAL_PREVENTIVE_SCHEDULES;
+}
+
+export function saveStoredPreventiveSchedules(items: StoredPreventiveSchedule[]): void {
+  try {
+    localStorage.setItem(PREVENTIVE_SCHEDULES_KEY, JSON.stringify(items));
+  } catch {
+    // localStorage unavailable
+  }
+}
+

@@ -68,8 +68,8 @@ interface PointInjury extends InjuryItem {
   y: number;
 }
 
-import { getHorseInjuries, createInjury, deleteInjury } from "../api";
-import { getHorseById } from "@/features/horses/api";
+import { getHorseInjuries, createInjury, updateInjury, deleteInjury } from "../api";
+import { getHorseById, getHorses } from "@/features/horses/api";
 import type { Horse } from "@/features/horses/types";
 
 export default function InjuryMapPage() {
@@ -80,6 +80,7 @@ export default function InjuryMapPage() {
 
   const isVet = user?.role === "VETERINARIAN";
   const [horse, setHorse] = useState<Horse | null>(null);
+  const [availableHorses, setAvailableHorses] = useState<Horse[]>([]);
 
   const [view, setView] = useState<"LEFT" | "RIGHT">("LEFT");
   const [layer, setLayer] = useState<"MUSCLE" | "SKELETON">("MUSCLE");
@@ -90,27 +91,49 @@ export default function InjuryMapPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
+    getHorses({ limit: 100 })
+      .then((res) => {
+        if (res && Array.isArray(res.items)) {
+          setAvailableHorses(res.items);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
     let active = true;
     if (id) {
-      getHorseById(id).then((res: any) => {
-        if (active) setHorse(res.data || res);
-      }).catch(console.error);
+      getHorseById(id)
+        .then((res: any) => {
+          if (active) setHorse(res.data || res);
+        })
+        .catch(console.error);
 
-      getHorseInjuries(id).then((res: any) => {
-        if (!active) return;
-        const list = Array.isArray(res) ? res : (res.injuries || []);
-        const mappedList: PointInjury[] = list.map((item: any) => ({
-          ...item,
-          x: item.coordinateX ?? 0.5,
-          y: item.coordinateY ?? 0.5,
-          region: item.anatomicalZone || item.region,
-          view: item.viewSide || item.view,
-        }));
-        setInjuries(mappedList);
-        setSelectedId(mappedList[0]?.id || null);
-      }).catch(console.error);
+      getHorseInjuries(id)
+        .then((res: any) => {
+          if (!active) return;
+          const list = Array.isArray(res) ? res : res.injuries || [];
+          const mappedList: PointInjury[] = list.map((item: any) => {
+            const rawX = item.coordinateX ?? item.x ?? 0.5;
+            const rawY = item.coordinateY ?? item.y ?? 0.5;
+            const x = rawX <= 1 ? Math.round(rawX * 100) : Math.round(rawX);
+            const y = rawY <= 1 ? Math.round(rawY * 100) : Math.round(rawY);
+            return {
+              ...item,
+              x,
+              y,
+              region: item.anatomicalZone || item.region || "Anatomical Zone",
+              view: item.viewSide || item.view || "LEFT",
+            };
+          });
+          setInjuries(mappedList);
+          setSelectedId(mappedList[0]?.id || null);
+        })
+        .catch(console.error);
     }
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [id]);
 
   // Dialogs & Actions
@@ -160,23 +183,23 @@ export default function InjuryMapPage() {
 
     // If currently relocating an existing pin
     if (repositioningId) {
-      import("../api").then(({ updateInjury }) => {
-        updateInjury(repositioningId, { coordinateX: x, coordinateY: y })
-          .then(() => {
-            const updated = injuries.map((inj) => (inj.id === repositioningId ? { ...inj, x, y } : inj));
-            setInjuries(updated);
-            const target = injuries.find((i) => i.id === repositioningId);
-            setRepositioningId(null);
-            toast.show(
-              `Pin "${target?.region || "lesion"}" relocated to new coordinates (${x}%, ${y}%).`,
-              "ok",
-            );
-          })
-          .catch(error => {
-            toast.show("Failed to relocate injury point.", "danger");
-            console.error(error);
-          });
-      });
+      const normX = Number((x / 100).toFixed(4));
+      const normY = Number((y / 100).toFixed(4));
+      updateInjury(repositioningId, { coordinateX: normX, coordinateY: normY })
+        .then(() => {
+          const updated = injuries.map((inj) => (inj.id === repositioningId ? { ...inj, x, y } : inj));
+          setInjuries(updated);
+          const target = injuries.find((i) => i.id === repositioningId);
+          setRepositioningId(null);
+          toast.show(
+            `Pin "${target?.region || "lesion"}" relocated to new coordinates (${x}%, ${y}%).`,
+            "ok",
+          );
+        })
+        .catch((error) => {
+          toast.show("Failed to relocate injury point.", "danger");
+          console.error(error);
+        });
       return;
     }
 
@@ -190,10 +213,12 @@ export default function InjuryMapPage() {
   async function handleSaveNewInjury() {
     if (!addModalPoint || !formType.trim()) return;
     try {
+      const normX = Number((addModalPoint.x / 100).toFixed(4));
+      const normY = Number((addModalPoint.y / 100).toFixed(4));
       const payload = {
         horseId: id,
-        coordinateX: addModalPoint.x,
-        coordinateY: addModalPoint.y,
+        coordinateX: normX,
+        coordinateY: normY,
         viewSide: view,
         layer,
         anatomicalZone: formRegion,
@@ -202,17 +227,22 @@ export default function InjuryMapPage() {
         severity: formSeverity,
         stage: "ACUTE",
         description: formNotes.trim() || undefined,
-        discoveryDate: new Date().toISOString()
+        discoveryDate: new Date().toISOString(),
       };
       const res: any = await createInjury(payload);
+      const item = res.injury || res;
+      const rawX = item.coordinateX ?? item.x ?? addModalPoint.x;
+      const rawY = item.coordinateY ?? item.y ?? addModalPoint.y;
+      const x = rawX <= 1 ? Math.round(rawX * 100) : Math.round(rawX);
+      const y = rawY <= 1 ? Math.round(rawY * 100) : Math.round(rawY);
       const newInj: PointInjury = {
-        ...res.injury,
-        x: res.injury.coordinateX,
-        y: res.injury.coordinateY,
-        region: res.injury.anatomicalZone,
-        view: res.injury.viewSide,
+        ...item,
+        x,
+        y,
+        region: item.anatomicalZone || item.region || formRegion,
+        view: item.viewSide || item.view || view,
       };
-      
+
       const updated = [...injuries, newInj];
       setInjuries(updated);
       setSelectedId(newInj.id);
@@ -253,7 +283,6 @@ export default function InjuryMapPage() {
         payload.description = `${selectedInjury.notes || ""}\n- [${new Date().toLocaleDateString("en-US")}]: ${stageNotes.trim()}`;
       }
       
-      const { updateInjury } = await import("../api");
       await updateInjury(selectedInjury.id, payload);
       
       const updated = injuries.map((inj) => {
@@ -298,8 +327,21 @@ export default function InjuryMapPage() {
           </div>
         </div>
 
-        {isVet && (
-          <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {availableHorses.length > 0 && (
+            <div style={{ minWidth: 220 }}>
+              <Select
+                value={id}
+                onChange={(newId) => navigate(`/health/injury-map/${newId}`)}
+                options={availableHorses.map((h) => ({
+                  value: h.id,
+                  label: `${h.name} (${h.horseCode || h.id.slice(0, 6)})`,
+                }))}
+              />
+            </div>
+          )}
+
+          {isVet && (
             <Button
               tone={markingMode ? "danger" : "primary"}
               icon="pin"
@@ -307,8 +349,8 @@ export default function InjuryMapPage() {
             >
               {markingMode ? "Marking Mode Active (Click on model)" : "Enable Marking Mode"}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div className={styles.mainLayout}>

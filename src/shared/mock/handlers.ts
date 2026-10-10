@@ -22,6 +22,12 @@ import {
   placeHorseTrainingLock,
   liftHorseTrainingLock,
   extendHorseTrainingLock,
+  getInjuriesForHorse,
+  saveInjuriesForHorse,
+  getStoredPreventiveCatalogs,
+  saveStoredPreventiveCatalogs,
+  getStoredPreventiveSchedules,
+  saveStoredPreventiveSchedules,
 } from "@/shared/mock/horsesData";
 import type { FollowUpItem, MedicalRecord, PrescriptionItem, TreatmentPhase } from "@/features/health/types";
 import {
@@ -718,6 +724,271 @@ const routes: Route[] = [
   // ===== FLOW 3: MEDICAL & HEALTH ROUTES =====
   {
     method: "GET",
+    pattern: /^\/medical\/health-board$/,
+    handler({ url }) {
+      const stored = getStoredHorses();
+      const healthGroupFilter = url.searchParams.get("healthGroup");
+      const isLockedFilter = url.searchParams.get("isLocked");
+      const search = url.searchParams.get("search")?.toLowerCase().trim();
+
+      let qualifiedCount = 0;
+      let observationCount = 0;
+      let injuredCount = 0;
+      let isolatedCount = 0;
+      let lockedCount = 0;
+
+      const mapped = stored.map((horse) => {
+        const isLocked = Boolean(horse.isLocked);
+        if (isLocked) lockedCount++;
+
+        let healthGroup: "QUALIFIED" | "OBSERVATION" | "INJURED" | "ISOLATED" = "QUALIFIED";
+        if (horse.healthGroup === "WATCH") {
+          healthGroup = "OBSERVATION";
+          observationCount++;
+        } else if (horse.healthGroup === "INJURED") {
+          healthGroup = "INJURED";
+          injuredCount++;
+        } else if (horse.healthGroup === "QUARANTINED") {
+          healthGroup = "ISOLATED";
+          isolatedCount++;
+        } else {
+          qualifiedCount++;
+        }
+
+        return {
+          id: horse.id,
+          name: horse.name,
+          microchipRfid: horse.microchipRfid || horse.rfid || horse.code,
+          status: horse.statusText || "ACTIVE",
+          healthGroup,
+          isMedicalLocked: isLocked,
+          stallCode: horse.stall || null,
+          zone: horse.zone || null,
+        };
+      });
+
+      let filtered = mapped;
+      if (healthGroupFilter) {
+        filtered = filtered.filter((h) => h.healthGroup === healthGroupFilter);
+      }
+      if (isLockedFilter === "true") {
+        filtered = filtered.filter((h) => h.isMedicalLocked);
+      }
+      if (search) {
+        filtered = filtered.filter(
+          (h) => h.name.toLowerCase().includes(search) || h.microchipRfid.toLowerCase().includes(search),
+        );
+      }
+
+      return {
+        summary: {
+          qualifiedCount,
+          observationCount,
+          injuredCount,
+          isolatedCount,
+          lockedCount,
+          total: mapped.length,
+        },
+        data: filtered,
+      };
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/medical\/horses\/([^/]+)\/injuries$/,
+    handler({ params, url }) {
+      const horseId = params[0];
+      const list = getInjuriesForHorse(horseId);
+      const viewSide = url.searchParams.get("viewSide");
+      const layer = url.searchParams.get("layer");
+
+      let filtered = list;
+      if (viewSide) {
+        filtered = filtered.filter((inj) => (inj.viewSide || inj.view) === viewSide);
+      }
+      if (layer) {
+        filtered = filtered.filter((inj) => inj.layer === layer);
+      }
+
+      return filtered.map((inj) => ({
+        id: inj.id,
+        horseId: inj.horseId,
+        coordinateX: inj.coordinateX !== undefined ? inj.coordinateX : (inj.x > 1 ? Number((inj.x / 100).toFixed(4)) : inj.x),
+        coordinateY: inj.coordinateY !== undefined ? inj.coordinateY : (inj.y > 1 ? Number((inj.y / 100).toFixed(4)) : inj.y),
+        viewSide: inj.viewSide || inj.view || "LEFT",
+        layer: inj.layer || "MUSCLE",
+        anatomicalZone: inj.anatomicalZone || inj.region || "Superficial Digital Flexor Tendon (SDFT)",
+        bodySide: inj.bodySide || inj.view || "LEFT",
+        injuryType: inj.injuryType || "Tendon Strain",
+        severity: inj.severity || "MODERATE",
+        stage: inj.stage || "ACUTE",
+        status: inj.stage === "HEALED" ? "RESOLVED" : "ACTIVE",
+        description: inj.description || inj.notes || null,
+        discoveryDate: inj.discoveryDate || inj.detectedDate || new Date().toISOString(),
+        recoveryHistory: inj.recoveryHistory || inj.recoveryTimeline || [],
+      }));
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/medical\/injuries$/,
+    handler({ body }) {
+      const b = (body as any) || {};
+      const horseId = String(b.horseId);
+      const rawX = Number(b.coordinateX ?? 0.5);
+      const rawY = Number(b.coordinateY ?? 0.5);
+      const normX = rawX > 1 ? Number((rawX / 100).toFixed(4)) : rawX;
+      const normY = rawY > 1 ? Number((rawY / 100).toFixed(4)) : rawY;
+
+      const newInj = {
+        id: `inj-${Date.now()}`,
+        horseId,
+        coordinateX: normX,
+        coordinateY: normY,
+        x: Math.round(normX * 100),
+        y: Math.round(normY * 100),
+        viewSide: b.viewSide || "LEFT",
+        view: b.viewSide || "LEFT",
+        layer: b.layer || "MUSCLE",
+        anatomicalZone: b.anatomicalZone || "Limb",
+        region: b.anatomicalZone || "Limb",
+        bodySide: b.bodySide || b.viewSide || "LEFT",
+        injuryType: b.injuryType || "Strain",
+        severity: b.severity || "MODERATE",
+        stage: b.stage || "ACUTE",
+        status: b.stage === "HEALED" ? "RESOLVED" : "ACTIVE",
+        description: b.description || null,
+        notes: b.description || null,
+        discoveryDate: b.discoveryDate || new Date().toISOString(),
+        recoveryHistory: [
+          {
+            id: `hist-${Date.now()}`,
+            stage: b.stage || "ACUTE",
+            evaluationDate: b.discoveryDate || new Date().toISOString(),
+            severity: b.severity || "MODERATE",
+            notes: b.description || "Ghi nhận vị trí chấn thương ban đầu",
+            updatedByName: "Veterinarian",
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      };
+
+      const existing = getInjuriesForHorse(horseId);
+      saveInjuriesForHorse(horseId, [...existing, newInj]);
+
+      const recommendMedicalLock = newInj.severity === "SEVERE" || newInj.severity === "CRITICAL";
+      return {
+        ...newInj,
+        recommendMedicalLock,
+        recommendationMessage: recommendMedicalLock ? "Chấn thương nặng. Cân nhắc đặt Khóa huấn luyện." : null,
+      };
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/medical\/injuries\/([^/]+)$/,
+    handler({ params }) {
+      const id = params[0];
+      const horses = getStoredHorses();
+      for (const h of horses) {
+        const injs = getInjuriesForHorse(h.id);
+        const matched = injs.find((i) => i.id === id);
+        if (matched) return matched;
+      }
+      throw new ApiError(404, "NOT_FOUND", "Injury point not found");
+    },
+  },
+  {
+    method: "PUT",
+    pattern: /^\/medical\/injuries\/([^/]+)$/,
+    handler({ params, body }) {
+      const id = params[0];
+      const b = (body as any) || {};
+      const horses = getStoredHorses();
+      for (const h of horses) {
+        const injs = getInjuriesForHorse(h.id);
+        const idx = injs.findIndex((i) => i.id === id);
+        if (idx !== -1) {
+          const rawX = b.coordinateX !== undefined ? Number(b.coordinateX) : injs[idx].coordinateX;
+          const rawY = b.coordinateY !== undefined ? Number(b.coordinateY) : injs[idx].coordinateY;
+          const normX = rawX > 1 ? Number((rawX / 100).toFixed(4)) : rawX;
+          const normY = rawY > 1 ? Number((rawY / 100).toFixed(4)) : rawY;
+
+          const updated = {
+            ...injs[idx],
+            ...b,
+            coordinateX: normX,
+            coordinateY: normY,
+            x: Math.round(normX * 100),
+            y: Math.round(normY * 100),
+            stage: b.stage || injs[idx].stage,
+            status: (b.stage || injs[idx].stage) === "HEALED" ? "RESOLVED" : "ACTIVE",
+          };
+          injs[idx] = updated;
+          saveInjuriesForHorse(h.id, injs);
+          return updated;
+        }
+      }
+      throw new ApiError(404, "NOT_FOUND", "Injury point not found");
+    },
+  },
+  {
+    method: "DELETE",
+    pattern: /^\/medical\/injuries\/([^/]+)$/,
+    handler({ params }) {
+      const id = params[0];
+      const horses = getStoredHorses();
+      for (const h of horses) {
+        const injs = getInjuriesForHorse(h.id);
+        const filtered = injs.filter((i) => i.id !== id);
+        if (filtered.length !== injs.length) {
+          saveInjuriesForHorse(h.id, filtered);
+          return { message: "Đã xóa điểm chấn thương thành công" };
+        }
+      }
+      throw new ApiError(404, "NOT_FOUND", "Injury point not found");
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/medical\/injuries\/([^/]+)\/recovery$/,
+    handler({ params, body }) {
+      const id = params[0];
+      const b = (body as any) || {};
+      const horses = getStoredHorses();
+      for (const h of horses) {
+        const injs = getInjuriesForHorse(h.id);
+        const idx = injs.findIndex((i) => i.id === id);
+        if (idx !== -1) {
+          const injury = injs[idx];
+          const newStage = b.stage || injury.stage;
+          const newSeverity = b.severity || injury.severity;
+          const histEntry = {
+            id: `hist-${Date.now()}`,
+            stage: newStage,
+            severity: newSeverity,
+            evaluationDate: b.evaluationDate || new Date().toISOString(),
+            notes: b.notes || "Tiến trình hồi phục được ghi nhận",
+            updatedByName: "Veterinarian",
+            createdAt: new Date().toISOString(),
+          };
+          injury.stage = newStage;
+          injury.severity = newSeverity;
+          injury.status = newStage === "HEALED" ? "RESOLVED" : "ACTIVE";
+          injury.recoveryHistory = [...(injury.recoveryHistory || []), histEntry];
+          if (b.notes) {
+            injury.description = injury.description ? `${injury.description}\n${b.notes}` : b.notes;
+          }
+          injs[idx] = injury;
+          saveInjuriesForHorse(h.id, injs);
+          return { message: "Cập nhật tiến trình hồi phục thành công", injury };
+        }
+      }
+      throw new ApiError(404, "NOT_FOUND", "Injury point not found");
+    },
+  },
+  {
+    method: "GET",
     pattern: /^\/medical\/horses\/([^/]+)$/,
     handler({ db, params }) {
       const user = currentUser(db);
@@ -898,6 +1169,27 @@ const routes: Route[] = [
     },
   },
   {
+    method: "PUT",
+    pattern: /^\/medical\/records\/([^/]+)\/treatment-phases\/([^/]+)$/,
+    handler({ params, body }) {
+      const store = getMockMedicalStore();
+      const rec = store.records.find((r) => r.id === params[0]);
+      if (!rec) throw new ApiError(404, "NOT_FOUND", "Record not found");
+      const phaseId = params[1];
+      const phase = rec.treatmentPhases?.find((p) => p.id === phaseId);
+      if (!phase) throw new ApiError(404, "NOT_FOUND", "Treatment phase not found");
+      const b = (body as any) || {};
+      if (b.phaseName) phase.phaseName = String(b.phaseName);
+      if (b.startDate) phase.startDate = String(b.startDate);
+      if (b.endDate) phase.endDate = String(b.endDate);
+      if (b.target) phase.target = String(b.target);
+      if (b.allowedActivity) phase.allowedActivity = String(b.allowedActivity);
+      if (b.careInstructions) phase.careInstructions = b.careInstructions;
+      saveMockMedicalStore(store);
+      return { message: "Đã cập nhật phác đồ điều trị thành công", dto: b, record: rec };
+    },
+  },
+  {
     method: "POST",
     pattern: /^\/medical\/records\/([^/]+)\/prescriptions$/,
     handler({ params, body }) {
@@ -1073,6 +1365,203 @@ const routes: Route[] = [
         reason,
       });
       return { ok: true, lock: extended };
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/medical\/preventive\/catalogs$/,
+    handler({ url }) {
+      const catalogs = getStoredPreventiveCatalogs();
+      const category = url.searchParams.get("category");
+      const isActive = url.searchParams.get("isActive");
+
+      let filtered = catalogs;
+      if (category) filtered = filtered.filter((c) => c.category === category);
+      if (isActive !== null && isActive !== undefined) {
+        filtered = filtered.filter((c) => String(c.isActive) === isActive);
+      }
+      return filtered;
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/medical\/preventive\/catalogs$/,
+    handler({ body }) {
+      const b = (body as any) || {};
+      const catalogs = getStoredPreventiveCatalogs();
+      const newCat = {
+        id: `cat-${Date.now()}`,
+        code: String(b.code || "CAT_CUSTOM").toUpperCase(),
+        name: String(b.name || "Custom Preventive Care"),
+        category: b.category || "VACCINATION",
+        intervalDays: Number(b.intervalDays || 90),
+        advanceNoticeDays: Number(b.advanceNoticeDays || 7),
+        applyToNewHorses: Boolean(b.applyToNewHorses ?? true),
+        isActive: true,
+        description: b.description || null,
+        monitoredHorsesCount: 0,
+      };
+      saveStoredPreventiveCatalogs([...catalogs, newCat]);
+      return newCat;
+    },
+  },
+  {
+    method: "PUT",
+    pattern: /^\/medical\/preventive\/catalogs\/([^/]+)$/,
+    handler({ params, body }) {
+      const id = params[0];
+      const catalogs = getStoredPreventiveCatalogs();
+      const idx = catalogs.findIndex((c) => c.id === id);
+      if (idx === -1) throw new ApiError(404, "NOT_FOUND", "Catalog not found");
+      const b = (body as any) || {};
+      catalogs[idx] = { ...catalogs[idx], ...b };
+      saveStoredPreventiveCatalogs(catalogs);
+      return catalogs[idx];
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/medical\/preventive\/catalogs\/([^/]+)\/toggle-status$/,
+    handler({ params }) {
+      const id = params[0];
+      const catalogs = getStoredPreventiveCatalogs();
+      const idx = catalogs.findIndex((c) => c.id === id);
+      if (idx === -1) throw new ApiError(404, "NOT_FOUND", "Catalog not found");
+      catalogs[idx].isActive = !catalogs[idx].isActive;
+      saveStoredPreventiveCatalogs(catalogs);
+      return {
+        ...catalogs[idx],
+        message: catalogs[idx].isActive
+          ? `Đã kích hoạt lại loại chăm sóc '${catalogs[idx].name}'`
+          : `Đã ngừng sử dụng loại chăm sóc '${catalogs[idx].name}'`,
+      };
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/medical\/preventive\/schedules$/,
+    handler({ url }) {
+      const schedules = getStoredPreventiveSchedules();
+      const catalogs = getStoredPreventiveCatalogs();
+      const horses = getStoredHorses();
+
+      const horseId = url.searchParams.get("horseId");
+      const category = url.searchParams.get("category");
+      const statusFilter = url.searchParams.get("status");
+      const search = url.searchParams.get("search")?.toLowerCase().trim();
+      const page = parseInt(url.searchParams.get("page") || "1", 10);
+      const limit = parseInt(url.searchParams.get("limit") || "10", 10);
+
+      const now = new Date();
+      let overdueCount = 0;
+      let upcoming7DaysCount = 0;
+      let upcoming30DaysCount = 0;
+
+      const mapped = schedules.map((sch) => {
+        const cat = catalogs.find((c) => c.id === sch.typeCatalogId);
+        const horse = horses.find((h) => h.id === sch.horseId);
+        const dueDate = new Date(sch.dueDate);
+        const isOverdue = dueDate < now;
+        const isUpcoming7 = !isOverdue && dueDate <= new Date(now.getTime() + 7 * 86400000);
+        const isUpcoming30 = !isOverdue && dueDate <= new Date(now.getTime() + 30 * 86400000);
+        const noticeDays = cat?.advanceNoticeDays || 7;
+        const isNotice = !isOverdue && dueDate <= new Date(now.getTime() + noticeDays * 86400000);
+
+        if (isOverdue) overdueCount++;
+        if (isUpcoming7) upcoming7DaysCount++;
+        if (isUpcoming30) upcoming30DaysCount++;
+
+        let statusBadge = "NORMAL";
+        if (isOverdue) statusBadge = "OVERDUE";
+        else if (isNotice) statusBadge = "UPCOMING";
+        else if (!sch.lastCompletedDate && !sch.completedDate) statusBadge = "NODATA";
+
+        return {
+          ...sch,
+          horse: horse
+            ? {
+                id: horse.id,
+                name: horse.name,
+                microchipRfid: horse.microchipRfid || horse.rfid || horse.code,
+                status: horse.statusText || "ACTIVE",
+                stallAllocations: [{ stall: { code: horse.stall, zone: horse.zone } }],
+              }
+            : null,
+          typeCatalog: cat || { id: sch.typeCatalogId, name: sch.scheduleType, category: sch.scheduleType, intervalDays: 90, advanceNoticeDays: 7 },
+          stallCode: horse?.stall || null,
+          zone: horse?.zone || null,
+          statusBadge,
+          isOverdue,
+          isUpcomingNotice: isNotice,
+          daysUntilDue: Math.ceil((dueDate.getTime() - now.getTime()) / 86400000),
+        };
+      });
+
+      let filtered = mapped;
+      if (horseId) filtered = filtered.filter((s) => s.horseId === horseId);
+      if (category) filtered = filtered.filter((s) => s.scheduleType === category || s.typeCatalog?.category === category);
+      if (statusFilter) {
+        if (statusFilter === "OVERDUE") filtered = filtered.filter((s) => s.statusBadge === "OVERDUE");
+        else if (statusFilter === "UPCOMING") filtered = filtered.filter((s) => s.statusBadge === "UPCOMING");
+        else if (statusFilter === "NORMAL") filtered = filtered.filter((s) => s.statusBadge === "NORMAL");
+        else if (statusFilter === "NODATA") filtered = filtered.filter((s) => s.statusBadge === "NODATA");
+        else if (statusFilter === "UPCOMING_7") filtered = filtered.filter((s) => s.isUpcomingNotice);
+      }
+      if (search) {
+        filtered = filtered.filter(
+          (s) =>
+            s.horse?.name.toLowerCase().includes(search) ||
+            s.horse?.microchipRfid.toLowerCase().includes(search) ||
+            s.typeCatalog?.name.toLowerCase().includes(search),
+        );
+      }
+
+      const total = filtered.length;
+      const skip = (page - 1) * limit;
+      const paginated = filtered.slice(skip, skip + limit);
+
+      return {
+        counts: {
+          overdue: overdueCount,
+          upcoming7Days: upcoming7DaysCount,
+          upcoming30Days: upcoming30DaysCount,
+          total: schedules.length,
+        },
+        data: paginated,
+        total,
+        page,
+        limit,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      };
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/medical\/preventive\/record$/,
+    handler({ body }) {
+      const b = (body as any) || {};
+      const schedules = getStoredPreventiveSchedules();
+      const scheduleId = b.scheduleId;
+      const matchedIdx = schedules.findIndex((s) => s.id === scheduleId || (b.horseId && s.horseId === b.horseId && b.typeCatalogId && s.typeCatalogId === b.typeCatalogId));
+
+      const performedDate = b.performedDate || new Date().toISOString();
+      const nextDue = b.customNextDueDate || new Date(Date.now() + 90 * 86400000).toISOString();
+
+      if (matchedIdx !== -1) {
+        const sch = schedules[matchedIdx];
+        sch.status = "COMPLETED";
+        sch.lastCompletedDate = performedDate;
+        sch.completedDate = performedDate;
+        sch.dueDate = nextDue;
+        sch.performedByName = b.performedByName || "Veterinarian";
+        sch.productAdministered = b.productAdministered || "Equi-Standard Formulation";
+        sch.notes = b.notes || sch.notes;
+        schedules[matchedIdx] = sch;
+        saveStoredPreventiveSchedules(schedules);
+        return { message: "Ghi nhận hoàn thành định kỳ thành công", schedule: sch };
+      }
+
+      return { message: "Ghi nhận thành công", body };
     },
   },
 
