@@ -1220,6 +1220,175 @@ const routes: Route[] = [
     },
   },
   {
+    method: "GET",
+    pattern: /^\/horses\/([^/]+)\/history$/,
+    handler({ db, params }) {
+      const user = currentUser(db);
+      const stored = getStoredHorses();
+      const h: any = stored.find((item) => item.id === params[0]);
+      if (!h) throw new ApiError(404, "HORSE_NOT_FOUND", "Horse profile not found or permission denied.");
+
+      if (user.role === "HORSE_OWNER" && h.ownerId && h.ownerId !== user.id) {
+        throw new ApiError(404, "HORSE_NOT_FOUND", "Horse profile not found or permission denied.");
+      }
+
+      let st = h.statusText || h.status;
+      if (h.healthGroup === "FIT") st = "ACTIVE";
+      else if (h.healthGroup === "WATCH") st = "UNDER_OBSERVATION";
+      else if (h.healthGroup === "QUARANTINED") st = "ISOLATED";
+      else if (h.healthGroup === "INJURED") st = "INJURED";
+      else if (!st) st = "RESTING";
+
+      const horse = {
+        id: h.id,
+        horseCode: h.horseCode || (h.id.startsWith("horse-") ? `HR-${h.id.slice(-6)}` : `HR-000001`),
+        name: h.name,
+        breed: h.breed || "Thoroughbred",
+        dob: h.dob || "2021-04-12",
+        gender: h.gender || "Colt",
+        color: h.color || "Bay Dark",
+        status: st,
+        isMedicalLocked: Boolean(h.isLocked),
+        stallCode: user.role === "HORSE_OWNER" ? null : (h.stall || "STALL-A01"),
+        zone: user.role === "HORSE_OWNER" ? null : "Zone A - Barn 1",
+        primaryGroom: user.role === "HORSE_OWNER" ? null : "Michael Groom",
+      };
+
+      const statusHistory = [
+        {
+          id: `sh-${h.id}-1`,
+          timestamp: h.updatedAt || new Date().toISOString(),
+          changedBy: "Dr. Sarah Connor (Veterinarian)",
+          action: "HORSE_STATUS_CHANGED",
+          oldStatus: "RESTING",
+          newStatus: st,
+        },
+      ];
+
+      const ownershipHistory = [
+        {
+          id: `oh-${h.id}-1`,
+          timestamp: h.createdAt || new Date(Date.now() - 60 * 86400000).toISOString(),
+          previousOwner: "EquiFlow Racing Stable",
+          newOwner: h.ownerName || "Robert Sterling (Horse Owner)",
+          reason: "Purchased at Autumn Yearling Auction",
+          transferredBy: "Michael Tran (Club Manager)",
+        },
+      ];
+
+      const stallHistory = user.role === "HORSE_OWNER" ? [] : [
+        {
+          id: `stall-${h.id}-1`,
+          stallCode: h.stall || "STALL-A01",
+          zone: "Zone A - Barn 1",
+          groomName: "John Smith (Groom Hand)",
+          startDate: h.createdAt || new Date(Date.now() - 30 * 86400000).toISOString(),
+          endDate: null,
+          isActive: true,
+        },
+      ];
+
+      const medicalHistory = {
+        records: [
+          {
+            id: `mr-${h.id}-1`,
+            examinationDate: new Date(Date.now() - 5 * 86400000).toISOString(),
+            veterinarianName: "Dr. Sarah Connor",
+            symptoms: h.isLocked ? (h.lockReason || "Left forelimb swelling and lameness") : "Routine pre-training health screening",
+            clinicalDiagnosis: h.isLocked ? "Acute desmitis of suspensory ligament" : "Clinically sound, fit for regular conditioning",
+            treatmentProtocol: h.isLocked ? "Cryotherapy, bandage support, rest" : "Routine maintenance",
+          },
+        ],
+        injuries: h.isLocked ? [
+          {
+            id: `inj-${h.id}-1`,
+            discoveryDate: new Date(Date.now() - 5 * 86400000).toISOString(),
+            anatomicalZone: "Superficial Digital Flexor Tendon (SDFT)",
+            layer: "MUSCLE",
+            viewSide: "LEFT",
+            injuryType: "Tendon Strain & Mild Synovitis",
+            severity: "MODERATE",
+            stage: "ACUTE",
+            status: "ACTIVE",
+          },
+        ] : [],
+        locks: h.isLocked ? [
+          {
+            id: `lock-${h.id}-1`,
+            lockCode: "KH-000001",
+            lockedAt: new Date(Date.now() - 5 * 86400000).toISOString(),
+            lockReason: h.lockReason || "Suspensory ligament acute desmitis during intense trial run",
+            veterinarianName: "Dr. Sarah Connor",
+            isLocked: true,
+          },
+        ] : [],
+      };
+
+      const trainingHistory = [
+        {
+          id: `tp-${h.id}-1`,
+          phaseName: "Endurance & Speed Conditioning",
+          targetSpeed: 45,
+          targetDistance: 1600,
+          trackSurface: "TURF",
+          startDate: new Date(Date.now() - 20 * 86400000).toISOString(),
+          endDate: new Date(Date.now() + 10 * 86400000).toISOString(),
+          status: h.isLocked ? "SUSPENDED" : "ACTIVE",
+          trainerName: "David Nguyen (Head Trainer)",
+          totalWorkouts: 8,
+          completedWorkouts: 6,
+        },
+      ];
+
+      const timeline = [
+        {
+          id: `tl-${h.id}-1`,
+          category: "IDENTITY" as const,
+          title: "Horse identity profile created",
+          description: `Registered as ${h.name} (${horse.horseCode}), breed ${horse.breed}.`,
+          timestamp: h.createdAt || new Date(Date.now() - 60 * 86400000).toISOString(),
+          badgeTone: "info" as const,
+        },
+        ...(h.isLocked ? [
+          {
+            id: `tl-${h.id}-lock`,
+            category: "MEDICAL" as const,
+            title: "Veterinary Medical Lock enforced (KH-000001)",
+            description: `Reason: ${h.lockReason || "Acute desmitis"}. Issued by Dr. Sarah Connor.`,
+            timestamp: new Date(Date.now() - 5 * 86400000).toISOString(),
+            badgeTone: "danger" as const,
+          },
+        ] : []),
+        {
+          id: `tl-${h.id}-plan`,
+          category: "TRAINING" as const,
+          title: "Training plan issued: Endurance & Speed Conditioning",
+          description: `Status: ${h.isLocked ? "SUSPENDED" : "ACTIVE"}. Surface: TURF. Trainer: David Nguyen.`,
+          timestamp: new Date(Date.now() - 20 * 86400000).toISOString(),
+          badgeTone: "ok" as const,
+        },
+        {
+          id: `tl-${h.id}-med`,
+          category: "MEDICAL" as const,
+          title: "Clinical examination completed",
+          description: `Diagnosis: ${h.isLocked ? "Acute desmitis" : "Clinically sound"}. Examined by Dr. Sarah Connor.`,
+          timestamp: new Date(Date.now() - 5 * 86400000).toISOString(),
+          badgeTone: "warn" as const,
+        },
+      ];
+
+      return {
+        horse,
+        statusHistory,
+        ownershipHistory,
+        stallHistory,
+        medicalHistory,
+        trainingHistory,
+        timeline,
+      };
+    },
+  },
+  {
     method: "POST",
     pattern: /^\/horses$/,
     handler({ db, body }) {

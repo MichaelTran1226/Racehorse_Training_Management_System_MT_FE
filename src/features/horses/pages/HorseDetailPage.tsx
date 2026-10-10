@@ -9,8 +9,9 @@ import { Alert } from "@/shared/components/ui/Alert";
 import { Tabs } from "@/shared/components/ui/Tabs";
 import { HEALTH_STATUS } from "@/shared/lib/status";
 import type { HealthStatus } from "@/shared/types/enums";
-import { getHorseById } from "../api";
-import type { Horse } from "../types";
+import { DataTable } from "@/shared/components/ui/DataTable";
+import { getHorseById, getHorseHistory } from "../api";
+import type { Horse, HorseHistoryResponse } from "../types";
 import { ChangeStatusDialog } from "../components/ChangeStatusDialog";
 import { AssignOwnerModal } from "../components/AssignOwnerModal";
 import { DeleteHorseModal } from "../components/DeleteHorseModal";
@@ -19,6 +20,7 @@ export default function HorseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const currentUser = useCurrentUser();
   const [horse, setHorse] = useState<Horse | null>(null);
+  const [history, setHistory] = useState<HorseHistoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("info");
@@ -28,9 +30,15 @@ export default function HorseDetailPage() {
   useEffect(() => {
     if (!id) return;
     let active = true;
-    getHorseById(id)
-      .then((data) => {
-        if (active) setHorse(data);
+    Promise.all([
+      getHorseById(id),
+      getHorseHistory(id).catch(() => null),
+    ])
+      .then(([horseData, historyData]) => {
+        if (active) {
+          setHorse(horseData);
+          if (historyData) setHistory(historyData);
+        }
       })
       .catch((err) => {
         if (active) setError(err.message || "Horse record not found or you do not have permission to view.");
@@ -45,8 +53,14 @@ export default function HorseDetailPage() {
 
   const refreshHorse = () => {
     if (!id) return;
-    getHorseById(id)
-      .then((data) => setHorse(data))
+    Promise.all([
+      getHorseById(id),
+      getHorseHistory(id).catch(() => null),
+    ])
+      .then(([horseData, historyData]) => {
+        setHorse(horseData);
+        if (historyData) setHistory(historyData);
+      })
       .catch(() => {});
   };
 
@@ -365,26 +379,160 @@ export default function HorseDetailPage() {
 
       {/* Tab 4: Status History */}
       {activeTab === "status-history" && (
-        <Card pad={24}>
-          <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "1.125rem", fontWeight: 700 }}>
-            Status Transition History
-          </h3>
-          <p style={{ color: "var(--ink-muted, #64748b)" }}>
-            Current Status: <Badge tone={statusCfg.tone}>{statusCfg.label}</Badge> (Last modified:{" "}
-            {horse.updatedAt ? new Date(horse.updatedAt).toLocaleString("en-US") : "—"})
-          </p>
-        </Card>
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+          <Card pad={24}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+              <h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 700 }}>
+                Status Transition History
+              </h3>
+              <div>
+                Current Status: <Badge tone={statusCfg.tone}>{statusCfg.label}</Badge>
+              </div>
+            </div>
+            {history?.statusHistory && history.statusHistory.length > 0 ? (
+              <DataTable
+                caption="Horse status transitions"
+                rowKey={(r) => r.id}
+                rows={history.statusHistory}
+                columns={[
+                  {
+                    key: "timestamp",
+                    header: "Timestamp",
+                    render: (r) => new Date(r.timestamp).toLocaleString("en-US"),
+                  },
+                  {
+                    key: "action",
+                    header: "Action",
+                    render: (r) => <strong>{r.action}</strong>,
+                  },
+                  {
+                    key: "transition",
+                    header: "Transition",
+                    render: (r) => (
+                      <span>
+                        {r.oldStatus || "—"} → <Badge tone="info">{r.newStatus || "—"}</Badge>
+                      </span>
+                    ),
+                  },
+                  {
+                    key: "changedBy",
+                    header: "Changed By",
+                    render: (r) => r.changedBy || "System",
+                  },
+                  {
+                    key: "notes",
+                    header: "Notes / Reason",
+                    render: (r) => r.notes || "—",
+                  },
+                ]}
+              />
+            ) : (
+              <p style={{ color: "var(--ink-muted, #64748b)", margin: 0 }}>
+                No recorded status transitions yet. Current status: <Badge tone={statusCfg.tone}>{statusCfg.label}</Badge>
+              </p>
+            )}
+          </Card>
+
+          {history?.ownershipHistory && history.ownershipHistory.length > 0 && (
+            <Card pad={24}>
+              <h3 style={{ margin: "0 0 1rem 0", fontSize: "1.125rem", fontWeight: 700 }}>
+                Ownership Transfer History
+              </h3>
+              <DataTable
+                caption="Ownership transfers"
+                rowKey={(r) => r.id}
+                rows={history.ownershipHistory}
+                columns={[
+                  {
+                    key: "timestamp",
+                    header: "Date",
+                    render: (r) => new Date(r.timestamp).toLocaleDateString("en-US"),
+                  },
+                  {
+                    key: "previousOwner",
+                    header: "Previous Owner",
+                    render: (r) => r.previousOwner,
+                  },
+                  {
+                    key: "newOwner",
+                    header: "New Owner",
+                    render: (r) => <strong>{r.newOwner}</strong>,
+                  },
+                  {
+                    key: "transferredBy",
+                    header: "Transferred By",
+                    render: (r) => r.transferredBy || "System",
+                  },
+                  {
+                    key: "reason",
+                    header: "Reason",
+                    render: (r) => r.reason || "—",
+                  },
+                ]}
+              />
+            </Card>
+          )}
+        </div>
       )}
 
       {/* Tab 5: Stall History */}
       {activeTab === "stall-history" && !isOwner && (
         <Card pad={24}>
-          <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "1.125rem", fontWeight: 700 }}>
-            Stall Allocation History
-          </h3>
-          <p style={{ color: "var(--ink-muted, #64748b)" }}>
-            Active Stall: <strong>{horse.stallCode || "Unassigned"}</strong> ({horse.zone || "Unassigned Zone"})
-          </p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+            <h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 700 }}>
+              Stall Allocation History
+            </h3>
+            <div>
+              Active Stall: <strong>{horse.stallCode || "Unassigned"}</strong> ({horse.zone || "Unassigned Zone"})
+            </div>
+          </div>
+          {history?.stallHistory && history.stallHistory.length > 0 ? (
+            <DataTable
+              caption="Stall allocation records"
+              rowKey={(r) => r.id}
+              rows={history.stallHistory}
+              columns={[
+                {
+                  key: "stallCode",
+                  header: "Stall Code",
+                  render: (r) => <strong>{r.stallCode}</strong>,
+                },
+                {
+                  key: "zone",
+                  header: "Zone / Barn",
+                  render: (r) => r.zone,
+                },
+                {
+                  key: "groomName",
+                  header: "Assigned Groom",
+                  render: (r) => r.groomName || "Unassigned",
+                },
+                {
+                  key: "dates",
+                  header: "Period",
+                  render: (r) => (
+                    <span>
+                      {new Date(r.startDate).toLocaleDateString("en-US")} –{" "}
+                      {r.endDate ? new Date(r.endDate).toLocaleDateString("en-US") : "Present"}
+                    </span>
+                  ),
+                },
+                {
+                  key: "status",
+                  header: "Status",
+                  render: (r) => (
+                    <Badge tone={r.isActive ? "ok" : "neutral"}>
+                      {r.isActive ? "Active" : "Historical"}
+                    </Badge>
+                  ),
+                },
+              ]}
+            />
+          ) : (
+            <p style={{ color: "var(--ink-muted, #64748b)", margin: 0 }}>
+              No historical stall allocation records logged.
+            </p>
+          )}
         </Card>
       )}
 
@@ -394,32 +542,74 @@ export default function HorseDetailPage() {
           <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "1.125rem", fontWeight: 700 }}>
             Lifecycle Activity Timeline
           </h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
-              <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: "#e0f2fe", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                📋
-              </div>
-              <div>
-                <strong>Horse identity profile created</strong>
-                <div style={{ fontSize: "0.8125rem", color: "var(--ink-muted, #64748b)" }}>
-                  {horse.createdAt ? new Date(horse.createdAt).toLocaleString("en-US") : "System"} · Horse ID {horse.horseCode || horse.id}
-                </div>
-              </div>
+          {history?.timeline && history.timeline.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              {history.timeline.map((evt) => {
+                const getCategoryIcon = (category: string) => {
+                  switch (category) {
+                    case "IDENTITY": return "📋";
+                    case "STATUS": return "🔄";
+                    case "STALL": return "🏠";
+                    case "MEDICAL": return "🩺";
+                    case "TRAINING": return "🏃";
+                    case "TOURNAMENT": return "🏆";
+                    case "OWNERSHIP": return "🤝";
+                    default: return "📌";
+                  }
+                };
+                return (
+                  <div key={evt.id} style={{ display: "flex", gap: "1rem", alignItems: "flex-start", paddingBottom: "0.75rem", borderBottom: "1px solid var(--border-subtle, #f1f5f9)" }}>
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", backgroundColor: "var(--bg-subtle, #f8fafc)", border: "1px solid var(--border-subtle, #e2e8f0)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.125rem", flexShrink: 0 }}>
+                      {getCategoryIcon(evt.category)}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <strong style={{ fontSize: "0.9375rem" }}>{evt.title}</strong>
+                          {evt.badgeTone && (
+                            <Badge tone={evt.badgeTone}>{evt.category}</Badge>
+                          )}
+                        </div>
+                        <div style={{ fontSize: "0.8125rem", color: "var(--ink-muted, #64748b)" }}>
+                          {new Date(evt.timestamp).toLocaleString("en-US")}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: "0.875rem", color: "var(--ink-secondary, #334155)", marginTop: "0.25rem" }}>
+                        {evt.description}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            {horse.isMedicalLocked && (
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
-                <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  🔒
+                <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: "#e0f2fe", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  📋
                 </div>
                 <div>
-                  <strong>Veterinary Medical Lock enforced</strong>
+                  <strong>Horse identity profile created</strong>
                   <div style={{ fontSize: "0.8125rem", color: "var(--ink-muted, #64748b)" }}>
-                    High-intensity conditioning and race trials suspended
+                    {horse.createdAt ? new Date(horse.createdAt).toLocaleString("en-US") : "System"} · Horse ID {horse.horseCode || horse.id}
                   </div>
                 </div>
               </div>
-            )}
-          </div>
+              {horse.isMedicalLocked && (
+                <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
+                  <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    🔒
+                  </div>
+                  <div>
+                    <strong>Veterinary Medical Lock enforced</strong>
+                    <div style={{ fontSize: "0.8125rem", color: "var(--ink-muted, #64748b)" }}>
+                      High-intensity conditioning and race trials suspended
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </Card>
       )}
 
