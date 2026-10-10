@@ -1,5 +1,16 @@
 import { api } from "@/shared/lib/api";
 import { getStoredHorses } from "@/shared/mock/horsesData";
+import {
+  getStoredPlans,
+  saveStoredPlans,
+  getStoredWorkouts,
+  saveStoredWorkouts,
+  getStoredTrialRuns,
+  saveStoredTrialRuns,
+  getStoredAlerts,
+  saveStoredAlerts,
+  getStoredFitnessMetrics,
+} from "@/shared/mock/trainingData";
 import type {
   ExerciseSession,
   FitnessMetricPoint,
@@ -9,308 +20,31 @@ import type {
   TrialRunSchedule,
 } from "./types";
 
-const MOCK_PLANS: TrainingPlan[] = [
-  {
-    id: "plan-1",
-    planCode: "PLAN-2026-001",
-    name: "Endurance & Speed Conditioning - Autumn Derby",
-    horseId: "horse-1",
-    horseName: "Thunderbolt Swift",
-    horseCode: "HR-000001",
-    target: "Enhance muscular endurance and stabilize heart rate during 2000m sprint phase",
-    targetDistanceMeters: 2000,
-    startDate: "2026-09-15",
-    endDate: "2026-10-31",
-    status: "ACTIVE",
-    headTrainerId: "trainer-1",
-    headTrainerName: "David Nguyen (Head Trainer)",
-    notes: "Focus on light aerobic intervals early in the week and progressive pacing on weekends",
-    createdAt: "2026-09-10",
-    updatedAt: "2026-09-28",
-    phases: [
-      {
-        id: "phase-1",
-        phaseOrder: 1,
-        name: "Phase 1: Volume Building & Aerobic Base",
-        startDate: "2026-09-15",
-        endDate: "2026-09-30",
-        targetHeartRateMax: 140,
-        targetSpeedKmh: 35,
-        focus: "Hill walks, steady trot, and extended canter at controlled pace",
-      },
-      {
-        id: "phase-2",
-        phaseOrder: 2,
-        name: "Phase 2: Speed Work & Sprint Conditioning",
-        startDate: "2026-10-01",
-        endDate: "2026-10-20",
-        targetHeartRateMax: 175,
-        targetSpeedKmh: 58,
-        focus: "Interval workouts and final 400m acceleration runs",
-      },
-      {
-        id: "phase-3",
-        phaseOrder: 3,
-        name: "Phase 3: Tapering & Gate Rehearsal",
-        startDate: "2026-10-21",
-        endDate: "2026-10-31",
-        targetHeartRateMax: 150,
-        targetSpeedKmh: 45,
-        focus: "Rhythm maintenance and barrier break reaction practice",
-      },
-    ],
-  },
-  {
-    id: "plan-2",
-    planCode: "PLAN-2026-002",
-    name: "Post-Injury Gentle Recovery Protocol",
-    horseId: "horse-2",
-    horseName: "Northern Dancer Legacy",
-    horseCode: "HR-000002",
-    target: "Musculoskeletal rehabilitation and low cardiovascular strain capped below 120 bpm",
-    targetDistanceMeters: 800,
-    startDate: "2026-10-01",
-    endDate: "2026-11-15",
-    status: "DRAFT",
-    headTrainerId: "trainer-1",
-    headTrainerName: "David Nguyen (Head Trainer)",
-    isLockedByMedical: true,
-    notes: "Under active Medical Lock: High-intensity workouts (Gallop, Fast Canter) strictly suspended!",
-    createdAt: "2026-09-29",
-    updatedAt: "2026-09-29",
-    phases: [
-      {
-        id: "phase-2-1",
-        phaseOrder: 1,
-        name: "Phase 1: Controlled Walk & Joint Mobilization",
-        startDate: "2026-10-01",
-        endDate: "2026-10-20",
-        targetHeartRateMax: 110,
-        targetSpeedKmh: 15,
-        focus: "Hand walking 30 min/day and gentle equine hydrotherapy",
-      },
-    ],
-  },
-];
-
-const MOCK_SESSIONS: ExerciseSession[] = [
-  {
-    id: "ses-101",
-    planId: "plan-1",
-    planName: "Endurance & Speed Conditioning - Autumn Derby",
-    horseId: "horse-1",
-    horseName: "Thunderbolt Swift",
-    horseCode: "HR-000001",
-    sessionDate: "2026-09-30",
-    startTime: "06:30",
-    endTime: "07:30",
-    sessionType: "CANTER",
-    intensity: "MODERATE",
-    status: "COMPLETED",
-    groomName: "John Smith (Groom Hand)",
-    jockeyName: "Alex Turner (Jockey)",
-    trackType: "TURF",
-    lane: 2,
-    targetDistanceMeters: 1600,
-    notes: "Dry turf track conditions, light headwind",
-    result: {
-      id: "res-1",
-      sessionId: "ses-101",
-      actualDistanceMeters: 1620,
-      actualDurationSeconds: 154,
-      avgSpeedKmh: 37.8,
-      maxSpeedKmh: 48.2,
-      avgHeartRate: 138,
-      maxHeartRate: 162,
-      recoveryHeartRate1Min: 98,
-      recoveryHeartRate5Min: 62,
-      performanceScore: 8.5,
-      hasAbnormalSigns: false,
-      alertSentToVet: false,
-      headTrainerFeedback: "Horse maintained steady rhythm with calm post-session respiration.",
-      recordedAt: "2026-09-30 07:40",
-      recordedBy: "David Nguyen (Head Trainer)",
-    },
-  },
-  {
-    id: "ses-102",
-    planId: "plan-1",
-    planName: "Endurance & Speed Conditioning - Autumn Derby",
-    horseId: "horse-1",
-    horseName: "Thunderbolt Swift",
-    horseCode: "HR-000001",
-    sessionDate: "2026-10-01",
-    startTime: "06:00",
-    endTime: "07:15",
-    sessionType: "GALLOP",
-    intensity: "HEAVY",
-    status: "SCHEDULED",
-    groomName: "John Smith (Groom Hand)",
-    jockeyName: "Alex Turner (Jockey)",
-    trackType: "TURF",
-    lane: 1,
-    targetDistanceMeters: 1800,
-    notes: "Focus on final 400m speed acceleration",
-  },
-  {
-    id: "ses-103",
-    planId: "plan-2",
-    planName: "Post-Injury Gentle Recovery Protocol",
-    horseId: "horse-2",
-    horseName: "Northern Dancer Legacy",
-    horseCode: "HR-000002",
-    sessionDate: "2026-10-01",
-    startTime: "08:00",
-    endTime: "08:45",
-    sessionType: "CANTER",
-    intensity: "HEAVY",
-    status: "BLOCKED_BY_LOCK",
-    blockedReason: "Medical Lock Active: Acute suspensory ligament strain. Heavy training strictly prohibited!",
-    groomName: "John Smith (Groom Hand)",
-    targetDistanceMeters: 1200,
-    notes: "Automatically blocked by system due to active Medical Lock",
-  },
-  {
-    id: "ses-104",
-    horseId: "horse-2",
-    horseName: "Northern Dancer Legacy",
-    horseCode: "HR-000002",
-    sessionDate: "2026-10-01",
-    startTime: "16:00",
-    endTime: "16:30",
-    sessionType: "WALK",
-    intensity: "LIGHT",
-    status: "SCHEDULED",
-    groomName: "John Smith (Groom Hand)",
-    targetDistanceMeters: 600,
-    notes: "Gentle soft-ground walking for joint rehabilitation; compliant with Vet protocol",
-  },
-];
-
-const MOCK_TRIAL_RUNS: TrialRunSchedule[] = [
-  {
-    id: "trial-1",
-    runCode: "TR-2026-W40-01",
-    runDate: "2026-10-03",
-    trackType: "TURF",
-    orderNumber: 1,
-    distanceMeters: 1200,
-    startTime: "07:00",
-    status: "PENDING",
-    coordinatorName: "David Nguyen (Head Trainer)",
-    notes: "Barrier break trial in preparation for Autumn Cup",
-    horses: [
-      { horseId: "horse-1", horseName: "Thunderbolt Swift", jockeyName: "Alex Turner", gateNumber: 1 },
-      { horseId: "horse-3", horseName: "Shadowfax Wonder", jockeyName: "Kyle Bennett", gateNumber: 2 },
-    ],
-  },
-  {
-    id: "trial-2",
-    runCode: "TR-2026-W40-02",
-    runDate: "2026-10-03",
-    trackType: "SAND",
-    orderNumber: 2,
-    distanceMeters: 1400,
-    startTime: "07:45",
-    status: "PENDING",
-    coordinatorName: "David Nguyen (Head Trainer)",
-    notes: "Sand track trial for surface adaptation and conditioning",
-    horses: [
-      { horseId: "horse-1", horseName: "Thunderbolt Swift", jockeyName: "Alex Turner", gateNumber: 1 },
-      { horseId: "horse-3", horseName: "Shadowfax Wonder", jockeyName: "Kyle Bennett", gateNumber: 2 },
-    ],
-  },
-];
-
-const MOCK_FITNESS_METRICS: FitnessMetricPoint[] = [
-  { date: "2026-09-16", sessionName: "Basic Trot", avgSpeedKmh: 24, maxSpeedKmh: 32, avgHeartRate: 110, maxHeartRate: 135, recoveryScore: 88, staminaScore: 72, performanceScore: 7.0, hasAlert: false },
-  { date: "2026-09-19", sessionName: "Canter 1200m", avgSpeedKmh: 32, maxSpeedKmh: 42, avgHeartRate: 125, maxHeartRate: 148, recoveryScore: 84, staminaScore: 75, performanceScore: 7.5, hasAlert: false },
-  { date: "2026-09-22", sessionName: "Canter 1600m", avgSpeedKmh: 35, maxSpeedKmh: 46, avgHeartRate: 130, maxHeartRate: 154, recoveryScore: 82, staminaScore: 78, performanceScore: 8.0, hasAlert: false },
-  { date: "2026-09-26", sessionName: "Interval Sprints", avgSpeedKmh: 38, maxSpeedKmh: 52, avgHeartRate: 142, maxHeartRate: 170, recoveryScore: 79, staminaScore: 82, performanceScore: 8.2, hasAlert: false },
-  { date: "2026-09-30", sessionName: "High-speed Canter", avgSpeedKmh: 37.8, maxSpeedKmh: 48.2, avgHeartRate: 138, maxHeartRate: 162, recoveryScore: 86, staminaScore: 85, performanceScore: 8.5, hasAlert: false },
-];
-
-const MOCK_ALERTS: TrainingAlert[] = [
-  {
-    id: "alt-1",
-    horseId: "horse-2",
-    horseName: "Northern Dancer Legacy",
-    sessionId: "ses-99",
-    sessionDate: "2026-09-28",
-    severity: "HIGH",
-    alertType: "LAMENESS_OBSERVED",
-    message: "Groom reported limping after light trot, left forelimb pain response.",
-    reportedBy: "John Smith (Groom Hand)",
-    createdAt: "2026-09-28 08:15",
-    acknowledgedByVet: true,
-    vetNotes: "Examined and diagnosed with superficial digital flexor desmitis. Medical Lock placed.",
-  },
-  {
-    id: "alt-2",
-    horseId: "horse-3",
-    horseName: "Shadowfax Wonder",
-    sessionId: "ses-100",
-    sessionDate: "2026-09-29",
-    severity: "MEDIUM",
-    alertType: "HEART_RATE_SPIKE",
-    message: "Delayed heart rate recovery (115 bpm after 5 minutes of rest).",
-    reportedBy: "Kyle Bennett (Jockey)",
-    createdAt: "2026-09-29 07:35",
-    acknowledgedByVet: false,
-  },
-];
-
-const TRAINING_PLANS_KEY = "equiflow.training.plans.v1";
-
-function getStoredPlans(): TrainingPlan[] {
-  let plans: TrainingPlan[] = MOCK_PLANS;
-  if (typeof window !== "undefined") {
-    try {
-      const raw = localStorage.getItem(TRAINING_PLANS_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as TrainingPlan[];
-        if (Array.isArray(parsed) && parsed.length > 0) plans = parsed;
-      }
-    } catch {
-      // fallback
-    }
-  }
-
-  // Reconcile dynamic medical lock status with canonical herd store
-  const horses = getStoredHorses();
-  return plans.map((p) => {
-    const horse = horses.find((h) => h.id === p.horseId);
-    if (horse) {
-      return {
-        ...p,
-        isLockedByMedical: Boolean(horse.isLocked),
-        medicalLockReason: horse.lockReason || p.medicalLockReason,
-      };
-    }
-    return p;
-  });
-}
-
-function saveStoredPlans(plans: TrainingPlan[]): void {
-  if (typeof window !== "undefined") {
-    try {
-      localStorage.setItem(TRAINING_PLANS_KEY, JSON.stringify(plans));
-    } catch {
-      // ignore
-    }
-  }
-}
-
 export const trainingApi = {
   // Plans
-  async getPlans(): Promise<TrainingPlan[]> {
+  async getPlans(query?: { horseId?: string; status?: string; search?: string }): Promise<TrainingPlan[]> {
+    const params = new URLSearchParams();
+    if (query?.horseId) params.append("horseId", query.horseId);
+    if (query?.status) params.append("status", query.status);
+    if (query?.search) params.append("search", query.search);
+    const qs = params.toString() ? `?${params.toString()}` : "";
+
     try {
-      const res = await api<TrainingPlan[]>("GET", "/training/plans");
-      if (Array.isArray(res) && res.length > 0) return res;
-      return structuredClone(getStoredPlans());
+      const res = await api<{ items: TrainingPlan[]; total: number } | TrainingPlan[]>("GET", `/training/plans${qs}`);
+      if (res && "items" in res && Array.isArray(res.items)) {
+        return res.items;
+      }
+      if (Array.isArray(res)) {
+        return res;
+      }
     } catch {
-      return structuredClone(getStoredPlans());
+      // offline/fallback
     }
+
+    let plans = getStoredPlans();
+    if (query?.horseId) plans = plans.filter((p) => p.horseId === query.horseId);
+    if (query?.status) plans = plans.filter((p) => p.status === query.status);
+    return structuredClone(plans);
   },
 
   async getPlanById(id: string): Promise<TrainingPlan | null> {
@@ -318,7 +52,7 @@ export const trainingApi = {
       const res = await api<TrainingPlan>("GET", `/training/plans/${id}`);
       if (res) return res;
     } catch {
-      // fallback to mock
+      // fallback
     }
     const plans = getStoredPlans();
     const p = plans.find((item) => item.id === id);
@@ -326,18 +60,27 @@ export const trainingApi = {
   },
 
   async createPlan(data: Partial<TrainingPlan>): Promise<TrainingPlan> {
-    const plans = getStoredPlans();
+    try {
+      const res = await api<TrainingPlan>("POST", "/training/plans", data);
+      if (res) return res;
+    } catch (err: any) {
+      if (err.status === 400 || err.message?.includes("RULE-MED-01") || err.message?.includes("Medical Lock")) {
+        throw err;
+      }
+    }
+
+    // Fallback store update
     const horses = getStoredHorses();
     const horse = horses.find((h) => h.id === data.horseId);
     const isLocked = Boolean(horse?.isLocked);
 
-    // RULE-MED-01 Enforcement: Active plans cannot be created for locked horses
     if (isLocked && data.status === "ACTIVE") {
       throw new Error(
         `Cannot activate training plan: Horse "${horse?.name}" is currently under Veterinary Medical Lock (RULE-MED-01). You may only save as Draft.`
       );
     }
 
+    const plans = getStoredPlans();
     const newPlan: TrainingPlan = {
       id: `plan-${Date.now()}`,
       planCode: `PLAN-2026-${Math.floor(100 + Math.random() * 900)}`,
@@ -364,7 +107,30 @@ export const trainingApi = {
     return structuredClone(newPlan);
   },
 
+  async updatePlan(id: string, data: Partial<TrainingPlan>): Promise<TrainingPlan> {
+    try {
+      const res = await api<TrainingPlan>("PUT", `/training/plans/${id}`, data);
+      if (res) return res;
+    } catch (err: any) {
+      if (err.status === 400 || err.message?.includes("RULE-MED-01")) throw err;
+    }
+
+    const plans = getStoredPlans();
+    const p = plans.find((item) => item.id === id);
+    if (!p) throw new Error("Training plan not found");
+    Object.assign(p, data, { updatedAt: new Date().toISOString().split("T")[0] });
+    saveStoredPlans(plans);
+    return structuredClone(p);
+  },
+
   async activatePlan(id: string): Promise<TrainingPlan> {
+    try {
+      const res = await api<TrainingPlan>("PATCH", `/training/plans/${id}/status`, { status: "ACTIVE" });
+      if (res) return res;
+    } catch (err) {
+      throw err;
+    }
+
     const plans = getStoredPlans();
     const p = plans.find((item) => item.id === id);
     if (!p) throw new Error("Training plan not found");
@@ -373,7 +139,7 @@ export const trainingApi = {
     const horse = horses.find((h) => h.id === p.horseId);
     if (p.isLockedByMedical || horse?.isLocked) {
       throw new Error(
-        `Cannot activate plan: Horse "${p.horseName}" is currently under protective Medical Lock (RULE-MED-01). Hold reason: "${horse?.lockReason || p.medicalLockReason || "Clinical injury suspension"}"`
+        `Cannot activate plan: Horse "${p.horseName}" is currently under protective Medical Lock (RULE-MED-01).`
       );
     }
     p.status = "ACTIVE";
@@ -383,6 +149,11 @@ export const trainingApi = {
   },
 
   async cancelPlan(id: string, reason: string): Promise<TrainingPlan> {
+    try {
+      const res = await api<TrainingPlan>("PATCH", `/training/plans/${id}/status`, { status: "CANCELLED", reason });
+      if (res) return res;
+    } catch {}
+
     const plans = getStoredPlans();
     const p = plans.find((item) => item.id === id);
     if (!p) throw new Error("Training plan not found");
@@ -394,6 +165,11 @@ export const trainingApi = {
   },
 
   async completePlan(id: string): Promise<TrainingPlan> {
+    try {
+      const res = await api<TrainingPlan>("PATCH", `/training/plans/${id}/status`, { status: "COMPLETED" });
+      if (res) return res;
+    } catch {}
+
     const plans = getStoredPlans();
     const p = plans.find((item) => item.id === id);
     if (!p) throw new Error("Training plan not found");
@@ -405,6 +181,11 @@ export const trainingApi = {
   },
 
   async clonePlan(id: string, targetHorseId: string, targetHorseName: string): Promise<TrainingPlan> {
+    try {
+      const res = await api<TrainingPlan>("POST", `/training/plans/${id}/clone`, { targetHorseId, targetHorseName });
+      if (res) return res;
+    } catch {}
+
     const plans = getStoredPlans();
     const source = plans.find((item) => item.id === id);
     if (!source) throw new Error("Original training plan not found");
@@ -424,22 +205,49 @@ export const trainingApi = {
     return structuredClone(cloned);
   },
 
-  // Sessions
-  async getSessions(filter?: { date?: string; horseId?: string }): Promise<ExerciseSession[]> {
-    let result = [...MOCK_SESSIONS];
-    if (filter?.date) {
-      result = result.filter((s) => s.sessionDate === filter.date);
+  async deletePlan(id: string): Promise<void> {
+    try {
+      await api<{ message: string }>("DELETE", `/training/plans/${id}`);
+    } catch {}
+    const plans = getStoredPlans();
+    const idx = plans.findIndex((p) => p.id === id);
+    if (idx !== -1) {
+      plans.splice(idx, 1);
+      saveStoredPlans(plans);
     }
-    if (filter?.horseId) {
-      result = result.filter((s) => s.horseId === filter.horseId);
-    }
+  },
+
+  // Sessions / Workouts
+  async getSessions(filter?: { date?: string; horseId?: string; planId?: string }): Promise<ExerciseSession[]> {
+    const params = new URLSearchParams();
+    if (filter?.date) params.append("date", filter.date);
+    if (filter?.horseId) params.append("horseId", filter.horseId);
+    if (filter?.planId) params.append("planId", filter.planId);
+    const qs = params.toString() ? `?${params.toString()}` : "";
+
+    try {
+      const res = await api<ExerciseSession[]>("GET", `/training/workouts${qs}`);
+      if (Array.isArray(res)) return res;
+    } catch {}
+
+    let result = getStoredWorkouts();
+    if (filter?.date) result = result.filter((s) => s.sessionDate === filter.date);
+    if (filter?.horseId) result = result.filter((s) => s.horseId === filter.horseId);
+    if (filter?.planId) result = result.filter((s) => s.planId === filter.planId);
     return structuredClone(result);
   },
 
   async createSession(session: Partial<ExerciseSession>): Promise<ExerciseSession> {
-    const isLocked = session.horseId === "horse-2"; // Mock check
-    const isHeavy = session.intensity === "HEAVY" || session.sessionType === "CANTER" || session.sessionType === "GALLOP";
+    if (session.planId) {
+      try {
+        const res = await api<ExerciseSession>("POST", `/training/plans/${session.planId}/workouts`, session);
+        if (res) return res;
+      } catch (err) {
+        throw err;
+      }
+    }
 
+    const workouts = getStoredWorkouts();
     const newSession: ExerciseSession = {
       id: `ses-${Date.now()}`,
       planId: session.planId,
@@ -450,8 +258,7 @@ export const trainingApi = {
       endTime: session.endTime || "08:00",
       sessionType: session.sessionType || "TROT",
       intensity: session.intensity || "MODERATE",
-      status: isLocked && isHeavy ? "BLOCKED_BY_LOCK" : "SCHEDULED",
-      blockedReason: isLocked && isHeavy ? "Medical Lock Active: Heavy workouts automatically blocked by system!" : undefined,
+      status: session.status || "SCHEDULED",
       groomName: session.groomName,
       jockeyName: session.jockeyName,
       trackType: session.trackType || "TURF",
@@ -459,20 +266,41 @@ export const trainingApi = {
       targetDistanceMeters: session.targetDistanceMeters || 1200,
       notes: session.notes,
     };
-    MOCK_SESSIONS.push(newSession);
+    workouts.push(newSession);
+    saveStoredWorkouts(workouts);
     return structuredClone(newSession);
   },
 
   async restoreBlockedSession(sessionId: string): Promise<ExerciseSession> {
-    const s = MOCK_SESSIONS.find((item) => item.id === sessionId);
+    try {
+      const res = await api<ExerciseSession>("PATCH", `/training/workouts/${sessionId}`, { status: "SCHEDULED" });
+      if (res) return res;
+    } catch {}
+
+    const workouts = getStoredWorkouts();
+    const s = workouts.find((item) => item.id === sessionId);
     if (!s) throw new Error("Workout session not found");
     s.status = "SCHEDULED";
     s.blockedReason = undefined;
+    saveStoredWorkouts(workouts);
     return structuredClone(s);
   },
 
   async saveSessionResult(sessionId: string, resultData: Partial<SessionResult>): Promise<SessionResult> {
-    const s = MOCK_SESSIONS.find((item) => item.id === sessionId);
+    try {
+      const res = await api<ExerciseSession>("PATCH", `/training/workouts/${sessionId}`, {
+        status: "COMPLETED",
+        actualTimeSeconds: resultData.actualDurationSeconds,
+        heartRatePeak: resultData.maxHeartRate,
+        heartRateRecovery: resultData.recoveryHeartRate1Min,
+        performanceScore: resultData.performanceScore,
+        trainerNotes: resultData.headTrainerFeedback,
+      });
+      if (res && res.result) return res.result;
+    } catch {}
+
+    const workouts = getStoredWorkouts();
+    const s = workouts.find((item) => item.id === sessionId);
     if (!s) throw new Error("Workout session not found");
 
     const result: SessionResult = {
@@ -497,10 +325,11 @@ export const trainingApi = {
 
     s.result = result;
     s.status = "COMPLETED";
+    saveStoredWorkouts(workouts);
 
-    // If abnormal signs detected, trigger alert to VET
     if (result.hasAbnormalSigns) {
-      MOCK_ALERTS.unshift({
+      const alerts = getStoredAlerts();
+      alerts.unshift({
         id: `alt-${Date.now()}`,
         horseId: s.horseId,
         horseName: s.horseName,
@@ -513,24 +342,34 @@ export const trainingApi = {
         createdAt: new Date().toISOString().replace("T", " ").substring(0, 16),
         acknowledgedByVet: false,
       });
+      saveStoredAlerts(alerts);
     }
 
     return structuredClone(result);
   },
 
-
   // Trial Runs
   async getTrialRuns(): Promise<TrialRunSchedule[]> {
-    return structuredClone(MOCK_TRIAL_RUNS);
+    try {
+      const res = await api<TrialRunSchedule[]>("GET", "/training/trial-runs");
+      if (Array.isArray(res)) return res;
+    } catch {}
+    return structuredClone(getStoredTrialRuns());
   },
 
   async createTrialRun(data: Partial<TrialRunSchedule>): Promise<TrialRunSchedule> {
+    try {
+      const res = await api<TrialRunSchedule>("POST", "/training/trial-runs", data);
+      if (res) return res;
+    } catch {}
+
+    const trials = getStoredTrialRuns();
     const item: TrialRunSchedule = {
       id: `trial-${Date.now()}`,
-      runCode: `CT-2026-W${Math.floor(35 + Math.random() * 15)}-${Math.floor(1 + Math.random() * 9)}`,
+      runCode: `TR-2026-W${Math.floor(35 + Math.random() * 15)}-${Math.floor(1 + Math.random() * 9)}`,
       runDate: data.runDate || new Date().toISOString().split("T")[0],
       trackType: data.trackType || "TURF",
-      orderNumber: MOCK_TRIAL_RUNS.length + 1,
+      orderNumber: trials.length + 1,
       distanceMeters: data.distanceMeters || 1200,
       startTime: data.startTime || "07:00",
       status: "PENDING",
@@ -538,25 +377,40 @@ export const trainingApi = {
       coordinatorName: "David Nguyen (Head Trainer)",
       notes: data.notes || "",
     };
-    MOCK_TRIAL_RUNS.push(item);
+    trials.push(item);
+    saveStoredTrialRuns(trials);
     return structuredClone(item);
   },
 
   // Fitness Metrics & Alerts
   async getFitnessMetrics(horseId: string): Promise<FitnessMetricPoint[]> {
-    void horseId;
-    return structuredClone(MOCK_FITNESS_METRICS);
+    try {
+      const res = await api<FitnessMetricPoint[]>("GET", `/training/horses/${horseId}/fitness-metrics`);
+      if (Array.isArray(res)) return res;
+    } catch {}
+    return structuredClone(getStoredFitnessMetrics(horseId));
   },
 
   async getAlerts(): Promise<TrainingAlert[]> {
-    return structuredClone(MOCK_ALERTS);
+    try {
+      const res = await api<TrainingAlert[]>("GET", "/training/alerts");
+      if (Array.isArray(res)) return res;
+    } catch {}
+    return structuredClone(getStoredAlerts());
   },
 
   async acknowledgeAlert(alertId: string, vetNotes: string): Promise<TrainingAlert> {
-    const alert = MOCK_ALERTS.find((a) => a.id === alertId);
+    try {
+      const res = await api<TrainingAlert>("PATCH", `/training/alerts/${alertId}`, { vetNotes });
+      if (res) return res;
+    } catch {}
+
+    const alerts = getStoredAlerts();
+    const alert = alerts.find((a) => a.id === alertId);
     if (!alert) throw new Error("Training alert not found");
     alert.acknowledgedByVet = true;
     alert.vetNotes = vetNotes;
+    saveStoredAlerts(alerts);
     return structuredClone(alert);
   },
 };

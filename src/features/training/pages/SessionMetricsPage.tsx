@@ -11,8 +11,9 @@ import { Tabs } from "@/shared/components/ui/Tabs";
 import { Textarea } from "@/shared/components/form/Textarea";
 import { useAuth } from "@/shared/components/layout/AuthProvider";
 import { useToast } from "@/shared/components/ui/Toast";
+import { getHorses } from "@/features/horses/api";
 import { trainingApi } from "../api";
-import type { FitnessMetricPoint } from "../types";
+import type { ExerciseSession, FitnessMetricPoint } from "../types";
 
 export default function SessionMetricsPage() {
   const { user } = useAuth();
@@ -21,6 +22,13 @@ export default function SessionMetricsPage() {
 
   const [activeTab, setActiveTab] = useState<string>("RECORD");
   const [metrics, setMetrics] = useState<FitnessMetricPoint[]>([]);
+  const [sessions, setSessions] = useState<ExerciseSession[]>([]);
+  const [horseOptions, setHorseOptions] = useState<{ value: string; label: string }[]>([
+    { value: "horse-1", label: "Thunderbolt Swift (HR-000001)" },
+    { value: "horse-2", label: "Northern Dancer Legacy (HR-000002)" },
+    { value: "horse-3", label: "Shadowfax Wonder (HR-000003)" },
+  ]);
+  const [selectedHorseId, setSelectedHorseId] = useState<string>("horse-1");
   const [loading, setLoading] = useState<boolean>(true);
 
   // Form Record Session Result (SC-2.06)
@@ -39,17 +47,39 @@ export default function SessionMetricsPage() {
   const [feedback, setFeedback] = useState<string>("");
   const [submitting, setSubmitting] = useState<boolean>(false);
 
+  useEffect(() => {
+    getHorses({ limit: 50 })
+      .then((res) => {
+        if (res.items && res.items.length > 0) {
+          const opts = res.items.map((h) => ({
+            value: h.id,
+            label: `${h.name} (${h.horseCode || h.id.slice(0, 8)})`,
+          }));
+          setHorseOptions(opts);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await trainingApi.getFitnessMetrics("horse-1");
+      const [data, sessionList] = await Promise.all([
+        trainingApi.getFitnessMetrics(selectedHorseId),
+        trainingApi.getSessions({ horseId: selectedHorseId }),
+      ]);
       setMetrics(data);
+      setSessions(sessionList);
+      if (sessionList.length > 0) {
+        setSelectedSessionId(sessionList[0].id);
+        if (sessionList[0].targetDistanceMeters) setActualDistance(sessionList[0].targetDistanceMeters);
+      }
     } catch {
       toast.show("Unable to load fitness metrics data", "danger");
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [selectedHorseId, toast]);
 
   useEffect(() => {
     void loadData();
@@ -112,6 +142,25 @@ export default function SessionMetricsPage() {
         </div>
       </div>
 
+      {/* Athlete Horse Filter */}
+      <Card pad={16}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flex: 1, minWidth: 260 }}>
+            <span style={{ fontWeight: 600, fontSize: "0.9375rem" }}>Athlete Horse Profile:</span>
+            <div style={{ minWidth: 240, flex: 1 }}>
+              <Select
+                value={selectedHorseId}
+                onChange={(e) => setSelectedHorseId(e.target.value)}
+                options={horseOptions}
+              />
+            </div>
+          </div>
+          <div style={{ fontSize: "0.8125rem", color: "var(--ink-muted, #64748b)" }}>
+            Showing telemetry stream & scheduled sessions for selected horse
+          </div>
+        </div>
+      </Card>
+
       {/* Tabs */}
       <Card pad={16}>
         <Tabs
@@ -134,10 +183,17 @@ export default function SessionMetricsPage() {
               <Select
                 value={selectedSessionId}
                 onChange={(e) => setSelectedSessionId(e.target.value)}
-                options={[
-                  { value: "ses-102", label: "06:00 - 07:15: Thunderbolt Swift - Gallop Turf 1800m" },
-                  { value: "ses-104", label: "16:00 - 16:30: Northern Dancer Legacy - Walk 600m" },
-                ]}
+                options={
+                  sessions.length > 0
+                    ? sessions.map((s) => ({
+                        value: s.id,
+                        label: `${s.sessionDate || "Today"} (${s.startTime || "07:00"}) - ${s.sessionType} ${s.targetDistanceMeters || 1200}m [Status: ${s.status}]`,
+                      }))
+                    : [
+                        { value: "ses-102", label: "06:00 - 07:15: Thunderbolt Swift - Gallop Turf 1800m" },
+                        { value: "ses-104", label: "16:00 - 16:30: Northern Dancer Legacy - Walk 600m" },
+                      ]
+                }
               />
             </Field>
 
