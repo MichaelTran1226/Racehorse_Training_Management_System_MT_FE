@@ -13,6 +13,7 @@ import { Textarea } from "@/shared/components/form/Textarea";
 import { useAuth } from "@/shared/components/layout/AuthProvider";
 import { useToast } from "@/shared/components/ui/Toast";
 import { getStoredHorses } from "@/shared/mock/horsesData";
+import { getHorses } from "@/features/horses/api";
 import { trainingApi } from "../api";
 import type { ExerciseIntensity, ExerciseSession, ExerciseType, TrackType } from "../types";
 
@@ -27,8 +28,18 @@ export default function WeeklyCalendarPage() {
   const toast = useToast();
   const isTrainer = user?.role === "HEAD_TRAINER" || user?.role === "CLUB_MANAGER";
 
-  // Available horses
-  const availableHorses = useMemo(() => getStoredHorses(), []);
+  // Available horses with dynamic roster reconciliation
+  const [availableHorses, setAvailableHorses] = useState(() => getStoredHorses());
+
+  useEffect(() => {
+    getHorses({ limit: 100 })
+      .then((res) => {
+        if (res.items && res.items.length > 0) {
+          setAvailableHorses(res.items as any);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const [sessions, setSessions] = useState<ExerciseSession[]>([]);
   const [loading, setLoading] = useState<boolean>(true);

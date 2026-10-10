@@ -5,6 +5,7 @@ import type {
   HorseListResponse,
   CreateHorsePayload,
   UpdateHorsePayload,
+  HorseHistoryResponse,
 } from "./types";
 
 export async function getHorses(filter?: HorseListFilter): Promise<HorseListResponse> {
@@ -62,3 +63,8 @@ export async function transferHorseOwner(
 ): Promise<Horse> {
   return await api<Horse>("PATCH", `/horses/${id}/transfer-owner`, payload);
 }
+
+export async function getHorseHistory(id: string): Promise<HorseHistoryResponse> {
+  return await api<HorseHistoryResponse>("GET", `/horses/${id}/history`);
+}
+

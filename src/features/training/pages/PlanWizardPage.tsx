@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/shared/components/ui/Button";
 import { Card } from "@/shared/components/ui/Card";
@@ -8,6 +8,7 @@ import { Select } from "@/shared/components/form/Select";
 import { Textarea } from "@/shared/components/form/Textarea";
 import { useToast } from "@/shared/components/ui/Toast";
 import { getStoredHorses } from "@/shared/mock/horsesData";
+import { getHorses } from "@/features/horses/api";
 import { trainingApi } from "../api";
 import type { TrainingPhase } from "../types";
 
@@ -18,8 +19,18 @@ export default function PlanWizardPage() {
   const [step, setStep] = useState<number>(1);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  // Available horses from canonical store
-  const horses = useMemo(() => getStoredHorses(), []);
+  // Available horses from store with dynamic fetch reconciliation
+  const [horses, setHorses] = useState(() => getStoredHorses());
+
+  useEffect(() => {
+    getHorses({ limit: 100 })
+      .then((res) => {
+        if (res.items && res.items.length > 0) {
+          setHorses(res.items as any);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Form State
   const [name, setName] = useState<string>("");
