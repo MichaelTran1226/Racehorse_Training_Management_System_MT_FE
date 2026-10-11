@@ -10,7 +10,6 @@ import type { Role } from "./enums";
 export type AccountStatus =
   | "PENDING_EMAIL"
   | "PENDING_APPROVAL"
-  | "PENDING_INTAKE"
   | "INVITED"
   | "ACTIVE"
   | "INACTIVE"

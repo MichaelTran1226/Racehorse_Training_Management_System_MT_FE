@@ -61,7 +61,15 @@ export default function ChangePasswordPage() {
       });
       toast.show("Password saved. Other devices were signed out.", "ok");
     } catch (err) {
-      if (err instanceof ApiError && err.code === "WRONG_PASSWORD") fail({ current: "The current password is not correct." });
+      if (err instanceof ApiError && err.code === "WRONG_PASSWORD") {
+        const left = Number(err.data.attemptsLeft ?? 0);
+        fail({
+          current:
+            left > 0 && left <= 2
+              ? `The current password is not correct. ${left} ${left === 1 ? "attempt" : "attempts"} left before a 15-minute lock.`
+              : "The current password is not correct.",
+        });
+      } else if (err instanceof ApiError && err.code === "ATTEMPTS_EXCEEDED") fail({}, messageFor(err));
       else if (err instanceof ApiError && (err.code === "WEAK_PASSWORD" || err.code === "SAME_PASSWORD")) {
         fail({ next: err.code === "SAME_PASSWORD" ? "The new password must differ from the current one." : messageFor(err) });
       } else fail({}, messageFor(err));
