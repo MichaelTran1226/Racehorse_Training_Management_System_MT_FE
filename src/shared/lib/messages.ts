@@ -28,6 +28,7 @@ const GENERIC: Record<string, string> = {
   RESET_EXPIRED: "This reset session has expired. Request a new code.",
   ATTEMPTS_EXCEEDED: "Too many wrong passwords. Wait 15 minutes, or use Forgot password to unlock it now.",
   FORBIDDEN: "This action is not part of your permissions.",
+  VET_ONLY: "Only a Veterinarian can change medical data. You can still view it.",
 };
 
 export function messageFor(err: unknown): string {

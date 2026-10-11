@@ -6,15 +6,17 @@ import { Select } from "@/shared/components/form/Select";
 import { Textarea } from "@/shared/components/form/Textarea";
 import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
+import { messageFor } from "@/shared/lib/messages";
 
 const APPLIED_STATUS_OPTIONS = [
   { value: "INJURED", label: "Injured" },
   { value: "UNDER_OBSERVATION", label: "Under Observation" },
-  { value: "QUARANTINED", label: "Quarantined" },
+  { value: "ISOLATED", label: "Isolated (quarantine)" },
 ];
 
 const RESTORE_STATUS_OPTIONS = [
-  { value: "FIT", label: "Fit - Allow full training resumption" },
+  { value: "RESTING", label: "Resting - Rest before training resumes" },
+  { value: "IN_TRAINING", label: "In Training - Allow training to resume" },
   { value: "UNDER_OBSERVATION", label: "Under Observation - Light exercise only" },
 ];
 
@@ -54,7 +56,7 @@ export function TrainingLockModal({
       ? new Date(new Date(currentReviewDate).getTime() + 7 * 86400000).toISOString().split("T")[0]
       : new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0],
   );
-  const [restoreStatus, setRestoreStatus] = useState("FIT");
+  const [restoreStatus, setRestoreStatus] = useState("RESTING");
   const [unlockConditions, setUnlockConditions] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -105,7 +107,7 @@ export function TrainingLockModal({
       }
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Operation failed.");
+      setError(messageFor(err));
     } finally {
       setBusy(false);
     }

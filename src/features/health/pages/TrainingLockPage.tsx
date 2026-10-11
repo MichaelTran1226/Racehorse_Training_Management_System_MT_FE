@@ -9,6 +9,7 @@ import { healthApi } from "../api";
 import { TrainingLockModal } from "../components/TrainingLockModal";
 import type { TrainingLockHistoryItem } from "../types";
 import { getHorses } from "@/features/horses/api";
+import { HEALTH_STATUS } from "@/shared/lib/status";
 
 export default function TrainingLockPage() {
   const { user } = useAuth();
@@ -975,7 +976,7 @@ export default function TrainingLockPage() {
               horseId: selectedLock.horseId,
             });
             toast.show(
-              `Training lock lifted successfully. Horse restored to ${dto.restoreStatus === "FIT" ? "Fit for Training" : "Under Observation"}`,
+              `Training lock lifted successfully. Horse status: ${HEALTH_STATUS[dto.restoreStatus as keyof typeof HEALTH_STATUS]?.label ?? dto.restoreStatus}`,
               "ok",
             );
             setModalMode(null);
