@@ -1,4 +1,4 @@
-import { api } from "@/shared/lib/api";
+import { api, USE_MOCK } from "@/shared/lib/api";
 import {
   getStoredHorses,
   getStoredLocks,
@@ -375,17 +375,9 @@ export const applyTrainingLock = async (
 ) => {
   const restDays = Math.max(1, Math.ceil((new Date(input.reviewDate).getTime() - Date.now()) / 86400000));
 
-  try {
-    return await api("POST", "/medical/locks", {
-      horseId,
-      expectedRestDays: restDays,
-      reviewDate: input.reviewDate,
-      lockReason: input.lockReason,
-      unlockConditions: input.unlockConditions || "Full clinical recovery confirmed",
-      medicalStatus: input.appliedMedicalStatus,
-    });
-  } catch {
-    // Fallback: direct localStorage update if network / backend is unavailable
+  // Chế độ mock: ghi khóa vào dữ liệu giả. Chế độ thật: lỗi từ BE phải hiện ra màn hình,
+  // KHÔNG được giả vờ thành công (trước đây mọi lỗi đều bị nuốt và báo thành công).
+  if (USE_MOCK) {
     placeHorseTrainingLock(horseId, {
       appliedStatus: input.appliedMedicalStatus,
       reviewDate: input.reviewDate,
@@ -394,6 +386,14 @@ export const applyTrainingLock = async (
     });
     return { ok: true as const };
   }
+  return await api("POST", "/medical/locks", {
+    horseId,
+    expectedRestDays: restDays,
+    reviewDate: input.reviewDate,
+    lockReason: input.lockReason,
+    unlockConditions: input.unlockConditions || "Full clinical recovery confirmed",
+    medicalStatus: input.appliedMedicalStatus,
+  });
 };
 
 // 3. Release training lock (POST /api/medical/locks/:id/release)
@@ -406,18 +406,17 @@ export const releaseTrainingLock = async (
   const targetHorseId = input.horseId || matchedLock?.horseId || lockId;
   const realLockId = matchedLock?.id || lockId;
 
-  try {
-    return await api("POST", `/medical/locks/${realLockId}/release`, {
-      unlockReason: input.releaseReason,
-      newHorseStatus: input.targetStatus,
-    });
-  } catch {
+  if (USE_MOCK) {
     liftHorseTrainingLock(targetHorseId, {
-      restoreStatus: input.targetStatus || "FIT",
+      restoreStatus: input.targetStatus || "RESTING",
       reason: input.releaseReason,
     });
     return { ok: true as const };
   }
+  return await api("POST", `/medical/locks/${realLockId}/release`, {
+    unlockReason: input.releaseReason,
+    newHorseStatus: input.targetStatus,
+  });
 };
 
 // 4. Extend training lock (POST /api/medical/locks/:id/extend)
@@ -437,12 +436,7 @@ export const extendTrainingLock = async (
   additionalDays = additionalDays || 7;
 
   const realLockId = matchedLock?.id || lockId;
-  try {
-    return await api("POST", `/medical/locks/${realLockId}/extend`, {
-      additionalDays,
-      recheckNotes: input.reason,
-    });
-  } catch {
+  if (USE_MOCK) {
     if (input.newReviewDate) {
       extendHorseTrainingLock(targetHorseId, {
         newReviewDate: input.newReviewDate,
@@ -451,6 +445,10 @@ export const extendTrainingLock = async (
     }
     return { ok: true as const };
   }
+  return await api("POST", `/medical/locks/${realLockId}/extend`, {
+    additionalDays,
+    recheckNotes: input.reason,
+  });
 };
 
 // P2-05: Preventive care & catalogue (SC-3.07, SC-3.08, FR-3.13 -> FR-3.16)
