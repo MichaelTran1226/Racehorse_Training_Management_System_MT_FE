@@ -18,6 +18,9 @@ import {
   addStoredHorse,
   deleteStoredHorse,
   saveStoredHorses,
+  horseStatusOf,
+  getDeletedHorses,
+  saveDeletedHorses,
   getStoredLocks,
   placeHorseTrainingLock,
   liftHorseTrainingLock,
@@ -1587,12 +1590,7 @@ const routes: Route[] = [
       const limit = parseInt(url.searchParams.get("limit") || "20", 10);
 
       let list = stored.map((h: any) => {
-        let st = h.statusText || h.status;
-        if (h.healthGroup === "FIT") st = "ACTIVE";
-        else if (h.healthGroup === "WATCH") st = "UNDER_OBSERVATION";
-        else if (h.healthGroup === "QUARANTINED") st = "ISOLATED";
-        else if (h.healthGroup === "INJURED") st = "INJURED";
-        else if (!st) st = "RESTING";
+        const st = horseStatusOf(h);
 
         let microchip = h.microchip || h.code;
         let microchipRfid = h.code || h.microchip || "985141002341001";
@@ -1673,6 +1671,47 @@ const routes: Route[] = [
   },
   {
     method: "GET",
+    pattern: /^\/horses\/deleted$/,
+    handler({ db, url }) {
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Only Club Manager can view deleted horses.");
+      const search = url.searchParams.get("search")?.toLowerCase().trim() || "";
+      const from = url.searchParams.get("from");
+      const to = url.searchParams.get("to");
+      const page = parseInt(url.searchParams.get("page") || "1", 10);
+      const limit = parseInt(url.searchParams.get("limit") || "20", 10);
+      let list = getDeletedHorses().sort((a, b) => b.deletedAt.localeCompare(a.deletedAt));
+      if (search) {
+        list = list.filter(
+          (h) =>
+            h.name.toLowerCase().includes(search) ||
+            (h.horseCode || "").toLowerCase().includes(search) ||
+            (h.microchip || h.code || "").includes(search),
+        );
+      }
+      if (from) list = list.filter((h) => h.deletedAt.slice(0, 10) >= from);
+      if (to) list = list.filter((h) => h.deletedAt.slice(0, 10) <= to);
+      const total = list.length;
+      return {
+        items: list.slice((page - 1) * limit, page * limit).map((h) => ({
+          id: h.id,
+          horseCode: h.horseCode || null,
+          name: h.name,
+          microchip: h.microchip || h.code,
+          status: horseStatusOf(h),
+          deletedAt: h.deletedAt,
+          deletedBy: h.deletedBy,
+          deleteReason: h.deleteReason,
+        })),
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    },
+  },
+  {
+    method: "GET",
     pattern: /^\/horses\/([^/]+)$/,
     handler({ db, params }) {
       const user = currentUser(db);
@@ -1684,12 +1723,7 @@ const routes: Route[] = [
         throw new ApiError(404, "HORSE_NOT_FOUND", "Horse profile not found or permission denied.");
       }
 
-      let st = h.statusText || h.status;
-      if (h.healthGroup === "FIT") st = "ACTIVE";
-      else if (h.healthGroup === "WATCH") st = "UNDER_OBSERVATION";
-      else if (h.healthGroup === "QUARANTINED") st = "ISOLATED";
-      else if (h.healthGroup === "INJURED") st = "INJURED";
-      else if (!st) st = "RESTING";
+      const st = horseStatusOf(h);
 
       let microchip = h.microchip || h.code;
       let microchipRfid = h.code || h.microchip || "985141002341001";
@@ -1714,6 +1748,7 @@ const routes: Route[] = [
         gender: h.gender || "Colt",
         color: h.color || "Bay Dark",
         status: st,
+        retireReason: h.retireReason ?? null,
         isMedicalLocked: Boolean(h.isLocked),
         ownerId: h.ownerId || "owner-1",
         ownerName: h.ownerName || "Robert Sterling (Horse Owner)",
@@ -1739,12 +1774,7 @@ const routes: Route[] = [
         throw new ApiError(404, "HORSE_NOT_FOUND", "Horse profile not found or permission denied.");
       }
 
-      let st = h.statusText || h.status;
-      if (h.healthGroup === "FIT") st = "ACTIVE";
-      else if (h.healthGroup === "WATCH") st = "UNDER_OBSERVATION";
-      else if (h.healthGroup === "QUARANTINED") st = "ISOLATED";
-      else if (h.healthGroup === "INJURED") st = "INJURED";
-      else if (!st) st = "RESTING";
+      const st = horseStatusOf(h);
 
       const horse = {
         id: h.id,
@@ -1935,8 +1965,8 @@ const routes: Route[] = [
         rfid: rfid || null,
         stall: body.stallCode || "STALL-A01",
         healthGroup: "FIT",
-        status: body.status || "RESTING",
-        statusText: body.status || "RESTING",
+        status: "RESTING",
+        statusText: "RESTING",
         isLocked: false,
         restingHeartRate: 38,
         temp: 38.0,
@@ -1995,7 +2025,6 @@ const routes: Route[] = [
       if (body.dob) existing.dob = String(body.dob);
       if (body.gender) existing.gender = String(body.gender);
       if (body.color) existing.color = String(body.color);
-      if (body.status) (existing as any).status = body.status;
 
       saveStoredHorses(stored);
       audit(db, user.fullName, "HORSE_UPDATED", `Updated horse profile ${existing.name}`);
@@ -2003,23 +2032,83 @@ const routes: Route[] = [
     },
   },
   {
+    // DL-1.10 Xóa mềm: chuyển hồ sơ sang kho "đã xóa" (giống BE: deletedAt + lý do), khôi phục được.
     method: "DELETE",
     pattern: /^\/horses\/([^/]+)$/,
-    handler({ db, params }) {
+    handler({ db, params, body }) {
       const user = currentUser(db);
       if (user.role !== "CLUB_MANAGER") {
         throw new ApiError(403, "FORBIDDEN", "Only Club Manager can delete horse profiles.");
       }
+      const reason = String(body.reason || "").trim();
+      if (reason.length < 10 || reason.length > 500) {
+        throw new ApiError(400, "VALIDATION", "Reason must be 10 to 500 characters.");
+      }
       const stored = getStoredHorses();
       const existing = stored.find((h) => h.id === params[0]);
       if (!existing) throw new ApiError(404, "HORSE_NOT_FOUND", "Horse profile not found.");
+      const typed = String(body.confirmName || "").trim().replace(/\s+/g, " ").toLowerCase();
+      if (typed !== existing.name.toLowerCase()) {
+        throw new ApiError(400, "CONFIRM_NAME_MISMATCH", "The name does not match.");
+      }
       if (existing.isLocked) {
         throw new ApiError(400, "HORSE_LOCKED", "Cannot delete horse profile while an active Medical Lock is in effect.");
       }
 
-      deleteStoredHorse(params[0]);
-      audit(db, user.fullName, "HORSE_DELETED", `Deleted horse profile ${existing.name}`);
-      return { success: true, message: `Successfully deleted horse ${existing.name}.` };
+      saveStoredHorses(stored.filter((h) => h.id !== existing.id));
+      saveDeletedHorses([
+        {
+          ...existing,
+          status: horseStatusOf(existing),
+          deletedAt: new Date().toISOString(),
+          deletedBy: { id: user.id, fullName: user.fullName },
+          deletedById: user.id,
+          deleteReason: reason,
+        },
+        ...getDeletedHorses().filter((h) => h.id !== existing.id),
+      ]);
+      audit(db, user.fullName, "HORSE_DELETED", `Soft-deleted horse profile ${existing.name}. Reason: ${reason}`);
+      return { success: true, id: existing.id, name: existing.name, message: `Đã xóa hồ sơ ngựa ${existing.name}.` };
+    },
+  },
+  {
+    // DL-1.11 Khôi phục (lý do 10-500) hoặc Hoàn tác trong 60 giây (undo = true).
+    method: "POST",
+    pattern: /^\/horses\/([^/]+)\/restore$/,
+    handler({ db, params, body }) {
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") {
+        throw new ApiError(403, "FORBIDDEN", "Only Club Manager can restore horse profiles.");
+      }
+      const deleted = getDeletedHorses();
+      const target = deleted.find((h) => h.id === params[0]);
+      if (!target) throw new ApiError(404, "HORSE_NOT_FOUND", "Không tìm thấy hồ sơ đã xóa.");
+
+      let reason: string;
+      if (body.undo) {
+        const expired = Date.now() - new Date(target.deletedAt).getTime() > 60_000;
+        if (expired || target.deletedById !== user.id) {
+          throw new ApiError(400, "UNDO_EXPIRED", "Đã hết thời gian hoàn tác.");
+        }
+        reason = "Hoàn tác thao tác xóa";
+      } else {
+        reason = String(body.reason || "").trim();
+        if (reason.length < 10 || reason.length > 500) {
+          throw new ApiError(400, "REASON_REQUIRED", "Lý do phải từ 10 đến 500 ký tự.");
+        }
+      }
+
+      const stored = getStoredHorses();
+      if (stored.some((h) => h.name.toLowerCase() === target.name.toLowerCase())) {
+        throw new ApiError(409, "RESTORE_CONFLICT", `Tên ngựa ${target.name} đã được dùng cho ngựa khác.`, { field: "name" });
+      }
+
+      // Bỏ các trường xóa; ngựa về trạng thái lúc bị xóa, chưa có ô chuồng.
+      const { deletedAt: _a, deletedBy: _b, deletedById: _c, deleteReason: _d, ...horse } = target;
+      saveStoredHorses([{ ...horse, stall: "" }, ...stored]);
+      saveDeletedHorses(deleted.filter((h) => h.id !== target.id));
+      audit(db, user.fullName, "HORSE_RESTORED", `Restored horse profile ${target.name}. Reason: ${reason}`);
+      return { success: true, message: `Đã khôi phục hồ sơ ngựa ${target.name}.` };
     },
   },
   {
@@ -2061,6 +2150,7 @@ const routes: Route[] = [
     },
   },
   {
+    // Bảng chuyển trạng thái Flow 1 §4.2 (bản giả của src/horses/horse-rules.ts ở BE).
     method: "PATCH",
     pattern: /^\/horses\/([^/]+)\/status$/,
     handler({ db, params, body }) {
@@ -2068,13 +2158,69 @@ const routes: Route[] = [
       const stored = getStoredHorses();
       const existing = stored.find((h) => h.id === params[0]);
       if (!existing) throw new ApiError(404, "HORSE_NOT_FOUND", "Horse profile not found.");
-      
-      const newStatus = String(body.status);
-      (existing as any).status = newStatus;
-      
+
+      const OPERATIONAL = ["RESTING", "IN_TRAINING", "ACTIVE"];
+      const MEDICAL = ["UNDER_OBSERVATION", "INJURED", "ISOLATED"];
+      const from = horseStatusOf(existing);
+      const to = String(body.status);
+      const reason = String(body.reason || "").trim();
+      const locked = Boolean(existing.isLocked);
+      const retireReason = body.retireReason ? String(body.retireReason) : "";
+      const deny = (code: string, msg: string): never => {
+        throw new ApiError(403, code, msg);
+      };
+      const needReason = () => {
+        if (reason.length < 10) throw new ApiError(400, "REASON_REQUIRED", "Lý do phải từ 10 đến 500 ký tự.");
+      };
+
+      if (from === to) throw new ApiError(400, "SAME_STATUS", `Horse is already in status ${to}.`);
+      if (from === "RETIRED") {
+        if (user.role !== "CLUB_MANAGER" || to !== "RESTING") deny("HORSE_RETIRED", "Horse is no longer managed.");
+        if (existing.retireReason === "DECEASED") {
+          throw new ApiError(400, "HORSE_DECEASED", "Không thể kích hoạt lại hồ sơ ngựa đã chết.");
+        }
+        needReason();
+      } else if (user.role === "CLUB_MANAGER") {
+        if (to !== "RETIRED") deny("ROLE_RESTRICTION", "Club Manager can only stop managing or reactivate.");
+        if (!retireReason) throw new ApiError(400, "RETIRE_REASON_REQUIRED", "Vui lòng chọn lý do ngừng quản lý.");
+        if (locked && retireReason !== "DECEASED") deny("MEDICAL_LOCK_ACTIVE", "Locked: only Deceased is allowed.");
+        needReason();
+      } else if (user.role === "HEAD_TRAINER") {
+        if (!OPERATIONAL.includes(from) || !OPERATIONAL.includes(to)) deny("ROLE_RESTRICTION", "Head Trainer: operational statuses only.");
+        if (locked) deny("MEDICAL_LOCK_ACTIVE", "Horse is under a Training Lock.");
+      } else if (user.role === "VETERINARIAN") {
+        const toMedical = MEDICAL.includes(to);
+        const backToWork = MEDICAL.includes(from) && (to === "RESTING" || to === "IN_TRAINING");
+        if (!toMedical && !backToWork) deny("ROLE_RESTRICTION", "Veterinarian: medical statuses only.");
+        if (backToWork && locked) deny("MEDICAL_LOCK_ACTIVE", "Horse is under a Training Lock.");
+        needReason();
+      } else {
+        deny("ROLE_RESTRICTION", "Your role cannot change horse status.");
+      }
+
+      const effects: string[] = [];
+      existing.status = to;
+      if (to === "RETIRED") {
+        existing.retireReason = retireReason;
+        if (existing.stall) effects.push(`Trả ô chuồng ${existing.stall}`);
+        existing.stall = "";
+        if (locked) {
+          existing.isLocked = false;
+          existing.lockReason = undefined;
+          effects.push("Kết thúc Khóa huấn luyện");
+        }
+        if ((retireReason === "SOLD" || retireReason === "TRANSFERRED") && existing.ownerId) {
+          existing.ownerId = undefined;
+          existing.ownerName = undefined;
+          effects.push("Kết thúc sở hữu của 1 chủ sở hữu");
+        }
+      } else if (from === "RETIRED") {
+        existing.retireReason = null;
+      }
+
       saveStoredHorses(stored);
-      audit(db, user.fullName, "HORSE_STATUS_CHANGED", `Changed status of ${existing.name} to ${newStatus}`);
-      return { success: true, message: `Status updated to ${newStatus}`, data: existing };
+      audit(db, user.fullName, "HORSE_STATUS_CHANGED", `Changed status of ${existing.name} from ${from} to ${to}. Reason: ${reason || "None"}`);
+      return { success: true, message: `Status updated to ${to}`, data: { ...existing, status: to }, effects };
     },
   },
   // ===== FLOW 2: TRAINING PLANS & TELEMETRY =====

@@ -1,5 +1,15 @@
 import type { HorseStatus } from "@/shared/types/enums";
 
+/** Lý do Ngừng quản lý (DL-1.08). DECEASED không được kích hoạt lại. */
+export type RetireReason = "RETIRED" | "SOLD" | "DECEASED" | "TRANSFERRED";
+
+export const RETIRE_REASON_LABEL: Record<RetireReason, string> = {
+  RETIRED: "Retired from racing",
+  SOLD: "Sold",
+  DECEASED: "Deceased",
+  TRANSFERRED: "Transferred to another club",
+};
+
 export interface Horse {
   id: string;
   horseCode?: string;
@@ -14,6 +24,7 @@ export interface Horse {
   avatarUrl?: string;
   status: HorseStatus;
   isMedicalLocked: boolean;
+  retireReason?: RetireReason | null;
   ownerId?: string;
   owner?: { id: string; fullName: string; email: string };
   ownerName?: string;
@@ -61,7 +72,6 @@ export interface CreateHorsePayload {
   color: string;
   microchip: string;
   rfid?: string;
-  status?: HorseStatus;
   ownerId?: string;
   avatarUrl?: string;
   stallId?: string;
@@ -75,7 +85,6 @@ export interface UpdateHorsePayload {
   color?: string;
   microchip?: string;
   rfid?: string;
-  status?: HorseStatus;
   ownerId?: string;
   avatarUrl?: string;
 }
@@ -162,3 +171,36 @@ export interface HorseHistoryResponse {
   }>;
 }
 
+/** Một dòng ở SC-1.05 Hồ sơ đã xóa. */
+export interface DeletedHorse {
+  id: string;
+  horseCode?: string | null;
+  name: string;
+  microchip?: string | null;
+  status: HorseStatus;
+  deletedAt: string;
+  deletedBy?: { id: string; fullName: string } | null;
+  deleteReason?: string | null;
+}
+
+export interface DeletedHorseFilter {
+  search?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface DeletedHorseListResponse {
+  items: DeletedHorse[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface ChangeHorseStatusPayload {
+  status: HorseStatus;
+  reason?: string;
+  retireReason?: RetireReason;
+}

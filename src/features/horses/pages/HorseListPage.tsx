@@ -152,6 +152,13 @@ export default function HorseListPage() {
                 Herd Health Map
               </Button>
             </Link>
+            {currentUser.role === "CLUB_MANAGER" && (
+              <Link to="/horses/deleted">
+                <Button tone="secondary" size="md">
+                  Deleted horses
+                </Button>
+              </Link>
+            )}
             {canEdit && (
               <Link to="/horses/new">
                 <Button tone="primary" size="md">

@@ -30,6 +30,8 @@
 .info .icon { color: var(--toast-icon-info); }
 .icon { display: flex; }
 .text { flex: 1; }
+.action { background: none; border: 1px solid currentColor; border-radius: var(--r); color: inherit; font: inherit; font-weight: 700; padding: 2px 9px; cursor: pointer; }
+.action:hover { opacity: 0.8; }
 .close { background: none; border: 0; color: inherit; opacity: 0.6; cursor: pointer; padding: 0; display: flex; }
 .close:hover { opacity: 1; }
 @media (max-width: 720px) {

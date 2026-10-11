@@ -321,6 +321,11 @@ export function screenAccess(role: Role, permissions: PermissionMap, pathname: s
     };
   }
 
+  // SC-1.05 Hồ sơ ngựa đã xóa: chỉ CM (BE cũng chặn bằng @Roles).
+  if (pathname === "/horses/deleted") {
+    return { allowed: role === "CLUB_MANAGER", group: "WORKSPACE", label: "Deleted horses", ownerRoles: ["CLUB_MANAGER"], inOwnRole: role === "CLUB_MANAGER" };
+  }
+
   let href = "/" + (pathname.split("/")[1] ?? "");
   
   if (href === "/medical") {

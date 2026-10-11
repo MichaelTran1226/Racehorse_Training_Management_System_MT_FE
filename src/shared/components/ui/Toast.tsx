@@ -9,14 +9,21 @@ export type ToastTone = "ok" | "warn" | "danger" | "info";
 const ICONS: Record<ToastTone, string> = { ok: "checkCircle", warn: "alert", danger: "xCircle", info: "info" };
 const DURATION_MS = 4200;
 
+// Nút hành động trong toast, ví dụ "Undo" sau khi xóa hồ sơ ngựa.
+export interface ToastOptions {
+  action?: { label: string; onClick: () => void };
+  durationMs?: number;
+}
+
 interface ToastItem {
   id: number;
   message: string;
   tone: ToastTone;
+  action?: ToastOptions["action"];
 }
 
 interface ToastApi {
-  show: (message: string, tone?: ToastTone) => void;
+  show: (message: string, tone?: ToastTone, options?: ToastOptions) => void;
 }
 
 const ToastContext = createContext<ToastApi | null>(null);
@@ -35,10 +42,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const show = useCallback(
-    (message: string, tone: ToastTone = "ok") => {
+    (message: string, tone: ToastTone = "ok", options?: ToastOptions) => {
       const id = nextId.current++;
-      setItems((list) => [...list.slice(-2), { id, message, tone }]);
-      timers.current.set(id, window.setTimeout(() => dismiss(id), DURATION_MS));
+      setItems((list) => [...list.slice(-2), { id, message, tone, action: options?.action }]);
+      timers.current.set(id, window.setTimeout(() => dismiss(id), options?.durationMs ?? DURATION_MS));
     },
     [dismiss],
   );
@@ -60,6 +67,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               <Icon name={ICONS[t.tone]} size={16} />
             </span>
             <span className={styles.text}>{t.message}</span>
+            {t.action && (
+              <button
+                type="button"
+                className={styles.action}
+                onClick={() => {
+                  dismiss(t.id);
+                  t.action?.onClick();
+                }}
+              >
+                {t.action.label}
+              </button>
+            )}
             <button type="button" className={styles.close} onClick={() => dismiss(t.id)} aria-label="Dismiss">
               <Icon name="x" size={14} />
             </button>

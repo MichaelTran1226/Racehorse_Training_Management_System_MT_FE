@@ -12,6 +12,9 @@ export interface HerdHorse {
   zone?: string;
   healthGroup: "FIT" | "WATCH" | "INJURED" | "QUARANTINED";
   statusText: string;
+  // Trạng thái Flow 1 (HorseStatus) do PATCH /horses/:id/status hoặc khóa y tế đặt. Không có thì suy từ healthGroup.
+  status?: string;
+  retireReason?: string | null;
   isLocked: boolean;
   lockReason?: string;
   primaryDiagnosis?: string;
@@ -33,6 +36,45 @@ export interface HerdHorse {
 }
 
 const HORSES_STORAGE_KEY = "equiflow.herd.horses.v5";
+const DELETED_HORSES_STORAGE_KEY = "equiflow.herd.deleted.v1";
+
+const HORSE_STATUS_VALUES = ["ACTIVE", "IN_TRAINING", "UNDER_OBSERVATION", "INJURED", "ISOLATED", "RESTING", "RETIRED"];
+
+/** Trạng thái Flow 1 của một ngựa giả: ưu tiên trường status, nếu không có thì suy từ healthGroup như trước. */
+export function horseStatusOf(h: HerdHorse): string {
+  if (h.status && HORSE_STATUS_VALUES.includes(h.status)) return h.status;
+  if (h.healthGroup === "FIT") return "ACTIVE";
+  if (h.healthGroup === "WATCH") return "UNDER_OBSERVATION";
+  if (h.healthGroup === "QUARANTINED") return "ISOLATED";
+  if (h.healthGroup === "INJURED") return "INJURED";
+  return HORSE_STATUS_VALUES.includes(h.statusText) ? h.statusText : "RESTING";
+}
+
+/** Một hồ sơ ngựa đã xóa mềm trong chế độ mock (SC-1.05). */
+export type DeletedHerdHorse = HerdHorse & {
+  deletedAt: string;
+  deletedBy: { id: string; fullName: string };
+  deletedById: string;
+  deleteReason: string;
+};
+
+export function getDeletedHorses(): DeletedHerdHorse[] {
+  try {
+    const raw = localStorage.getItem(DELETED_HORSES_STORAGE_KEY);
+    const parsed = raw ? (JSON.parse(raw) as DeletedHerdHorse[]) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveDeletedHorses(horses: DeletedHerdHorse[]): void {
+  try {
+    localStorage.setItem(DELETED_HORSES_STORAGE_KEY, JSON.stringify(horses));
+  } catch {
+    // localStorage unavailable
+  }
+}
 const INJURIES_STORAGE_PREFIX = "equiflow.injuries.v5.";
 const LOCKS_STORAGE_KEY = "equiflow.locks.v5";
 
@@ -402,6 +444,12 @@ export function placeHorseTrainingLock(
         : input.appliedStatus === "UNDER_OBSERVATION"
         ? "WATCH"
         : "INJURED";
+    horse.status =
+      input.appliedStatus === "QUARANTINED" || input.appliedStatus === "ISOLATED"
+        ? "ISOLATED"
+        : input.appliedStatus === "UNDER_OBSERVATION"
+        ? "UNDER_OBSERVATION"
+        : "INJURED";
     horse.lockReason = input.reason;
     horse.statusText = input.reason;
     horse.lockDate = nowStr;
@@ -521,6 +569,7 @@ export function liftHorseTrainingLock(
   if (horse) {
     horse.isLocked = false;
     horse.healthGroup = input.restoreStatus === "FIT" ? "FIT" : "WATCH";
+    horse.status = input.restoreStatus === "FIT" ? "ACTIVE" : input.restoreStatus;
     horse.statusText =
       input.restoreStatus === "FIT"
         ? "Fit for full training (Lock lifted)"
