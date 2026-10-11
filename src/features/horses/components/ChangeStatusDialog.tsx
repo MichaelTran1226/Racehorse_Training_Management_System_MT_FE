@@ -4,9 +4,10 @@ import { Modal } from "@/shared/components/ui/Modal";
 import { useToast } from "@/shared/components/ui/Toast";
 import { changeHorseStatus } from "../api";
 import { HEALTH_STATUS } from "@/shared/lib/status";
+import { messageFor } from "@/shared/lib/messages";
 import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
 import { Badge } from "@/shared/components/ui/Badge";
-import type { HealthStatus } from "@/shared/types/enums";
+import type { HealthStatus, HorseStatus } from "@/shared/types/enums";
 import type { Horse } from "../types";
 
 interface ChangeStatusDialogProps {
@@ -14,9 +15,29 @@ interface ChangeStatusDialogProps {
   onSuccess: (updatedHorse: Horse) => void;
 }
 
+// Bảng chuyển trạng thái Flow 1 §4.2 (BE kiểm lại ở horse-rules.ts).
+const OPERATIONAL: HorseStatus[] = ["RESTING", "IN_TRAINING", "ACTIVE"];
+const MEDICAL: HorseStatus[] = ["UNDER_OBSERVATION", "INJURED", "ISOLATED"];
+
+/** Các trạng thái vai trò này được chọn từ trạng thái hiện tại. CM không dùng hộp thoại này. */
+function allowedTargets(role: string, horse: Horse): HorseStatus[] {
+  const from = horse.status;
+  if (from === "RETIRED") return [];
+  if (role === "HEAD_TRAINER") {
+    if (horse.isMedicalLocked || !OPERATIONAL.includes(from)) return [];
+    return OPERATIONAL.filter((s) => s !== from);
+  }
+  if (role === "VETERINARIAN") {
+    const targets = MEDICAL.filter((s) => s !== from);
+    if (MEDICAL.includes(from) && !horse.isMedicalLocked) targets.push("RESTING", "IN_TRAINING");
+    return targets;
+  }
+  return [];
+}
+
 export function ChangeStatusDialog({ horse, onSuccess }: ChangeStatusDialogProps) {
   const [open, setOpen] = useState(false);
-  const [status, setStatus] = useState<HealthStatus | "RETIRED">(horse.status as HealthStatus);
+  const [status, setStatus] = useState<HorseStatus | "">("");
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const currentUser = useCurrentUser();
@@ -24,55 +45,47 @@ export function ChangeStatusDialog({ horse, onSuccess }: ChangeStatusDialogProps
 
   const isHeadTrainer = currentUser.role === "HEAD_TRAINER";
   const isVeterinarian = currentUser.role === "VETERINARIAN";
-  const isManager = currentUser.role === "CLUB_MANAGER";
+  if (!isHeadTrainer && !isVeterinarian) return null;
 
-  let allowedStatuses: string[] = [];
-  if (isHeadTrainer) {
-    allowedStatuses = ["RESTING", "IN_TRAINING", "ACTIVE"];
-  } else if (isVeterinarian) {
-    allowedStatuses = ["INJURED", "ISOLATED", "UNDER_OBSERVATION", "RESTING", "IN_TRAINING"];
-  } else if (isManager) {
-    allowedStatuses = ["ACTIVE", "IN_TRAINING", "UNDER_OBSERVATION", "INJURED", "ISOLATED", "RESTING", "RETIRED"];
-  }
+  const allowedStatuses = allowedTargets(currentUser.role, horse);
+  // VET bắt buộc lý do 10-500 ký tự; HT tùy chọn.
+  const reasonRequired = isVeterinarian;
+  const reasonError =
+    reason.trim().length > 0 && reason.trim().length < 10
+      ? "Reason must be 10 to 500 characters."
+      : reasonRequired && reason.trim().length === 0
+        ? "Please enter a reason."
+        : "";
 
-  if (horse.isMedicalLocked) {
-    if (isVeterinarian) {
-      allowedStatuses = allowedStatuses.filter((s) => ["INJURED", "ISOLATED", "UNDER_OBSERVATION"].includes(s));
-    } else if (isManager) {
-      allowedStatuses = ["ACTIVE", "IN_TRAINING", "UNDER_OBSERVATION", "INJURED", "ISOLATED", "RESTING", "RETIRED"];
-    } else {
-      allowedStatuses = [];
-    }
+  let disabledHint = "";
+  if (allowedStatuses.length === 0) {
+    if (horse.status === "RETIRED") disabledHint = "Horse is no longer managed";
+    else if (horse.isMedicalLocked) disabledHint = "Blocked by Training Lock";
+    else if (isHeadTrainer) disabledHint = "Horse is in a medical status; only a Veterinarian can change it";
   }
 
   const handleOpen = () => {
-    if (allowedStatuses.length === 0) {
-      if (horse.isMedicalLocked && isHeadTrainer) {
-        toast.show("Horse is currently under Medical Lock. Cannot transition to operational status.", "danger");
-      }
-      return;
-    }
-    setStatus(horse.status as HealthStatus);
+    if (allowedStatuses.length === 0) return;
+    setStatus("");
     setReason("");
     setOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!status) return;
-    if (status === horse.status) {
-      toast.show("Status unchanged", "info");
-      return;
-    }
+    if (!status || reasonError) return;
 
     setLoading(true);
     try {
-      const res = await changeHorseStatus(horse.id, { status, reason });
+      const res = await changeHorseStatus(horse.id, {
+        status,
+        reason: reason.trim() || undefined,
+      });
       toast.show(res.message || "Horse status updated successfully", "ok");
       setOpen(false);
-      onSuccess({ ...horse, status: status as any });
-    } catch (err: any) {
-      toast.show(err.message || "Failed to update horse status", "danger");
+      onSuccess({ ...horse, status });
+    } catch (err: unknown) {
+      toast.show(messageFor(err), "danger");
     } finally {
       setLoading(false);
     }
@@ -82,11 +95,11 @@ export function ChangeStatusDialog({ horse, onSuccess }: ChangeStatusDialogProps
 
   return (
     <>
-      <Button 
-        tone="secondary" 
+      <Button
+        tone="secondary"
         onClick={handleOpen}
         disabled={allowedStatuses.length === 0}
-        title={horse.isMedicalLocked && isHeadTrainer ? "Blocked by Medical Lock" : ""}
+        title={disabledHint}
       >
         Change Status
       </Button>
@@ -100,7 +113,7 @@ export function ChangeStatusDialog({ horse, onSuccess }: ChangeStatusDialogProps
               <Button tone="secondary" onClick={() => setOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={(e: any) => handleSubmit(e)} disabled={status === horse.status || loading}>
+              <Button onClick={(e: any) => handleSubmit(e)} disabled={!status || Boolean(reasonError) || loading}>
                 Confirm
               </Button>
             </div>
@@ -128,7 +141,7 @@ export function ChangeStatusDialog({ horse, onSuccess }: ChangeStatusDialogProps
                         name="status"
                         value={s}
                         checked={status === s}
-                        onChange={(e) => setStatus(e.target.value as HealthStatus)}
+                        onChange={(e) => setStatus(e.target.value as HorseStatus)}
                       />
                       <span>{cfg.label}</span>
                     </label>
@@ -139,12 +152,13 @@ export function ChangeStatusDialog({ horse, onSuccess }: ChangeStatusDialogProps
 
             <div>
               <label style={{ display: "block", marginBottom: "0.25rem", fontWeight: 500 }}>
-                Status Change Rationale (Optional)
+                Reason {reasonRequired ? <span style={{ color: "red" }}>*</span> : "(Optional)"}
               </label>
               <textarea
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 rows={3}
+                maxLength={500}
                 style={{
                   width: "100%",
                   padding: "0.5rem",
@@ -153,8 +167,11 @@ export function ChangeStatusDialog({ horse, onSuccess }: ChangeStatusDialogProps
                   background: "var(--bg-card)",
                   color: "var(--ink)",
                 }}
-                placeholder="Enter clinical or operational rationale..."
+                placeholder={reasonRequired ? "Clinical rationale (10-500 characters)..." : "Operational note..."}
               />
+              {reasonError && reason.length > 0 && (
+                <div style={{ color: "var(--danger, #dc2626)", fontSize: "0.8rem", marginTop: "0.25rem" }}>{reasonError}</div>
+              )}
             </div>
           </form>
         </Modal>

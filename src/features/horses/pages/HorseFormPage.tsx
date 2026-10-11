@@ -106,8 +106,8 @@ export default function HorseFormPage() {
       errs.name = "Horse name is required.";
     } else if (name.trim().length < 2 || name.trim().length > 100) {
       errs.name = "Horse name must be between 2 and 100 characters.";
-    } else if (!/^[a-zA-Z0-9\s'.-]+$/.test(name.trim())) {
-      errs.name = "Horse name can only contain letters, numbers, spaces, and ' - .";
+    } else if (!/^[\p{L}\p{N}\s'.-]+$/u.test(name.trim())) {
+      errs.name = "Horse name can only contain letters (accents allowed), numbers, spaces, and ' - .";
     }
 
     if (!breed) {
@@ -143,8 +143,8 @@ export default function HorseFormPage() {
       errs.microchip = "Microchip number must consist of exactly 15 digits.";
     }
 
-    if (rfid.trim() && !/^RFID-[A-Z0-9-]{4,28}$/.test(rfid.trim().toUpperCase())) {
-      errs.rfid = "RFID tag must start with 'RFID-' prefix followed by 4-28 uppercase letters, digits, or hyphens.";
+    if (rfid.trim() && !/^[A-Z0-9-]{4,32}$/.test(rfid.trim().toUpperCase())) {
+      errs.rfid = "RFID tag must be 4-32 characters: letters, digits, or hyphens.";
     }
 
     setErrors(errs);
@@ -180,7 +180,6 @@ export default function HorseFormPage() {
           color,
           microchip: microchip.trim(),
           rfid: rfid.trim() ? rfid.trim().toUpperCase() : undefined,
-          status: "RESTING",
         };
         const saved = await createHorse(payload);
         toast.show(`Horse profile ${saved.name} created successfully.`, "ok");
@@ -343,7 +342,7 @@ export default function HorseFormPage() {
               />
             </Field>
 
-            <Field label="RFID Tag Code (Optional)" error={errors.rfid} hint="Prefix RFID- followed by 4-28 uppercase letters/digits, e.g. RFID-985141002341">
+            <Field label="RFID Tag Code (Optional)" error={errors.rfid} hint="4-32 letters, digits or hyphens, e.g. RFID-985141002341">
               <Input
                 placeholder="e.g. RFID-985141002341..."
                 value={rfid}

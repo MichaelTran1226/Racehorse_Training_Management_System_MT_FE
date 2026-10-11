@@ -29,6 +29,22 @@ const GENERIC: Record<string, string> = {
   ATTEMPTS_EXCEEDED: "Too many wrong passwords. Wait 15 minutes, or use Forgot password to unlock it now.",
   FORBIDDEN: "This action is not part of your permissions.",
   VET_ONLY: "Only a Veterinarian can change medical data. You can still view it.",
+  // Flow 1 - hồ sơ ngựa
+  HORSE_NOT_FOUND: "This horse profile no longer exists or was deleted. Reload the list.",
+  ROLE_RESTRICTION: "Your role cannot make this status change.",
+  MEDICAL_LOCK_ACTIVE: "The horse is under a Training Lock. A Veterinarian must lift it first.",
+  HORSE_RETIRED: "The horse is no longer managed. A Club Manager must reactivate it first.",
+  HORSE_DECEASED: "A deceased horse cannot be reactivated.",
+  RETIRE_REASON_REQUIRED: "Please select a reason for stopping management.",
+  REASON_REQUIRED: "Reason must be 10 to 500 characters.",
+  SAME_STATUS: "The horse is already in this status.",
+  CONFIRM_NAME_MISMATCH: "The name does not match.",
+  HORSE_LOCKED: "Cannot delete the profile while a Training Lock is in effect.",
+  HAS_DEPENDENT_DATA: "The horse already has training, medical, care or racing data, so it cannot be deleted. Use Stop managing instead.",
+  UNDO_EXPIRED: "The undo time has passed. Restore the profile from Deleted horses.",
+  RESTORE_CONFLICT: "Cannot restore because another horse now uses this name. Rename that horse, then try again.",
+  STALL_OCCUPIED: "This stall already has a horse.",
+  STALL_MAINTENANCE: "This stall is under maintenance.",
 };
 
 export function messageFor(err: unknown): string {

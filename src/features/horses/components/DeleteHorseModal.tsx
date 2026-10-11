@@ -3,133 +3,100 @@ import { useNavigate } from "react-router-dom";
 import { Modal } from "@/shared/components/ui/Modal";
 import { Button } from "@/shared/components/ui/Button";
 import { Field } from "@/shared/components/form/Field";
+import { Input } from "@/shared/components/form/Input";
 import { Textarea } from "@/shared/components/form/Textarea";
 import { Alert } from "@/shared/components/ui/Alert";
 import { useToast } from "@/shared/components/ui/Toast";
-import { deleteHorse, changeHorseStatus } from "../api";
+import { messageFor } from "@/shared/lib/messages";
+import { deleteHorse, restoreHorse } from "../api";
 import type { Horse } from "../types";
 
 interface DeleteHorseModalProps {
   horse: Horse;
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
 }
 
-export function DeleteHorseModal({ horse, isOpen, onClose, onSuccess }: DeleteHorseModalProps) {
+const UNDO_MS = 10_000;
+
+/**
+ * DL-1.10 Xóa hồ sơ (xóa mềm, chỉ CM). Chỉ dùng cho hồ sơ tạo nhầm. Sau khi xóa về danh sách,
+ * toast có nút Undo trong 10 giây (bấm = khôi phục ngay, BE tự ghi lý do "Hoàn tác thao tác xóa").
+ */
+export function DeleteHorseModal({ horse, isOpen, onClose }: DeleteHorseModalProps) {
   const navigate = useNavigate();
   const toast = useToast();
-  const [retireReason, setRetireReason] = useState<string>("Career retirement / Transferred to stud farm");
-  const [submitting, setSubmitting] = useState<boolean>(false);
-  const [actionType, setActionType] = useState<"RETIRE" | "DELETE">("RETIRE");
+  const [reason, setReason] = useState("");
+  const [confirmName, setConfirmName] = useState("");
+  const [touched, setTouched] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleRetire = async () => {
+  const n = reason.trim().length;
+  const reasonErr = n === 0 ? "Please enter a reason." : n < 10 || n > 500 ? "Reason must be 10 to 500 characters." : "";
+  const sameName =
+    confirmName.trim().replace(/\s+/g, " ").toLowerCase() === horse.name.trim().toLowerCase();
+  const nameErr = confirmName.trim() && !sameName ? "The name does not match." : "";
+
+  const undo = async () => {
     try {
-      setSubmitting(true);
-      await changeHorseStatus(horse.id, {
-        status: "RETIRED",
-        reason: retireReason.trim() || "Retired by Club Manager",
-      });
-      toast.show(`Horse ${horse.name} has been successfully retired from active stable roster`, "ok");
-      if (onSuccess) onSuccess();
-      onClose();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Error retiring horse";
-      toast.show(msg, "danger");
-    } finally {
-      setSubmitting(false);
+      await restoreHorse(horse.id, { undo: true });
+      toast.show(`Horse profile ${horse.name} has been restored.`, "ok");
+      navigate(`/horses/${horse.id}`);
+    } catch (e: unknown) {
+      toast.show(messageFor(e), "danger");
     }
   };
 
   const handleDelete = async () => {
+    setTouched(true);
+    if (reasonErr || !sameName) return;
+    setSubmitting(true);
     try {
-      setSubmitting(true);
-      const res = await deleteHorse(horse.id);
-      toast.show(res.message || `Horse profile ${horse.name} deleted successfully`, "ok");
+      await deleteHorse(horse.id, { reason: reason.trim(), confirmName: confirmName.trim() });
       onClose();
       navigate("/horses");
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Error deleting horse profile";
-      toast.show(msg, "danger");
+      toast.show(`Horse profile ${horse.name} has been deleted.`, "ok", {
+        durationMs: UNDO_MS,
+        action: { label: "Undo", onClick: () => void undo() },
+      });
+    } catch (e: unknown) {
+      toast.show(messageFor(e), "danger");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Modal onClose={onClose} title={`Manage Roster Status: ${horse.name}`}>
-      <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-        {horse.isMedicalLocked && (
-          <Alert tone="danger" title="Medical Lock In Effect">
-            This racehorse is currently under a veterinary Medical Lock. Deletion or retirement should only be performed after clinical review.
-          </Alert>
-        )}
-
-        <div style={{ display: "flex", gap: "0.5rem" }}>
-          <Button
-            tone={actionType === "RETIRE" ? "primary" : "secondary"}
-            onClick={() => setActionType("RETIRE")}
-          >
-            Retire Racehorse (Recommended)
+    <Modal
+      onClose={onClose}
+      tone="danger"
+      title={`Delete profile: ${horse.name}`}
+      foot={
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
+          <Button tone="ghost" onClick={onClose} disabled={submitting}>
+            Cancel
           </Button>
-          <Button
-            tone={actionType === "DELETE" ? "danger" : "secondary"}
-            onClick={() => setActionType("DELETE")}
-          >
-            Permanent Delete
+          <Button tone="danger" onClick={() => void handleDelete()} disabled={submitting || !sameName || Boolean(reasonErr)}>
+            {submitting ? "Deleting..." : "Delete profile"}
           </Button>
         </div>
+      }
+    >
+      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <Alert tone="danger" title="Only for profiles created by mistake">
+          A deleted profile is hidden from the roster but can be restored from Deleted horses. To stop managing a real
+          horse (sold, retired, deceased), use Stop managing instead.
+        </Alert>
 
-        {actionType === "RETIRE" ? (
-          <>
-            <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--ink-muted, #64748b)" }}>
-              Retiring marks the horse as <strong>RETIRED</strong>. It preserves all pedigree, clinical history, and workout logs while automatically freeing up stall assignments.
-            </p>
+        <Field label="Reason for deletion" required error={touched ? reasonErr || undefined : undefined} hint="10-500 characters">
+          <Textarea rows={3} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} />
+        </Field>
 
-            <Field label="Retirement Reason" required>
-              <Textarea
-                rows={3}
-                value={retireReason}
-                onChange={(e) => setRetireReason(e.target.value)}
-                placeholder="e.g. Age-related retirement, permanent pasture breeding, sold out of country..."
-              />
-            </Field>
-
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "0.5rem" }}>
-              <Button tone="ghost" onClick={onClose} disabled={submitting}>
-                Cancel
-              </Button>
-              <Button
-                tone="primary"
-                onClick={() => void handleRetire()}
-                disabled={submitting || !retireReason.trim()}
-              >
-                {submitting ? "Processing..." : "Confirm Retirement"}
-              </Button>
-            </div>
-          </>
-        ) : (
-          <>
-            <Alert tone="warn" title="Permanent Record Deletion">
-              Hard deletion completely purges this horse from the database. This operation is only permitted if the horse has zero training sessions, medical treatments, or financial records.
-            </Alert>
-
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "0.5rem" }}>
-              <Button tone="ghost" onClick={onClose} disabled={submitting}>
-                Cancel
-              </Button>
-              <Button
-                tone="danger"
-                onClick={() => void handleDelete()}
-                disabled={submitting}
-              >
-                {submitting ? "Deleting..." : "Permanently Delete Record"}
-              </Button>
-            </div>
-          </>
-        )}
+        <Field label={`Type the horse name "${horse.name}" to confirm`} required error={nameErr || undefined}>
+          <Input value={confirmName} onChange={(e) => setConfirmName(e.target.value)} autoComplete="off" />
+        </Field>
       </div>
     </Modal>
   );

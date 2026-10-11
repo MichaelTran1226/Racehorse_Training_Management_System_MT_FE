@@ -11,10 +11,12 @@ import { HEALTH_STATUS } from "@/shared/lib/status";
 import type { HealthStatus } from "@/shared/types/enums";
 import { DataTable } from "@/shared/components/ui/DataTable";
 import { getHorseById, getHorseHistory } from "../api";
+import { RETIRE_REASON_LABEL } from "../types";
 import type { Horse, HorseHistoryResponse } from "../types";
 import { ChangeStatusDialog } from "../components/ChangeStatusDialog";
 import { AssignOwnerModal } from "../components/AssignOwnerModal";
 import { DeleteHorseModal } from "../components/DeleteHorseModal";
+import { RetireHorseModal } from "../components/RetireHorseModal";
 
 export default function HorseDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +28,7 @@ export default function HorseDetailPage() {
   const [activeTab, setActiveTab] = useState("info");
   const [isOwnerModalOpen, setIsOwnerModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isRetireModalOpen, setIsRetireModalOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -161,9 +164,32 @@ export default function HorseDetailPage() {
               <Button tone="secondary">2D Injury Map</Button>
             </Link>
 
+            {/* BTN-1.10 / BTN-1.11: Ngừng quản lý hoặc Kích hoạt lại (ngựa đã chết thì không kích hoạt lại) */}
+            {isManager && horse.status !== "RETIRED" && (
+              <Button tone="danger" onClick={() => setIsRetireModalOpen(true)}>
+                Stop managing
+              </Button>
+            )}
+            {isManager && horse.status === "RETIRED" && (
+              <Button
+                tone="secondary"
+                onClick={() => setIsRetireModalOpen(true)}
+                disabled={horse.retireReason === "DECEASED"}
+                title={horse.retireReason === "DECEASED" ? "A deceased horse cannot be reactivated." : ""}
+              >
+                Reactivate
+              </Button>
+            )}
+
+            {/* BTN-1.12: Xóa hồ sơ tạo nhầm (xóa mềm) */}
             {isManager && (
-              <Button tone="danger" onClick={() => setIsDeleteModalOpen(true)}>
-                {horse.status === "RETIRED" ? "Delete Record" : "Retire / Delete"}
+              <Button
+                tone="ghost"
+                onClick={() => setIsDeleteModalOpen(true)}
+                disabled={horse.isMedicalLocked}
+                title={horse.isMedicalLocked ? "Cannot delete while a Training Lock is in effect." : ""}
+              >
+                Delete profile
               </Button>
             )}
           </div>
@@ -188,8 +214,9 @@ export default function HorseDetailPage() {
 
       {/* Banner Retired */}
       {horse.status === "RETIRED" && (
-        <Alert tone="info" title="Horse Record Retired">
-          This racehorse is retired from active stable operations (sold, retired, or deceased). Historical identity, pedigree, and health logs remain archived for reference.
+        <Alert tone="info" title="No longer managed">
+          {horse.retireReason ? `Reason: ${RETIRE_REASON_LABEL[horse.retireReason]}. ` : ""}
+          Historical identity, pedigree, and health logs remain archived for reference.
         </Alert>
       )}
 
@@ -625,6 +652,13 @@ export default function HorseDetailPage() {
         horse={horse}
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
+      />
+
+      <RetireHorseModal
+        key={`${horse.id}-${horse.status}`}
+        horse={horse}
+        isOpen={isRetireModalOpen}
+        onClose={() => setIsRetireModalOpen(false)}
         onSuccess={refreshHorse}
       />
     </div>
