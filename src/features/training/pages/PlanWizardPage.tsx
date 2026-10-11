@@ -7,8 +7,9 @@ import { Input } from "@/shared/components/form/Input";
 import { Select } from "@/shared/components/form/Select";
 import { Textarea } from "@/shared/components/form/Textarea";
 import { useToast } from "@/shared/components/ui/Toast";
-import { getStoredHorses } from "@/shared/mock/horsesData";
+import { messageFor } from "@/shared/lib/messages";
 import { getHorses } from "@/features/horses/api";
+import type { Horse } from "@/features/horses/types";
 import { trainingApi } from "../api";
 import type { TrainingPhase } from "../types";
 
@@ -19,23 +20,22 @@ export default function PlanWizardPage() {
   const [step, setStep] = useState<number>(1);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  // Available horses from store with dynamic fetch reconciliation
-  const [horses, setHorses] = useState(() => getStoredHorses());
+  // Ngựa lấy từ API thật (không dùng dữ liệu giả); bỏ ngựa đã Ngừng quản lý.
+  const [horses, setHorses] = useState<Horse[]>([]);
+  const [horseId, setHorseId] = useState<string>("");
 
   useEffect(() => {
     getHorses({ limit: 100 })
       .then((res) => {
-        if (res.items && res.items.length > 0) {
-          setHorses(res.items as any);
-        }
+        const usable = res.items.filter((h) => h.status !== "RETIRED");
+        setHorses(usable);
+        setHorseId((current) => current || usable[0]?.id || "");
       })
-      .catch(() => {});
-  }, []);
+      .catch((err) => toast.show(messageFor(err), "danger"));
+  }, [toast]);
 
   // Form State
   const [name, setName] = useState<string>("");
-  const [horseId, setHorseId] = useState<string>(() => horses[0]?.id || "horse-1");
-  const [target, setTarget] = useState<string>("");
   const [targetDistance, setTargetDistance] = useState<number>(1600);
   const [startDate, setStartDate] = useState<string>(() => new Date().toISOString().split("T")[0]);
   const [endDate, setEndDate] = useState<string>(() => {
@@ -43,7 +43,6 @@ export default function PlanWizardPage() {
     d.setDate(d.getDate() + 30);
     return d.toISOString().split("T")[0];
   });
-  const [notes, setNotes] = useState<string>("");
 
   // Phases
   const [phases, setPhases] = useState<TrainingPhase[]>(() => [
@@ -63,7 +62,7 @@ export default function PlanWizardPage() {
     return horses.find((h) => h.id === horseId) || horses[0];
   }, [horses, horseId]);
 
-  const isHorseLocked = Boolean(selectedHorse?.isLocked);
+  const isHorseLocked = Boolean(selectedHorse?.isMedicalLocked);
 
   const handleAddPhase = () => {
     const nextOrder = phases.length + 1;
@@ -93,43 +92,30 @@ export default function PlanWizardPage() {
     setPhases(updated);
   };
 
-  const handleSave = async (activate = false) => {
-    if (!name.trim()) {
+  // SC-2.03: giáo án mới luôn ở Nháp. Kích hoạt (DL-2.02) làm ở danh sách sau khi đã thêm buổi tập.
+  const handleSave = async () => {
+    if (name.trim().length < 2) {
       toast.show("Please enter a training plan name", "warn");
       return;
     }
-    if (activate && isHorseLocked) {
-      toast.show(
-        "Cannot activate! Selected horse is currently under Medical Lock. You may only Save as Draft.",
-        "danger",
-      );
+    if (!horseId) {
+      toast.show("Please select a horse", "warn");
       return;
     }
-
     try {
       setSubmitting(true);
-      const created = await trainingApi.createPlan({
-        name,
+      await trainingApi.createPlan({
         horseId,
-        horseName: selectedHorse?.name || "Racehorse",
-        horseCode: selectedHorse?.code || selectedHorse?.horseCode || "HR-000001",
-        target,
-        targetDistanceMeters: targetDistance,
+        phaseName: name.trim(),
+        targetDistance: targetDistance || undefined,
         startDate,
         endDate,
-        notes,
         phases,
-        status: activate ? "ACTIVE" : "DRAFT",
       });
-
-      toast.show(
-        `Plan ${created.planCode} successfully created (${activate ? "Active" : "Draft"})`,
-        "ok",
-      );
+      toast.show("Draft plan created. Add workouts in the schedule, then activate it.", "ok");
       navigate("/training/plans");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to create training plan";
-      toast.show(msg, "danger");
+      toast.show(messageFor(err), "danger");
     } finally {
       setSubmitting(false);
     }
@@ -194,7 +180,7 @@ export default function PlanWizardPage() {
                   onChange={(e) => setHorseId(e.target.value)}
                   options={horses.map((h) => ({
                     value: h.id,
-                    label: `${h.name} (${h.code || h.horseCode})${h.isLocked ? " - Medical Lock 🔒" : ""}`,
+                    label: `${h.name} (${h.horseCode ?? ""})${h.isMedicalLocked ? " - Training Lock 🔒" : ""}`,
                   }))}
                 />
               </Field>
@@ -211,14 +197,6 @@ export default function PlanWizardPage() {
               </Field>
             </div>
 
-            <Field label="Core Conditioning Objective" required>
-              <Textarea
-                rows={2}
-                value={target}
-                onChange={(e) => setTarget(e.target.value)}
-                placeholder="State the core objective, e.g., Build aerobic capacity and race-pace rhythm..."
-              />
-            </Field>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
               <Field label="Start Date" required>
@@ -229,14 +207,6 @@ export default function PlanWizardPage() {
               </Field>
             </div>
 
-            <Field label="Trainer Notes & Tactical Considerations">
-              <Textarea
-                rows={2}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Track surface preferences, nutritional requirements, or special jockey instructions..."
-              />
-            </Field>
 
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}>
               <Button tone="primary" onClick={() => setStep(2)}>
@@ -336,11 +306,11 @@ export default function PlanWizardPage() {
                 <div style={{ fontSize: "0.875rem" }}>
                   Horse <strong>{selectedHorse?.name}</strong> is currently under Veterinary Medical Lock:
                   <div style={{ marginTop: "0.25rem", fontStyle: "italic" }}>
-                    &ldquo;{selectedHorse?.lockReason || "Under protective clinical training suspension"}&rdquo;
+                    &ldquo;{selectedHorse?.medicalLocks?.[0]?.lockReason || "Under protective clinical training suspension"}&rdquo;
                   </div>
                   <ul style={{ margin: "0.5rem 0 0", paddingLeft: "1.25rem" }}>
-                    <li>You are strictly prohibited from activating this plan to ACTIVE status.</li>
-                    <li>You may only <strong>Save as Draft</strong> until the Veterinarian removes the lock.</li>
+                    <li>The plan cannot be activated until the Veterinarian lifts the lock.</li>
+                    <li>Light and medium workouts can still be scheduled; heavy ones are blocked.</li>
                   </ul>
                 </div>
               </div>
@@ -362,7 +332,7 @@ export default function PlanWizardPage() {
 
             <div style={{ background: "var(--surface-sunken)", padding: "1rem", borderRadius: 8, fontSize: "0.875rem" }}>
               <div><strong>Plan Name:</strong> {name || "Untitled"}</div>
-              <div><strong>Assigned Horse:</strong> {selectedHorse?.name} ({selectedHorse?.code || selectedHorse?.horseCode})</div>
+              <div><strong>Assigned Horse:</strong> {selectedHorse?.name} ({selectedHorse?.horseCode})</div>
               <div><strong>Target Distance:</strong> {targetDistance}m</div>
               <div><strong>Duration:</strong> {startDate} to {endDate}</div>
               <div><strong>Phases:</strong> {phases.length}</div>
@@ -373,18 +343,9 @@ export default function PlanWizardPage() {
                 ← Back
               </Button>
 
-              <div style={{ display: "flex", gap: "0.75rem" }}>
-                <Button tone="secondary" onClick={() => void handleSave(false)} disabled={submitting}>
-                  Save as Draft
-                </Button>
-                <Button
-                  tone="primary"
-                  onClick={() => void handleSave(true)}
-                  disabled={submitting || isHorseLocked}
-                >
-                  Save & Activate Plan
-                </Button>
-              </div>
+              <Button tone="primary" onClick={() => void handleSave()} disabled={submitting || !horseId}>
+                Save as Draft
+              </Button>
             </div>
           </div>
         </Card>
