@@ -236,7 +236,6 @@ const routes: Route[] = [
         LOCKED: [423, "ACCOUNT_LOCKED"],
         PENDING_APPROVAL: [403, "ACCOUNT_PENDING"],
         PENDING_EMAIL: [403, "EMAIL_NOT_VERIFIED"],
-        PENDING_INTAKE: [403, "PENDING_INTAKE"],
         INVITED: [403, "ACCOUNT_INVITED"],
         INACTIVE: [403, "ACCOUNT_INACTIVE"],
         REJECTED: [403, "ACCOUNT_REJECTED"],
@@ -285,11 +284,13 @@ const routes: Route[] = [
       const fullName = String(body.fullName ?? "").trim();
       const role = body.role as Role;
       if (role !== "HORSE_OWNER") throw new ApiError(403, "ROLE_NOT_ALLOWED", "Only Horse Owner can self-register");
-      if (!fullName || !EMAIL_RE.test(email) || String(body.password ?? "").length < 8) {
+      if (!fullName || !EMAIL_RE.test(email) || passwordError(String(body.password ?? ""))) {
         throw new ApiError(400, "VALIDATION", "Invalid input");
       }
       const existing = db.accounts.find((a) => a.email.toLowerCase() === email);
-      if (existing && existing.status !== "PENDING_EMAIL") throw new ApiError(409, "EMAIL_TAKEN", "Email taken");
+      // Giống BE: cho đăng ký lại khi đăng ký dở (PENDING_EMAIL) hoặc đã bị từ chối (REJECTED).
+      const canReapply = existing?.status === "PENDING_EMAIL" || existing?.status === "REJECTED";
+      if (existing && !canReapply) throw new ApiError(409, "EMAIL_TAKEN", "Email taken");
 
       const account: Account = existing ?? {
         id: `u${Date.now()}`, fullName, email, role, status: "PENDING_EMAIL", password: "",
@@ -298,9 +299,14 @@ const routes: Route[] = [
         permissions: defaultPermissions(role), permissionsChangedAt: null,
         permissionsChangedBy: null, notify: defaultNotify(role),
       };
+      const wasRejected = existing?.status === "REJECTED";
       account.fullName = fullName;
       account.password = String(body.password);
-      account.requestCode = account.requestCode ?? requestCode(db);
+      account.status = "PENDING_EMAIL";
+      account.statusReason = null;
+      account.requestedAt = null;
+      // Yêu cầu bị từ chối đã đóng => yêu cầu mới có mã mới.
+      account.requestCode = wasRejected || !account.requestCode ? requestCode(db) : account.requestCode;
       if (!existing) db.accounts.push(account);
 
       const record = issueOtp(db, email, "signup");

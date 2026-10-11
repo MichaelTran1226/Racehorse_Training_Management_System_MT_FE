@@ -17,7 +17,7 @@ const GENERIC: Record<string, string> = {
   SERVICE_UNAVAILABLE: "The service did not answer. Nothing was changed. Try again in a moment.",
   EMAIL_TAKEN: "This email already has an account in the system.",
   ROLE_NOT_ALLOWED: "Only Horse Owner accounts can be requested here. Staff accounts are created by the Club Manager.",
-  WEAK_PASSWORD: "Add an uppercase letter, a digit or a symbol.",
+  WEAK_PASSWORD: "Use at least 8 characters with an uppercase letter, a digit and a special character.",
   CANNOT_LOCK_SELF: "You cannot lock your own account. Ask another Club Manager.",
   CANNOT_CHANGE_SELF: "You cannot do this to your own account. Ask another Club Manager.",
   CANNOT_DELETE_USED: "This account has been used, so it cannot be deleted. Deactivate it instead to keep its history.",
@@ -26,6 +26,7 @@ const GENERIC: Record<string, string> = {
   NOT_FOUND: "This account no longer exists. Reload the list.",
   LAST_MANAGER: "The club must keep at least one active Club Manager.",
   RESET_EXPIRED: "This reset session has expired. Request a new code.",
+  ATTEMPTS_EXCEEDED: "Too many wrong passwords. Wait 15 minutes, or use Forgot password to unlock it now.",
   FORBIDDEN: "This action is not part of your permissions.",
 };
 
@@ -152,17 +153,6 @@ export function loginFailure(err: unknown): LoginFailure {
         blockedReason: "The invitation must be accepted first.",
         footNote: who,
         next: "acceptInvite",
-      };
-    case "PENDING_INTAKE":
-      return {
-        alert: {
-          tone: "warn",
-          icon: "clock",
-          title: "Waiting for horse intake",
-          body: "The account becomes active once at least one horse is assigned to it at intake.",
-        },
-        blockedReason: "The Club Manager assigns a horse at intake first.",
-        footNote: who,
       };
     case "ACCOUNT_INACTIVE":
       return {

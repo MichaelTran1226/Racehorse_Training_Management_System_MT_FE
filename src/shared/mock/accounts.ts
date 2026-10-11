@@ -71,7 +71,7 @@ export function seedAccounts(): Account[] {
       requestedAt: "2026-09-19T08:05:00", requestCode: "REQ-2609-013",
     }),
     make({
-      id: "huy", fullName: "William Davis", email: "huy.hoang@gmail.com", role: "HORSE_OWNER", status: "PENDING_INTAKE",
+      id: "huy", fullName: "William Davis", email: "huy.hoang@gmail.com", role: "HORSE_OWNER", status: "PENDING_APPROVAL",
       requestedAt: "2026-09-16T10:20:00", requestCode: "REQ-2609-011",
     }),
     make({

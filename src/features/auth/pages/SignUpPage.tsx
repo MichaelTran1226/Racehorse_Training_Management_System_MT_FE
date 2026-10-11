@@ -9,6 +9,7 @@ import { Alert } from "@/shared/components/ui/Alert";
 import { Button } from "@/shared/components/ui/Button";
 import { ApiError } from "@/shared/lib/api";
 import { messageFor } from "@/shared/lib/messages";
+import { passwordError } from "@/shared/lib/password";
 import { register } from "../api";
 import { EMAIL_PLACEHOLDER } from "@/shared/lib/brand";
 import styles from "./AuthPages.module.css";
@@ -54,7 +55,7 @@ export default function SignUpPage() {
     if (!mail) next.email = "Club email is required.";
     else if (!EMAIL_RE.test(mail)) next.email = "Email must be a @gmail.com address.";
     if (!password) next.password = "Password is required.";
-    else if (password.length < 8) next.password = "Password must be at least 8 characters.";
+    else if (passwordError(password)) next.password = passwordError(password);
     if (confirm !== password) next.confirm = "The two passwords do not match.";
     if (Object.keys(next).length > 0) return fail(next);
 
