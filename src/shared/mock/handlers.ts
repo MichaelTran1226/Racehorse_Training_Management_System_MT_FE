@@ -2253,6 +2253,12 @@ const routes: Route[] = [
       if (!p || (user.role === "HORSE_OWNER" && p.horseOwnerId !== user.id)) {
         throw new ApiError(404, "PLAN_NOT_FOUND", "Training plan not found.");
       }
+      const lockedHorse = getStoredHorses().find((h) => h.id === p.horseId);
+      if (p.horse && lockedHorse?.isLocked) {
+        (p.horse as Record<string, unknown>).medicalLocks = [
+          { lockedAt: lockedHorse.lockDate ?? new Date().toISOString(), lockReason: lockedHorse.lockReason ?? "" },
+        ];
+      }
       const workoutSessions = getStoredWorkouts()
         .filter((w) => w.trainingPlanId === p.id)
         .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate))
@@ -2274,12 +2280,18 @@ const routes: Route[] = [
       if (String(body.startDate) > String(body.endDate)) {
         throw new ApiError(400, "INVALID_DATE_RANGE", "Plan start date cannot be later than end date.");
       }
+      if (String(body.objective ?? "").trim().length < 10) {
+        throw new ApiError(400, "VALIDATION", "Mục tiêu phải từ 10 đến 1000 ký tự.");
+      }
       const plan: MockPlan = {
         id: `plan-${Date.now()}`,
+        planCode: `GA-${String(getStoredPlans().length + 1).padStart(6, "0")}`,
         horseId: horse.id,
         trainerUserId: user.id,
         phaseName: String(body.phaseName),
-        phases: body.phases,
+        objective: String(body.objective).trim(),
+        notes: body.notes ? String(body.notes) : null,
+        phases: (body.phases as Record<string, unknown>[]).map((ph, i) => ({ ...ph, id: ph.id || `ph-${Date.now()}-${i}` })),
         targetDistance: body.targetDistance as number | undefined,
         targetSpeed: body.targetSpeed as number | undefined,
         startDate: new Date(String(body.startDate)).toISOString(),
@@ -2306,7 +2318,11 @@ const routes: Route[] = [
         throw new ApiError(400, "PLAN_CLOSED", "Giáo án đã hoàn thành hoặc đã hủy nên không sửa được.");
       }
       if (body.phaseName) p.phaseName = String(body.phaseName);
-      if (body.phases) p.phases = body.phases;
+      if (body.objective !== undefined) p.objective = String(body.objective);
+      if (body.notes !== undefined) p.notes = body.notes ? String(body.notes) : null;
+      if (body.phases) {
+        p.phases = (body.phases as Record<string, unknown>[]).map((ph, i) => ({ ...ph, id: ph.id || `ph-${Date.now()}-${i}` }));
+      }
       if (body.startDate) p.startDate = new Date(String(body.startDate)).toISOString();
       if (body.endDate) p.endDate = new Date(String(body.endDate)).toISOString();
       saveStoredPlans(plans);
@@ -2501,6 +2517,7 @@ const routes: Route[] = [
         id: `w-${Date.now()}`,
         trainingPlanId: plan.id,
         horseId: plan.horseId,
+        phaseId: body.phaseId ? String(body.phaseId) : null,
         scheduledDate: new Date(String(body.scheduledDate)).toISOString(),
         workoutType: type,
         intensity: type === "BREEZE" || type === "TRIAL" ? "HEAVY" : String(body.intensity),
@@ -2517,6 +2534,7 @@ const routes: Route[] = [
         abnormalSigns: false,
       };
       draft.medicalOverride = assertWorkoutAllowedMock(db, plan, draft, Boolean(body.vetConsulted));
+      assertWarningsMock(db, plan, draft, Boolean(body.acknowledgeWarnings));
       saveStoredWorkouts([...getStoredWorkouts(), draft]);
       audit(db, user.fullName, "CREATE_WORKOUT_SESSION", `Scheduled ${type} for plan "${plan.phaseName}"`);
       return decorateWorkout(draft);
@@ -2575,21 +2593,43 @@ const routes: Route[] = [
       if (w.status === "BLOCKED" || w.status === "CANCELLED") {
         throw new ApiError(400, "WORKOUT_NOT_RECORDABLE", "Buổi tập bị chặn hoặc đã hủy nên không ghi kết quả.");
       }
-      if (body.abnormalSigns && String(body.abnormalNotes ?? "").trim().length < 10) {
+      if (w.status === "MISSED" && Date.now() - new Date(w.scheduledDate).getTime() > 8 * 24 * 3600_000) {
+        throw new ApiError(400, "LATE_RESULT_EXPIRED", "Đã quá 7 ngày, không thể ghi kết quả cho buổi tập bỏ lỡ.");
+      }
+      const editing = w.status === "COMPLETED";
+      if (editing && w.resultRecordedAt && Date.now() - new Date(w.resultRecordedAt).getTime() > 48 * 3600_000) {
+        throw new ApiError(400, "RESULT_EDIT_EXPIRED", "Chỉ sửa được kết quả trong 48 giờ sau khi ghi.");
+      }
+      const noTime = ["WALK", "SWIM", "TREADMILL"].includes(String(w.workoutType));
+      if (body.actualTimeSeconds == null && !noTime) throw new ApiError(400, "TIME_REQUIRED", "Thời gian chạy là bắt buộc.");
+      if (body.heartRatePeak != null && body.heartRateRecovery != null && Number(body.heartRateRecovery) > Number(body.heartRatePeak)) {
+        throw new ApiError(400, "RECOVERY_ABOVE_PEAK", "Nhịp tim sau 10 phút không được lớn hơn nhịp tim tối đa.");
+      }
+      const signs = Array.isArray(body.abnormalSignTypes) ? (body.abnormalSignTypes as string[]) : [];
+      if (signs.length > 0 && String(body.abnormalNotes ?? "").trim().length < 10) {
         throw new ApiError(400, "ABNORMAL_NOTES_REQUIRED", "Vui lòng mô tả dấu hiệu bất thường.");
       }
+      const distance = Number(body.actualDistanceMeters);
+      const time = body.actualTimeSeconds == null ? null : Number(body.actualTimeSeconds);
+      const nowIso = new Date().toISOString();
       Object.assign(w, {
         status: "COMPLETED",
-        resultRecordedAt: w.resultRecordedAt ?? new Date().toISOString(),
-        actualTimeSeconds: body.actualTimeSeconds ?? w.actualTimeSeconds,
-        heartRatePeak: body.heartRatePeak ?? w.heartRatePeak,
-        heartRateRecovery: body.heartRateRecovery ?? w.heartRateRecovery,
-        averageSpeedKmh: body.averageSpeedKmh ?? w.averageSpeedKmh,
-        topSpeedKmh: body.topSpeedKmh ?? w.topSpeedKmh,
-        performanceScore: body.performanceScore ?? w.performanceScore,
-        trainerNotes: body.trainerNotes ?? w.trainerNotes,
-        abnormalSigns: Boolean(body.abnormalSigns),
-        abnormalNotes: body.abnormalSigns ? String(body.abnormalNotes) : null,
+        actualDistanceMeters: distance,
+        actualTimeSeconds: time,
+        averageSpeedKmh: time ? Math.round((distance / time) * 3.6 * 10) / 10 : null,
+        actualSurface: body.actualSurface ?? w.trackSurface,
+        trackCondition: body.trackCondition ?? null,
+        heartRatePeak: body.heartRatePeak ?? null,
+        heartRateRecovery: body.heartRateRecovery ?? null,
+        performanceScore: Number(body.performanceScore),
+        completionLevel: String(body.completionLevel),
+        resultNotes: String(body.trainerNotes ?? ""),
+        abnormalSignTypes: signs,
+        abnormalSigns: signs.length > 0,
+        abnormalNotes: signs.length > 0 ? String(body.abnormalNotes) : null,
+        ...(editing
+          ? { resultUpdatedAt: nowIso, resultUpdatedById: user.id }
+          : { resultRecordedAt: nowIso, resultRecordedById: user.id }),
       });
       saveStoredWorkouts(rows);
       audit(db, user.fullName, "RECORD_WORKOUT_RESULT", `Recorded result for workout ${w.id}`);
@@ -2599,22 +2639,206 @@ const routes: Route[] = [
   {
     method: "GET",
     pattern: /^\/training\/horses\/([^/]+)\/fitness-metrics$/,
-    handler({ params }) {
-      return getStoredWorkouts()
-        .filter((w) => w.horseId === params[0] && w.status === "COMPLETED")
-        .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate))
+    handler({ db, params, url }) {
+      const user = currentUser(db);
+      const h = mockHorse(params[0]);
+      const weeks = [4, 12, 26].includes(Number(url.searchParams.get("weeks"))) ? Number(url.searchParams.get("weeks")) : 12;
+      const from = Date.now() - weeks * 7 * 24 * 3600_000;
+      const done = getStoredWorkouts()
+        .filter((w) => w.horseId === h.id && w.status === "COMPLETED")
+        .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate));
+      const points = done
+        .filter((w) => new Date(w.scheduledDate).getTime() >= from)
         .map((w) => ({
           workoutId: w.id,
           date: w.scheduledDate,
-          sessionName: `${w.workoutType} (${w.distanceMeters}m - ${w.trackSurface})`,
-          avgSpeedKmh: w.averageSpeedKmh ?? null,
-          maxSpeedKmh: w.topSpeedKmh ?? null,
+          workoutType: w.workoutType,
+          distanceMeters: w.actualDistanceMeters ?? w.distanceMeters * (w.repetitions ?? 1),
+          timeSeconds: w.actualTimeSeconds ?? null,
+          avgSpeedKmh: ["CANTER", "BREEZE", "TRIAL"].includes(String(w.workoutType)) ? (w.averageSpeedKmh ?? null) : null,
           maxHeartRate: w.heartRatePeak ?? null,
-          recoveryScore: w.heartRateRecovery ? Math.min(100, Math.max(20, 200 - w.heartRateRecovery)) : null,
-          staminaScore: null,
-          performanceScore: w.performanceScore ?? null,
+          recoveryHeartRate: w.heartRateRecovery ?? null,
+          performanceScore: user.role === "GROOM" ? null : (w.performanceScore ?? null),
+          load: loadMock(w),
           hasAlert: Boolean(w.abnormalSigns),
         }));
+      const weekly = new Map<string, number>();
+      for (const pt of points) {
+        const key = mondayOf(pt.date);
+        weekly.set(key, Math.round(((weekly.get(key) ?? 0) + pt.load) * 10) / 10);
+      }
+      const load7d = sumLoadMock(done, 7, 0);
+      const avg4w = sumLoadMock(done, 35, 7) / 4;
+      const last4 = points.slice(-4);
+      const avg = (xs: (number | null)[]) => {
+        const v = xs.filter((x): x is number => x != null);
+        return v.length ? Math.round((v.reduce((a, b) => a + b, 0) / v.length) * 10) / 10 : null;
+      };
+      const best = points.reduce<{ value: number; date: string } | null>(
+        (m, pt) => (pt.avgSpeedKmh != null && (!m || pt.avgSpeedKmh > m.value) ? { value: pt.avgSpeedKmh, date: pt.date } : m),
+        null,
+      );
+      const stored = getStoredHorses().find((x) => x.id === h.id);
+      return {
+        horse: { id: h.id, name: h.name, horseCode: h.horseCode, status: h.status, isMedicalLocked: h.isLocked },
+        points,
+        weeklyLoad: [...weekly.entries()].map(([weekStart, load]) => ({ weekStart, load })),
+        lockPeriods: stored?.isLocked ? [{ from: stored.lockDate ?? new Date().toISOString(), to: null }] : [],
+        summary: {
+          bestAvgSpeed: best,
+          avgScoreLast4: avg(last4.map((pt) => pt.performanceScore)),
+          avgRecoveryLast4: avg(last4.map((pt) => pt.recoveryHeartRate)),
+          load7d,
+          loadChangePct: avg4w > 0 ? Math.round(((load7d - avg4w) / avg4w) * 100) : null,
+        },
+      };
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/training\/overview$/,
+    handler({ db }) {
+      trainingRole(currentUser(db), ["CLUB_MANAGER", "HEAD_TRAINER", "VETERINARIAN"]);
+      sweepTraining();
+      const today = todayIso();
+      const horses = getStoredHorses().filter((h) => horseStatusOf(h) !== "RETIRED");
+      const plans = getStoredPlans().filter((p) => p.status === "ACTIVE");
+      const all = getStoredWorkouts();
+      const rows = horses.map((h) => {
+        const plan = plans.find((p) => p.horseId === h.id);
+        const phases = (plan && Array.isArray(plan.phases) ? plan.phases : []) as { name: string; startDate: string; endDate: string }[];
+        const ph = phases.find((x) => x.startDate <= today && today <= x.endDate);
+        const done = all.filter((w) => w.horseId === h.id && w.status === "COMPLETED").sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate));
+        const scored = done.filter((w) => w.performanceScore != null);
+        const prev3 = scored.slice(-4, -1).map((w) => w.performanceScore as number);
+        const load7d = sumLoadMock(done, 7, 0);
+        const avg4w = sumLoadMock(done, 35, 7) / 4;
+        const next = all
+          .filter((w) => w.horseId === h.id && w.status === "SCHEDULED" && new Date(w.scheduledDate).getTime() >= Date.now())
+          .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate))[0];
+        const dayMs = 24 * 3600_000;
+        return {
+          horse: { id: h.id, name: h.name, horseCode: h.horseCode ?? h.code, status: horseStatusOf(h), isMedicalLocked: Boolean(h.isLocked) },
+          plan: plan ? { id: plan.id, planCode: plan.planCode, name: plan.phaseName } : null,
+          currentPhase: ph
+            ? {
+                name: ph.name,
+                week: Math.floor((Date.parse(today) - Date.parse(ph.startDate)) / (7 * dayMs)) + 1,
+                weeks: Math.ceil((Date.parse(ph.endDate) - Date.parse(ph.startDate) + dayMs) / (7 * dayMs)),
+              }
+            : null,
+          progress: plan ? progressMock(plan.id) : null,
+          latestScore: scored[scored.length - 1]?.performanceScore ?? null,
+          previousAvgScore: prev3.length ? Math.round((prev3.reduce((a, b) => a + b, 0) / prev3.length) * 10) / 10 : null,
+          load7d,
+          loadSpike: avg4w > 0 && load7d > avg4w * 1.3,
+          nextWorkout: next ? { date: next.scheduledDate, workoutType: next.workoutType } : null,
+        };
+      });
+      const todays = all.filter((w) => clubDay(w.scheduledDate) === today && w.status !== "CANCELLED");
+      const in7 = new Date(Date.now() + 8 * 24 * 3600_000).toISOString().slice(0, 10);
+      return {
+        kpis: {
+          activePlans: plans.length,
+          managedHorses: horses.length,
+          todayCompleted: todays.filter((w) => w.status === "COMPLETED").length,
+          todayTotal: todays.length,
+          blockedNext7Days: all.filter((w) => w.status === "BLOCKED" && clubDay(w.scheduledDate) >= today && clubDay(w.scheduledDate) < in7).length,
+          loadSpikeHorses: rows.filter((r) => r.loadSpike).length,
+        },
+        rows,
+      };
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/training\/plans\/([^/]+)\/workouts\/repeat$/,
+    handler({ db, params, body }) {
+      const user = currentUser(db);
+      trainingRole(user, ["HEAD_TRAINER"]);
+      const plan = getStoredPlans().find((x) => x.id === params[0]);
+      if (!plan) throw new ApiError(404, "PLAN_NOT_FOUND", "Training plan not found.");
+      const weekdays = Array.isArray(body.weekdays) ? (body.weekdays as number[]) : [];
+      if (weekdays.length === 0) throw new ApiError(400, "VALIDATION", "Vui lòng chọn ít nhất 1 thứ trong tuần.");
+      const first = new Date(String(body.scheduledDate));
+      const time = new Date(first.getTime() + 7 * 3600_000).toISOString().slice(11, 16);
+      const until = String(body.until).slice(0, 10);
+      const dates: string[] = [];
+      for (let d = clubDay(first.toISOString()); d <= until; d = new Date(Date.parse(`${d}T00:00:00Z`) + 24 * 3600_000).toISOString().slice(0, 10)) {
+        const weekday = new Date(`${d}T00:00:00Z`).getUTCDay() || 7;
+        if (weekdays.includes(weekday)) dates.push(d);
+      }
+      if (dates.length > 60) throw new ApiError(400, "TOO_MANY_REPEATS", "Mỗi lần chỉ tạo tối đa 60 buổi tập.");
+      const skippable = ["MEDICAL_LOCK_ACTIVE", "HORSE_RETIRED", "TRIAL_SLOT_TAKEN", "MAX_WORKOUTS_PER_DAY", "DATE_IN_PAST", "OUTSIDE_PHASE_DATES", "OUTSIDE_PLAN_DATES"];
+      let created = 0;
+      const skipped: { date: string; reason: string }[] = [];
+      dates.forEach((d, i) => {
+        const type = String(body.workoutType);
+        const draft: MockWorkout = {
+          id: `w-${Date.now()}-${i}`,
+          trainingPlanId: plan.id,
+          horseId: plan.horseId,
+          phaseId: String(body.phaseId),
+          scheduledDate: new Date(`${d}T${time}:00+07:00`).toISOString(),
+          workoutType: type,
+          intensity: type === "BREEZE" || type === "TRIAL" ? "HEAVY" : String(body.intensity),
+          trackSurface: type === "SWIM" || type === "TREADMILL" ? "NONE" : String(body.trackSurface),
+          distanceMeters: Number(body.distanceMeters),
+          repetitions: Number(body.repetitions ?? 1),
+          targetSpeedKmh: body.targetSpeedKmh == null ? null : Number(body.targetSpeedKmh),
+          jockeyName: body.jockeyName ? String(body.jockeyName) : null,
+          assignedStaffUserId: String(body.assignedStaffUserId ?? ""),
+          trainerNotes: body.trainerNotes ? String(body.trainerNotes) : null,
+          status: "SCHEDULED",
+          statusReason: null,
+          medicalOverride: false,
+          abnormalSigns: false,
+          abnormalSignTypes: [],
+        };
+        try {
+          draft.medicalOverride = assertWorkoutAllowedMock(db, plan, draft, Boolean(body.vetConsulted));
+          saveStoredWorkouts([...getStoredWorkouts(), draft]);
+          created += 1;
+        } catch (e) {
+          if (!(e instanceof ApiError) || !skippable.includes(e.code)) throw e;
+          skipped.push({ date: d, reason: e.message });
+        }
+      });
+      return { created, skipped };
+    },
+  },
+  {
+    method: "PATCH",
+    pattern: /^\/training\/workouts\/([^/]+)$/,
+    handler({ db, params, body }) {
+      trainingRole(currentUser(db), ["HEAD_TRAINER"]);
+      const rows = getStoredWorkouts();
+      const w = rows.find((x) => x.id === params[0]);
+      if (!w) throw new ApiError(404, "WORKOUT_NOT_FOUND", "Workout session not found.");
+      if (w.status !== "SCHEDULED" || new Date(w.scheduledDate).getTime() <= Date.now()) {
+        throw new ApiError(400, "WORKOUT_NOT_EDITABLE", "Chỉ sửa được buổi tập Đã lên lịch và chưa tới giờ bắt đầu.");
+      }
+      const plan = getStoredPlans().find((x) => x.id === w.trainingPlanId)!;
+      const type = String(body.workoutType ?? w.workoutType);
+      const next: MockWorkout = {
+        ...w,
+        ...(body.scheduledDate ? { scheduledDate: new Date(String(body.scheduledDate)).toISOString() } : {}),
+        phaseId: body.phaseId ? String(body.phaseId) : w.phaseId,
+        workoutType: type,
+        intensity: type === "BREEZE" || type === "TRIAL" ? "HEAVY" : String(body.intensity ?? w.intensity),
+        trackSurface: type === "SWIM" || type === "TREADMILL" ? "NONE" : String(body.trackSurface ?? w.trackSurface),
+        distanceMeters: Number(body.distanceMeters ?? w.distanceMeters),
+        repetitions: Number(body.repetitions ?? w.repetitions ?? 1),
+        targetSpeedKmh: body.targetSpeedKmh === undefined ? w.targetSpeedKmh : body.targetSpeedKmh == null ? null : Number(body.targetSpeedKmh),
+        jockeyName: body.jockeyName === undefined ? w.jockeyName : body.jockeyName ? String(body.jockeyName) : null,
+        assignedStaffUserId: String(body.assignedStaffUserId ?? w.assignedStaffUserId ?? ""),
+        trainerNotes: body.trainerNotes === undefined ? w.trainerNotes : String(body.trainerNotes),
+      };
+      next.medicalOverride = assertWorkoutAllowedMock(db, plan, next, Boolean(body.vetConsulted ?? w.medicalOverride), w.id);
+      assertWarningsMock(db, plan, next, Boolean(body.acknowledgeWarnings), w.id);
+      Object.assign(w, next);
+      saveStoredWorkouts(rows);
+      return decorateWorkout(w);
     },
   },
   {
@@ -2679,6 +2903,7 @@ function decoratePlan(p: MockPlan) {
     horse: h ? { id: h.id, name: h.name, horseCode: h.horseCode ?? h.code, status: horseStatusOf(h), isMedicalLocked: Boolean(h.isLocked) } : undefined,
     trainer: { fullName: "David Nguyen (Head Trainer)" },
     _count: { workoutSessions: getStoredWorkouts().filter((w) => w.trainingPlanId === p.id).length },
+    progress: progressMock(p.id),
   };
 }
 
@@ -2688,9 +2913,20 @@ function decorateWorkout(w: MockWorkout) {
   const groom = getDb().accounts.find((a) => a.id === w.assignedStaffUserId);
   return {
     ...w,
-    horse: h ? { id: h.id, name: h.name, horseCode: h.horseCode ?? h.code, status: horseStatusOf(h), isMedicalLocked: Boolean(h.isLocked) } : undefined,
+    horse: h
+      ? {
+          id: h.id,
+          name: h.name,
+          horseCode: h.horseCode ?? h.code,
+          status: horseStatusOf(h),
+          isMedicalLocked: Boolean(h.isLocked),
+          stallAllocations: h.stall ? [{ stall: { code: h.stall } }] : [],
+        }
+      : undefined,
     assignedStaff: groom ? { id: groom.id, fullName: groom.fullName } : null,
-    trainingPlan: plan ? { id: plan.id, phaseName: plan.phaseName } : null,
+    trainingPlan: plan ? { id: plan.id, phaseName: plan.phaseName, status: plan.status, phases: plan.phases } : null,
+    resultRecordedBy: nameOf(w.resultRecordedById),
+    resultUpdatedBy: nameOf(w.resultUpdatedById),
   };
 }
 
@@ -2711,6 +2947,73 @@ function listWorkouts(user: Account, url: URL) {
   return rows
     .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate))
     .map((w) => ({ ...decorateWorkout(w), ...(user.role === "GROOM" ? { performanceScore: null } : {}) }));
+}
+
+function nameOf(userId?: string | null) {
+  if (!userId) return null;
+  const a = getDb().accounts.find((x) => x.id === userId);
+  return a ? { fullName: a.fullName } : null;
+}
+
+/** Hoàn thành / đã đến hạn (không tính buổi đã hủy). */
+function progressMock(planId: string) {
+  const due = getStoredWorkouts().filter(
+    (w) => w.trainingPlanId === planId && w.status !== "CANCELLED" && new Date(w.scheduledDate).getTime() <= Date.now(),
+  );
+  return { completed: due.filter((w) => w.status === "COMPLETED").length, due: due.length };
+}
+
+/** Điểm tải = km × số hiệp × hệ số cường độ (1/2/3). */
+function loadMock(w: MockWorkout): number {
+  const factor = w.intensity === "HEAVY" ? 3 : w.intensity === "LIGHT" ? 1 : 2;
+  const km = w.actualDistanceMeters ? w.actualDistanceMeters / 1000 : (w.distanceMeters * (w.repetitions ?? 1)) / 1000;
+  return Math.round(km * factor * 10) / 10;
+}
+
+/** Tổng tải các buổi trong khoảng (fromDaysAgo, toDaysAgo]. */
+function sumLoadMock(rows: MockWorkout[], fromDaysAgo: number, toDaysAgo: number): number {
+  const from = Date.now() - fromDaysAgo * 24 * 3600_000;
+  const to = Date.now() - toDaysAgo * 24 * 3600_000;
+  const total = rows
+    .filter((w) => new Date(w.scheduledDate).getTime() > from && new Date(w.scheduledDate).getTime() <= to)
+    .reduce((sum, w) => sum + loadMock(w), 0);
+  return Math.round(total * 10) / 10;
+}
+
+/** Thứ Hai (YYYY-MM-DD, giờ câu lạc bộ) của tuần chứa thời điểm iso. */
+function mondayOf(iso: string): string {
+  const day = clubDay(iso);
+  const d = new Date(`${day}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+  return d.toISOString().slice(0, 10);
+}
+
+/** Cảnh báo không chặn (DL-2.01 mục 6): vượt định mức tuần, nhân viên trùng giờ. */
+function assertWarningsMock(db: Db, plan: MockPlan, w: MockWorkout, acknowledged: boolean, selfId?: string): void {
+  const warnings: string[] = [];
+  const phases = (Array.isArray(plan.phases) ? plan.phases : []) as { id: string; maxWeeklyDistance: number }[];
+  const ph = phases.find((x) => x.id === w.phaseId);
+  const others = getStoredWorkouts().filter((x) => x.id !== selfId && x.status !== "CANCELLED");
+  if (ph) {
+    const monday = mondayOf(w.scheduledDate);
+    const total =
+      others
+        .filter((x) => x.horseId === w.horseId && mondayOf(x.scheduledDate) === monday)
+        .reduce((sum, x) => sum + x.distanceMeters * (x.repetitions ?? 1), 0) +
+      w.distanceMeters * (w.repetitions ?? 1);
+    if (total > ph.maxWeeklyDistance) warnings.push(`Tổng cự ly tuần ${total} m vượt định mức ${ph.maxWeeklyDistance} m.`);
+  }
+  const t = new Date(w.scheduledDate).getTime();
+  const busy = others.find(
+    (x) => x.assignedStaffUserId === w.assignedStaffUserId && Math.abs(new Date(x.scheduledDate).getTime() - t) < 30 * 60_000,
+  );
+  if (busy) {
+    const groom = db.accounts.find((a) => a.id === w.assignedStaffUserId);
+    warnings.push(`Nhân viên ${groom?.fullName ?? ""} đã có buổi tập trùng giờ.`);
+  }
+  if (warnings.length > 0 && !acknowledged) {
+    throw new ApiError(409, "WARNINGS_NEED_CONFIRMATION", warnings.join(" "), { warnings });
+  }
 }
 
 /** Buổi Đã lên lịch quá hết ngày hôm sau -> Bỏ lỡ (giống sweepOverdue của BE). */
@@ -2748,6 +3051,14 @@ function assertWorkoutAllowedMock(db: Db, plan: MockPlan, w: MockWorkout, vetCon
   if (w.workoutType === "BREEZE" || w.workoutType === "TRIAL") {
     if (w.targetSpeedKmh == null) throw new ApiError(400, "TARGET_SPEED_REQUIRED", "Tốc độ mục tiêu là bắt buộc với bài chạy tốc độ và chạy thử.");
     if (!w.jockeyName) throw new ApiError(400, "JOCKEY_REQUIRED", "Vui lòng nhập tên nài ngựa.");
+  }
+  const phases = (Array.isArray(plan.phases) ? plan.phases : []) as { id: string; name: string; startDate: string; endDate: string }[];
+  if (phases.length > 0) {
+    const ph = phases.find((x) => x.id === w.phaseId);
+    if (!ph) throw new ApiError(400, "PHASE_REQUIRED", "Vui lòng chọn giai đoạn.");
+    if (day < ph.startDate || day > ph.endDate) {
+      throw new ApiError(400, "OUTSIDE_PHASE_DATES", `Ngày tập phải nằm trong giai đoạn ${ph.name}.`);
+    }
   }
   const groom = db.accounts.find((a) => a.id === w.assignedStaffUserId);
   if (!groom || groom.role !== "GROOM" || groom.status !== "ACTIVE") {

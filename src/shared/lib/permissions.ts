@@ -194,6 +194,7 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
     {
       label: "TRAINING",
       items: [
+        item("training", "Training Overview", "chart"),
         item("plans", "Training Plans", "clipboard", { requires: "createPlan" }),
         item("calendar", "Weekly Calendar", "calendar", { requires: "assignSchedule" }),
         item("trials", "Trial Runs", "play", { requires: "assignSchedule" }),
@@ -217,6 +218,7 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
         item("records", "Medical Records", "file", { requires: "viewMedical" }),
         item("rx", "Prescriptions", "pill", { requires: "viewMedical" }),
         item("locks", "Training Locks", "lock", { requires: "placeLock" }),
+        item("training", "Training Overview", "chart"),
         item("alerts", "Biomechanical Alerts", "alert", { alert: true }),
         item("vaccine", "Vaccination Schedule", "syringe", { requires: "viewMedical" }),
       ],
@@ -230,6 +232,7 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
       label: "DAILY",
       items: [
         item("tasks", "Today's Tasks", "check", { alert: true }),
+        item("my-training", "My Training", "calendar"),
         item("stalls", "Stall Map", "grid"),
         item("rations", "Meal Rations", "wheat"),
         item("incidents", "Incident Reports", "camera"),
@@ -256,6 +259,7 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
       ],
     },
     { label: "MASTER DATA", items: [item("horses", "Horses", "horse", { requires: "viewHorses" }), item("stalls", "Stall Map", "grid")] },
+    { label: "TRAINING", items: [item("training", "Training Overview", "chart")] },
     {
       label: "REPORTS",
       items: [
@@ -320,6 +324,17 @@ export function screenAccess(role: Role, permissions: PermissionMap, pathname: s
       inOwnRole: role === "CLUB_MANAGER",
     };
   }
+
+  // Flow 2: Tổng quan chỉ CM, HT, VET; "Lịch tập của tôi" chỉ GROOM. Các trang /training/* khác mở cho
+  // mọi vai trò vì BE đã giới hạn dữ liệu theo vai trò (OWNER xem giáo án ngựa sở hữu, GROOM xem kết quả buổi được giao).
+  if (pathname === "/training") {
+    const ok = role === "CLUB_MANAGER" || role === "HEAD_TRAINER" || role === "VETERINARIAN";
+    return { allowed: ok, group: "TRAINING", label: "Training Overview", ownerRoles: ["CLUB_MANAGER", "HEAD_TRAINER", "VETERINARIAN"], inOwnRole: ok };
+  }
+  if (pathname === "/my-training" || pathname === "/my/training") {
+    return { allowed: role === "GROOM", group: "WORKSPACE", label: "My Training", ownerRoles: ["GROOM"], inOwnRole: role === "GROOM" };
+  }
+  if (pathname.startsWith("/training/")) return open;
 
   // SC-1.05 Hồ sơ ngựa đã xóa: chỉ CM (BE cũng chặn bằng @Roles).
   if (pathname === "/horses/deleted") {

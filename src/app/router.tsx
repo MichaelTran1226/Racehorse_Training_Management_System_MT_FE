@@ -39,11 +39,17 @@ import TrialRunsPage from "@/features/training/pages/TrialRunsPage";
 import SessionMetricsPage from "@/features/training/pages/SessionMetricsPage";
 import LiveMonitorPage from "@/features/training/pages/LiveMonitorPage";
 import AlertListPage from "@/features/training/pages/AlertListPage";
+import TrainingOverviewPage from "@/features/training/pages/TrainingOverviewPage";
+import PlanDetailPage from "@/features/training/pages/PlanDetailPage";
+import SessionResultPage from "@/features/training/pages/SessionResultPage";
+import FitnessChartPage from "@/features/training/pages/FitnessChartPage";
+import MyTrainingPage from "@/features/training/pages/MyTrainingPage";
 import StableMapPage from "@/features/stable/pages/StableMapPage";
 import StallCatalogPage from "@/features/stable/pages/StallCatalogPage";
 import { AppShell } from "@/shared/components/layout/AppShell";
 import { Providers } from "@/shared/components/layout/Providers";
 import { RoleGuard } from "./RoleGuard";
+import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
 
 // BẢNG ROUTE DUY NHẤT của ứng dụng: đường dẫn URL → trang thật nằm trong features/*/pages.
 // Thêm màn hình mới = thêm một dòng { path, element } vào đây (xem CONTRIBUTING.md).
@@ -122,6 +128,12 @@ function PermissionMatrixRoute() {
   return <PermissionMatrix accountId={id} />;
 }
 
+// "Training Progress" trên menu: Chủ ngựa xem giáo án ngựa của mình (SC-2.02), nhân viên xem Tổng quan (SC-2.01).
+function TrainingProgressRoute() {
+  const user = useCurrentUser();
+  return user.role === "HORSE_OWNER" ? <PlanListPage /> : <TrainingOverviewPage />;
+}
+
 // Mọi đường dẫn chưa có trang riêng (ngựa, huấn luyện, y tế...). RoleGuard trong AppShell đã kiểm quyền trước đó.
 function ComingSoonRoute() {
   const { "*": path = "" } = useParams();
@@ -189,11 +201,19 @@ export const router = createBrowserRouter([
           { path: "/herd", element: <HerdHealthPage /> },
 
           // ---- Phân hệ Huấn luyện & Giáo án (Flow 2: P2-06 -> P2-09)
+          { path: "/training", element: <TrainingOverviewPage /> },
+          { path: "/progress", element: <TrainingProgressRoute /> },
           { path: "/training/plans", element: <PlanListPage /> },
           { path: "/plans", element: <PlanListPage /> },
           { path: "/training/plans/new", element: <PlanWizardPage /> },
           { path: "/plans/new", element: <PlanWizardPage /> },
           { path: "/training/plans/history", element: <PlanHistoryPage /> },
+          { path: "/training/plans/:id", element: <PlanDetailPage /> },
+          { path: "/training/plans/:id/edit", element: <PlanWizardPage /> },
+          { path: "/training/sessions/:id/result", element: <SessionResultPage /> },
+          { path: "/horses/:id/fitness", element: <FitnessChartPage /> },
+          { path: "/my-training", element: <MyTrainingPage /> },
+          { path: "/my/training", element: <MyTrainingPage /> },
           { path: "/training/calendar", element: <WeeklyCalendarPage /> },
           { path: "/calendar", element: <WeeklyCalendarPage /> },
           { path: "/training/trials", element: <TrialRunsPage /> },

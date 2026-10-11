@@ -15,6 +15,23 @@ export const PLAN_STATUS_LABEL: Record<PlanStatus, string> = {
   CANCELLED: "Cancelled",
 };
 
+export type Tone = "ok" | "warn" | "danger" | "neutral" | "info";
+
+export const PLAN_STATUS_TONE: Record<PlanStatus, Tone> = {
+  DRAFT: "neutral",
+  ACTIVE: "info",
+  COMPLETED: "ok",
+  CANCELLED: "danger",
+};
+
+export const SESSION_STATUS_TONE: Record<SessionStatus, Tone> = {
+  SCHEDULED: "info",
+  COMPLETED: "ok",
+  BLOCKED: "danger",
+  MISSED: "warn",
+  CANCELLED: "neutral",
+};
+
 export const SESSION_STATUS_LABEL: Record<SessionStatus, string> = {
   SCHEDULED: "Scheduled",
   COMPLETED: "Completed",
@@ -61,16 +78,56 @@ export function isHeavy(type: ExerciseType, intensity: ExerciseIntensity): boole
   return intensity === "HEAVY" || ALWAYS_HEAVY.includes(type);
 }
 
+export type PhaseType = "BASE" | "BUILD" | "SPEED" | "PRE_RACE" | "RECOVERY";
+export type PhaseSurface = "TURF" | "DIRT" | "SYNTHETIC";
+
+export const PHASE_TYPE_LABEL: Record<PhaseType, string> = {
+  BASE: "Base fitness",
+  BUILD: "Build-up",
+  SPEED: "Speed",
+  PRE_RACE: "Pre-race maintenance",
+  RECOVERY: "Recovery",
+};
+
+/** Một giai đoạn của giáo án (SC-2.03). Ngày dạng YYYY-MM-DD theo giờ câu lạc bộ. */
 export interface TrainingPhase {
   id: string;
-  phaseOrder: number;
   name: string;
+  type: PhaseType;
   startDate: string;
   endDate: string;
-  targetHeartRateMax: number;
-  targetSpeedKmh: number;
-  focus: string;
+  goal?: string;
+  sessionsPerWeek: number;
+  maxWeeklyDistance: number;
+  surface: PhaseSurface;
+  targetSpeedKmh?: number;
 }
+
+export type CompletionLevel = "ACHIEVED" | "PARTIAL" | "NOT_ACHIEVED";
+export type TrackCondition = "GOOD" | "SOFT" | "HEAVY" | "FIRM";
+export type AbnormalSign = "LAMENESS" | "PROLONGED_BREATHING" | "NOSEBLEED" | "LEG_SWELLING" | "OFF_FEED" | "OTHER";
+
+export const COMPLETION_LABEL: Record<CompletionLevel, string> = {
+  ACHIEVED: "Achieved",
+  PARTIAL: "Partly achieved",
+  NOT_ACHIEVED: "Not achieved",
+};
+export const TRACK_CONDITION_LABEL: Record<TrackCondition, string> = {
+  GOOD: "Good",
+  SOFT: "Soft",
+  HEAVY: "Heavy",
+  FIRM: "Firm",
+};
+export const ABNORMAL_SIGN_LABEL: Record<AbnormalSign, string> = {
+  LAMENESS: "Lameness",
+  PROLONGED_BREATHING: "Prolonged heavy breathing",
+  NOSEBLEED: "Nosebleed",
+  LEG_SWELLING: "Swollen / hot leg",
+  OFF_FEED: "Off feed after work",
+  OTHER: "Other",
+};
+/** Không bắt buộc thời gian chạy với các loại này (SC-2.06). */
+export const NO_TIME_TYPES: ExerciseType[] = ["WALK", "SWIM", "TREADMILL"];
 
 export interface TrainingPlan {
   id: string;
@@ -82,12 +139,17 @@ export interface TrainingPlan {
   horseStatus?: string;
   targetDistanceMeters?: number | null;
   targetSpeedKmh?: number | null;
+  objective?: string | null;
+  notes?: string | null;
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
   status: PlanStatus;
   phases: TrainingPhase[];
   headTrainerName: string;
   workoutCount: number;
+  /** Số buổi Hoàn thành / số buổi đã đến hạn. */
+  progress: { completed: number; due: number };
+  lockedSince?: string | null;
   cancelledReason?: string | null;
   completionSummary?: string | null;
   createdAt: string;
@@ -95,6 +157,14 @@ export interface TrainingPlan {
 }
 
 export interface SessionResult {
+  actualDistanceMeters?: number | null;
+  actualSurface?: TrackType | null;
+  trackCondition?: TrackCondition | null;
+  completionLevel?: CompletionLevel | null;
+  abnormalSignTypes: AbnormalSign[];
+  recordedBy?: string | null;
+  updatedBy?: string | null;
+  updatedAt?: string | null;
   actualDurationSeconds?: number | null;
   avgSpeedKmh?: number | null;
   maxSpeedKmh?: number | null;
@@ -111,7 +181,12 @@ export interface ExerciseSession {
   id: string;
   planId: string;
   planName?: string;
+  planStatus?: PlanStatus;
+  phaseId?: string | null;
+  phaseName?: string | null;
   horseId: string;
+  horseStatus?: string;
+  stallCode?: string | null;
   horseName: string;
   horseCode?: string;
   isHorseLocked: boolean;
@@ -137,6 +212,8 @@ export interface ExerciseSession {
 /** Dữ liệu gửi khi thêm / sửa buổi tập (DL-2.01). */
 export interface SessionInput {
   scheduledDate: string; // ISO kèm +07:00
+  phaseId: string;
+  acknowledgeWarnings?: boolean;
   workoutType: ExerciseType;
   intensity: ExerciseIntensity;
   distanceMeters: number;
@@ -150,28 +227,77 @@ export interface SessionInput {
 }
 
 export interface ResultInput {
+  actualDistanceMeters: number;
   actualTimeSeconds?: number;
+  actualSurface?: TrackType;
+  trackCondition?: TrackCondition;
   heartRatePeak?: number;
   heartRateRecovery?: number;
-  averageSpeedKmh?: number;
-  topSpeedKmh?: number;
-  performanceScore?: number;
-  trainerNotes?: string;
-  abnormalSigns?: boolean;
+  performanceScore: number;
+  completionLevel: CompletionLevel;
+  trainerNotes: string;
+  abnormalSignTypes?: AbnormalSign[];
   abnormalNotes?: string;
 }
 
 export interface FitnessMetricPoint {
   workoutId: string;
   date: string;
-  sessionName: string;
+  workoutType: ExerciseType;
+  distanceMeters: number;
+  timeSeconds: number | null;
   avgSpeedKmh: number | null;
-  maxSpeedKmh: number | null;
   maxHeartRate: number | null;
-  recoveryScore: number | null;
-  staminaScore: number | null;
+  recoveryHeartRate: number | null;
   performanceScore: number | null;
+  load: number;
   hasAlert: boolean;
+}
+
+/** SC-2.07 dữ liệu biểu đồ thể lực. */
+export interface FitnessData {
+  horse: { id: string; name: string; horseCode?: string | null; status: string; isMedicalLocked: boolean };
+  points: FitnessMetricPoint[];
+  weeklyLoad: { weekStart: string; load: number }[];
+  lockPeriods: { from: string; to: string | null }[];
+  summary: {
+    bestAvgSpeed: { value: number; date: string } | null;
+    avgScoreLast4: number | null;
+    avgRecoveryLast4: number | null;
+    load7d: number;
+    loadChangePct: number | null;
+  };
+}
+
+/** SC-2.01 tổng quan huấn luyện. */
+export interface OverviewRow {
+  horse: { id: string; name: string; horseCode?: string | null; status: string; isMedicalLocked: boolean };
+  plan: { id: string; planCode?: string | null; name: string } | null;
+  currentPhase: { name: string; week: number; weeks: number } | null;
+  progress: { completed: number; due: number } | null;
+  latestScore: number | null;
+  previousAvgScore: number | null;
+  load7d: number;
+  loadSpike: boolean;
+  nextWorkout: { date: string; workoutType: ExerciseType } | null;
+}
+
+export interface TrainingOverview {
+  kpis: {
+    activePlans: number;
+    managedHorses: number;
+    todayCompleted: number;
+    todayTotal: number;
+    blockedNext7Days: number;
+    loadSpikeHorses: number;
+  };
+  rows: OverviewRow[];
+}
+
+/** Kết quả lặp hằng tuần (DL-2.01). */
+export interface RepeatResult {
+  created: number;
+  skipped: { date: string; reason: string }[];
 }
 
 /** Cảnh báo dấu hiệu bất thường sau buổi tập (FR-2.14) = một buổi tập có abnormalSigns. */
