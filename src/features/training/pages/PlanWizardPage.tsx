@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/shared/components/ui/Button";
 import { Card } from "@/shared/components/ui/Card";
 import { Field } from "@/shared/components/form/Field";
@@ -14,6 +14,8 @@ import type { TrainingPhase } from "../types";
 
 export default function PlanWizardPage() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id?: string }>();
+  const isEditing = Boolean(id);
   const toast = useToast();
 
   const [step, setStep] = useState<number>(1);
@@ -44,6 +46,25 @@ export default function PlanWizardPage() {
     return d.toISOString().split("T")[0];
   });
   const [notes, setNotes] = useState<string>("");
+
+  useEffect(() => {
+    if (id) {
+      trainingApi.getPlanById(id).then((p) => {
+        if (p) {
+          setName(p.name);
+          setHorseId(p.horseId);
+          setTarget(p.target || "");
+          setTargetDistance(p.targetDistanceMeters || 1600);
+          setStartDate(p.startDate);
+          setEndDate(p.endDate);
+          setNotes(p.notes || "");
+          if (p.phases && p.phases.length > 0) {
+            setPhases(p.phases);
+          }
+        }
+      }).catch(() => {});
+    }
+  }, [id]);
 
   // Phases
   const [phases, setPhases] = useState<TrainingPhase[]>(() => [
@@ -108,27 +129,44 @@ export default function PlanWizardPage() {
 
     try {
       setSubmitting(true);
-      const created = await trainingApi.createPlan({
-        name,
-        horseId,
-        horseName: selectedHorse?.name || "Racehorse",
-        horseCode: selectedHorse?.code || selectedHorse?.horseCode || "HR-000001",
-        target,
-        targetDistanceMeters: targetDistance,
-        startDate,
-        endDate,
-        notes,
-        phases,
-        status: activate ? "ACTIVE" : "DRAFT",
-      });
+      if (isEditing && id) {
+        await trainingApi.updatePlan(id, {
+          name,
+          horseId,
+          horseName: selectedHorse?.name || "Racehorse",
+          horseCode: selectedHorse?.code || selectedHorse?.horseCode || "HR-000001",
+          target,
+          targetDistanceMeters: targetDistance,
+          startDate,
+          endDate,
+          notes,
+          phases,
+        });
+        toast.show("Training plan updated successfully", "ok");
+        navigate(`/training/plans/${id}`);
+      } else {
+        const created = await trainingApi.createPlan({
+          name,
+          horseId,
+          horseName: selectedHorse?.name || "Racehorse",
+          horseCode: selectedHorse?.code || selectedHorse?.horseCode || "HR-000001",
+          target,
+          targetDistanceMeters: targetDistance,
+          startDate,
+          endDate,
+          notes,
+          phases,
+          status: activate ? "ACTIVE" : "DRAFT",
+        });
 
-      toast.show(
-        `Plan ${created.planCode} successfully created (${activate ? "Active" : "Draft"})`,
-        "ok",
-      );
-      navigate("/training/plans");
+        toast.show(
+          `Plan ${created.planCode} successfully created (${activate ? "Active" : "Draft"})`,
+          "ok",
+        );
+        navigate("/training/plans");
+      }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to create training plan";
+      const msg = err instanceof Error ? err.message : "Failed to save training plan";
       toast.show(msg, "danger");
     } finally {
       setSubmitting(false);
@@ -140,12 +178,14 @@ export default function PlanWizardPage() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <div>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 700, margin: 0 }}>Create Training Plan</h1>
+          <h1 style={{ fontSize: "1.5rem", fontWeight: 700, margin: 0 }}>
+            {isEditing ? "Edit Training Plan" : "Create Training Plan"}
+          </h1>
           <p style={{ margin: "0.25rem 0 0", color: "var(--muted)", fontSize: "0.875rem" }}>
-            Design periodized conditioning cycles and verify clinical readiness
+            {isEditing ? "Update periodized targets and phase specifications" : "Design periodized conditioning cycles and verify clinical readiness"}
           </p>
         </div>
-        <Button tone="ghost" onClick={() => navigate("/training/plans")}>
+        <Button tone="ghost" onClick={() => navigate(isEditing ? `/training/plans/${id}` : "/training/plans")}>
           Cancel
         </Button>
       </div>

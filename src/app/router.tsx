@@ -31,6 +31,7 @@ import TrainingLockPage from "@/features/health/pages/TrainingLockPage";
 import CareSchedulePage from "@/features/health/pages/CareSchedulePage";
 import HerdHealthPage from "@/features/health/pages/HerdHealthPage";
 import PlanListPage from "@/features/training/pages/PlanListPage";
+import PlanDetailPage from "@/features/training/pages/PlanDetailPage";
 import PlanWizardPage from "@/features/training/pages/PlanWizardPage";
 import PlanHistoryPage from "@/features/training/pages/PlanHistoryPage";
 import WeeklyCalendarPage from "@/features/training/pages/WeeklyCalendarPage";
@@ -187,17 +188,23 @@ export const router = createBrowserRouter([
           { path: "/herd", element: <HerdHealthPage /> },
 
           // ---- Phân hệ Huấn luyện & Giáo án (Flow 2: P2-06 -> P2-09)
+          { path: "/training", element: <PlanListPage /> },
           { path: "/training/plans", element: <PlanListPage /> },
           { path: "/plans", element: <PlanListPage /> },
           { path: "/training/plans/new", element: <PlanWizardPage /> },
           { path: "/plans/new", element: <PlanWizardPage /> },
+          { path: "/training/plans/:id", element: <PlanDetailPage /> },
+          { path: "/plans/:id", element: <PlanDetailPage /> },
+          { path: "/training/plans/:id/edit", element: <PlanWizardPage /> },
           { path: "/training/plans/history", element: <PlanHistoryPage /> },
           { path: "/training/calendar", element: <WeeklyCalendarPage /> },
+          { path: "/training/schedule", element: <WeeklyCalendarPage /> },
           { path: "/calendar", element: <WeeklyCalendarPage /> },
           { path: "/training/trials", element: <TrialRunsPage /> },
           { path: "/trials", element: <TrialRunsPage /> },
           { path: "/training/metrics", element: <SessionMetricsPage /> },
           { path: "/metrics", element: <SessionMetricsPage /> },
+          { path: "/horses/:id/fitness", element: <SessionMetricsPage /> },
           { path: "/training/monitor", element: <LiveMonitorPage /> },
           { path: "/monitor", element: <LiveMonitorPage /> },
           { path: "/training/alerts", element: <AlertListPage /> },
