@@ -4,14 +4,17 @@ import type {
   ExerciseIntensity,
   ExerciseSession,
   ExerciseType,
-  FitnessMetricPoint,
+  FitnessData,
   Groom,
   PlanStatus,
+  RepeatResult,
   ResultInput,
   SessionInput,
+  SessionResult,
   SessionStatus,
   TrackType,
   TrainingAlert,
+  TrainingOverview,
   TrainingPhase,
   TrainingPlan,
 } from "./types";
@@ -46,12 +49,18 @@ interface BeHorse {
   horseCode?: string | null;
   status?: string;
   isMedicalLocked?: boolean;
+  medicalLocks?: { lockedAt: string; lockReason: string }[];
+  stallAllocations?: { stall: { code: string } }[];
 }
 
 export interface BePlan {
   id: string;
+  planCode?: string | null;
   horseId: string;
   phaseName: string;
+  objective?: string | null;
+  notes?: string | null;
+  progress?: { completed: number; due: number };
   phases?: unknown;
   targetSpeed?: number | null;
   targetDistance?: number | null;
@@ -70,7 +79,17 @@ export interface BeWorkout {
   id: string;
   trainingPlanId: string;
   horseId: string;
+  phaseId?: string | null;
   scheduledDate: string;
+  actualDistanceMeters?: number | null;
+  actualSurface?: string | null;
+  trackCondition?: string | null;
+  completionLevel?: string | null;
+  resultNotes?: string | null;
+  abnormalSignTypes?: string[];
+  resultRecordedBy?: { fullName: string } | null;
+  resultUpdatedBy?: { fullName: string } | null;
+  resultUpdatedAt?: string | null;
   workoutType?: string | null;
   intensity?: string | null;
   trackSurface?: string | null;
@@ -96,7 +115,7 @@ export interface BeWorkout {
   vetAcknowledgedAt?: string | null;
   vetNotes?: string | null;
   horse?: BeHorse;
-  trainingPlan?: { id: string; phaseName: string } | null;
+  trainingPlan?: { id: string; phaseName: string; status?: PlanStatus; phases?: unknown } | null;
 }
 
 // ------------------------------------------------------------ Chuyển đổi BE -> màn hình
@@ -104,8 +123,12 @@ export interface BeWorkout {
 export function toPlan(p: BePlan): TrainingPlan {
   return {
     id: p.id,
-    planCode: `GA-${p.id.slice(0, 6).toUpperCase()}`,
+    planCode: p.planCode ?? "—",
     name: p.phaseName,
+    objective: p.objective,
+    notes: p.notes,
+    progress: p.progress ?? { completed: 0, due: 0 },
+    lockedSince: p.horse?.medicalLocks?.[0]?.lockedAt ?? null,
     horseId: p.horseId,
     horseName: p.horse?.name ?? "—",
     horseCode: p.horse?.horseCode ?? "",
@@ -125,12 +148,18 @@ export function toPlan(p: BePlan): TrainingPlan {
   };
 }
 
-export function toSession(w: BeWorkout): ExerciseSession {
+export function toSession(w: BeWorkout, planPhases?: TrainingPhase[]): ExerciseSession {
   const { date, time } = clubParts(w.scheduledDate);
+  const phases = planPhases ?? (Array.isArray(w.trainingPlan?.phases) ? (w.trainingPlan?.phases as TrainingPhase[]) : []);
   return {
     id: w.id,
     planId: w.trainingPlanId,
     planName: w.trainingPlan?.phaseName,
+    planStatus: w.trainingPlan?.status,
+    phaseId: w.phaseId,
+    phaseName: phases.find((p) => p.id === w.phaseId)?.name ?? null,
+    horseStatus: w.horse?.status,
+    stallCode: w.horse?.stallAllocations?.[0]?.stall.code ?? null,
     horseId: w.horseId,
     horseName: w.horse?.name ?? "—",
     horseCode: w.horse?.horseCode ?? undefined,
@@ -154,6 +183,14 @@ export function toSession(w: BeWorkout): ExerciseSession {
     result:
       w.status === "COMPLETED"
         ? {
+            actualDistanceMeters: w.actualDistanceMeters,
+            actualSurface: (w.actualSurface ?? null) as TrackType | null,
+            trackCondition: (w.trackCondition ?? null) as SessionResult["trackCondition"],
+            completionLevel: (w.completionLevel ?? null) as SessionResult["completionLevel"],
+            abnormalSignTypes: (w.abnormalSignTypes ?? []) as SessionResult["abnormalSignTypes"],
+            recordedBy: w.resultRecordedBy?.fullName ?? null,
+            updatedBy: w.resultUpdatedBy?.fullName ?? null,
+            updatedAt: w.resultUpdatedAt ?? null,
             actualDurationSeconds: w.actualTimeSeconds,
             avgSpeedKmh: w.averageSpeedKmh,
             maxSpeedKmh: w.topSpeedKmh,
@@ -162,7 +199,7 @@ export function toSession(w: BeWorkout): ExerciseSession {
             performanceScore: w.performanceScore,
             hasAbnormalSigns: Boolean(w.abnormalSigns),
             abnormalSignsDescription: w.abnormalNotes,
-            headTrainerFeedback: w.trainerNotes,
+            headTrainerFeedback: w.resultNotes ?? null,
             recordedAt: w.resultRecordedAt,
           }
         : undefined,
@@ -188,6 +225,8 @@ function toAlert(w: BeWorkout): TrainingAlert {
 export interface PlanInput {
   horseId: string;
   phaseName: string;
+  objective: string;
+  notes?: string;
   targetDistance?: number;
   targetSpeed?: number;
   startDate: string;
@@ -213,7 +252,16 @@ export const trainingApi = {
 
   async getPlanById(id: string): Promise<TrainingPlan & { sessions: ExerciseSession[] }> {
     const res = await api<BePlan & { workoutSessions?: BeWorkout[] }>("GET", `/training/plans/${id}`);
-    return { ...toPlan(res), sessions: (res.workoutSessions ?? []).map(toSession) };
+    const plan = toPlan(res);
+    const horse = res.horse;
+    const sessions = (res.workoutSessions ?? []).map((w) =>
+      toSession({ ...w, horse, trainingPlan: { id: plan.id, phaseName: plan.name, status: plan.status } }, plan.phases),
+    );
+    return { ...plan, sessions };
+  },
+
+  async getOverview(): Promise<TrainingOverview> {
+    return api<TrainingOverview>("GET", "/training/overview");
   },
 
   /** Luôn tạo ở Nháp (SC-2.03); kích hoạt qua activatePlan sau khi có buổi tập. */
@@ -261,11 +309,27 @@ export const trainingApi = {
     for (const [k, v] of Object.entries(filter ?? {})) if (v) params.set(k, v);
     const qs = params.toString() ? `?${params.toString()}` : "";
     const res = await api<BeWorkout[]>("GET", `/training/workouts${qs}`);
-    return res.map(toSession);
+    return res.map((w) => toSession(w));
   },
 
   async createSession(planId: string, input: SessionInput): Promise<ExerciseSession> {
     return toSession(await api<BeWorkout>("POST", `/training/plans/${planId}/workouts`, input));
+  },
+
+  /** DL-2.01 Lặp lại hằng tuần (weekdays: 1 = Thứ Hai ... 7 = Chủ nhật). */
+  async createRepeatSessions(
+    planId: string,
+    input: SessionInput & { weekdays: number[]; until: string },
+  ): Promise<RepeatResult> {
+    return api<RepeatResult>("POST", `/training/plans/${planId}/workouts/repeat`, input);
+  },
+
+  async updateSession(id: string, input: Partial<SessionInput>): Promise<ExerciseSession> {
+    return toSession(await api<BeWorkout>("PATCH", `/training/workouts/${id}`, input));
+  },
+
+  async getSession(id: string): Promise<ExerciseSession> {
+    return toSession(await api<BeWorkout>("GET", `/training/workouts/${id}`));
   },
 
   async cancelSession(id: string, reason: CancelWorkoutReason, note?: string): Promise<ExerciseSession> {
@@ -291,12 +355,12 @@ export const trainingApi = {
     if (range?.from) params.set("from", range.from);
     if (range?.to) params.set("to", range.to);
     const qs = params.toString() ? `?${params.toString()}` : "";
-    return (await api<BeWorkout[]>("GET", `/training/trial-runs${qs}`)).map(toSession);
+    return (await api<BeWorkout[]>("GET", `/training/trial-runs${qs}`)).map((w) => toSession(w));
   },
 
   // Thể lực & cảnh báo
-  async getFitnessMetrics(horseId: string): Promise<FitnessMetricPoint[]> {
-    return api<FitnessMetricPoint[]>("GET", `/training/horses/${horseId}/fitness-metrics`);
+  async getFitness(horseId: string, weeks = 12): Promise<FitnessData> {
+    return api<FitnessData>("GET", `/training/horses/${horseId}/fitness-metrics?weeks=${weeks}`);
   },
 
   async getAlerts(): Promise<TrainingAlert[]> {

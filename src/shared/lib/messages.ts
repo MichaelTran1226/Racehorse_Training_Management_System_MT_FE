@@ -76,6 +76,19 @@ const GENERIC: Record<string, string> = {
   NOTE_REQUIRED: "Note must be 10 to 500 characters.",
   WORKOUT_NOT_BLOCKED: "Only blocked workouts can be restored.",
   ALERT_NOT_FOUND: "This alert no longer exists. Reload the list.",
+  START_DATE_TOO_EARLY: "The start date cannot be more than 7 days ago.",
+  PLAN_TOO_LONG: "A plan can last at most 52 weeks.",
+  TOO_MANY_PHASES: "A plan can have at most 12 phases.",
+  INVALID_PHASE: "A phase is not valid: check its name, dates, quotas and surface.",
+  PHASE_OVERLAP: "Two phases overlap. Adjust their dates.",
+  PHASE_HAS_COMPLETED_WORKOUTS: "This phase already has completed workouts, so it cannot be removed and its start date cannot change.",
+  PHASE_REQUIRED: "Please choose a phase.",
+  OUTSIDE_PHASE_DATES: "The workout date must be within the chosen phase.",
+  REPEAT_BEYOND_PHASE: "“Repeat until” cannot be after the end of the phase.",
+  NO_REPEAT_DATES: "No day matches the chosen weekdays.",
+  TOO_MANY_REPEATS: "At most 60 workouts can be created at once.",
+  TIME_REQUIRED: "Running time is required for this workout type.",
+  RECOVERY_ABOVE_PEAK: "Heart rate after 10 minutes cannot exceed the peak heart rate.",
 };
 
 export function messageFor(err: unknown): string {

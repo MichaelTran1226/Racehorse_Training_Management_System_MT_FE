@@ -96,6 +96,18 @@ export function breadcrumbFor(user: AuthUser, pathname: string, accountName?: st
       { label: "Create Plan" },
     ];
   }
+  if (/^\/training\/plans\/[^/]+\/edit$/.test(pathname)) {
+    return [homeSegment, { label: "Training Plans", href: "/plans" }, { label: "Edit Plan" }];
+  }
+  if (/^\/training\/plans\/[^/]+$/.test(pathname) && pathname !== "/training/plans/history") {
+    return [homeSegment, { label: "Training Plans", href: "/plans" }, { label: "Plan Details" }];
+  }
+  if (/^\/training\/sessions\/[^/]+\/result$/.test(pathname)) {
+    return [homeSegment, { label: "Training Schedule", href: "/calendar" }, { label: "Workout Result" }];
+  }
+  if (/^\/horses\/[^/]+\/fitness$/.test(pathname)) {
+    return [homeSegment, { label: "Horses", href: "/horses" }, { label: "Fitness Chart" }];
+  }
   if (pathname === "/training/plans/history") {
     return [
       homeSegment,
