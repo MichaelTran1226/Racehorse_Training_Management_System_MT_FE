@@ -937,13 +937,14 @@ export default function TrainingLockPage() {
                 ? `${selectedLock.horseName} (${selectedLock.horseCode || selectedLock.horseId})`
                 : selectedLock.horseId
               : horses[0]
-              ? `${horses[0].name} (${horses[0].code})`
+              ? `${horses[0].name} (${horses[0].horseCode ?? horses[0].id})`
               : "Horse"
           }
           horseId={selectedLock?.horseId || (horses[0]?.id ?? "")}
           horseOptions={horses.map((h) => ({
             value: h.id,
-            label: `${h.name} (${h.code}) - ${h.healthGroup}${h.isLocked ? " [LOCKED]" : ""}`,
+            // Ngựa lấy từ GET /horses: mã là horseCode, trạng thái là status, cờ khóa là isMedicalLocked.
+            label: `${h.name} (${h.horseCode ?? h.id}) - ${HEALTH_STATUS[h.status as keyof typeof HEALTH_STATUS]?.label ?? h.status}${h.isMedicalLocked ? " [LOCKED]" : ""}`,
           }))}
           currentReviewDate={selectedLock?.reviewDate}
           mode={modalMode}
