@@ -220,9 +220,17 @@ export default function PlanListPage() {
               <tbody>
                 {filteredPlans.map((plan) => (
                   <tr key={plan.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                    <td style={{ padding: "0.75rem 1rem", fontWeight: 600 }}>{plan.planCode}</td>
+                    <td style={{ padding: "0.75rem 1rem", fontWeight: 600 }}>
+                      <Link to={`/training/plans/${plan.id}`} style={{ color: "var(--accent)", textDecoration: "none" }}>
+                        {plan.planCode}
+                      </Link>
+                    </td>
                     <td style={{ padding: "0.75rem 1rem" }}>
-                      <div style={{ fontWeight: 600 }}>{plan.name}</div>
+                      <div style={{ fontWeight: 600 }}>
+                        <Link to={`/training/plans/${plan.id}`} style={{ color: "inherit", textDecoration: "none" }}>
+                          {plan.name}
+                        </Link>
+                      </div>
                       <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
                         Target: {plan.targetDistanceMeters}m · {plan.target}
                       </div>
@@ -249,10 +257,14 @@ export default function PlanListPage() {
                     </td>
                     <td style={{ padding: "0.75rem 1rem", textAlign: "right" }}>
                       <div style={{ display: "inline-flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                        <Link to={`/training/plans/${plan.id}`}>
+                          <Button tone="ghost" size="sm">Details</Button>
+                        </Link>
                         {isTrainer && plan.status === "DRAFT" && (
                           plan.isLockedByMedical ? (
                             <Button
                               tone="secondary"
+                              size="sm"
                               onClick={() =>
                                 toast.show(
                                   `Activation blocked: ${plan.horseName} is under Veterinary Medical Lock (${plan.medicalLockReason || "Clinical hold"}).`,
@@ -261,26 +273,26 @@ export default function PlanListPage() {
                               }
                               title="Activation blocked by Veterinary Medical Lock"
                             >
-                              🔒 Locked by Vet
+                              🔒 Locked
                             </Button>
                           ) : (
-                            <Button tone="primary" onClick={() => void handleActivate(plan)}>
+                            <Button tone="primary" size="sm" onClick={() => void handleActivate(plan)}>
                               Activate
                             </Button>
                           )
                         )}
                         {isTrainer && plan.status === "ACTIVE" && (
-                          <Button tone="accent" onClick={() => void handleComplete(plan)}>
+                          <Button tone="accent" size="sm" onClick={() => void handleComplete(plan)}>
                             Complete
                           </Button>
                         )}
                         {isTrainer && (plan.status === "DRAFT" || plan.status === "ACTIVE") && (
-                          <Button tone="danger" onClick={() => setCancellingPlan(plan)}>
+                          <Button tone="danger" size="sm" onClick={() => setCancellingPlan(plan)}>
                             Cancel
                           </Button>
                         )}
                         {isTrainer && (
-                          <Button tone="secondary" onClick={() => setCloningPlan(plan)}>
+                          <Button tone="secondary" size="sm" onClick={() => setCloningPlan(plan)}>
                             Clone
                           </Button>
                         )}
