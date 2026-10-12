@@ -1,4 +1,5 @@
 import { addAppNotification } from "@/shared/lib/notifications";
+import { blockHeavyWorkouts } from "@/shared/mock/trainingData";
 
 export interface HerdHorse {
   id: string;
@@ -452,6 +453,7 @@ export function placeHorseTrainingLock(
         : "INJURED";
     horse.lockReason = input.reason;
     horse.statusText = input.reason;
+    blockHeavyWorkouts(horse.id, `Training lock: ${input.reason}`);
     horse.lockDate = nowStr;
     horse.reviewDate = input.reviewDate;
     saveStoredHorses(horses);
