@@ -6,6 +6,7 @@ import { ConfirmModal } from "@/shared/components/ui/ConfirmModal";
 import { BRAND } from "@/shared/lib/brand";
 import { breadcrumbFor } from "@/shared/lib/navigation";
 import { ROLE_LABEL } from "@/shared/lib/permissions";
+import { useAppLanguage } from "@/shared/lib/language";
 import { useAuth } from "./AuthProvider";
 import { BreadcrumbContext } from "./BreadcrumbContext";
 import { Sidebar } from "./Sidebar";
@@ -18,6 +19,7 @@ import styles from "./AppShell.module.css";
 export function AppShell({ children }: { children: ReactNode }) {
   const { status, user, expired, signOut, refresh } = useAuth();
   const { pathname } = useLocation();
+  const { t } = useAppLanguage();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
@@ -65,19 +67,18 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Hộp thoại nằm NGOÀI RoleGuard: vẫn hiện được khi trang bên trong bị chặn (403). */}
       {logoutOpen && (
         <ConfirmModal
-          title={`Log out of ${BRAND.name}?`}
-          subtitle="Unsaved changes on open forms are discarded."
+          title={t("common.confirmLogoutTitle", `Log out of ${BRAND.name}?`)}
+          subtitle={t("common.confirmLogoutSubtitle", "Unsaved changes on open forms are discarded.")}
           tone="warn"
-          confirmLabel="Log out"
-          cancelLabel="Stay signed in"
+          confirmLabel={t("common.logout", "Log out")}
+          cancelLabel={t("common.staySignedIn", "Stay signed in")}
           onCancel={() => setLogoutOpen(false)}
           onConfirm={async () => {
             await signOut();
             navigate("/login", { replace: true });
           }}
         >
-          The session for {user.fullName} · {ROLE_LABEL[user.role]} closes and the browser returns to the sign-in page. Keep me signed
-          in does not survive an explicit log out.
+          {t("common.confirmLogoutBody", `The session for ${user.fullName} · ${t(`nav.role_${user.role}`, ROLE_LABEL[user.role])} closes and the browser returns to the sign-in page.`)}
         </ConfirmModal>
       )}
       {expired && <SessionExpiredModal />}

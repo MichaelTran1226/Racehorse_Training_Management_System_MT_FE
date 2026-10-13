@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Icon } from "@/shared/components/ui/Icon";
+import { LanguageToggle } from "@/shared/components/ui/LanguageToggle";
 import { useTheme } from "@/shared/lib/theme";
+import { useAppLanguage } from "@/shared/lib/language";
 import { cx } from "@/shared/lib/cx";
 import {
   getStoredNotifications,
@@ -27,6 +29,7 @@ interface TopbarProps {
 export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
   const { user } = useAuth();
   const { theme, toggle: toggleTheme } = useTheme();
+  const { t } = useAppLanguage();
   const navigate = useNavigate();
   const [popoverOpen, setPopoverOpen] = useState(false);
   const bellTriggerRef = useRef<HTMLDivElement>(null);
@@ -146,8 +149,8 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
           </span>
           <input
             type="text"
-            aria-label="Search horses, plans, people"
-            placeholder="Search horses, plans, people"
+            aria-label={t("topbar.searchAria", "Search horses, plans, people")}
+            placeholder={t("topbar.searchPlaceholder", "Search horses, plans, people")}
             className={cx(searchQuery && styles.hasValue)}
             onFocus={() => {
               setAllStoredHorses(getStoredHorses());
@@ -216,11 +219,14 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
             />
           </div>
 
+          {/* Language Switcher */}
+          <LanguageToggle />
+
           {/* Theme Toggle Button */}
           <button
             type="button"
-            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            aria-label={theme === "dark" ? t("topbar.themeToggleLight", "Switch to light mode") : t("topbar.themeToggleDark", "Switch to dark mode")}
+            title={theme === "dark" ? t("topbar.themeToggleLight", "Switch to light mode") : t("topbar.themeToggleDark", "Switch to dark mode")}
             onClick={toggleTheme}
             className={styles.actionBtn}
           >
@@ -230,8 +236,8 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
           {/* Logout Button */}
           <button
             type="button"
-            aria-label="Log out"
-            title="Log out"
+            aria-label={t("topbar.logout", "Log out")}
+            title={t("topbar.logout", "Log out")}
             onClick={onLogout}
             className={styles.actionBtn}
           >

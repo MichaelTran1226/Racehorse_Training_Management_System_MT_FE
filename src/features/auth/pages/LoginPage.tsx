@@ -11,6 +11,7 @@ import type { AlertTone } from "@/shared/components/ui/Alert";
 import { Button } from "@/shared/components/ui/Button";
 import { formatCountdown, formatTime } from "@/shared/lib/format";
 import { useCountdown, useQueryParams } from "@/shared/lib/hooks";
+import { useAppLanguage } from "@/shared/lib/language";
 import { loginFailure } from "@/shared/lib/messages";
 import type { LoginFailure } from "@/shared/lib/messages";
 import { safeNext } from "../flow";
@@ -30,6 +31,7 @@ interface AlertState {
 export default function LoginPage() {
   const navigate = useNavigate();
   const { status, signIn } = useAuth();
+  const { t } = useAppLanguage();
   const params = useQueryParams();
 
   const [email, setEmail] = useState("");
@@ -133,7 +135,10 @@ export default function LoginPage() {
       : null);
 
   return (
-    <AuthLayout title="Sign in to start your shift." description="Use the club account you were issued. Each role sees only the work it is granted.">
+    <AuthLayout
+      title={t("auth.loginTitle", "Sign in to start your shift.")}
+      description={t("auth.loginSubtitle", "Use the club account you were issued. Each role sees only the work it is granted.")}
+    >
       <form onSubmit={onSubmit} noValidate style={{ display: "contents" }}>
         {banner && (
           <Alert
@@ -156,7 +161,7 @@ export default function LoginPage() {
           </Alert>
         )}
 
-        <Field label="Club email" required error={emailError}>
+        <Field label={t("auth.email", "Club email")} required error={emailError}>
           <Input
             type="email"
             icon="mail"
@@ -174,7 +179,7 @@ export default function LoginPage() {
           />
         </Field>
 
-        <Field label="Password" required error={passwordError}>
+        <Field label={t("auth.password", "Password")} required error={passwordError}>
           <Input
             type="password"
             icon="key"
@@ -191,8 +196,8 @@ export default function LoginPage() {
         </Field>
 
         <div className={styles.row}>
-          <Checkbox label="Keep me signed in" checked={remember} onChange={setRemember} disabled={checking} />
-          <Link to="/forgot-password">Forgot password?</Link>
+          <Checkbox label={t("auth.rememberMe", "Keep me signed in")} checked={remember} onChange={setRemember} disabled={checking} />
+          <Link to="/forgot-password">{t("auth.forgotPassword", "Forgot password?")}</Link>
         </div>
 
         <Button
@@ -203,21 +208,21 @@ export default function LoginPage() {
           disabled={checking}
           blockedReason={locked ? `Sign-in is paused. Try again in ${formatCountdown(lockLeft)}.` : blockedReason}
         >
-          {checking ? "Signing in…" : "Enter workspace"}
+          {checking ? t("auth.submitting", "Signing in…") : t("auth.enterWorkspace", "Enter workspace")}
         </Button>
 
         <div className={styles.divider} aria-hidden="true">
-          <span>OR</span>
+          <span>{t("auth.or", "OR")}</span>
         </div>
         <p className={styles.foot}>
           {footNote ?? (
             <>
-              No account yet? <Link to="/sign-up">Sign up and wait for Club Manager approval</Link>
+              {t("auth.noAccount", "No account yet?")} <Link to="/sign-up">{t("auth.signUpWait", "Sign up and wait for Club Manager approval")}</Link>
             </>
           )}
         </p>
         <p className={styles.foot}>
-          Invited as staff? <Link to="/accept-invite">Accept the invitation</Link>
+          {t("auth.invitedStaff", "Invited as staff?")} <Link to="/accept-invite">{t("auth.acceptInviteLink", "Accept the invitation")}</Link>
         </p>
       </form>
     </AuthLayout>

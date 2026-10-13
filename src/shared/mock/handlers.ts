@@ -169,6 +169,81 @@ const routes: Route[] = [
         .map((a) => ({ id: a.id, fullName: a.fullName, email: a.email, horseCount: getStoredHorses().filter((h) => h.assignedGroomId === a.id).length })),
   },
   { method: "GET", pattern: /^\/stalls$/, handler: ({ db, url }) => mockStalls(db, url) },
+  // Đăng ký ô chuồng cho ngựa (Allocate Stall)
+  {
+    method: "POST",
+    pattern: /^\/stalls\/([^/]+)\/allocations$/,
+    handler: ({ db, params, body }) => {
+      const [stallId] = params;
+      const horseId = String(body.horseId ?? "");
+      const groomId = body.assignedGroomUserId ? String(body.assignedGroomUserId) : undefined;
+      const horses = getStoredHorses();
+      const horse = horses.find((h) => h.id === horseId);
+      if (!horse) throw new ApiError(404, "HORSE_NOT_FOUND", "Horse not found");
+      const stalls = mockStallList(db);
+      const stall = stalls.find(
+        (s) =>
+          s.id === stallId ||
+          s.code === stallId ||
+          s.id.toLowerCase() === stallId.toLowerCase() ||
+          s.code.toLowerCase() === stallId.toLowerCase(),
+      );
+      if (!stall) throw new ApiError(404, "STALL_NOT_FOUND", "Stall not found");
+      horse.stall = stall.code;
+      if (groomId) horse.assignedGroomId = groomId;
+      saveStoredHorses(horses);
+      if (typeof window !== "undefined") window.dispatchEvent(new Event("horsesUpdated"));
+      return { stallCode: stall.code, horseName: horse.name };
+    },
+  },
+  // Di chuyển ô chuồng (Transfer Stall)
+  {
+    method: "PUT",
+    pattern: /^\/stalls\/allocations\/([^/]+)\/transfer$/,
+    handler: ({ db, params, body }) => {
+      const [allocId] = params;
+      const toStallId = String(body.toStallId ?? "");
+      const groomId = body.assignedGroomUserId ? String(body.assignedGroomUserId) : undefined;
+      const stalls = mockStallList(db);
+      const toStall = stalls.find(
+        (s) =>
+          s.id === toStallId ||
+          s.code === toStallId ||
+          s.id.toLowerCase() === toStallId.toLowerCase() ||
+          s.code.toLowerCase() === toStallId.toLowerCase(),
+      );
+      if (!toStall) throw new ApiError(404, "TARGET_STALL_NOT_FOUND", "Target stall not found");
+      const horses = getStoredHorses();
+      const horse = horses.find(
+        (h) => h.id === allocId || `alloc-${h.id}` === allocId || allocId.includes(h.id),
+      );
+      if (!horse) throw new ApiError(404, "ALLOCATION_NOT_FOUND", "Allocation not found");
+      const fromStallCode = horse.stall || "";
+      horse.stall = toStall.code;
+      if (groomId) horse.assignedGroomId = groomId;
+      saveStoredHorses(horses);
+      if (typeof window !== "undefined") window.dispatchEvent(new Event("horsesUpdated"));
+      return { fromStallCode, stallCode: toStall.code, horseName: horse.name };
+    },
+  },
+  // Trả ô chuồng (Return Stall)
+  {
+    method: "PUT",
+    pattern: /^\/stalls\/allocations\/([^/]+)\/return$/,
+    handler: ({ params }) => {
+      const [allocId] = params;
+      const horses = getStoredHorses();
+      const horse = horses.find(
+        (h) => h.id === allocId || `alloc-${h.id}` === allocId || allocId.includes(h.id),
+      );
+      if (!horse) throw new ApiError(404, "ALLOCATION_NOT_FOUND", "Allocation not found");
+      const stallCode = horse.stall || "";
+      horse.stall = "";
+      saveStoredHorses(horses);
+      if (typeof window !== "undefined") window.dispatchEvent(new Event("horsesUpdated"));
+      return { stallCode, horseName: horse.name };
+    },
+  },
   {
     method: "GET", pattern: /^\/audit-logs$/,
     handler: ({ db, url }) => {

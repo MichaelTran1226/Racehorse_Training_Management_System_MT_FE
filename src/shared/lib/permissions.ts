@@ -279,7 +279,6 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
       label: "ADMINISTRATION",
       items: [
         item("accounts", "Accounts", "users", { requires: "manageAccounts", alert: true }),
-        item("permissions", "Permissions", "shield", { requires: "manageAccounts" }),
         item("staff", "Staff Directory", "user", { requires: "manageAccounts" }),
         item("catalog", "Supplies Catalog", "package", { requires: "manageAccounts" }),
       ],
@@ -288,8 +287,8 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
     {
       label: "TRAINING",
       items: [
-        item("plans", "Training Plans", "clipboard", { requires: "createPlan" }),
-        item("calendar", "Weekly Calendar", "calendar", { requires: "assignSchedule" }),
+        item("plans", "Training Plans", "clipboard"),
+        item("calendar", "Weekly Calendar", "calendar"),
       ],
     },
     // Menu Y tế (MEDICAL) cho CLUB_MANAGER (quản lý, giám sát sức khỏe, bệnh án và lịch chăm sóc)

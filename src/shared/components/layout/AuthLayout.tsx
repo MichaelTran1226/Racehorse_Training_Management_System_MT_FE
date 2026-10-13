@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { ThemeToggle } from "@/shared/components/ui/ThemeToggle";
+import { LanguageToggle } from "@/shared/components/ui/LanguageToggle";
+import { useAppLanguage } from "@/shared/lib/language";
 import { BRAND } from "@/shared/lib/brand";
 import { cx } from "@/shared/lib/cx";
 import styles from "./AuthLayout.module.css";
@@ -33,6 +35,8 @@ interface AuthLayoutProps {
 // Khung 2 cột chuẩn của mọi màn public (design Phase 0 · 1a): cột form 660px + ảnh editorial.
 // Dưới 980px xếp dọc: dải ảnh 186px ở trên, form ở dưới.
 export function AuthLayout({ title, description, hero = HERO_DEFAULT, compact, children }: AuthLayoutProps) {
+  const { t } = useAppLanguage();
+
   return (
     <div className={styles.page}>
       <section className={cx(styles.formPane, compact && styles.compact)}>
@@ -44,18 +48,19 @@ export function AuthLayout({ title, description, hero = HERO_DEFAULT, compact, c
               <span>{BRAND.fullName}</span>
             </div>
           </div>
+          <LanguageToggle />
           <ThemeToggle />
         </div>
 
         <main className={styles.column}>
-          <p className={styles.eyebrow}>CLUB WORKSPACE</p>
+          <p className={styles.eyebrow}>{t("auth.loginEyebrow", "CLUB WORKSPACE")}</p>
           <h1 className={styles.title}>{title}</h1>
           {description && <p className={styles.description}>{description}</p>}
           <div className={styles.body}>{children}</div>
         </main>
 
         <p className={styles.support}>
-          Club support: {BRAND.supportEmail} · {BRAND.supportPhone}
+          {t("auth.clubSupport", "Club support")}: {BRAND.supportEmail} · {BRAND.supportPhone}
         </p>
       </section>
 
