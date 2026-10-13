@@ -59,6 +59,8 @@ export default function PlanWizardPage() {
   const { id } = useParams();
   const editing = Boolean(id);
   const navigate = useNavigate();
+  const { id } = useParams<{ id?: string }>();
+  const isEditing = Boolean(id);
   const toast = useToast();
   const user = useCurrentUser();
 
