@@ -1,0 +1,236 @@
+import { useCallback, useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Alert } from "@/shared/components/ui/Alert";
+import { Badge } from "@/shared/components/ui/Badge";
+import { Button } from "@/shared/components/ui/Button";
+import { Card } from "@/shared/components/ui/Card";
+import { EmptyState } from "@/shared/components/ui/EmptyState";
+import { Checkbox } from "@/shared/components/form/Checkbox";
+import { Input } from "@/shared/components/form/Input";
+import { Select } from "@/shared/components/form/Select";
+import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
+import { HEALTH_STATUS } from "@/shared/lib/status";
+import { messageFor } from "@/shared/lib/messages";
+import type { HealthStatus } from "@/shared/types/enums";
+import { clubParts, trainingApi } from "../api";
+import { ProgressBar } from "../components/ProgressBar";
+import { EXERCISE_TYPE_LABEL } from "../types";
+import type { OverviewRow, TrainingOverview } from "../types";
+import { Icon } from "@/shared/components/ui/Icon";
+
+type SortKey = "name" | "progress" | "score" | "load" | "next";
+
+/** SC-2.01 Tổng quan huấn luyện (CM, HT, VET). */
+export default function TrainingOverviewPage() {
+  const navigate = useNavigate();
+  const user = useCurrentUser();
+  const [data, setData] = useState<TrainingOverview | null>(null);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [planFilter, setPlanFilter] = useState("ALL");
+  const [spikeOnly, setSpikeOnly] = useState(false);
+  const [sort, setSort] = useState<SortKey>("name");
+
+  const load = useCallback(async () => {
+    setError("");
+    try {
+      setData(await trainingApi.getOverview());
+    } catch (err) {
+      setError(messageFor(err));
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  if (error) {
+    return (
+      <Alert tone="danger" title="Could not load data">
+        {error} <Button size="sm" tone="secondary" onClick={() => void load()}>Try again</Button>
+      </Alert>
+    );
+  }
+  if (!data) return <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Loading overview...</div>;
+
+  const q = search.toLowerCase();
+  const pct = (r: OverviewRow) => (r.progress && r.progress.due ? r.progress.completed / r.progress.due : -1);
+  const rows = data.rows
+    .filter(
+      (r) =>
+        (r.horse.name.toLowerCase().includes(q) || (r.horse.horseCode ?? "").toLowerCase().includes(q)) &&
+        (planFilter === "ALL" || (planFilter === "WITH" ? r.plan : !r.plan)) &&
+        (!spikeOnly || r.loadSpike),
+    )
+    .sort((a, b) => {
+      if (sort === "progress") return pct(b) - pct(a);
+      if (sort === "score") return (b.latestScore ?? -1) - (a.latestScore ?? -1);
+      if (sort === "load") return b.load7d - a.load7d;
+      if (sort === "next") return (a.nextWorkout?.date ?? "9").localeCompare(b.nextWorkout?.date ?? "9");
+      return a.horse.name.localeCompare(b.horse.name);
+    });
+  const k = data.kpis;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>Training Overview</h1>
+          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
+            Progress and fitness of every managed horse.
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: "0.75rem" }}>
+          <Link to="/training/calendar"><Button tone="secondary">Today's schedule</Button></Link>
+          {user.role === "HEAD_TRAINER" && (
+            <Button tone="primary" onClick={() => navigate("/training/plans/new")}>+ Create plan</Button>
+          )}
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
+        <Link to="/training/plans?status=ACTIVE" style={{ color: "inherit", textDecoration: "none" }}>
+          <Card pad={16}>
+            <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>Active plans</div>
+            <div style={{ fontSize: "var(--fs-h1)", fontWeight: 700 }}>{k.activePlans} / {k.managedHorses}</div>
+            <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>horses managed</div>
+          </Card>
+        </Link>
+        <Link to="/training/calendar" style={{ color: "inherit", textDecoration: "none" }}>
+          <Card pad={16}>
+            <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>Workouts today</div>
+            <div style={{ fontSize: "var(--fs-h1)", fontWeight: 700 }}>{k.todayCompleted}/{k.todayTotal}</div>
+            <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>completed</div>
+          </Card>
+        </Link>
+        <Link to="/training/calendar?status=BLOCKED" style={{ color: "inherit", textDecoration: "none" }}>
+          <Card pad={16}>
+            <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>Blocked by Training Lock</div>
+            <div style={{ fontSize: "var(--fs-h1)", fontWeight: 700, color: k.blockedNext7Days ? "var(--danger)" : undefined }}>{k.blockedNext7Days}</div>
+            <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>in the next 7 days</div>
+          </Card>
+        </Link>
+        <button type="button" onClick={() => setSpikeOnly(true)} style={{ all: "unset", cursor: "pointer" }}>
+          <Card pad={16}>
+            <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>Sudden load increase</div>
+            <div style={{ fontSize: "var(--fs-h1)", fontWeight: 700, color: k.loadSpikeHorses ? "var(--warn)" : undefined }}>{k.loadSpikeHorses}</div>
+            <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>horses above 130% of their 4-week average</div>
+          </Card>
+        </button>
+      </div>
+
+      <Card pad={16}>
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
+          <Input placeholder="Horse name or code" value={search} onChange={(e) => setSearch(e.target.value)} style={{ width: 240 }} />
+          <div style={{ width: 200 }}>
+            <Select
+              value={planFilter}
+              onChange={(e) => setPlanFilter(e.target.value)}
+              options={[
+                { value: "ALL", label: "All horses" },
+                { value: "WITH", label: "With an active plan" },
+                { value: "WITHOUT", label: "Without an active plan" },
+              ]}
+            />
+          </div>
+          <div style={{ width: 200 }}>
+            <Select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+              options={[
+                { value: "name", label: "Sort: horse" },
+                { value: "progress", label: "Sort: progress" },
+                { value: "score", label: "Sort: latest score" },
+                { value: "load", label: "Sort: 7-day load" },
+                { value: "next", label: "Sort: next workout" },
+              ]}
+            />
+          </div>
+          <Checkbox label="Only sudden load increase" checked={spikeOnly} onChange={setSpikeOnly} />
+        </div>
+      </Card>
+
+      <Card>
+        {data.rows.length === 0 ? (
+          <EmptyState title="No horses to follow yet." />
+        ) : rows.length === 0 ? (
+          <EmptyState title="No horses match the filter." />
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "var(--fs-body)" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-sunken)" }}>
+                  {["Horse", "Current plan", "Current phase", "Progress", "Latest score", "7-day load", "Next workout", ""].map((h) => (
+                    <th key={h} style={{ padding: "0.6rem 0.75rem" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => {
+                  const st = HEALTH_STATUS[r.horse.status as HealthStatus] ?? { label: r.horse.status, tone: "neutral" };
+                  const trend =
+                    r.latestScore != null && r.previousAvgScore != null
+                      ? r.latestScore > r.previousAvgScore
+                        ? "▲"
+                        : r.latestScore < r.previousAvgScore
+                          ? "▼"
+                          : ""
+                      : "";
+                  return (
+                    <tr key={r.horse.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                      <td style={{ padding: "0.6rem 0.75rem" }}>
+                        <Link to={`/horses/${r.horse.id}`}><strong>{r.horse.name}</strong></Link> {r.horse.isMedicalLocked && (
+                      <span title="Training Lock" style={{ color: "var(--danger)", display: "inline-flex", verticalAlign: "-2px" }}>
+                        <Icon name="lock" size={14} />
+                        <span className="sr-only">Training Lock</span>
+                      </span>
+                    )}
+                        <div style={{ display: "flex", gap: "0.35rem", alignItems: "center" }}>
+                          <span style={{ color: "var(--text-muted)" }}>{r.horse.horseCode}</span>
+                          <Badge tone={st.tone as never}>{st.label}</Badge>
+                        </div>
+                      </td>
+                      <td style={{ padding: "0.6rem 0.75rem" }}>{r.plan ? `${r.plan.planCode ?? ""} ${r.plan.name}` : "None"}</td>
+                      <td style={{ padding: "0.6rem 0.75rem" }}>
+                        {r.currentPhase ? `${r.currentPhase.name} · week ${r.currentPhase.week}/${r.currentPhase.weeks}` : "—"}
+                      </td>
+                      <td style={{ padding: "0.6rem 0.75rem", minWidth: 130 }}>
+                        {r.progress ? <ProgressBar done={r.progress.completed} total={r.progress.due} /> : "—"}
+                      </td>
+                      <td style={{ padding: "0.6rem 0.75rem" }}>
+                        {r.latestScore != null ? (
+                          <span>
+                            {r.latestScore}/10{" "}
+                            <span style={{ color: trend === "▲" ? "var(--ok)" : "var(--danger)" }}>{trend}</span>
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td style={{ padding: "0.6rem 0.75rem", color: r.loadSpike ? "var(--warn)" : undefined }}>
+                        {r.load7d} {r.loadSpike && <Badge tone="warn">Sudden increase</Badge>}
+                      </td>
+                      <td style={{ padding: "0.6rem 0.75rem" }}>
+                        {r.nextWorkout
+                          ? `${clubParts(r.nextWorkout.date).date.slice(5)} ${clubParts(r.nextWorkout.date).time} – ${EXERCISE_TYPE_LABEL[r.nextWorkout.workoutType] ?? r.nextWorkout.workoutType}`
+                          : "—"}
+                      </td>
+                      <td style={{ padding: "0.6rem 0.75rem", whiteSpace: "nowrap" }}>
+                        <div style={{ display: "flex", gap: "0.35rem" }}>
+                          <Button size="sm" tone="secondary" disabled={!r.plan} onClick={() => r.plan && navigate(`/training/plans/${r.plan.id}`)}>
+                            View plan
+                          </Button>
+                          <Link to={`/horses/${r.horse.id}/fitness`}><Button size="sm" tone="ghost">Chart</Button></Link>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}

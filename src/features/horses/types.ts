@@ -1,5 +1,15 @@
 import type { HorseStatus } from "@/shared/types/enums";
 
+/** Lý do Ngừng quản lý (DL-1.08). DECEASED không được kích hoạt lại. */
+export type RetireReason = "RETIRED" | "SOLD" | "DECEASED" | "TRANSFERRED";
+
+export const RETIRE_REASON_LABEL: Record<RetireReason, string> = {
+  RETIRED: "Retired from racing",
+  SOLD: "Sold",
+  DECEASED: "Deceased",
+  TRANSFERRED: "Transferred to another club",
+};
+
 export interface Horse {
   id: string;
   horseCode?: string;
@@ -14,11 +24,16 @@ export interface Horse {
   avatarUrl?: string;
   status: HorseStatus;
   isMedicalLocked: boolean;
+  retireReason?: RetireReason | null;
   ownerId?: string;
   owner?: { id: string; fullName: string; email: string };
   ownerName?: string;
   stallCode?: string | null;
   zone?: string | null;
+  /** Phân bổ ô đang hiệu lực (Tab 2: Chuyển / Trả ô). */
+  allocationId?: string | null;
+  stallId?: string | null;
+  stallSince?: string | null;
   primaryGroom?: string | null;
   groomName?: string;
   medicalLocks?: Array<{
@@ -39,6 +54,8 @@ export interface HorseListFilter {
   breed?: string;
   gender?: string;
   ownerId?: string;
+  /** "true" = chỉ ngựa chưa có ô chuồng (DL-1.02). */
+  noStall?: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
   page?: number;
@@ -61,7 +78,6 @@ export interface CreateHorsePayload {
   color: string;
   microchip: string;
   rfid?: string;
-  status?: HorseStatus;
   ownerId?: string;
   avatarUrl?: string;
   stallId?: string;
@@ -75,7 +91,6 @@ export interface UpdateHorsePayload {
   color?: string;
   microchip?: string;
   rfid?: string;
-  status?: HorseStatus;
   ownerId?: string;
   avatarUrl?: string;
 }
@@ -87,7 +102,9 @@ export interface HorseHistoryResponse {
     timestamp: string;
     changedBy: string;
     action: string;
-    notes?: string;
+    /** MANUAL / MEDICAL_LOCK / SYSTEM (Tab 4 cột Nguồn). */
+    source?: string;
+    notes?: string | null;
     oldStatus?: string | null;
     newStatus?: string | null;
   }>;
@@ -152,13 +169,76 @@ export interface HorseHistoryResponse {
     totalWorkouts: number;
     completedWorkouts: number;
   }>;
-  timeline: Array<{
-    id: string;
-    category: 'IDENTITY' | 'STATUS' | 'STALL' | 'MEDICAL' | 'TRAINING' | 'TOURNAMENT' | 'OWNERSHIP';
-    title: string;
-    description: string;
-    timestamp: string;
-    badgeTone?: 'ok' | 'warn' | 'danger' | 'info' | 'neutral';
-  }>;
+  timeline: TimelineEvent[];
 }
 
+export type TimelineCategory =
+  | "IDENTITY"
+  | "STATUS"
+  | "STALL"
+  | "CARE"
+  | "OWNERSHIP"
+  | "MEDICAL"
+  | "TRAINING"
+  | "TOURNAMENT";
+
+/** Một mục ở Tab 6 Dòng thời gian. */
+export interface TimelineEvent {
+  id: string;
+  category: TimelineCategory;
+  title: string;
+  description: string;
+  timestamp: string;
+  actor?: string | null;
+  /** Link sang màn chi tiết của Flow 2/3. */
+  link?: string | null;
+  badgeTone?: "ok" | "warn" | "danger" | "info" | "neutral";
+}
+
+/** Một dòng ở SC-1.05 Hồ sơ đã xóa. */
+export interface DeletedHorse {
+  id: string;
+  horseCode?: string | null;
+  name: string;
+  microchip?: string | null;
+  status: HorseStatus;
+  deletedAt: string;
+  deletedBy?: { id: string; fullName: string } | null;
+  deleteReason?: string | null;
+}
+
+export interface DeletedHorseFilter {
+  search?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface DeletedHorseListResponse {
+  items: DeletedHorse[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface ChangeHorseStatusPayload {
+  status: HorseStatus;
+  reason?: string;
+  retireReason?: RetireReason;
+}
+
+/** SC-1.06 Danh mục Giống & Màu lông. Horse.breed / Horse.color lưu Tên của mục. */
+export type HorseCatalogType = "BREED" | "COLOR";
+
+export interface HorseCatalogItem {
+  id: string;
+  type: HorseCatalogType;
+  code: string;
+  name: string;
+  description?: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  horseCount?: number;
+}

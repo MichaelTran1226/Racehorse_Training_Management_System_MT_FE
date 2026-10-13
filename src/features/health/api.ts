@@ -1,4 +1,4 @@
-import { api } from "@/shared/lib/api";
+import { api, USE_MOCK } from "@/shared/lib/api";
 import {
   getStoredHorses,
   getStoredLocks,
@@ -45,12 +45,23 @@ export interface ListRecordsResponse {
 export interface HealthBoardHorse {
   id: string;
   name: string;
+  horseCode?: string | null;
   microchipRfid: string;
   status: string;
   healthGroup: "QUALIFIED" | "OBSERVATION" | "INJURED" | "ISOLATED";
   isMedicalLocked: boolean;
+  lock: { lockCode?: string | null; lockedAt: string; recheckDate?: string | null; veterinarianName?: string | null } | null;
+  stallId?: string | null;
   stallCode?: string | null;
   zone?: string | null;
+  zoneId?: string | null;
+  row?: number | null;
+  col?: number | null;
+  openInjuries: Array<{ zone: string; stage: string }>;
+  latestRecord: { id: string; examinationDate: string; diagnosis: string } | null;
+  preventiveDue: Array<{ name: string; dueDate: string; overdue: boolean }>;
+  hasOverduePreventive: boolean;
+  latestObservation: { text: string; at: string; groomName?: string | null } | null;
 }
 
 export interface HealthBoardResponse {
@@ -60,20 +71,15 @@ export interface HealthBoardResponse {
     injuredCount: number;
     isolatedCount: number;
     lockedCount: number;
+    overdueCount: number;
     total: number;
   };
   data: HealthBoardHorse[];
+  generatedAt?: string;
 }
 
-// P2-01: Sơ đồ sức khỏe đàn ngựa (Health Board)
-export const getHealthBoard = (params?: { healthGroup?: string; isLocked?: string; search?: string }) => {
-  const query = new URLSearchParams();
-  if (params?.healthGroup) query.set("healthGroup", params.healthGroup);
-  if (params?.isLocked) query.set("isLocked", params.isLocked);
-  if (params?.search) query.set("search", params.search);
-  const qStr = query.toString();
-  return api<HealthBoardResponse>("GET", `/medical/health-board${qStr ? `?${qStr}` : ""}`);
-};
+// P1-14: Sơ đồ sức khỏe đàn ngựa (SC-3.01). Bộ lọc áp ở trình duyệt để thẻ đếm luôn tính cả đàn.
+export const getHealthBoard = () => api<HealthBoardResponse>("GET", "/medical/health-board");
 
 // P2-01: Hồ sơ y tế ngựa 6 tab (SC-3.02, API-004)
 export const getHorseMedicalProfile = (horseId: string) =>
@@ -375,17 +381,9 @@ export const applyTrainingLock = async (
 ) => {
   const restDays = Math.max(1, Math.ceil((new Date(input.reviewDate).getTime() - Date.now()) / 86400000));
 
-  try {
-    return await api("POST", "/medical/locks", {
-      horseId,
-      expectedRestDays: restDays,
-      reviewDate: input.reviewDate,
-      lockReason: input.lockReason,
-      unlockConditions: input.unlockConditions || "Full clinical recovery confirmed",
-      medicalStatus: input.appliedMedicalStatus,
-    });
-  } catch {
-    // Fallback: direct localStorage update if network / backend is unavailable
+  // Chế độ mock: ghi khóa vào dữ liệu giả. Chế độ thật: lỗi từ BE phải hiện ra màn hình,
+  // KHÔNG được giả vờ thành công (trước đây mọi lỗi đều bị nuốt và báo thành công).
+  if (USE_MOCK) {
     placeHorseTrainingLock(horseId, {
       appliedStatus: input.appliedMedicalStatus,
       reviewDate: input.reviewDate,
@@ -394,6 +392,14 @@ export const applyTrainingLock = async (
     });
     return { ok: true as const };
   }
+  return await api("POST", "/medical/locks", {
+    horseId,
+    expectedRestDays: restDays,
+    reviewDate: input.reviewDate,
+    lockReason: input.lockReason,
+    unlockConditions: input.unlockConditions || "Full clinical recovery confirmed",
+    medicalStatus: input.appliedMedicalStatus,
+  });
 };
 
 // 3. Release training lock (POST /api/medical/locks/:id/release)
@@ -406,18 +412,17 @@ export const releaseTrainingLock = async (
   const targetHorseId = input.horseId || matchedLock?.horseId || lockId;
   const realLockId = matchedLock?.id || lockId;
 
-  try {
-    return await api("POST", `/medical/locks/${realLockId}/release`, {
-      unlockReason: input.releaseReason,
-      newHorseStatus: input.targetStatus,
-    });
-  } catch {
+  if (USE_MOCK) {
     liftHorseTrainingLock(targetHorseId, {
-      restoreStatus: input.targetStatus || "FIT",
+      restoreStatus: input.targetStatus || "RESTING",
       reason: input.releaseReason,
     });
     return { ok: true as const };
   }
+  return await api("POST", `/medical/locks/${realLockId}/release`, {
+    unlockReason: input.releaseReason,
+    newHorseStatus: input.targetStatus,
+  });
 };
 
 // 4. Extend training lock (POST /api/medical/locks/:id/extend)
@@ -437,12 +442,7 @@ export const extendTrainingLock = async (
   additionalDays = additionalDays || 7;
 
   const realLockId = matchedLock?.id || lockId;
-  try {
-    return await api("POST", `/medical/locks/${realLockId}/extend`, {
-      additionalDays,
-      recheckNotes: input.reason,
-    });
-  } catch {
+  if (USE_MOCK) {
     if (input.newReviewDate) {
       extendHorseTrainingLock(targetHorseId, {
         newReviewDate: input.newReviewDate,
@@ -451,6 +451,10 @@ export const extendTrainingLock = async (
     }
     return { ok: true as const };
   }
+  return await api("POST", `/medical/locks/${realLockId}/extend`, {
+    additionalDays,
+    recheckNotes: input.reason,
+  });
 };
 
 // P2-05: Preventive care & catalogue (SC-3.07, SC-3.08, FR-3.13 -> FR-3.16)

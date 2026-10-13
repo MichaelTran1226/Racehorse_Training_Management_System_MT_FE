@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Icon } from "@/shared/components/ui/Icon";
 import { BRAND } from "@/shared/lib/brand";
 import { cx } from "@/shared/lib/cx";
-import { initials } from "@/shared/lib/format";
+import { capitalize, initials } from "@/shared/lib/format";
 import { isNavItemActive, navFor, ROLE_LABEL } from "@/shared/lib/permissions";
 import { getStoredLocks } from "@/shared/mock/horsesData";
 import type { AuthUser } from "@/shared/types/auth";
@@ -35,18 +35,10 @@ export function Sidebar({ user, pathname, note, open, onNavigate }: SidebarProps
         </div>
       </div>
 
-      <div className={styles.user}>
-        <span className={styles.userAvatar}>{initials(user.fullName)}</span>
-        <div className={styles.userText}>
-          <strong>{user.fullName}</strong>
-          <span>{ROLE_LABEL[user.role]}</span>
-        </div>
-      </div>
-
       <div className={styles.groups}>
         {groups.map((g) => (
           <div key={g.label} className={styles.group}>
-            <p className={styles.groupLabel}>{g.label}</p>
+            <p className={styles.groupLabel}>{capitalize(g.label)}</p>
             {g.items.map((it) => {
               const active = isNavItemActive(it, pathname);
               const showAlertDot = (it.id === "locks" && hasActiveLocks) || (it.id !== "locks" && Boolean(it.alert));
@@ -69,18 +61,20 @@ export function Sidebar({ user, pathname, note, open, onNavigate }: SidebarProps
       </div>
 
       {note && (
-        <div className={styles.note}>
-          <div>
-            <strong>{note.title}</strong>
-            <span>{note.body}</span>
-          </div>
-          <Icon name="horse" size={16} />
-        </div>
+        <Link to={note.href} onClick={onNavigate} className={styles.note}>
+          <strong>{note.title}</strong>
+          <span>{note.body}</span>
+        </Link>
       )}
 
-      <div className={styles.foot}>
-        <span className={styles.footDot} />
-        EquiFlow Equestrian Club
+      <div className={styles.user} title={`${user.fullName} · ${ROLE_LABEL[user.role]}`}>
+        <span className={styles.userAvatar} aria-hidden="true">
+          {initials(user.fullName)}
+        </span>
+        <div className={styles.userText}>
+          <strong>{user.fullName}</strong>
+          <span>{ROLE_LABEL[user.role]}</span>
+        </div>
       </div>
     </nav>
   );

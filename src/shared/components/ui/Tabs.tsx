@@ -14,7 +14,7 @@ interface TabsProps<T extends string> {
   label?: string;
 }
 
-// Thanh tab: tab đang mở có gạch chân burgundy (màu nhấn thương hiệu). Hỗ trợ phím ← → để đổi tab.
+// Thanh tab: tab đang mở có gạch chân màu brand. Hỗ trợ phím ← → để đổi tab.
 export function Tabs<T extends string>({ items, active, onChange, label = "Filter" }: TabsProps<T>) {
   function onKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
     if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;

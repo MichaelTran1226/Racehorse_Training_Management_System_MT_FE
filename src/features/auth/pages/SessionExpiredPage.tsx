@@ -15,9 +15,9 @@ export default function SessionExpiredPage() {
 
   return (
     <>
-      <PageHeader eyebrow="SESSION" title="The session has expired." showDate />
+      <PageHeader title="The session has expired." showDate />
       <Card title="Review page" subtitle="Shown behind the expiry dialog">
-        <p style={{ margin: 0, fontSize: 12, color: "var(--muted)" }}>
+        <p style={{ margin: 0, fontSize: "var(--fs-caption)", color: "var(--muted)" }}>
           The dialog above has no close control: the choice must be made. Signing in again keeps you on this screen; leaving returns to the sign-in page.
         </p>
       </Card>

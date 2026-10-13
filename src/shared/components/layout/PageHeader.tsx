@@ -5,26 +5,25 @@ import { useToday } from "@/shared/lib/hooks";
 import styles from "./PageHeader.module.css";
 
 interface PageHeaderProps {
-  eyebrow?: string;
-  title: string; // câu hoàn chỉnh kết bằng dấu chấm — nét nhận diện của EquiFlow
+  eyebrow?: string; // không còn hiển thị (DESIGN.md: không dùng nhãn IN HOA phía trên tiêu đề)
+  title: string;
   description?: string;
   showDate?: boolean; // hiện ngày hôm nay ở góc phải
   action?: ReactNode;
 }
 
-export function PageHeader({ eyebrow, title, description, showDate, action }: PageHeaderProps) {
+export function PageHeader({ title, description, showDate, action }: PageHeaderProps) {
   const today = useToday();
   return (
     <header className={styles.header}>
       <div className={styles.text}>
-        {eyebrow && <p className={styles.eyebrow}>{eyebrow}</p>}
-        <h1 className={styles.title}>{title}</h1>
+        <h1 className={styles.title}>{title.replace(/\.$/, "")}</h1>
         {description && <p className={styles.description}>{description}</p>}
       </div>
       <div className={styles.side}>
         {showDate && today && (
           <span className={styles.meta}>
-            <Icon name="calendar" size={14} />
+            <Icon name="calendar" size={16} />
             {formatLongDate(today)}
           </span>
         )}

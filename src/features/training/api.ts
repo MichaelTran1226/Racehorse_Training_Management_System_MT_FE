@@ -1,416 +1,373 @@
 import { api } from "@/shared/lib/api";
-import { getStoredHorses } from "@/shared/mock/horsesData";
-import {
-  getStoredPlans,
-  saveStoredPlans,
-  getStoredWorkouts,
-  saveStoredWorkouts,
-  getStoredTrialRuns,
-  saveStoredTrialRuns,
-  getStoredAlerts,
-  saveStoredAlerts,
-  getStoredFitnessMetrics,
-} from "@/shared/mock/trainingData";
 import type {
+  CancelWorkoutReason,
+  ExerciseIntensity,
   ExerciseSession,
-  FitnessMetricPoint,
+  ExerciseType,
+  FitnessData,
+  Groom,
+  PlanStatus,
+  RepeatResult,
+  ResultInput,
+  SessionInput,
   SessionResult,
+  SessionStatus,
+  TrackType,
   TrainingAlert,
+  TrainingOverview,
+  TrainingPhase,
   TrainingPlan,
-  TrialRunSchedule,
 } from "./types";
 
+// Mọi lỗi từ BE đi thẳng ra màn hình (không còn "lưu tạm vào trình duyệt rồi báo thành công").
+// Chế độ mock (VITE_USE_MOCK=true) do shared/mock/handlers.ts trả về đúng dạng dữ liệu của BE.
+
+// ------------------------------------------------------------ Giờ câu lạc bộ (UTC+7)
+
+const CLUB_OFFSET_MS = 7 * 60 * 60 * 1000;
+
+/** ISO -> ngày + giờ theo giờ câu lạc bộ. */
+export function clubParts(iso: string): { date: string; time: string } {
+  const local = new Date(new Date(iso).getTime() + CLUB_OFFSET_MS).toISOString();
+  return { date: local.slice(0, 10), time: local.slice(11, 16) };
+}
+
+/** Ngày (YYYY-MM-DD) + giờ (HH:mm) theo giờ câu lạc bộ -> ISO gửi BE. */
+export function clubIso(date: string, time: string): string {
+  return `${date}T${time}:00+07:00`;
+}
+
+export function todayClub(): string {
+  return clubParts(new Date().toISOString()).date;
+}
+
+// ------------------------------------------------------------ Dạng dữ liệu BE
+
+interface BeHorse {
+  id: string;
+  name: string;
+  horseCode?: string | null;
+  status?: string;
+  isMedicalLocked?: boolean;
+  medicalLocks?: { lockedAt: string; lockReason: string }[];
+  stallAllocations?: { stall: { code: string } }[];
+}
+
+export interface BePlan {
+  id: string;
+  planCode?: string | null;
+  horseId: string;
+  phaseName: string;
+  objective?: string | null;
+  notes?: string | null;
+  progress?: { completed: number; due: number };
+  phases?: unknown;
+  targetSpeed?: number | null;
+  targetDistance?: number | null;
+  startDate: string;
+  endDate: string;
+  status: PlanStatus;
+  cancelReason?: string | null;
+  completionSummary?: string | null;
+  createdAt: string;
+  horse?: BeHorse;
+  trainer?: { fullName: string } | null;
+  _count?: { workoutSessions: number };
+}
+
+export interface BeWorkout {
+  id: string;
+  trainingPlanId: string;
+  horseId: string;
+  phaseId?: string | null;
+  scheduledDate: string;
+  actualDistanceMeters?: number | null;
+  actualSurface?: string | null;
+  trackCondition?: string | null;
+  completionLevel?: string | null;
+  resultNotes?: string | null;
+  abnormalSignTypes?: string[];
+  resultRecordedBy?: { fullName: string } | null;
+  resultUpdatedBy?: { fullName: string } | null;
+  resultUpdatedAt?: string | null;
+  workoutType?: string | null;
+  intensity?: string | null;
+  trackSurface?: string | null;
+  distanceMeters: number;
+  repetitions?: number;
+  targetSpeedKmh?: number | null;
+  jockeyName?: string | null;
+  assignedStaffUserId?: string | null;
+  assignedStaff?: { id: string; fullName: string } | null;
+  trainerNotes?: string | null;
+  status: SessionStatus;
+  statusReason?: string | null;
+  medicalOverride?: boolean;
+  actualTimeSeconds?: number | null;
+  heartRatePeak?: number | null;
+  heartRateRecovery?: number | null;
+  averageSpeedKmh?: number | null;
+  topSpeedKmh?: number | null;
+  performanceScore?: number | null;
+  resultRecordedAt?: string | null;
+  abnormalSigns?: boolean;
+  abnormalNotes?: string | null;
+  vetAcknowledgedAt?: string | null;
+  vetNotes?: string | null;
+  horse?: BeHorse;
+  trainingPlan?: { id: string; phaseName: string; status?: PlanStatus; phases?: unknown } | null;
+}
+
+// ------------------------------------------------------------ Chuyển đổi BE -> màn hình
+
+export function toPlan(p: BePlan): TrainingPlan {
+  return {
+    id: p.id,
+    planCode: p.planCode ?? "—",
+    name: p.phaseName,
+    objective: p.objective,
+    notes: p.notes,
+    progress: p.progress ?? { completed: 0, due: 0 },
+    lockedSince: p.horse?.medicalLocks?.[0]?.lockedAt ?? null,
+    horseId: p.horseId,
+    horseName: p.horse?.name ?? "—",
+    horseCode: p.horse?.horseCode ?? "",
+    horseStatus: p.horse?.status,
+    targetDistanceMeters: p.targetDistance,
+    targetSpeedKmh: p.targetSpeed,
+    startDate: p.startDate.slice(0, 10),
+    endDate: p.endDate.slice(0, 10),
+    status: p.status,
+    phases: Array.isArray(p.phases) ? (p.phases as TrainingPhase[]) : [],
+    headTrainerName: p.trainer?.fullName ?? "—",
+    workoutCount: p._count?.workoutSessions ?? 0,
+    cancelledReason: p.cancelReason,
+    completionSummary: p.completionSummary,
+    createdAt: p.createdAt,
+    isLockedByMedical: Boolean(p.horse?.isMedicalLocked),
+  };
+}
+
+export function toSession(w: BeWorkout, planPhases?: TrainingPhase[]): ExerciseSession {
+  const { date, time } = clubParts(w.scheduledDate);
+  const phases = planPhases ?? (Array.isArray(w.trainingPlan?.phases) ? (w.trainingPlan?.phases as TrainingPhase[]) : []);
+  return {
+    id: w.id,
+    planId: w.trainingPlanId,
+    planName: w.trainingPlan?.phaseName,
+    planStatus: w.trainingPlan?.status,
+    phaseId: w.phaseId,
+    phaseName: phases.find((p) => p.id === w.phaseId)?.name ?? null,
+    horseStatus: w.horse?.status,
+    stallCode: w.horse?.stallAllocations?.[0]?.stall.code ?? null,
+    horseId: w.horseId,
+    horseName: w.horse?.name ?? "—",
+    horseCode: w.horse?.horseCode ?? undefined,
+    isHorseLocked: Boolean(w.horse?.isMedicalLocked),
+    scheduledAt: w.scheduledDate,
+    sessionDate: date,
+    startTime: time,
+    sessionType: (w.workoutType ?? "CANTER") as ExerciseType,
+    intensity: (w.intensity ?? "MEDIUM") as ExerciseIntensity,
+    status: w.status,
+    groomId: w.assignedStaffUserId,
+    groomName: w.assignedStaff?.fullName,
+    jockeyName: w.jockeyName,
+    trackType: (w.trackSurface ?? "TURF") as TrackType,
+    targetDistanceMeters: w.distanceMeters,
+    repetitions: w.repetitions ?? 1,
+    targetSpeedKmh: w.targetSpeedKmh,
+    notes: w.trainerNotes,
+    statusReason: w.statusReason,
+    medicalOverride: Boolean(w.medicalOverride),
+    result:
+      w.status === "COMPLETED"
+        ? {
+            actualDistanceMeters: w.actualDistanceMeters,
+            actualSurface: (w.actualSurface ?? null) as TrackType | null,
+            trackCondition: (w.trackCondition ?? null) as SessionResult["trackCondition"],
+            completionLevel: (w.completionLevel ?? null) as SessionResult["completionLevel"],
+            abnormalSignTypes: (w.abnormalSignTypes ?? []) as SessionResult["abnormalSignTypes"],
+            recordedBy: w.resultRecordedBy?.fullName ?? null,
+            updatedBy: w.resultUpdatedBy?.fullName ?? null,
+            updatedAt: w.resultUpdatedAt ?? null,
+            actualDurationSeconds: w.actualTimeSeconds,
+            avgSpeedKmh: w.averageSpeedKmh,
+            maxSpeedKmh: w.topSpeedKmh,
+            maxHeartRate: w.heartRatePeak,
+            recoveryHeartRate: w.heartRateRecovery,
+            performanceScore: w.performanceScore,
+            hasAbnormalSigns: Boolean(w.abnormalSigns),
+            abnormalSignsDescription: w.abnormalNotes,
+            headTrainerFeedback: w.resultNotes ?? null,
+            recordedAt: w.resultRecordedAt,
+          }
+        : undefined,
+  };
+}
+
+function toAlert(w: BeWorkout): TrainingAlert {
+  return {
+    id: w.id,
+    horseId: w.horseId,
+    horseName: w.horse?.name ?? "—",
+    sessionDate: clubParts(w.scheduledDate).date,
+    sessionType: (w.workoutType ?? "CANTER") as ExerciseType,
+    message: w.abnormalNotes ?? "",
+    createdAt: w.resultRecordedAt ?? w.scheduledDate,
+    acknowledgedByVet: Boolean(w.vetAcknowledgedAt),
+    vetNotes: w.vetNotes,
+  };
+}
+
+// ------------------------------------------------------------ Gọi API
+
+export interface PlanInput {
+  horseId: string;
+  phaseName: string;
+  objective: string;
+  notes?: string;
+  targetDistance?: number;
+  targetSpeed?: number;
+  startDate: string;
+  endDate: string;
+  phases: TrainingPhase[];
+}
+
+export interface ActivateOptions {
+  moveHorseToTraining?: boolean;
+  vetConsulted?: boolean;
+}
+
 export const trainingApi = {
-  // Plans
-  async getPlans(query?: { horseId?: string; status?: string; search?: string }): Promise<TrainingPlan[]> {
-    const params = new URLSearchParams();
-    if (query?.horseId) params.append("horseId", query.horseId);
-    if (query?.status) params.append("status", query.status);
-    if (query?.search) params.append("search", query.search);
-    const qs = params.toString() ? `?${params.toString()}` : "";
-
-    try {
-      const res = await api<{ items: TrainingPlan[]; total: number } | TrainingPlan[]>("GET", `/training/plans${qs}`);
-      if (res && "items" in res && Array.isArray(res.items)) {
-        return res.items;
-      }
-      if (Array.isArray(res)) {
-        return res;
-      }
-    } catch {
-      // offline/fallback
-    }
-
-    let plans = getStoredPlans();
-    if (query?.horseId) plans = plans.filter((p) => p.horseId === query.horseId);
-    if (query?.status) plans = plans.filter((p) => p.status === query.status);
-    return structuredClone(plans);
+  // Giáo án
+  async getPlans(query?: { horseId?: string; status?: PlanStatus; search?: string }): Promise<TrainingPlan[]> {
+    const params = new URLSearchParams({ pageSize: "100" });
+    if (query?.horseId) params.set("horseId", query.horseId);
+    if (query?.status) params.set("status", query.status);
+    if (query?.search) params.set("search", query.search);
+    const res = await api<{ items: BePlan[] }>("GET", `/training/plans?${params.toString()}`);
+    return res.items.map(toPlan);
   },
 
-  async getPlanById(id: string): Promise<TrainingPlan | null> {
-    try {
-      const res = await api<TrainingPlan>("GET", `/training/plans/${id}`);
-      if (res) return res;
-    } catch {
-      // fallback
-    }
-    const plans = getStoredPlans();
-    const p = plans.find((item) => item.id === id);
-    return p ? structuredClone(p) : null;
+  async getPlanById(id: string): Promise<TrainingPlan & { sessions: ExerciseSession[] }> {
+    const res = await api<BePlan & { workoutSessions?: BeWorkout[] }>("GET", `/training/plans/${id}`);
+    const plan = toPlan(res);
+    const horse = res.horse;
+    const sessions = (res.workoutSessions ?? []).map((w) =>
+      toSession({ ...w, horse, trainingPlan: { id: plan.id, phaseName: plan.name, status: plan.status } }, plan.phases),
+    );
+    return { ...plan, sessions };
   },
 
-  async createPlan(data: Partial<TrainingPlan>): Promise<TrainingPlan> {
-    try {
-      const res = await api<TrainingPlan>("POST", "/training/plans", data);
-      if (res) return res;
-    } catch (err: any) {
-      if (err.status === 400 || err.message?.includes("RULE-MED-01") || err.message?.includes("Medical Lock")) {
-        throw err;
-      }
-    }
-
-    // Fallback store update
-    const horses = getStoredHorses();
-    const horse = horses.find((h) => h.id === data.horseId);
-    const isLocked = Boolean(horse?.isLocked);
-
-    if (isLocked && data.status === "ACTIVE") {
-      throw new Error(
-        `Cannot activate training plan: Horse "${horse?.name}" is currently under Veterinary Medical Lock (RULE-MED-01). You may only save as Draft.`
-      );
-    }
-
-    const plans = getStoredPlans();
-    const newPlan: TrainingPlan = {
-      id: `plan-${Date.now()}`,
-      planCode: `PLAN-2026-${Math.floor(100 + Math.random() * 900)}`,
-      name: data.name || "New Training Plan",
-      horseId: data.horseId || "horse-1",
-      horseName: data.horseName || horse?.name || "Thunderbolt Swift",
-      horseCode: data.horseCode || horse?.code || "HR-000001",
-      target: data.target || "",
-      targetDistanceMeters: data.targetDistanceMeters || 1600,
-      startDate: data.startDate || new Date().toISOString().split("T")[0],
-      endDate: data.endDate || new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
-      status: data.status || "DRAFT",
-      phases: data.phases || [],
-      headTrainerId: "trainer-1",
-      headTrainerName: "David Nguyen (Head Trainer)",
-      notes: data.notes || "",
-      createdAt: new Date().toISOString().split("T")[0],
-      updatedAt: new Date().toISOString().split("T")[0],
-      isLockedByMedical: isLocked,
-      medicalLockReason: horse?.lockReason,
-    };
-    plans.unshift(newPlan);
-    saveStoredPlans(plans);
-    return structuredClone(newPlan);
+  async getOverview(): Promise<TrainingOverview> {
+    return api<TrainingOverview>("GET", "/training/overview");
   },
 
-  async updatePlan(id: string, data: Partial<TrainingPlan>): Promise<TrainingPlan> {
-    try {
-      const res = await api<TrainingPlan>("PUT", `/training/plans/${id}`, data);
-      if (res) return res;
-    } catch (err: any) {
-      if (err.status === 400 || err.message?.includes("RULE-MED-01")) throw err;
-    }
-
-    const plans = getStoredPlans();
-    const p = plans.find((item) => item.id === id);
-    if (!p) throw new Error("Training plan not found");
-    Object.assign(p, data, { updatedAt: new Date().toISOString().split("T")[0] });
-    saveStoredPlans(plans);
-    return structuredClone(p);
+  /** Luôn tạo ở Nháp (SC-2.03); kích hoạt qua activatePlan sau khi có buổi tập. */
+  async createPlan(data: PlanInput): Promise<TrainingPlan> {
+    return toPlan(await api<BePlan>("POST", "/training/plans", data));
   },
 
-  async activatePlan(id: string): Promise<TrainingPlan> {
-    try {
-      const res = await api<TrainingPlan>("PATCH", `/training/plans/${id}/status`, { status: "ACTIVE" });
-      if (res) return res;
-    } catch (err) {
-      throw err;
-    }
+  async updatePlan(id: string, data: Partial<PlanInput>): Promise<TrainingPlan> {
+    const { horseId: _ignored, ...rest } = data;
+    return toPlan(await api<BePlan>("PUT", `/training/plans/${id}`, rest));
+  },
 
-    const plans = getStoredPlans();
-    const p = plans.find((item) => item.id === id);
-    if (!p) throw new Error("Training plan not found");
-
-    const horses = getStoredHorses();
-    const horse = horses.find((h) => h.id === p.horseId);
-    if (p.isLockedByMedical || horse?.isLocked) {
-      throw new Error(
-        `Cannot activate plan: Horse "${p.horseName}" is currently under protective Medical Lock (RULE-MED-01).`
-      );
-    }
-    p.status = "ACTIVE";
-    p.updatedAt = new Date().toISOString().split("T")[0];
-    saveStoredPlans(plans);
-    return structuredClone(p);
+  async activatePlan(id: string, options: ActivateOptions = {}): Promise<TrainingPlan> {
+    return toPlan(await api<BePlan>("PATCH", `/training/plans/${id}/status`, { status: "ACTIVE", ...options }));
   },
 
   async cancelPlan(id: string, reason: string): Promise<TrainingPlan> {
-    try {
-      const res = await api<TrainingPlan>("PATCH", `/training/plans/${id}/status`, { status: "CANCELLED", reason });
-      if (res) return res;
-    } catch {}
-
-    const plans = getStoredPlans();
-    const p = plans.find((item) => item.id === id);
-    if (!p) throw new Error("Training plan not found");
-    p.status = "CANCELLED";
-    p.cancelledReason = reason;
-    p.updatedAt = new Date().toISOString().split("T")[0];
-    saveStoredPlans(plans);
-    return structuredClone(p);
+    return toPlan(await api<BePlan>("PATCH", `/training/plans/${id}/status`, { status: "CANCELLED", reason }));
   },
 
-  async completePlan(id: string): Promise<TrainingPlan> {
-    try {
-      const res = await api<TrainingPlan>("PATCH", `/training/plans/${id}/status`, { status: "COMPLETED" });
-      if (res) return res;
-    } catch {}
-
-    const plans = getStoredPlans();
-    const p = plans.find((item) => item.id === id);
-    if (!p) throw new Error("Training plan not found");
-    p.status = "COMPLETED";
-    p.completedAt = new Date().toISOString().split("T")[0];
-    p.updatedAt = new Date().toISOString().split("T")[0];
-    saveStoredPlans(plans);
-    return structuredClone(p);
+  async completePlan(id: string, summary: string): Promise<TrainingPlan> {
+    return toPlan(await api<BePlan>("PATCH", `/training/plans/${id}/status`, { status: "COMPLETED", summary }));
   },
 
-  async clonePlan(id: string, targetHorseId: string, targetHorseName: string): Promise<TrainingPlan> {
-    try {
-      const res = await api<TrainingPlan>("POST", `/training/plans/${id}/clone`, { targetHorseId, targetHorseName });
-      if (res) return res;
-    } catch {}
-
-    const plans = getStoredPlans();
-    const source = plans.find((item) => item.id === id);
-    if (!source) throw new Error("Original training plan not found");
-    const cloned: TrainingPlan = {
-      ...structuredClone(source),
-      id: `plan-${Date.now()}`,
-      planCode: `PLAN-2026-${Math.floor(100 + Math.random() * 900)}`,
-      name: `${source.name} (Copy)`,
-      horseId: targetHorseId,
-      horseName: targetHorseName,
-      status: "DRAFT",
-      createdAt: new Date().toISOString().split("T")[0],
-      updatedAt: new Date().toISOString().split("T")[0],
-    };
-    plans.unshift(cloned);
-    saveStoredPlans(plans);
-    return structuredClone(cloned);
+  async clonePlan(
+    id: string,
+    input: { targetHorseId: string; name?: string; startDate?: string; copyWorkouts?: boolean },
+  ): Promise<TrainingPlan> {
+    return toPlan(await api<BePlan>("POST", `/training/plans/${id}/clone`, input));
   },
 
   async deletePlan(id: string): Promise<void> {
-    try {
-      await api<{ message: string }>("DELETE", `/training/plans/${id}`);
-    } catch {}
-    const plans = getStoredPlans();
-    const idx = plans.findIndex((p) => p.id === id);
-    if (idx !== -1) {
-      plans.splice(idx, 1);
-      saveStoredPlans(plans);
-    }
+    await api<{ message: string }>("DELETE", `/training/plans/${id}`);
   },
 
-  // Sessions / Workouts
-  async getSessions(filter?: { date?: string; horseId?: string; planId?: string }): Promise<ExerciseSession[]> {
+  // Buổi tập
+  async getSessions(filter?: {
+    date?: string;
+    from?: string;
+    to?: string;
+    horseId?: string;
+    planId?: string;
+  }): Promise<ExerciseSession[]> {
     const params = new URLSearchParams();
-    if (filter?.date) params.append("date", filter.date);
-    if (filter?.horseId) params.append("horseId", filter.horseId);
-    if (filter?.planId) params.append("planId", filter.planId);
+    for (const [k, v] of Object.entries(filter ?? {})) if (v) params.set(k, v);
     const qs = params.toString() ? `?${params.toString()}` : "";
-
-    try {
-      const res = await api<ExerciseSession[]>("GET", `/training/workouts${qs}`);
-      if (Array.isArray(res)) return res;
-    } catch {}
-
-    let result = getStoredWorkouts();
-    if (filter?.date) result = result.filter((s) => s.sessionDate === filter.date);
-    if (filter?.horseId) result = result.filter((s) => s.horseId === filter.horseId);
-    if (filter?.planId) result = result.filter((s) => s.planId === filter.planId);
-    return structuredClone(result);
+    const res = await api<BeWorkout[]>("GET", `/training/workouts${qs}`);
+    return res.map((w) => toSession(w));
   },
 
-  async createSession(session: Partial<ExerciseSession>): Promise<ExerciseSession> {
-    if (session.planId) {
-      try {
-        const res = await api<ExerciseSession>("POST", `/training/plans/${session.planId}/workouts`, session);
-        if (res) return res;
-      } catch (err) {
-        throw err;
-      }
-    }
-
-    const workouts = getStoredWorkouts();
-    const newSession: ExerciseSession = {
-      id: `ses-${Date.now()}`,
-      planId: session.planId,
-      horseId: session.horseId || "horse-1",
-      horseName: session.horseName || "Thunderbolt Swift",
-      sessionDate: session.sessionDate || new Date().toISOString().split("T")[0],
-      startTime: session.startTime || "07:00",
-      endTime: session.endTime || "08:00",
-      sessionType: session.sessionType || "TROT",
-      intensity: session.intensity || "MODERATE",
-      status: session.status || "SCHEDULED",
-      groomName: session.groomName,
-      jockeyName: session.jockeyName,
-      trackType: session.trackType || "TURF",
-      lane: session.lane || 1,
-      targetDistanceMeters: session.targetDistanceMeters || 1200,
-      notes: session.notes,
-    };
-    workouts.push(newSession);
-    saveStoredWorkouts(workouts);
-    return structuredClone(newSession);
+  async createSession(planId: string, input: SessionInput): Promise<ExerciseSession> {
+    return toSession(await api<BeWorkout>("POST", `/training/plans/${planId}/workouts`, input));
   },
 
-  async restoreBlockedSession(sessionId: string): Promise<ExerciseSession> {
-    try {
-      const res = await api<ExerciseSession>("PATCH", `/training/workouts/${sessionId}`, { status: "SCHEDULED" });
-      if (res) return res;
-    } catch {}
-
-    const workouts = getStoredWorkouts();
-    const s = workouts.find((item) => item.id === sessionId);
-    if (!s) throw new Error("Workout session not found");
-    s.status = "SCHEDULED";
-    s.blockedReason = undefined;
-    saveStoredWorkouts(workouts);
-    return structuredClone(s);
+  /** DL-2.01 Lặp lại hằng tuần (weekdays: 1 = Thứ Hai ... 7 = Chủ nhật). */
+  async createRepeatSessions(
+    planId: string,
+    input: SessionInput & { weekdays: number[]; until: string },
+  ): Promise<RepeatResult> {
+    return api<RepeatResult>("POST", `/training/plans/${planId}/workouts/repeat`, input);
   },
 
-  async saveSessionResult(sessionId: string, resultData: Partial<SessionResult>): Promise<SessionResult> {
-    try {
-      const res = await api<ExerciseSession>("PATCH", `/training/workouts/${sessionId}`, {
-        status: "COMPLETED",
-        actualTimeSeconds: resultData.actualDurationSeconds,
-        heartRatePeak: resultData.maxHeartRate,
-        heartRateRecovery: resultData.recoveryHeartRate1Min,
-        performanceScore: resultData.performanceScore,
-        trainerNotes: resultData.headTrainerFeedback,
-      });
-      if (res && res.result) return res.result;
-    } catch {}
-
-    const workouts = getStoredWorkouts();
-    const s = workouts.find((item) => item.id === sessionId);
-    if (!s) throw new Error("Workout session not found");
-
-    const result: SessionResult = {
-      id: `res-${Date.now()}`,
-      sessionId,
-      actualDistanceMeters: resultData.actualDistanceMeters || 1200,
-      actualDurationSeconds: resultData.actualDurationSeconds || 120,
-      avgSpeedKmh: resultData.avgSpeedKmh || 36,
-      maxSpeedKmh: resultData.maxSpeedKmh || 45,
-      avgHeartRate: resultData.avgHeartRate || 130,
-      maxHeartRate: resultData.maxHeartRate || 155,
-      recoveryHeartRate1Min: resultData.recoveryHeartRate1Min,
-      recoveryHeartRate5Min: resultData.recoveryHeartRate5Min,
-      performanceScore: resultData.performanceScore || 8,
-      hasAbnormalSigns: Boolean(resultData.hasAbnormalSigns),
-      abnormalSignsDescription: resultData.abnormalSignsDescription,
-      alertSentToVet: Boolean(resultData.hasAbnormalSigns),
-      headTrainerFeedback: resultData.headTrainerFeedback,
-      recordedAt: new Date().toISOString().replace("T", " ").substring(0, 16),
-      recordedBy: "David Nguyen (Head Trainer)",
-    };
-
-    s.result = result;
-    s.status = "COMPLETED";
-    saveStoredWorkouts(workouts);
-
-    if (result.hasAbnormalSigns) {
-      const alerts = getStoredAlerts();
-      alerts.unshift({
-        id: `alt-${Date.now()}`,
-        horseId: s.horseId,
-        horseName: s.horseName,
-        sessionId: s.id,
-        sessionDate: s.sessionDate,
-        severity: "HIGH",
-        alertType: "LAMENESS_OBSERVED",
-        message: result.abnormalSignsDescription || "Abnormal clinical symptoms observed post-workout",
-        reportedBy: "David Nguyen (Head Trainer)",
-        createdAt: new Date().toISOString().replace("T", " ").substring(0, 16),
-        acknowledgedByVet: false,
-      });
-      saveStoredAlerts(alerts);
-    }
-
-    return structuredClone(result);
+  async updateSession(id: string, input: Partial<SessionInput>): Promise<ExerciseSession> {
+    return toSession(await api<BeWorkout>("PATCH", `/training/workouts/${id}`, input));
   },
 
-  // Trial Runs
-  async getTrialRuns(): Promise<TrialRunSchedule[]> {
-    try {
-      const res = await api<TrialRunSchedule[]>("GET", "/training/trial-runs");
-      if (Array.isArray(res)) return res;
-    } catch {}
-    return structuredClone(getStoredTrialRuns());
+  async getSession(id: string): Promise<ExerciseSession> {
+    return toSession(await api<BeWorkout>("GET", `/training/workouts/${id}`));
   },
 
-  async createTrialRun(data: Partial<TrialRunSchedule>): Promise<TrialRunSchedule> {
-    try {
-      const res = await api<TrialRunSchedule>("POST", "/training/trial-runs", data);
-      if (res) return res;
-    } catch {}
-
-    const trials = getStoredTrialRuns();
-    const item: TrialRunSchedule = {
-      id: `trial-${Date.now()}`,
-      runCode: `TR-2026-W${Math.floor(35 + Math.random() * 15)}-${Math.floor(1 + Math.random() * 9)}`,
-      runDate: data.runDate || new Date().toISOString().split("T")[0],
-      trackType: data.trackType || "TURF",
-      orderNumber: trials.length + 1,
-      distanceMeters: data.distanceMeters || 1200,
-      startTime: data.startTime || "07:00",
-      status: "PENDING",
-      horses: data.horses || [],
-      coordinatorName: "David Nguyen (Head Trainer)",
-      notes: data.notes || "",
-    };
-    trials.push(item);
-    saveStoredTrialRuns(trials);
-    return structuredClone(item);
+  async cancelSession(id: string, reason: CancelWorkoutReason, note?: string): Promise<ExerciseSession> {
+    return toSession(await api<BeWorkout>("POST", `/training/workouts/${id}/cancel`, { reason, note: note || undefined }));
   },
 
-  // Fitness Metrics & Alerts
-  async getFitnessMetrics(horseId: string): Promise<FitnessMetricPoint[]> {
-    try {
-      const res = await api<FitnessMetricPoint[]>("GET", `/training/horses/${horseId}/fitness-metrics`);
-      if (Array.isArray(res)) return res;
-    } catch {}
-    return structuredClone(getStoredFitnessMetrics(horseId));
+  /** DL-2.07: khôi phục buổi bị chặn (có thể dời ngày giờ). */
+  async restoreBlockedSession(id: string, scheduledDate?: string): Promise<ExerciseSession> {
+    return toSession(await api<BeWorkout>("POST", `/training/workouts/${id}/restore`, { scheduledDate }));
+  },
+
+  async saveSessionResult(id: string, input: ResultInput): Promise<ExerciseSession> {
+    return toSession(await api<BeWorkout>("POST", `/training/workouts/${id}/result`, input));
+  },
+
+  async getGrooms(): Promise<Groom[]> {
+    return api<Groom[]>("GET", "/training/grooms");
+  },
+
+  // Lượt chạy thử = buổi tập loại TRIAL
+  async getTrialRuns(range?: { from?: string; to?: string }): Promise<ExerciseSession[]> {
+    const params = new URLSearchParams();
+    if (range?.from) params.set("from", range.from);
+    if (range?.to) params.set("to", range.to);
+    const qs = params.toString() ? `?${params.toString()}` : "";
+    return (await api<BeWorkout[]>("GET", `/training/trial-runs${qs}`)).map((w) => toSession(w));
+  },
+
+  // Thể lực & cảnh báo
+  async getFitness(horseId: string, weeks = 12): Promise<FitnessData> {
+    return api<FitnessData>("GET", `/training/horses/${horseId}/fitness-metrics?weeks=${weeks}`);
   },
 
   async getAlerts(): Promise<TrainingAlert[]> {
-    try {
-      const res = await api<TrainingAlert[]>("GET", "/training/alerts");
-      if (Array.isArray(res)) return res;
-    } catch {}
-    return structuredClone(getStoredAlerts());
+    return (await api<BeWorkout[]>("GET", "/training/alerts")).map(toAlert);
   },
 
   async acknowledgeAlert(alertId: string, vetNotes: string): Promise<TrainingAlert> {
-    try {
-      const res = await api<TrainingAlert>("PATCH", `/training/alerts/${alertId}`, { vetNotes });
-      if (res) return res;
-    } catch {}
-
-    const alerts = getStoredAlerts();
-    const alert = alerts.find((a) => a.id === alertId);
-    if (!alert) throw new Error("Training alert not found");
-    alert.acknowledgedByVet = true;
-    alert.vetNotes = vetNotes;
-    saveStoredAlerts(alerts);
-    return structuredClone(alert);
+    return toAlert(await api<BeWorkout>("PATCH", `/training/alerts/${alertId}`, { vetNotes }));
   },
 };

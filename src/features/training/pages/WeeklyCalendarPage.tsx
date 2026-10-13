@@ -1,386 +1,296 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { Alert } from "@/shared/components/ui/Alert";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
 import { Card } from "@/shared/components/ui/Card";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
-import { Field } from "@/shared/components/form/Field";
 import { Input } from "@/shared/components/form/Input";
-import { Modal } from "@/shared/components/ui/Modal";
 import { Select } from "@/shared/components/form/Select";
-import { Tabs } from "@/shared/components/ui/Tabs";
-import { Textarea } from "@/shared/components/form/Textarea";
-import { useAuth } from "@/shared/components/layout/AuthProvider";
-import { useToast } from "@/shared/components/ui/Toast";
-import { getStoredHorses } from "@/shared/mock/horsesData";
-import { getHorses } from "@/features/horses/api";
-import { trainingApi } from "../api";
-import type { ExerciseIntensity, ExerciseSession, ExerciseType, TrackType } from "../types";
+import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
+import { messageFor } from "@/shared/lib/messages";
+import { todayClub, trainingApi } from "../api";
+import { sessionButtons } from "../components/sessionRules";
+import { CancelWorkoutDialog, RestoreWorkoutDialog, WorkoutDialog } from "../components/WorkoutDialogs";
+import {
+  EXERCISE_TYPE_LABEL,
+  INTENSITY_LABEL,
+  isHeavy,
+  SESSION_STATUS_LABEL,
+  SESSION_STATUS_TONE,
+  TRACK_LABEL,
+} from "../types";
+import type { ExerciseSession, ExerciseType, SessionStatus, TrackType, TrainingPlan } from "../types";
 
-const INTENSITY_COLORS: Record<ExerciseIntensity, "ok" | "warn" | "danger"> = {
-  LIGHT: "ok",
-  MODERATE: "warn",
-  HEAVY: "danger",
-};
+function shiftDay(date: string, days: number): string {
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+function mondayOf(date: string): string {
+  const d = new Date(`${date}T00:00:00Z`);
+  return shiftDay(date, -((d.getUTCDay() + 6) % 7));
+}
+function minutes(t: string): number {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+}
 
+type Dialog =
+  | { kind: "add" }
+  | { kind: "edit" | "cancel" | "restore"; session: ExerciseSession }
+  | null;
+
+/** SC-2.05 Lịch tập. HT thêm / sửa / hủy / khôi phục; CM, VET xem; GROOM dùng "Lịch tập của tôi". */
 export default function WeeklyCalendarPage() {
-  const { user } = useAuth();
-  const toast = useToast();
-  const isTrainer = user?.role === "HEAD_TRAINER" || user?.role === "CLUB_MANAGER";
+  const user = useCurrentUser();
+  const [params] = useSearchParams();
+  const isTrainer = user.role === "HEAD_TRAINER";
 
-  // Available horses with dynamic roster reconciliation
-  const [availableHorses, setAvailableHorses] = useState(() => getStoredHorses());
-
-  useEffect(() => {
-    getHorses({ limit: 100 })
-      .then((res) => {
-        if (res.items && res.items.length > 0) {
-          setAvailableHorses(res.items as any);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
+  const [mode, setMode] = useState<"day" | "week">("day");
+  const [date, setDate] = useState(todayClub());
   const [sessions, setSessions] = useState<ExerciseSession[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [activeDate, setActiveDate] = useState<string>(() => new Date().toISOString().split("T")[0]);
-  const [filterIntensity, setFilterIntensity] = useState<string>("ALL");
+  const [plans, setPlans] = useState<TrainingPlan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [horse, setHorse] = useState("ALL");
+  const [groom, setGroom] = useState("ALL");
+  const [surface, setSurface] = useState("ALL");
+  const [type, setType] = useState("ALL");
+  const [status, setStatus] = useState(params.get("status") ?? "ALL");
+  const [selected, setSelected] = useState<ExerciseSession | null>(null);
+  const [dialog, setDialog] = useState<Dialog>(null);
+  const latest = useRef(0);
 
-  // Create Session Modal (DL-2.01)
-  const [isCreateOpen, setIsCreateOpen] = useState<boolean>(false);
-  const [newHorseId, setNewHorseId] = useState<string>(() => availableHorses[0]?.id || "horse-1");
-  const [newType, setNewType] = useState<ExerciseType>("TROT");
-  const [newIntensity, setNewIntensity] = useState<ExerciseIntensity>("MODERATE");
-  const [newStart, setNewStart] = useState<string>("06:30");
-  const [newEnd, setNewEnd] = useState<string>("07:30");
-  const [newGroom, setNewGroom] = useState<string>("John Smith (Groom Hand)");
-  const [newJockey, setNewJockey] = useState<string>("Alex Turner (Jockey)");
-  const [newTrack, setNewTrack] = useState<TrackType>("TURF");
-  const [newDistance, setNewDistance] = useState<number>(1200);
-  const [newNotes, setNewNotes] = useState<string>("");
+  const from = mode === "day" ? date : mondayOf(date);
+  const to = mode === "day" ? date : shiftDay(mondayOf(date), 6);
 
-  const loadSessions = useCallback(async () => {
+  // Đổi ngày nhanh: chỉ nhận kết quả của lần tải mới nhất.
+  const load = useCallback(async () => {
+    const requestId = ++latest.current;
+    setLoading(true);
+    setError("");
     try {
-      setLoading(true);
-      const data = await trainingApi.getSessions();
-      setSessions(data);
-    } catch {
-      toast.show("Unable to load training sessions schedule", "danger");
+      const rows = await trainingApi.getSessions({ from, to });
+      if (requestId === latest.current) setSessions(rows);
+    } catch (err) {
+      if (requestId === latest.current) setError(messageFor(err));
     } finally {
-      setLoading(false);
+      if (requestId === latest.current) setLoading(false);
     }
-  }, [toast]);
+  }, [from, to]);
 
   useEffect(() => {
-    void loadSessions();
-  }, [loadSessions]);
+    void load();
+  }, [load]);
 
-  const handleRestoreSession = async (sessionId: string) => {
-    try {
-      await trainingApi.restoreBlockedSession(sessionId);
-      toast.show("Restored workout session schedule after lock resolution", "ok");
-      void loadSessions();
-    } catch {
-      toast.show("Failed to restore workout session", "danger");
-    }
-  };
+  useEffect(() => {
+    if (!isTrainer) return;
+    trainingApi
+      .getPlans()
+      .then((all) => setPlans(all.filter((p) => p.status === "DRAFT" || p.status === "ACTIVE")))
+      .catch(() => setPlans([]));
+  }, [isTrainer]);
 
-  const handleCreateSession = async () => {
-    try {
-      const targetHorse = availableHorses.find((h) => h.id === newHorseId);
-      const horseName = targetHorse?.name || "Racehorse";
+  const shown = sessions.filter(
+    (s) =>
+      (horse === "ALL" || s.horseId === horse) &&
+      (groom === "ALL" || s.groomId === groom) &&
+      (surface === "ALL" || s.trackType === surface) &&
+      (type === "ALL" || s.sessionType === type) &&
+      (status === "ALL" || s.status === status),
+  );
 
-      const created = await trainingApi.createSession({
-        horseId: newHorseId,
-        horseName,
-        sessionDate: activeDate,
-        startTime: newStart,
-        endTime: newEnd,
-        sessionType: newType,
-        intensity: newIntensity,
-        groomName: newGroom,
-        jockeyName: newJockey,
-        trackType: newTrack,
-        targetDistanceMeters: newDistance,
-        notes: newNotes,
-      });
-
-      if (created.status === "BLOCKED_BY_LOCK") {
-        toast.show(
-          "Heavy workout automatically blocked: Horse is under active Medical Lock!",
-          "danger",
-        );
-      } else {
-        toast.show("Workout session added to schedule successfully", "ok");
+  // Nhân viên chăm sóc có 2 buổi trùng giờ (cách nhau < 30 phút cùng ngày) -> viền cam.
+  const overlapping = useMemo(() => {
+    const live = sessions.filter((s) => s.status !== "CANCELLED" && s.groomId);
+    const ids = new Set<string>();
+    for (const a of live) {
+      for (const b of live) {
+        if (a.id !== b.id && a.groomId === b.groomId && a.sessionDate === b.sessionDate && Math.abs(minutes(a.startTime) - minutes(b.startTime)) < 30) {
+          ids.add(a.id);
+        }
       }
-
-      setIsCreateOpen(false);
-      void loadSessions();
-    } catch {
-      toast.show("Failed to create workout session", "danger");
     }
-  };
+    return ids;
+  }, [sessions]);
 
-  const filteredSessions = sessions.filter((s) => {
-    const matchesIntensity = filterIntensity === "ALL" ? true : s.intensity === filterIntensity;
-    return matchesIntensity;
-  });
+  const uniq = <T,>(rows: T[], key: (r: T) => string, label: (r: T) => string) =>
+    [...new Map(rows.map((r) => [key(r), label(r)])).entries()].map(([value, l]) => ({ value, label: l }));
+
+  const SessionBlock = ({ s }: { s: ExerciseSession }) => (
+    <button
+      type="button"
+      onClick={() => setSelected(s)}
+      style={{
+        all: "unset",
+        cursor: "pointer",
+        display: "block",
+        padding: "0.6rem 0.75rem",
+        borderRadius: "var(--r)",
+        border: `1px solid ${overlapping.has(s.id) ? "var(--warn)" : "var(--border)"}`,
+        background:
+          selected?.id === s.id
+            ? "var(--surface-3)"
+            : s.status === "BLOCKED"
+              ? "var(--danger-bg)"
+              : s.status === "COMPLETED"
+                ? "var(--ok-bg)"
+                : "var(--brand-50)",
+        textDecoration: s.status === "CANCELLED" ? "line-through" : undefined,
+        width: "100%",
+        boxSizing: "border-box",
+      }}
+      title={overlapping.has(s.id) ? `Groom ${s.groomName} has two workouts at the same time.` : ""}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", gap: "0.35rem", flexWrap: "wrap" }}>
+        <strong>{s.startTime} {s.horseName}</strong>
+        <Badge tone={SESSION_STATUS_TONE[s.status]}>{SESSION_STATUS_LABEL[s.status]}</Badge>
+      </div>
+      <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>
+        {EXERCISE_TYPE_LABEL[s.sessionType]} {isHeavy(s.sessionType, s.intensity) && "· heavy"} · {s.targetDistanceMeters} m × {s.repetitions} · {TRACK_LABEL[s.trackType]} · {s.groomName ?? "—"}
+        {overlapping.has(s.id) && " · groom overlap"}
+      </div>
+    </button>
+  );
+
+  const days = mode === "week" ? Array.from({ length: 7 }, (_, i) => shiftDay(from, i)) : [date];
+  const b = selected ? sessionButtons(selected, user.role) : null;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-      {/* Header */}
+    <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Training Schedule & Assignments</h1>
-          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
-            Coordinate timeslots, assign Grooms/Jockeys, and enforce automated Medical Lock blocks
+          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>Training Schedule</h1>
+          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
+            Workouts by day or week. Heavy workouts are blocked while a horse is under a Training Lock.
           </p>
         </div>
-
         <div style={{ display: "flex", gap: "0.75rem" }}>
-          <Link to="/training/trials">
-            <Button tone="secondary">Trial Runs Coordinator</Button>
-          </Link>
-          {isTrainer && (
-            <Button tone="primary" onClick={() => setIsCreateOpen(true)}>
-              + Schedule Workout
-            </Button>
-          )}
+          <Link to="/training/trials"><Button tone="secondary">Trial runs</Button></Link>
+          {isTrainer && <Button tone="primary" onClick={() => setDialog({ kind: "add" })}>+ Schedule Workout</Button>}
         </div>
       </div>
 
-      {/* Control bar */}
       <Card pad={16}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
-          <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-            <span style={{ fontWeight: 600, fontSize: "0.875rem" }}>Date:</span>
-            <Input type="date" value={activeDate} onChange={(e) => setActiveDate(e.target.value)} style={{ width: 170 }} />
-          </div>
-
-          <Tabs
-            items={[
-              { id: "ALL", label: `All Intensities (${sessions.length})` },
-              { id: "LIGHT", label: "Light Workout" },
-              { id: "MODERATE", label: "Moderate" },
-              { id: "HEAVY", label: "Heavy Workout" },
-            ]}
-            active={filterIntensity}
-            onChange={setFilterIntensity}
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+          <Button tone="ghost" size="sm" onClick={() => setDate(shiftDay(date, mode === "day" ? -1 : -7))} aria-label="Previous">‹</Button>
+          <Input type="date" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} style={{ width: 170 }} />
+          <Button tone="ghost" size="sm" onClick={() => setDate(shiftDay(date, mode === "day" ? 1 : 7))} aria-label="Next">›</Button>
+          <Button tone="secondary" size="sm" onClick={() => setDate(todayClub())}>Today</Button>
+          <Button tone={mode === "day" ? "primary" : "secondary"} size="sm" onClick={() => setMode("day")}>Day</Button>
+          <Button tone={mode === "week" ? "primary" : "secondary"} size="sm" onClick={() => setMode("week")}>Week</Button>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.5rem", marginTop: "0.75rem" }}>
+          <Select value={horse} onChange={(e) => setHorse(e.target.value)} options={[{ value: "ALL", label: "All horses" }, ...uniq(sessions, (s) => s.horseId, (s) => s.horseName)]} />
+          <Select
+            value={groom}
+            onChange={(e) => setGroom(e.target.value)}
+            options={[{ value: "ALL", label: "All grooms" }, ...uniq(sessions.filter((s) => s.groomId), (s) => s.groomId as string, (s) => s.groomName ?? "—")]}
+          />
+          <Select
+            value={surface}
+            onChange={(e) => setSurface(e.target.value)}
+            options={[{ value: "ALL", label: "All surfaces" }, ...(Object.keys(TRACK_LABEL) as TrackType[]).map((t) => ({ value: t, label: TRACK_LABEL[t] }))]}
+          />
+          <Select
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+            options={[{ value: "ALL", label: "All types" }, ...(Object.keys(EXERCISE_TYPE_LABEL) as ExerciseType[]).map((t) => ({ value: t, label: EXERCISE_TYPE_LABEL[t] }))]}
+          />
+          <Select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            options={[{ value: "ALL", label: "All statuses" }, ...(Object.keys(SESSION_STATUS_LABEL) as SessionStatus[]).map((s) => ({ value: s, label: SESSION_STATUS_LABEL[s] }))]}
           />
         </div>
       </Card>
 
-      {/* Session list / calendar tiles */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-        {loading ? (
-          <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Loading schedule...</div>
-        ) : filteredSessions.length === 0 ? (
-          <EmptyState
-            title="No Workout Sessions Found"
-            description="No sessions are scheduled for the selected date or intensity filter."
-          />
-        ) : (
-          filteredSessions.map((session) => {
-            const isBlocked = session.status === "BLOCKED_BY_LOCK";
-            return (
-              <div
-                key={session.id}
-                style={{
-                  padding: "1.25rem",
-                  background: isBlocked ? "rgba(239, 68, 68, 0.03)" : "var(--surface)",
-                  borderRadius: "var(--radius-card)",
-                  border: "1px solid var(--border)",
-                  borderLeft: isBlocked ? "5px solid var(--danger)" : "5px solid var(--accent)",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.75rem",
-                }}
-              >
-                {/* Blocked banner if locked */}
-                {isBlocked && (
-                  <div
-                    style={{
-                      padding: "0.75rem 1rem",
-                      borderRadius: 6,
-                      background: "rgba(239, 68, 68, 0.12)",
-                      border: "1px solid var(--danger)",
-                      color: "var(--danger)",
-                      fontSize: "0.875rem",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                      gap: "0.5rem",
-                    }}
-                  >
-                    <div>
-                      <strong>🔒 BLOCKED BY MEDICAL LOCK:</strong> {session.blockedReason}
-                    </div>
-                    {isTrainer && (
-                      <Button tone="danger" onClick={() => void handleRestoreSession(session.id)}>
-                        Restore Workout
-                      </Button>
-                    )}
-                  </div>
-                )}
+      {error && (
+        <Alert tone="danger" title="Could not load data">
+          {error} <Button size="sm" tone="secondary" onClick={() => void load()}>Try again</Button>
+        </Alert>
+      )}
 
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem" }}>
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                      <span style={{ fontSize: "1.125rem", fontWeight: 700 }}>
-                        {session.startTime} – {session.endTime}
-                      </span>
-                      <Badge tone={INTENSITY_COLORS[session.intensity]}>
-                        Intensity: {session.intensity} · {session.sessionType}
-                      </Badge>
-                      {session.status === "COMPLETED" && <Badge tone="ok">Completed</Badge>}
-                      {session.status === "SCHEDULED" && <Badge tone="neutral">Scheduled</Badge>}
-                    </div>
-
-                    <h3 style={{ margin: "0.5rem 0 0", fontSize: "1.25rem", fontWeight: 700 }}>
-                      <Link to={`/horses/${session.horseId}`} style={{ color: "inherit", textDecoration: "none" }}>
-                        {session.horseName}
-                      </Link>
-                    </h3>
-
-                    {session.planName && (
-                      <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-                        Plan: <strong>{session.planName}</strong>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Assignment pills */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", fontSize: "0.8125rem" }}>
-                    <div>
-                      <span style={{ color: "var(--text-muted)" }}>Assigned Groom:</span>{" "}
-                      <strong>{session.groomName || "Unassigned"}</strong>
-                    </div>
-                    <div>
-                      <span style={{ color: "var(--text-muted)" }}>Assigned Jockey:</span>{" "}
-                      <strong>{session.jockeyName || "Unassigned"}</strong>
-                    </div>
-                    <div>
-                      <span style={{ color: "var(--text-muted)" }}>Track Surface:</span>{" "}
-                      <strong>{session.trackType} · {session.targetDistanceMeters}m</strong>
-                    </div>
-                  </div>
-                </div>
-
-                {session.notes && (
-                  <div style={{ fontSize: "0.875rem", background: "var(--surface-sunken)", padding: "0.5rem 0.75rem", borderRadius: 4 }}>
-                    <strong>Trainer Notes:</strong> {session.notes}
-                  </div>
-                )}
+      <div style={{ display: "grid", gridTemplateColumns: selected ? "minmax(0, 1fr) 320px" : "minmax(0, 1fr)", gap: "1rem", alignItems: "start" }}>
+        <div>
+          {loading ? (
+            <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Loading schedule...</div>
+          ) : mode === "day" ? (
+            shown.length === 0 ? (
+              <EmptyState title={`No workouts on ${date}.`} />
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                {shown.map((s) => (
+                  <SessionBlock key={s.id} s={s} />
+                ))}
               </div>
-            );
-          })
+            )
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(140px, 1fr))", gap: "0.5rem", overflowX: "auto" }}>
+              {days.map((d) => (
+                <div key={d} style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                  <div style={{ fontWeight: 700, fontSize: "var(--fs-body)", color: d === todayClub() ? "var(--brand)" : undefined }}>{d.slice(5)}</div>
+                  {shown.filter((s) => s.sessionDate === d).map((s) => (
+                    <SessionBlock key={s.id} s={s} />
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {selected && b && (
+          <Card pad={16}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <strong>{selected.horseName}</strong>
+              <Button tone="ghost" size="sm" onClick={() => setSelected(null)} aria-label="Close" icon="x" />
+            </div>
+            <div style={{ fontSize: "var(--fs-body)", display: "flex", flexDirection: "column", gap: "0.25rem", marginTop: "0.5rem" }}>
+              <div>{selected.sessionDate} {selected.startTime} · {EXERCISE_TYPE_LABEL[selected.sessionType]} · {INTENSITY_LABEL[selected.intensity]}</div>
+              <div>{selected.targetDistanceMeters} m × {selected.repetitions}{selected.targetSpeedKmh ? ` · ${selected.targetSpeedKmh} km/h` : ""}</div>
+              <div>{TRACK_LABEL[selected.trackType]} · Jockey: {selected.jockeyName || "—"} · Groom: {selected.groomName || "—"}</div>
+              <div>Plan: {selected.planName} {selected.phaseName ? `· ${selected.phaseName}` : ""}</div>
+              {selected.notes && <div>Instructions: {selected.notes}</div>}
+              {selected.statusReason && <div style={{ color: "var(--danger)" }}>{selected.statusReason}</div>}
+              {selected.medicalOverride && <Badge tone="warn">Scheduled in a medical status</Badge>}
+            </div>
+            <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", marginTop: "0.75rem" }}>
+              {b.edit && <Button size="sm" tone="ghost" onClick={() => setDialog({ kind: "edit", session: selected })}>Edit</Button>}
+              {b.record && <Link to={`/training/sessions/${selected.id}/result`}><Button size="sm" tone="secondary">Record result</Button></Link>}
+              {b.viewResult && <Link to={`/training/sessions/${selected.id}/result`}><Button size="sm" tone="secondary">View result</Button></Link>}
+              {b.restore && (
+                <Button size="sm" tone="primary" disabled={Boolean(b.restoreBlockedReason)} title={b.restoreBlockedReason ?? ""} onClick={() => setDialog({ kind: "restore", session: selected })}>
+                  Restore
+                </Button>
+              )}
+              {b.cancel && <Button size="sm" tone="danger" onClick={() => setDialog({ kind: "cancel", session: selected })}>Cancel workout</Button>}
+              {user.role !== "GROOM" && <Link to={`/training/plans/${selected.planId}`}><Button size="sm" tone="ghost">Open plan</Button></Link>}
+            </div>
+          </Card>
         )}
       </div>
 
-      {/* Create Session Modal */}
-      {isCreateOpen && (
-        <Modal onClose={() => setIsCreateOpen(false)} title="Schedule New Workout Session">
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <Field label="Select Racehorse" required>
-              <Select
-                value={newHorseId}
-                onChange={(e) => setNewHorseId(e.target.value)}
-                options={availableHorses.map((h) => ({
-                  value: h.id,
-                  label: `${h.name} (${h.code || h.horseCode})${h.isLocked ? " - Medical Lock 🔒" : ""}`,
-                }))}
-              />
-            </Field>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-              <Field label="Workout Type" required>
-                <Select
-                  value={newType}
-                  onChange={(e) => setNewType(e.target.value as ExerciseType)}
-                  options={[
-                    { value: "WALK", label: "Walk (Controlled Walk)" },
-                    { value: "TROT", label: "Trot (Trotting Drill)" },
-                    { value: "CANTER", label: "Canter (Steady Pace)" },
-                    { value: "GALLOP", label: "Gallop (Sprint / High-speed)" },
-                    { value: "GATE_PRACTICE", label: "Starting Gate Drill" },
-                  ]}
-                />
-              </Field>
-
-              <Field label="Intensity Level" required>
-                <Select
-                  value={newIntensity}
-                  onChange={(e) => setNewIntensity(e.target.value as ExerciseIntensity)}
-                  options={[
-                    { value: "LIGHT", label: "Light (Rehab / Gentle)" },
-                    { value: "MODERATE", label: "Moderate (Aerobic Conditioning)" },
-                    { value: "HEAVY", label: "Heavy (Sprint / Fast Work)" },
-                  ]}
-                />
-              </Field>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-              <Field label="Start Time" required>
-                <Input type="time" value={newStart} onChange={(e) => setNewStart(e.target.value)} />
-              </Field>
-
-              <Field label="End Time" required>
-                <Input type="time" value={newEnd} onChange={(e) => setNewEnd(e.target.value)} />
-              </Field>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-              <Field label="Assigned Groom" required>
-                <Input value={newGroom} onChange={(e) => setNewGroom(e.target.value)} />
-              </Field>
-
-              <Field label="Assigned Jockey">
-                <Input value={newJockey} onChange={(e) => setNewJockey(e.target.value)} />
-              </Field>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-              <Field label="Track Surface" required>
-                <Select
-                  value={newTrack}
-                  onChange={(e) => setNewTrack(e.target.value as TrackType)}
-                  options={[
-                    { value: "TURF", label: "Turf Track (Grass)" },
-                    { value: "SAND", label: "Sand Track (Dirt)" },
-                  ]}
-                />
-              </Field>
-
-              <Field label="Target Distance (meters)">
-                <Input
-                  type="number"
-                  value={newDistance}
-                  onChange={(e) => setNewDistance(Number(e.target.value))}
-                />
-              </Field>
-            </div>
-
-            <Field label="Trainer Instructions & Notes">
-              <Textarea
-                rows={2}
-                value={newNotes}
-                onChange={(e) => setNewNotes(e.target.value)}
-                placeholder="Specific tactical instructions for this session..."
-              />
-            </Field>
-
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "0.5rem" }}>
-              <Button tone="ghost" onClick={() => setIsCreateOpen(false)}>
-                Cancel
-              </Button>
-              <Button tone="primary" onClick={() => void handleCreateSession()}>
-                Save to Schedule
-              </Button>
-            </div>
-          </div>
-        </Modal>
+      {(dialog?.kind === "add" || dialog?.kind === "edit") && (
+        <WorkoutDialog
+          plans={plans}
+          plan={dialog.kind === "edit" ? plans.find((p) => p.id === dialog.session.planId) : undefined}
+          session={dialog.kind === "edit" ? dialog.session : undefined}
+          defaultDate={date < todayClub() ? todayClub() : date}
+          onClose={() => setDialog(null)}
+          onSaved={(d) => {
+            setDialog(null);
+            setSelected(null);
+            if (d >= from && d <= to) void load();
+            else setDate(d);
+          }}
+        />
+      )}
+      {dialog?.kind === "cancel" && (
+        <CancelWorkoutDialog session={dialog.session} onClose={() => setDialog(null)} onDone={() => { setSelected(null); void load(); }} />
+      )}
+      {dialog?.kind === "restore" && (
+        <RestoreWorkoutDialog session={dialog.session} onClose={() => setDialog(null)} onDone={() => { setSelected(null); void load(); }} />
       )}
     </div>
   );

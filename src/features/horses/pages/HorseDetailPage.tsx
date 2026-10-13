@@ -1,31 +1,62 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
 import { Card } from "@/shared/components/ui/Card";
 import { Badge } from "@/shared/components/ui/Badge";
-import { Button } from "@/shared/components/ui/Button";
+import { Button, LinkButton } from "@/shared/components/ui/Button";
+import { Menu } from "@/shared/components/ui/Menu";
+import { useBreadcrumbTail } from "@/shared/components/layout/BreadcrumbContext";
 import { Alert } from "@/shared/components/ui/Alert";
 import { Tabs } from "@/shared/components/ui/Tabs";
 import { HEALTH_STATUS } from "@/shared/lib/status";
 import type { HealthStatus } from "@/shared/types/enums";
 import { DataTable } from "@/shared/components/ui/DataTable";
 import { getHorseById, getHorseHistory } from "../api";
+import { RETIRE_REASON_LABEL } from "../types";
 import type { Horse, HorseHistoryResponse } from "../types";
 import { ChangeStatusDialog } from "../components/ChangeStatusDialog";
 import { AssignOwnerModal } from "../components/AssignOwnerModal";
 import { DeleteHorseModal } from "../components/DeleteHorseModal";
+import { RetireHorseModal } from "../components/RetireHorseModal";
+import { LifecycleTimeline } from "../components/LifecycleTimeline";
+import { Icon } from "@/shared/components/ui/Icon";
+import { useToast } from "@/shared/components/ui/Toast";
+import { AssignStallDialog, ReturnStallDialog, TransferStallDialog } from "@/features/stable/components/StallDialogs";
+import { formatDate, formatDateTime } from "@/shared/lib/format";
+
+/** Nguồn đổi trạng thái (Tab 4). */
+const STATUS_SOURCE_LABEL: Record<string, string> = {
+  MANUAL: "Manual",
+  MEDICAL_LOCK: "Training Lock",
+  SYSTEM: "System",
+  TRAINING_PLAN: "Training plan",
+};
 
 export default function HorseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const currentUser = useCurrentUser();
+  const toast = useToast();
   const [horse, setHorse] = useState<Horse | null>(null);
   const [history, setHistory] = useState<HorseHistoryResponse | null>(null);
+  useBreadcrumbTail(horse?.name);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("info");
   const [isOwnerModalOpen, setIsOwnerModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isRetireModalOpen, setIsRetireModalOpen] = useState(false);
+  const [stallDialog, setStallDialog] = useState<"assign" | "transfer" | "return" | null>(null);
+
+  const copyToClipboard = (text: string, label: string) => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => {
+        toast.show(`Copied ${label}: ${text}`);
+      }).catch(() => {
+        toast.show(`Copied: ${text}`);
+      });
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -67,9 +98,9 @@ export default function HorseDetailPage() {
   if (loading) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-        <PageHeader eyebrow="HORSE PROFILE · FLOW 1" title="Horse Profile Details" />
+        <PageHeader title="Horse profile" />
         <Card pad={32}>
-          <p style={{ color: "var(--ink-muted, #64748b)" }}>Loading horse profile details...</p>
+          <p style={{ margin: 0, color: "var(--muted)" }} aria-busy="true">Loading horse profile…</p>
         </Card>
       </div>
     );
@@ -78,15 +109,15 @@ export default function HorseDetailPage() {
   if (error || !horse) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-        <PageHeader eyebrow="HORSE PROFILE · FLOW 1" title="Profile Not Found" />
+        <PageHeader title="Horse profile not found" />
         <Card pad={24}>
-          <Alert tone="danger" title="Horse Record Not Found">
+          <Alert tone="danger" title="This horse profile could not be opened">
             {error || "This horse profile does not exist or your account lacks authorization."}
           </Alert>
           <div style={{ marginTop: "1rem" }}>
-            <Link to="/horses">
-              <Button tone="secondary">Back to Horse Roster</Button>
-            </Link>
+            <LinkButton to="/horses" icon="arrowLeft">
+              Back to horses
+            </LinkButton>
           </div>
         </Card>
       </div>
@@ -97,12 +128,16 @@ export default function HorseDetailPage() {
   const isGroom = currentUser.role === "GROOM";
   const isManager = currentUser.role === "CLUB_MANAGER";
 
-  // Calculate age
+  // Calculate age accurately (CL-1.12)
   let ageText = "—";
   if (horse.dob) {
-    const birthYear = new Date(horse.dob).getFullYear();
-    const currentYear = new Date().getFullYear();
-    const age = currentYear - birthYear;
+    const birthDate = new Date(horse.dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
     ageText = `${age >= 0 ? age : 0} y/o`;
   }
 
@@ -113,122 +148,252 @@ export default function HorseDetailPage() {
   }
 
   const statusCfg = HEALTH_STATUS[horse.status as HealthStatus] || { label: horse.status, tone: "neutral" };
+  const canViewMedical =
+    currentUser.role === "CLUB_MANAGER" || currentUser.role === "HEAD_TRAINER" || currentUser.role === "VETERINARIAN";
+  const canManageStall = currentUser.role === "CLUB_MANAGER" || currentUser.role === "HEAD_TRAINER";
+  const retiredReason = horse.status === "RETIRED" ? "The horse is no longer managed." : undefined;
+  const canViewOwner = currentUser.role === "CLUB_MANAGER" || currentUser.role === "HEAD_TRAINER" || currentUser.role === "HORSE_OWNER";
 
-  // 6 Tabs according to SC-1.03 (Hide stable tabs for owners)
+  // 6 Tabs according to SC-1.03 (Hide stable tabs for owners, hide owner tab for VET/GROOM per CL-1.07)
   const tabs = [
-    { id: "info", label: "1. General Information" },
-    ...(!isOwner ? [{ id: "stable", label: "2. Stabling & Care" }] : [{ id: "routine", label: "2. Daily Routine" }]),
-    { id: "owner", label: "3. Ownership & Custody" },
-    { id: "status-history", label: "4. Status History" },
-    ...(!isOwner ? [{ id: "stall-history", label: "5. Stall History" }] : []),
-    { id: "timeline", label: "6. Lifecycle Timeline" },
+    { id: "info", label: "General Information" },
+    ...(!isOwner ? [{ id: "stable", label: "Stabling & Care" }] : [{ id: "routine", label: "Daily Routine" }]),
+    ...(canViewOwner ? [{ id: "owner", label: "Ownership & Custody" }] : []),
+    { id: "status-history", label: "Status History" },
+    ...(!isOwner ? [{ id: "stall-history", label: "Stall History" }] : []),
+    { id: "timeline", label: "Lifecycle Timeline" },
   ];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
-        eyebrow={`HORSE ID: ${horse.horseCode || horse.id}`}
         title={horse.name}
-        description={`${horse.breed} · ${horse.gender} · ${horse.color} · ${ageText}`}
+        description={[horse.horseCode, horse.breed, horse.gender, horse.color, ageText].filter(Boolean).join(" · ")}
         action={
-          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-            <Link to="/horses">
-              <Button tone="secondary">← Roster</Button>
-            </Link>
-
-            {isManager && horse.status !== "RETIRED" && (
-              <Link to={`/horses/${horse.id}/edit`}>
-                <Button tone="secondary">Edit Profile</Button>
-              </Link>
-            )}
-
-            {isManager && horse.status !== "RETIRED" && (
-              <Button tone="secondary" onClick={() => setIsOwnerModalOpen(true)}>
-                Transfer Owner
-              </Button>
-            )}
-
-            <ChangeStatusDialog 
-              horse={horse} 
-              onSuccess={(updatedHorse: Horse) => setHorse({ ...horse, status: updatedHorse.status, isMedicalLocked: updatedHorse.isMedicalLocked })} 
+          <>
+            <ChangeStatusDialog
+              horse={horse}
+              onSuccess={(updatedHorse: Horse) => setHorse({ ...horse, status: updatedHorse.status, isMedicalLocked: updatedHorse.isMedicalLocked })}
             />
 
-            <Link to={`/medical/horses/${horse.id}`}>
-              <Button tone="secondary">Medical Records</Button>
-            </Link>
-
-            <Link to={`/medical/horses/${horse.id}/injuries`}>
-              <Button tone="secondary">2D Injury Map</Button>
-            </Link>
-
-            {isManager && (
-              <Button tone="danger" onClick={() => setIsDeleteModalOpen(true)}>
-                {horse.status === "RETIRED" ? "Delete Record" : "Retire / Delete"}
-              </Button>
+            {/* C1-04: GROOM, OWNER chưa xem được API y tế (BE trả 403) nên ẩn tới khi Cặp 2 mở quyền xem. */}
+            {canViewMedical && (
+              <LinkButton to={`/medical/horses/${horse.id}`} icon="file">
+                Medical records
+              </LinkButton>
             )}
-          </div>
+
+            {isManager && horse.status !== "RETIRED" && (
+              <LinkButton to={`/horses/${horse.id}/edit`} tone="primary" icon="edit">
+                Edit profile
+              </LinkButton>
+            )}
+
+            {/* Hành động ít dùng và hành động phá hủy nằm trong menu "More" (BTN-1.10 → BTN-1.12). */}
+            <Menu
+              label="More actions"
+              trigger="button"
+              buttonText="More"
+              items={[
+                { label: "Transfer owner", icon: "users", onSelect: () => setIsOwnerModalOpen(true), hidden: !(isManager && horse.status !== "RETIRED") },
+                { label: "2D injury map", icon: "bone", to: `/medical/horses/${horse.id}/injuries`, hidden: !canViewMedical },
+                { label: "Fitness chart", icon: "chart", to: `/horses/${horse.id}/fitness`, hidden: isOwner },
+                {
+                  label: "Reactivate",
+                  icon: "refresh",
+                  onSelect: () => setIsRetireModalOpen(true),
+                  hidden: !(isManager && horse.status === "RETIRED"),
+                  disabledReason: horse.retireReason === "DECEASED" ? "A deceased horse cannot be reactivated." : undefined,
+                },
+                {
+                  label: "Stop managing…",
+                  icon: "archive",
+                  danger: true,
+                  divider: true,
+                  onSelect: () => setIsRetireModalOpen(true),
+                  hidden: !(isManager && horse.status !== "RETIRED"),
+                },
+                {
+                  label: "Delete profile",
+                  icon: "trash",
+                  danger: true,
+                  onSelect: () => setIsDeleteModalOpen(true),
+                  hidden: !isManager,
+                  disabledReason: horse.isMedicalLocked ? "Cannot delete while a Training Lock is in effect." : undefined,
+                },
+              ]}
+            />
+          </>
         }
       />
 
       {/* Banner Medical Lock */}
       {horse.isMedicalLocked && (
-        <Alert
-          tone="danger"
-          title="VETERINARY MEDICAL LOCK ACTIVE"
-        >
-          Horse is currently subject to a protective veterinary Medical Lock. Heavy training workouts and competitive trial runs are strictly prohibited until cleared by the attending Veterinarian.
-          {horse.medicalLocks && horse.medicalLocks[0] && (
-            <div style={{ marginTop: "0.5rem", fontSize: "0.875rem" }}>
-              <strong>Lock Reason:</strong> {horse.medicalLocks[0].lockReason} (Placed:{" "}
-              {new Date(horse.medicalLocks[0].lockedAt).toLocaleString("en-US")})
+        <Alert tone="danger" icon="lock" title="Training Lock in effect">
+          <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
+            <div>
+              <div>
+                Heavy workouts and trial runs cannot be scheduled until the Veterinarian lifts the lock.
+              </div>
+              {horse.medicalLocks && horse.medicalLocks[0] && (
+                <div style={{ marginTop: "0.5rem", fontSize: "var(--fs-body)", opacity: 0.9 }}>
+                  <strong>Reason:</strong> {horse.medicalLocks[0].lockReason} (placed{" "}
+                  {formatDateTime(horse.medicalLocks[0].lockedAt)})
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </Alert>
       )}
 
       {/* Banner Retired */}
       {horse.status === "RETIRED" && (
-        <Alert tone="info" title="Horse Record Retired">
-          This racehorse is retired from active stable operations (sold, retired, or deceased). Historical identity, pedigree, and health logs remain archived for reference.
+        <Alert tone="info" title="No longer managed">
+          {horse.retireReason ? `Reason: ${RETIRE_REASON_LABEL[horse.retireReason]}. ` : ""}
+          Identity, stall and health history stay available for reference.
         </Alert>
       )}
 
+      {/* Athlete Header Card */}
       <Card pad={20}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-            <div
+        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: "1.5rem", alignItems: "center" }}>
+          {/* Athlete Portrait Crest */}
+          <div
+            style={{
+              width: 72,
+              height: 72,
+              borderRadius: "var(--r-lg)",
+              backgroundColor: "var(--brand-surface)",
+              border: "1px solid var(--brand-border)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "var(--brand)",
+              position: "relative",
+              flexShrink: 0,
+            }}
+          >
+            <Icon name="horse" size={36} />
+            <span
               style={{
-                width: 64,
-                height: 64,
+                position: "absolute",
+                bottom: -4,
+                right: -4,
+                backgroundColor: "var(--surface)",
                 borderRadius: "50%",
-                backgroundColor: "var(--brand-surface, #f0fdf4)",
+                padding: "2px",
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "1.75rem",
-                border: "2px solid var(--border, #e2e8f0)",
+                color: "var(--brand)",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
               }}
             >
-              🐎
+              <Icon name="checkCircle" size={14} />
+            </span>
+          </div>
+
+          {/* Identity & Identifiers */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+              <Badge tone={statusCfg.tone} icon={"icon" in statusCfg ? statusCfg.icon : undefined}>
+                {statusCfg.label}
+              </Badge>
+              {horse.isMedicalLocked && (
+                <Badge tone="danger" icon="lock">
+                  Training Lock
+                </Badge>
+              )}
             </div>
-            <div>
-              <h2 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 700 }}>
-                {horse.name}
-              </h2>
-              <span style={{ fontSize: "0.875rem", color: "var(--ink-muted, #64748b)" }}>
-                {horse.horseCode || horse.id} · {horse.breed}
-              </span>
+
+            <div style={{ fontSize: "var(--fs-body)", color: "var(--ink-secondary)" }}>
+              <span><strong>{horse.breed}</strong></span>
+              <span style={{ margin: "0 0.5rem", opacity: 0.5 }}>•</span>
+              <span>{horse.gender}</span>
+              <span style={{ margin: "0 0.5rem", opacity: 0.5 }}>•</span>
+              <span>{horse.color}</span>
+              <span style={{ margin: "0 0.5rem", opacity: 0.5 }}>•</span>
+              <span>{ageText}</span>
+            </div>
+
+            {/* Microchip & RFID quick-copy pills */}
+            <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginTop: "0.25rem", flexWrap: "wrap" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", fontSize: "var(--fs-body)" }}>
+                <span style={{ color: "var(--ink-muted)", fontSize: "var(--fs-caption)", fontWeight: 700 }}>Chip:</span>
+                <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, background: "var(--surface-subtle)", padding: "1px 6px", borderRadius: 4 }}>
+                  {displayMicrochip}
+                </span>
+                {horse.microchip && !isGroom && (
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(horse.microchip!, "Microchip")}
+                    title="Copy Microchip"
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "var(--ink-muted)",
+                      cursor: "pointer",
+                      padding: 2,
+                      display: "inline-flex",
+                    }}
+                  >
+                    <Icon name="clipboard" size={12} />
+                  </button>
+                )}
+              </div>
+
+              {horse.rfid && (
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", fontSize: "var(--fs-body)" }}>
+                  <span style={{ color: "var(--ink-muted)", fontSize: "var(--fs-caption)", fontWeight: 700 }}>RFID:</span>
+                  <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, background: "var(--surface-subtle)", padding: "1px 6px", borderRadius: 4 }}>
+                    {horse.rfid}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(horse.rfid!, "RFID")}
+                    title="Copy RFID"
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "var(--ink-muted)",
+                      cursor: "pointer",
+                      padding: 2,
+                      display: "inline-flex",
+                    }}
+                  >
+                    <Icon name="clipboard" size={12} />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: "0.5rem" }}>
-            <Badge tone={statusCfg.tone}>{statusCfg.label}</Badge>
-            {horse.isMedicalLocked && <Badge tone="danger">Medical Lock 🔒</Badge>}
+          {/* Quick Location / Assignment Stats */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.35rem",
+              paddingLeft: "1.5rem",
+              borderLeft: "1px solid var(--border-subtle)",
+              fontSize: "var(--fs-body)",
+              minWidth: 160,
+            }}
+          >
+            <div style={{ color: "var(--ink-muted)", fontSize: "var(--fs-caption)", fontWeight: 700 }}>
+              Location & Care
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontWeight: 600, color: "var(--brand)" }}>
+              <Icon name="home" size={13} />
+              <span>{horse.stallCode ? `Stall ${horse.stallCode}` : "Unassigned Stall"}</span>
+            </div>
+            <div style={{ color: "var(--ink-secondary)", display: "flex", alignItems: "center", gap: "0.35rem" }}>
+              <Icon name="user" size={13} />
+              <span>{horse.primaryGroom || "No Groom Assigned"}</span>
+            </div>
           </div>
         </div>
       </Card>
 
-      {/* 6 Tabs */}
+      {/* Tabs */}
       <Tabs
         items={tabs}
         active={activeTab}
@@ -238,70 +403,108 @@ export default function HorseDetailPage() {
       {/* Tab 1: General Info */}
       {activeTab === "info" && (
         <Card pad={24}>
-          <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "1.125rem", fontWeight: 700 }}>
-            Identity & Pedigree Information
+          <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "var(--fs-section)", fontWeight: 700 }}>
+            Identity
           </h3>
           <div
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
               gap: "1.25rem",
-              fontSize: "0.875rem",
+              fontSize: "var(--fs-body)",
             }}
           >
             <div>
-              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Horse Code (ID)</div>
+              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>Horse Code (ID)</div>
               <div style={{ fontWeight: 600 }}>{horse.horseCode || horse.id}</div>
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Registered Name</div>
+              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>Registered Name</div>
               <div style={{ fontWeight: 600 }}>{horse.name}</div>
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Microchip Number (15 digits)</div>
-              <div style={{ fontWeight: 600, fontFamily: "monospace" }}>{displayMicrochip}</div>
-            </div>
-
-            <div>
-              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>RFID Tag Code</div>
-              <div style={{ fontWeight: 600, fontFamily: "monospace" }}>{horse.rfid || "—"}</div>
-            </div>
-
-            <div>
-              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Breed</div>
-              <div style={{ fontWeight: 600 }}>{horse.breed}</div>
-            </div>
-
-            <div>
-              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Date of Birth / Age</div>
-              <div style={{ fontWeight: 600 }}>
-                {horse.dob ? new Date(horse.dob).toLocaleDateString("en-US") : "—"} ({ageText})
+              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>Microchip Number (15 digits)</div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{displayMicrochip}</span>
+                {horse.microchip && !isGroom && (
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(horse.microchip!, "Microchip")}
+                    title="Copy Microchip"
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "var(--ink-muted)",
+                      cursor: "pointer",
+                      padding: 2,
+                      display: "inline-flex",
+                    }}
+                  >
+                    <Icon name="clipboard" size={13} />
+                  </button>
+                )}
               </div>
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Gender</div>
+              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>RFID Tag Code</div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{horse.rfid || "—"}</span>
+                {horse.rfid && (
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(horse.rfid!, "RFID")}
+                    title="Copy RFID"
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "var(--ink-muted)",
+                      cursor: "pointer",
+                      padding: 2,
+                      display: "inline-flex",
+                    }}
+                  >
+                    <Icon name="clipboard" size={13} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>Breed</div>
+              <div style={{ fontWeight: 600 }}>{horse.breed}</div>
+            </div>
+
+            <div>
+              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>Date of Birth / Age</div>
+              <div style={{ fontWeight: 600 }}>
+                {horse.dob ? formatDate(horse.dob) : "—"} ({ageText})
+              </div>
+            </div>
+
+            <div>
+              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>Gender</div>
               <div style={{ fontWeight: 600 }}>{horse.gender}</div>
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Coat Color</div>
+              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>Coat Color</div>
               <div style={{ fontWeight: 600 }}>{horse.color}</div>
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Operational Status</div>
+              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>Operational Status</div>
               <div>
                 <Badge tone={statusCfg.tone}>{statusCfg.label}</Badge>
               </div>
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted, #64748b)", marginBottom: 4 }}>Registration Date</div>
+              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>Registration Date</div>
               <div style={{ fontWeight: 600 }}>
-                {horse.createdAt ? new Date(horse.createdAt).toLocaleString("en-US") : "—"}
+                {horse.createdAt ? formatDateTime(horse.createdAt) : "—"}
               </div>
             </div>
           </div>
@@ -311,21 +514,44 @@ export default function HorseDetailPage() {
       {/* Tab 2: Stable & Care */}
       {activeTab === "stable" && !isOwner && (
         <Card pad={24}>
-          <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "1.125rem", fontWeight: 700 }}>
+          <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "var(--fs-section)", fontWeight: 700 }}>
             Stabling & Assigned Caretakers
           </h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
-            <div style={{ border: "1px solid var(--border, #e2e8f0)", borderRadius: 8, padding: 16 }}>
+            <div style={{ border: "1px solid var(--border)", borderRadius: "var(--r)", padding: 16 }}>
               <h4 style={{ margin: "0 0 0.75rem 0" }}>Current Stall Assignment</h4>
               <p style={{ margin: "0 0 0.5rem 0" }}>
                 <strong>Stall Code:</strong> {horse.stallCode || "Unassigned"}
               </p>
-              <p style={{ margin: 0 }}>
+              <p style={{ margin: "0 0 0.5rem 0" }}>
                 <strong>Barn Zone:</strong> {horse.zone || "Unassigned"}
               </p>
+              {horse.stallSince && (
+                <p style={{ margin: 0 }}>
+                  <strong>Since:</strong> {formatDate(horse.stallSince)}
+                </p>
+              )}
+              {canManageStall && (
+                <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+                  {horse.allocationId ? (
+                    <>
+                      <Button size="sm" tone="secondary" blockedReason={retiredReason} onClick={() => setStallDialog("transfer")}>
+                        Move stall
+                      </Button>
+                      <Button size="sm" tone="ghost" blockedReason={retiredReason} onClick={() => setStallDialog("return")}>
+                        Release stall
+                      </Button>
+                    </>
+                  ) : (
+                    <Button size="sm" blockedReason={retiredReason} onClick={() => setStallDialog("assign")}>
+                      Assign stall
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
 
-            <div style={{ border: "1px solid var(--border, #e2e8f0)", borderRadius: 8, padding: 16 }}>
+            <div style={{ border: "1px solid var(--border)", borderRadius: "var(--r)", padding: 16 }}>
               <h4 style={{ margin: "0 0 0.75rem 0" }}>Assigned Groom Hand</h4>
               <p style={{ margin: 0 }}>
                 <strong>Primary Groom:</strong> {horse.primaryGroom || "Unassigned Groom"}
@@ -338,10 +564,10 @@ export default function HorseDetailPage() {
       {/* Tab 2 Routine (for owner or routine tab) */}
       {(activeTab === "routine" || (activeTab === "stable" && isOwner)) && (
         <Card pad={24}>
-          <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "1.125rem", fontWeight: 700 }}>
+          <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "var(--fs-section)", fontWeight: 700 }}>
             Daily Routine Schedule
           </h3>
-          <p style={{ color: "var(--ink-muted, #64748b)" }}>
+          <p style={{ color: "var(--ink-muted)" }}>
             Standard Stable Routine: Feed rations (06:00, 11:30, 17:00), Stall mucking & turnout (07:00), Training conditioning (08:00 - 10:00), Hydrotherapy & cryo leg hosing (10:30).
           </p>
         </Card>
@@ -351,7 +577,7 @@ export default function HorseDetailPage() {
       {activeTab === "owner" && (
         <Card pad={24}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem", flexWrap: "wrap", gap: "0.75rem" }}>
-            <h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 700 }}>
+            <h3 style={{ margin: 0, fontSize: "var(--fs-section)", fontWeight: 700 }}>
               Ownership & Custody Details
             </h3>
             {isManager && horse.status !== "RETIRED" && (
@@ -370,7 +596,7 @@ export default function HorseDetailPage() {
               </div>
             </div>
           ) : (
-            <p style={{ color: "var(--ink-muted, #64748b)" }}>
+            <p style={{ color: "var(--ink-muted)" }}>
               {horse.ownerName ? `Registered Owner: ${horse.ownerName}` : "No registered horse owner associated."}
             </p>
           )}
@@ -382,7 +608,7 @@ export default function HorseDetailPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           <Card pad={24}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-              <h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 700 }}>
+              <h3 style={{ margin: 0, fontSize: "var(--fs-section)", fontWeight: 700 }}>
                 Status Transition History
               </h3>
               <div>
@@ -398,12 +624,12 @@ export default function HorseDetailPage() {
                   {
                     key: "timestamp",
                     header: "Timestamp",
-                    render: (r) => new Date(r.timestamp).toLocaleString("en-US"),
+                    render: (r) => formatDateTime(r.timestamp),
                   },
                   {
-                    key: "action",
-                    header: "Action",
-                    render: (r) => <strong>{r.action}</strong>,
+                    key: "source",
+                    header: "Source",
+                    render: (r) => STATUS_SOURCE_LABEL[r.source ?? "MANUAL"] ?? r.source,
                   },
                   {
                     key: "transition",
@@ -427,7 +653,7 @@ export default function HorseDetailPage() {
                 ]}
               />
             ) : (
-              <p style={{ color: "var(--ink-muted, #64748b)", margin: 0 }}>
+              <p style={{ color: "var(--ink-muted)", margin: 0 }}>
                 No recorded status transitions yet. Current status: <Badge tone={statusCfg.tone}>{statusCfg.label}</Badge>
               </p>
             )}
@@ -435,7 +661,7 @@ export default function HorseDetailPage() {
 
           {history?.ownershipHistory && history.ownershipHistory.length > 0 && (
             <Card pad={24}>
-              <h3 style={{ margin: "0 0 1rem 0", fontSize: "1.125rem", fontWeight: 700 }}>
+              <h3 style={{ margin: "0 0 1rem 0", fontSize: "var(--fs-section)", fontWeight: 700 }}>
                 Ownership Transfer History
               </h3>
               <DataTable
@@ -446,7 +672,7 @@ export default function HorseDetailPage() {
                   {
                     key: "timestamp",
                     header: "Date",
-                    render: (r) => new Date(r.timestamp).toLocaleDateString("en-US"),
+                    render: (r) => formatDate(r.timestamp),
                   },
                   {
                     key: "previousOwner",
@@ -479,7 +705,7 @@ export default function HorseDetailPage() {
       {activeTab === "stall-history" && !isOwner && (
         <Card pad={24}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-            <h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 700 }}>
+            <h3 style={{ margin: 0, fontSize: "var(--fs-section)", fontWeight: 700 }}>
               Stall Allocation History
             </h3>
             <div>
@@ -512,8 +738,8 @@ export default function HorseDetailPage() {
                   header: "Period",
                   render: (r) => (
                     <span>
-                      {new Date(r.startDate).toLocaleDateString("en-US")} –{" "}
-                      {r.endDate ? new Date(r.endDate).toLocaleDateString("en-US") : "Present"}
+                      {formatDate(r.startDate)} –{" "}
+                      {r.endDate ? formatDate(r.endDate) : "Present"}
                     </span>
                   ),
                 },
@@ -529,7 +755,7 @@ export default function HorseDetailPage() {
               ]}
             />
           ) : (
-            <p style={{ color: "var(--ink-muted, #64748b)", margin: 0 }}>
+            <p style={{ color: "var(--ink-muted)", margin: 0 }}>
               No historical stall allocation records logged.
             </p>
           )}
@@ -539,77 +765,10 @@ export default function HorseDetailPage() {
       {/* Tab 6: Lifecycle Timeline */}
       {activeTab === "timeline" && (
         <Card pad={24}>
-          <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "1.125rem", fontWeight: 700 }}>
+          <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "var(--fs-section)", fontWeight: 700 }}>
             Lifecycle Activity Timeline
           </h3>
-          {history?.timeline && history.timeline.length > 0 ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              {history.timeline.map((evt) => {
-                const getCategoryIcon = (category: string) => {
-                  switch (category) {
-                    case "IDENTITY": return "📋";
-                    case "STATUS": return "🔄";
-                    case "STALL": return "🏠";
-                    case "MEDICAL": return "🩺";
-                    case "TRAINING": return "🏃";
-                    case "TOURNAMENT": return "🏆";
-                    case "OWNERSHIP": return "🤝";
-                    default: return "📌";
-                  }
-                };
-                return (
-                  <div key={evt.id} style={{ display: "flex", gap: "1rem", alignItems: "flex-start", paddingBottom: "0.75rem", borderBottom: "1px solid var(--border-subtle, #f1f5f9)" }}>
-                    <div style={{ width: 36, height: 36, borderRadius: "50%", backgroundColor: "var(--bg-subtle, #f8fafc)", border: "1px solid var(--border-subtle, #e2e8f0)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.125rem", flexShrink: 0 }}>
-                      {getCategoryIcon(evt.category)}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                          <strong style={{ fontSize: "0.9375rem" }}>{evt.title}</strong>
-                          {evt.badgeTone && (
-                            <Badge tone={evt.badgeTone}>{evt.category}</Badge>
-                          )}
-                        </div>
-                        <div style={{ fontSize: "0.8125rem", color: "var(--ink-muted, #64748b)" }}>
-                          {new Date(evt.timestamp).toLocaleString("en-US")}
-                        </div>
-                      </div>
-                      <div style={{ fontSize: "0.875rem", color: "var(--ink-secondary, #334155)", marginTop: "0.25rem" }}>
-                        {evt.description}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
-                <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: "#e0f2fe", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  📋
-                </div>
-                <div>
-                  <strong>Horse identity profile created</strong>
-                  <div style={{ fontSize: "0.8125rem", color: "var(--ink-muted, #64748b)" }}>
-                    {horse.createdAt ? new Date(horse.createdAt).toLocaleString("en-US") : "System"} · Horse ID {horse.horseCode || horse.id}
-                  </div>
-                </div>
-              </div>
-              {horse.isMedicalLocked && (
-                <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start" }}>
-                  <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    🔒
-                  </div>
-                  <div>
-                    <strong>Veterinary Medical Lock enforced</strong>
-                    <div style={{ fontSize: "0.8125rem", color: "var(--ink-muted, #64748b)" }}>
-                      High-intensity conditioning and race trials suspended
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          <LifecycleTimeline events={history?.timeline ?? []} isManager={isManager} />
         </Card>
       )}
 
@@ -625,8 +784,44 @@ export default function HorseDetailPage() {
         horse={horse}
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
+      />
+
+      <RetireHorseModal
+        key={`${horse.id}-${horse.status}`}
+        horse={horse}
+        isOpen={isRetireModalOpen}
+        onClose={() => setIsRetireModalOpen(false)}
         onSuccess={refreshHorse}
       />
+
+      {/* DL-1.02 / DL-1.03 từ Tab 2 (BTN-1.13 → 1.15) */}
+      {stallDialog === "assign" && (
+        <AssignStallDialog
+          horse={horse}
+          onClose={() => setStallDialog(null)}
+          onDone={() => {
+            setStallDialog(null);
+            refreshHorse();
+          }}
+        />
+      )}
+      {(stallDialog === "transfer" || stallDialog === "return") && horse.allocationId && (() => {
+        const allocation = {
+          allocationId: horse.allocationId,
+          horseName: horse.name,
+          stallId: horse.stallId ?? "",
+          stallCode: horse.stallCode ?? "",
+        };
+        const done = () => {
+          setStallDialog(null);
+          refreshHorse();
+        };
+        return stallDialog === "transfer" ? (
+          <TransferStallDialog allocation={allocation} onClose={() => setStallDialog(null)} onDone={done} />
+        ) : (
+          <ReturnStallDialog allocation={allocation} onClose={() => setStallDialog(null)} onDone={done} />
+        );
+      })()}
     </div>
   );
 }

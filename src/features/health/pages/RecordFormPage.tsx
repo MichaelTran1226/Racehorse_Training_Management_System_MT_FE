@@ -240,7 +240,7 @@ export default function RecordFormPage() {
             <h1 className={styles.horseTitle}>
               {isEdit ? "Edit Medical Record (Draft)" : "New Electronic Medical Record"}
             </h1>
-            <span style={{ fontSize: "14px", color: "var(--muted)" }}>
+            <span style={{ fontSize: "var(--fs-body)", color: "var(--muted)" }}>
               Record clinical exam findings, vital signs, and initialize the treatment plan.
             </span>
           </div>
@@ -248,7 +248,7 @@ export default function RecordFormPage() {
       </div>
 
       {error && (
-        <div style={{ color: "var(--danger)", padding: "12px 16px", background: "var(--danger-bg)", borderRadius: "8px", border: "1px solid var(--danger)" }}>
+        <div style={{ color: "var(--danger)", padding: "12px 16px", background: "var(--danger-bg)", borderRadius: "var(--r)", border: "1px solid var(--danger)" }}>
           {error}
         </div>
       )}
@@ -327,7 +327,7 @@ export default function RecordFormPage() {
             <Icon name="pulse" size={18} />
             2. Vital Signs
           </h2>
-          <span style={{ fontSize: "12px", color: "var(--muted)" }}>
+          <span style={{ fontSize: "var(--fs-caption)", color: "var(--muted)" }}>
             Values exceeding adult equine physiological reference ranges will be highlighted in red.
           </span>
         </div>
@@ -424,7 +424,7 @@ export default function RecordFormPage() {
         </div>
 
         {labTests.length === 0 ? (
-          <div style={{ color: "var(--muted)", fontSize: "13px" }}>
+          <div style={{ color: "var(--muted)", fontSize: "var(--fs-body)" }}>
             No diagnostic tests added yet. Click &quot;Add Diagnostic Result&quot; to record blood work, X-rays, or ultrasound findings.
           </div>
         ) : (
@@ -439,7 +439,7 @@ export default function RecordFormPage() {
                   alignItems: "center",
                   padding: "10px",
                   background: "var(--surface-2)",
-                  borderRadius: "6px",
+                  borderRadius: "var(--r-sm)",
                 }}
               >
                 <Select
@@ -547,7 +547,7 @@ export default function RecordFormPage() {
                 checked={proposeMedicalLock}
                 onChange={setProposeMedicalLock}
               />
-              <span style={{ fontSize: "12px", color: "var(--muted)", display: "block", marginTop: 4 }}>
+              <span style={{ fontSize: "var(--fs-caption)", color: "var(--muted)", display: "block", marginTop: 4 }}>
                 Upon finalizing the medical record, a confirmation step will be prompted to issue a protective training lock.
               </span>
             </div>
@@ -564,7 +564,7 @@ export default function RecordFormPage() {
           padding: "16px 20px",
           background: "var(--surface)",
           border: "1px solid var(--border)",
-          borderRadius: "8px",
+          borderRadius: "var(--r)",
           marginTop: 8,
         }}
       >

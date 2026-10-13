@@ -6,14 +6,14 @@ import type { HealthStatus, TrainingLockScope, TrainingPlanStatus } from "@/shar
 export type BadgeTone = "ok" | "warn" | "danger" | "info" | "neutral" | "violet" | "brand";
 
 export const HEALTH_STATUS: Record<HealthStatus, { label: string; tone: BadgeTone; icon: string }> = {
-  ACTIVE: { label: "Active / Fit", tone: "ok", icon: "checkCircle" },
+  ACTIVE: { label: "Ready to Race", tone: "ok", icon: "checkCircle" },
   FIT: { label: "Fit", tone: "ok", icon: "checkCircle" },
   IN_TRAINING: { label: "In Training", tone: "brand", icon: "activity" },
   UNDER_OBSERVATION: { label: "Under Observation", tone: "warn", icon: "eye" },
   INJURED: { label: "Injured", tone: "danger", icon: "alert" },
   ISOLATED: { label: "Isolated", tone: "violet", icon: "shield" },
   QUARANTINED: { label: "Quarantined", tone: "violet", icon: "shield" },
-  RESTING: { label: "Resting", tone: "info", icon: "clock" },
+  RESTING: { label: "Resting", tone: "neutral", icon: "clock" },
   RETIRED: { label: "Retired", tone: "neutral", icon: "archive" },
 };
 

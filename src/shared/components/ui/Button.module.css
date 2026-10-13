@@ -1,34 +1,38 @@
+/* Nút theo DESIGN.md: cao 44px (md), 36px (sm, dùng trong bảng/thanh lọc), bo 7px, chữ 14px. */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: 1px solid transparent;
   font-family: var(--font);
-  font-weight: 700;
-  letter-spacing: -0.1px;
-  line-height: 1.2;
+  font-weight: 600;
+  line-height: 20px;
   white-space: nowrap;
   cursor: pointer;
-  transition: background var(--dur-fast) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur-fast) var(--ease);
+  border-radius: var(--r-btn);
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
 }
-.btn:active:not(.off) { transform: translateY(1px); }
 .block { display: flex; width: 100%; }
+.link, .link:hover { text-decoration: none; }
+.link.primary:hover { color: var(--text-on-brand); }
+.link.secondary:hover { color: var(--text); }
 
-.sm { padding: 6px 11px; font-size: 11px; gap: 6px; border-radius: var(--r-sm); }
-.md { padding: 9px 15px; font-size: 12px; gap: 7px; border-radius: var(--r-btn); }
-.lg { padding: 11px 19px; font-size: 13px; gap: 9px; border-radius: 9px; }
+.sm { height: var(--control-h-sm); min-width: var(--control-h-sm); padding: 0 12px; font-size: var(--fs-body); gap: 6px; }
+.md { height: var(--control-h); padding: 0 16px; font-size: var(--fs-body); gap: 8px; }
+.lg { height: 48px; padding: 0 20px; font-size: var(--fs-body-lg); gap: 8px; }
 
 .primary { background: var(--brand); color: var(--text-on-brand); border-color: var(--brand); }
-.primary:hover:not(.off) { background: var(--brand-600); border-color: var(--brand-600); box-shadow: var(--shadow-primary-hover); }
-.accent { background: var(--accent); color: var(--text-on-brand); border-color: var(--accent); }
-.accent:hover:not(.off) { background: var(--accent-600); border-color: var(--accent-600); }
-.danger { background: var(--danger-600); color: var(--text-on-brand); border-color: var(--danger-600); }
-.danger:hover:not(.off) { filter: brightness(0.94); }
-.secondary { background: var(--surface); color: var(--text-2); border-color: var(--border-strong); }
-.secondary:hover:not(.off) { background: var(--surface-2); }
-.quiet { background: var(--brand-50); color: var(--brand-700); }
+.primary:hover:not(.off) { background: var(--brand-600); border-color: var(--brand-600); }
+.accent { background: var(--brand); color: var(--text-on-brand); border-color: var(--brand); }
+.accent:hover:not(.off) { background: var(--brand-600); border-color: var(--brand-600); }
+.danger { background: var(--danger); color: var(--text-on-brand); border-color: var(--danger); }
+.danger:hover:not(.off) { background: var(--danger-600); border-color: var(--danger-600); }
+.secondary { background: var(--surface); color: var(--text); border-color: var(--border-strong); }
+.secondary:hover:not(.off) { background: var(--surface-2); border-color: var(--border-field); }
+.quiet { background: var(--brand-50); color: var(--brand-600); }
 .quiet:hover:not(.off) { background: var(--brand-100); }
 .ghost { background: transparent; color: var(--text-2); }
-.ghost:hover:not(.off) { background: var(--surface-3); }
+.ghost:hover:not(.off) { background: var(--surface-3); color: var(--text); }
 
-.off { opacity: 0.45; cursor: not-allowed; }
+/* Bị chặn: nền xám, chữ nhạt — không làm mờ cả nút (khó đọc). */
+.off { background: var(--surface-3); border-color: var(--border); color: var(--muted); cursor: not-allowed; }

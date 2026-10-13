@@ -54,7 +54,7 @@ export default function AuditLogPage() {
     { key: "detail", header: "Details", align: "right", render: row => <Button tone="ghost" size="sm" onClick={() => setDetail(row)} aria-label={`View details for ${row.action}`}>View details</Button> },
   ];
   return <>
-    <PageHeader eyebrow="MANAGEMENT WORKSPACE" title="Audit Log" description="Review recorded activity and changes. Times and date filters use your local timezone." showDate />
+    <PageHeader title="Audit Log" description="Review recorded activity and changes. Times and date filters use your local timezone." showDate />
     {import.meta.env.VITE_USE_MOCK === "true" && <Alert tone="info" title="Demo audit history">Only activity recorded in this browser is shown (up to 200 events). Historical before/after values and request metadata are not recorded in demo mode.</Alert>}
     <Card pad={0}>
       <form className={styles.filters} onSubmit={event => { event.preventDefault(); if (!invalidDates) { setFilters({ ...draft }); setPage(1); } }}>

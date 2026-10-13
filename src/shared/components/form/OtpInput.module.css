@@ -11,7 +11,7 @@
   color: var(--text);
   font-family: var(--font-numeric);
   font-variant-numeric: tabular-nums;
-  font-size: 20px;
+  font-size: var(--fs-section);
   font-weight: 600;
   transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
 }

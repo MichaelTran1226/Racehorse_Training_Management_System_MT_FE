@@ -8,7 +8,7 @@ import styles from "./StallGrid.module.css";
 export type StallStatus = HealthStatus | "EMPTY";
 
 const STATE: Record<StallStatus, { cls: string; label: string }> = {
-  ACTIVE: { cls: styles.fit, label: "Active" },
+  ACTIVE: { cls: styles.fit, label: "Ready to Race" },
   FIT: { cls: styles.fit, label: "Fit" },
   IN_TRAINING: { cls: styles.fit, label: "In Training" },
   UNDER_OBSERVATION: { cls: styles.watch, label: "Under Observation" },

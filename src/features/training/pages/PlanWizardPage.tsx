@@ -1,434 +1,307 @@
-import { useState, useMemo, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Alert } from "@/shared/components/ui/Alert";
 import { Button } from "@/shared/components/ui/Button";
 import { Card } from "@/shared/components/ui/Card";
 import { Field } from "@/shared/components/form/Field";
 import { Input } from "@/shared/components/form/Input";
 import { Select } from "@/shared/components/form/Select";
 import { Textarea } from "@/shared/components/form/Textarea";
+import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
 import { useToast } from "@/shared/components/ui/Toast";
-import { getStoredHorses } from "@/shared/mock/horsesData";
+import { messageFor } from "@/shared/lib/messages";
 import { getHorses } from "@/features/horses/api";
-import { trainingApi } from "../api";
-import type { TrainingPhase } from "../types";
+import type { Horse } from "@/features/horses/types";
+import { todayClub, trainingApi } from "../api";
+import { PHASE_TYPE_LABEL } from "../types";
+import type { PhaseSurface, PhaseType, TrainingPhase, TrainingPlan } from "../types";
 
+const SURFACE_LABEL: Record<PhaseSurface, string> = { TURF: "Turf", DIRT: "Dirt", SYNTHETIC: "Mixed / synthetic" };
+const MEDICAL = ["UNDER_OBSERVATION", "INJURED", "ISOLATED"];
+
+function addDays(date: string, days: number): string {
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function newPhase(startDate: string, endDate: string, index: number): TrainingPhase {
+  return {
+    id: `ph-${Date.now()}-${index}`,
+    name: `Phase ${index + 1}`,
+    type: "BASE",
+    startDate,
+    endDate,
+    sessionsPerWeek: 5,
+    maxWeeklyDistance: 9000,
+    surface: "TURF",
+  };
+}
+
+/** Kiểm form trước khi gửi (BE kiểm lại tất cả). Trả câu lỗi đầu tiên hoặc "". */
+function validate(name: string, objective: string, start: string, end: string, phases: TrainingPhase[]): string {
+  if (name.trim().length < 3 || name.trim().length > 150) return "Plan name must be 3 to 150 characters.";
+  if (objective.trim().length < 10 || objective.trim().length > 1000) return "Objective must be 10 to 1000 characters.";
+  if (end < start) return "End date must be on or after the start date.";
+  if (phases.length === 0) return "A plan needs at least one phase.";
+  const sorted = [...phases].sort((a, b) => a.startDate.localeCompare(b.startDate));
+  for (const [i, p] of sorted.entries()) {
+    if (p.name.trim().length < 2) return "Each phase needs a name (2-100 characters).";
+    if (p.endDate < p.startDate) return `Phase ${p.name}: end date must be on or after the start date.`;
+    if (p.startDate < start || p.endDate > end) return `Phase ${p.name} must be within the plan dates.`;
+    if (i > 0 && p.startDate <= sorted[i - 1].endDate) return `Phase ${p.name} overlaps phase ${sorted[i - 1].name}.`;
+  }
+  return "";
+}
+
+/** SC-2.03 Tạo / Sửa giáo án (HT). Sửa được khi Nháp hoặc Đang áp dụng. */
 export default function PlanWizardPage() {
-  const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
-  const isEditing = Boolean(id);
+  const editing = Boolean(id);
+  const navigate = useNavigate();
   const toast = useToast();
+  const user = useCurrentUser();
 
-  const [step, setStep] = useState<number>(1);
-  const [submitting, setSubmitting] = useState<boolean>(false);
-
-  // Available horses from store with dynamic fetch reconciliation
-  const [horses, setHorses] = useState(() => getStoredHorses());
+  const [horses, setHorses] = useState<Horse[]>([]);
+  const [existing, setExisting] = useState<TrainingPlan | null>(null);
+  const [horseId, setHorseId] = useState("");
+  const [name, setName] = useState("");
+  const [objective, setObjective] = useState("");
+  const [notes, setNotes] = useState("");
+  const [startDate, setStartDate] = useState(todayClub());
+  const [endDate, setEndDate] = useState(addDays(todayClub(), 41));
+  const [phases, setPhases] = useState<TrainingPhase[]>(() => [newPhase(todayClub(), addDays(todayClub(), 41), 0)]);
+  const [dirty, setDirty] = useState(false);
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     getHorses({ limit: 100 })
       .then((res) => {
-        if (res.items && res.items.length > 0) {
-          setHorses(res.items as any);
-        }
+        const usable = res.items.filter((h) => h.status !== "RETIRED");
+        setHorses(usable);
+        if (!editing) setHorseId((cur) => cur || usable[0]?.id || "");
       })
-      .catch(() => {});
-  }, []);
-
-  // Form State
-  const [name, setName] = useState<string>("");
-  const [horseId, setHorseId] = useState<string>(() => horses[0]?.id || "horse-1");
-  const [target, setTarget] = useState<string>("");
-  const [targetDistance, setTargetDistance] = useState<number>(1600);
-  const [startDate, setStartDate] = useState<string>(() => new Date().toISOString().split("T")[0]);
-  const [endDate, setEndDate] = useState<string>(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 30);
-    return d.toISOString().split("T")[0];
-  });
-  const [notes, setNotes] = useState<string>("");
+      .catch((err) => toast.show(messageFor(err), "danger"));
+  }, [editing, toast]);
 
   useEffect(() => {
-    if (id) {
-      trainingApi.getPlanById(id).then((p) => {
-        if (p) {
-          setName(p.name);
-          setHorseId(p.horseId);
-          setTarget(p.target || "");
-          setTargetDistance(p.targetDistanceMeters || 1600);
-          setStartDate(p.startDate);
-          setEndDate(p.endDate);
-          setNotes(p.notes || "");
-          if (p.phases && p.phases.length > 0) {
-            setPhases(p.phases);
-          }
-        }
-      }).catch(() => {});
-    }
+    if (!id) return;
+    trainingApi
+      .getPlanById(id)
+      .then((p) => {
+        setExisting(p);
+        setHorseId(p.horseId);
+        setName(p.name);
+        setObjective(p.objective ?? "");
+        setNotes(p.notes ?? "");
+        setStartDate(p.startDate);
+        setEndDate(p.endDate);
+        setPhases(p.phases);
+      })
+      .catch((err) => setError(messageFor(err)));
   }, [id]);
 
-  // Phases
-  const [phases, setPhases] = useState<TrainingPhase[]>(() => [
-    {
-      id: "ph-1",
-      phaseOrder: 1,
-      name: "Phase 1: Aerobic Base & Steady Conditioning",
-      startDate: new Date().toISOString().split("T")[0],
-      endDate: new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0],
-      targetHeartRateMax: 140,
-      targetSpeedKmh: 35,
-      focus: "Controlled walking, regular trotting, and light canter work",
-    },
-  ]);
+  // DL-2.09: đóng tab / tải lại khi có thay đổi chưa lưu -> trình duyệt hỏi lại.
+  useEffect(() => {
+    if (!dirty) return;
+    const handler = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [dirty]);
 
-  const selectedHorse = useMemo(() => {
-    return horses.find((h) => h.id === horseId) || horses[0];
-  }, [horses, horseId]);
-
-  const isHorseLocked = Boolean(selectedHorse?.isLocked);
-
-  const handleAddPhase = () => {
-    const nextOrder = phases.length + 1;
-    setPhases([
-      ...phases,
-      {
-        id: `ph-${Date.now()}`,
-        phaseOrder: nextOrder,
-        name: `Phase ${nextOrder}: Speed Progression & Final Sprints`,
-        startDate: endDate,
-        endDate: endDate,
-        targetHeartRateMax: 165,
-        targetSpeedKmh: 50,
-        focus: "Short-distance bursts and starting gate reaction drills",
-      },
-    ]);
+  const horse = useMemo(() => horses.find((h) => h.id === horseId), [horses, horseId]);
+  const change =
+    <T,>(setter: (v: T) => void) =>
+    (v: T) => {
+      setter(v);
+      setDirty(true);
+    };
+  const updatePhase = (index: number, patch: Partial<TrainingPhase>) => {
+    setPhases((cur) => cur.map((p, i) => (i === index ? { ...p, ...patch } : p)));
+    setDirty(true);
+  };
+  const addPhase = () => {
+    const last = [...phases].sort((a, b) => a.startDate.localeCompare(b.startDate)).at(-1);
+    const from = last ? addDays(last.endDate, 1) : startDate;
+    setPhases((cur) => [...cur, newPhase(from > endDate ? endDate : from, endDate, cur.length)]);
+    setDirty(true);
+  };
+  const removePhase = (index: number) => {
+    const ph = phases[index];
+    // BTN-2.10: khi sửa, xóa giai đoạn sẽ xóa các buổi tập chưa diễn ra trong giai đoạn đó.
+    if (editing && !window.confirm(`Removing phase ${ph.name} deletes its workouts that have not happened yet. Continue?`)) return;
+    setPhases((cur) => cur.filter((_, i) => i !== index));
+    setDirty(true);
   };
 
-  const handleRemovePhase = (index: number) => {
-    if (phases.length <= 1) return;
-    setPhases(phases.filter((_, i) => i !== index));
+  const cancel = () => {
+    if (dirty && !window.confirm("You have unsaved changes. Leaving will lose them.")) return;
+    navigate(editing && id ? `/training/plans/${id}` : "/training/plans");
   };
 
-  const handlePhaseChange = (index: number, field: keyof TrainingPhase, value: string | number) => {
-    const updated = [...phases];
-    updated[index] = { ...updated[index], [field]: value };
-    setPhases(updated);
-  };
-
-  const handleSave = async (activate = false) => {
-    if (!name.trim()) {
-      toast.show("Please enter a training plan name", "warn");
+  const save = async (activate: boolean) => {
+    const problem = validate(name, objective, startDate, endDate, phases);
+    if (problem) {
+      setError(problem);
       return;
     }
-    if (activate && isHorseLocked) {
-      toast.show(
-        "Cannot activate! Selected horse is currently under Medical Lock. You may only Save as Draft.",
-        "danger",
-      );
-      return;
-    }
-
+    setSubmitting(true);
+    setError("");
     try {
-      setSubmitting(true);
-      if (isEditing && id) {
-        await trainingApi.updatePlan(id, {
-          name,
-          horseId,
-          horseName: selectedHorse?.name || "Racehorse",
-          horseCode: selectedHorse?.code || selectedHorse?.horseCode || "HR-000001",
-          target,
-          targetDistanceMeters: targetDistance,
-          startDate,
-          endDate,
-          notes,
-          phases,
-        });
-        toast.show("Training plan updated successfully", "ok");
-        navigate(`/training/plans/${id}`);
-      } else {
-        const created = await trainingApi.createPlan({
-          name,
-          horseId,
-          horseName: selectedHorse?.name || "Racehorse",
-          horseCode: selectedHorse?.code || selectedHorse?.horseCode || "HR-000001",
-          target,
-          targetDistanceMeters: targetDistance,
-          startDate,
-          endDate,
-          notes,
-          phases,
-          status: activate ? "ACTIVE" : "DRAFT",
-        });
-
-        toast.show(
-          `Plan ${created.planCode} successfully created (${activate ? "Active" : "Draft"})`,
-          "ok",
-        );
-        navigate("/training/plans");
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to save training plan";
-      toast.show(msg, "danger");
+      const payload = { horseId, phaseName: name.trim(), objective: objective.trim(), notes: notes.trim(), startDate, endDate, phases };
+      const saved = editing && id ? await trainingApi.updatePlan(id, payload) : await trainingApi.createPlan(payload);
+      setDirty(false);
+      toast.show("Training plan saved.", "ok");
+      navigate(`/training/plans/${saved.id}${activate ? "?activate=1" : ""}`);
+    } catch (err) {
+      setError(messageFor(err));
     } finally {
       setSubmitting(false);
     }
   };
 
+  if (user.role !== "HEAD_TRAINER") {
+    return <Alert tone="danger" title="Not allowed">Only the Head Trainer can create or edit training plans.</Alert>;
+  }
+  const canActivateAfterSave = !editing || existing?.status === "DRAFT";
+
   return (
-    <div style={{ maxWidth: 840, margin: "0 auto", padding: "1.5rem" }}>
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <div>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 700, margin: 0 }}>
-            {isEditing ? "Edit Training Plan" : "Create Training Plan"}
-          </h1>
-          <p style={{ margin: "0.25rem 0 0", color: "var(--muted)", fontSize: "0.875rem" }}>
-            {isEditing ? "Update periodized targets and phase specifications" : "Design periodized conditioning cycles and verify clinical readiness"}
-          </p>
-        </div>
-        <Button tone="ghost" onClick={() => navigate(isEditing ? `/training/plans/${id}` : "/training/plans")}>
-          Cancel
-        </Button>
+    <div style={{ maxWidth: 920, margin: "0 auto", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+      <div>
+        <h1 style={{ fontSize: "var(--fs-kpi)", fontWeight: 700, margin: 0 }}>
+          {editing ? `Edit ${existing?.planCode ?? "plan"}` : "Create Training Plan"}
+        </h1>
+        <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
+          A new plan is saved as a draft. Add workouts, then activate it.
+        </p>
       </div>
 
-      {/* Stepper */}
-      <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem" }}>
-        {[
-          { num: 1, label: "1. Basic Details" },
-          { num: 2, label: "2. Training Phases" },
-          { num: 3, label: "3. Health Review & Finish" },
-        ].map((s) => (
-          <div
-            key={s.num}
-            onClick={() => setStep(s.num)}
-            style={{
-              flex: 1,
-              padding: "0.75rem 1rem",
-              borderRadius: 8,
-              cursor: "pointer",
-              background: step === s.num ? "var(--primary-light, #2563eb15)" : "var(--surface-sunken)",
-              border: `1px solid ${step === s.num ? "var(--primary)" : "var(--border)"}`,
-              color: step === s.num ? "var(--primary)" : "var(--muted)",
-              fontWeight: step === s.num ? 700 : 500,
-              fontSize: "0.875rem",
-              textAlign: "center",
-              transition: "all 0.15s ease",
-            }}
-          >
-            {s.label}
+      {error && <Alert tone="danger" title="Cannot save">{error}</Alert>}
+
+      <Card pad={24}>
+        <h2 style={{ margin: "0 0 1rem", fontSize: "var(--fs-section)" }}>General information</h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
+          <Field label="Horse" required>
+            <Select
+              value={horseId}
+              disabled={editing}
+              onChange={(e) => change(setHorseId)(e.target.value)}
+              options={horses.map((h) => ({ value: h.id, label: `${h.name} (${h.horseCode ?? ""})${h.isMedicalLocked ? " · Training Lock" : ""}` }))}
+            />
+          </Field>
+          <Field label="Plan name" required hint="3-150 characters">
+            <Input value={name} maxLength={150} onChange={(e) => change(setName)(e.target.value)} />
+          </Field>
+          <Field label="Start date" required hint={editing ? undefined : "No earlier than 7 days ago"}>
+            <Input type="date" value={startDate} onChange={(e) => change(setStartDate)(e.target.value)} />
+          </Field>
+          <Field label="End date" required hint="At most 52 weeks">
+            <Input type="date" min={startDate} value={endDate} onChange={(e) => change(setEndDate)(e.target.value)} />
+          </Field>
+        </div>
+        {horse?.isMedicalLocked && (
+          <div style={{ marginTop: "1rem" }}>
+            <Alert tone="danger" title="Training Lock">
+              The horse is under a Training Lock. You can prepare a draft, but it cannot be activated yet.
+            </Alert>
           </div>
-        ))}
+        )}
+        {horse && !horse.isMedicalLocked && MEDICAL.includes(horse.status) && (
+          <div style={{ marginTop: "1rem" }}>
+            <Alert tone="warn" title="Medical status">The horse is in status {horse.status}.</Alert>
+          </div>
+        )}
+        <div style={{ display: "grid", gap: "1rem", marginTop: "1rem" }}>
+          <Field label="Objective" required hint="10-1000 characters">
+            <Textarea rows={2} maxLength={1000} value={objective} onChange={(e) => change(setObjective)(e.target.value)} />
+          </Field>
+          <Field label="Notes" hint="Up to 1000 characters">
+            <Textarea rows={2} maxLength={1000} value={notes} onChange={(e) => change(setNotes)(e.target.value)} />
+          </Field>
+        </div>
+      </Card>
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <h2 style={{ margin: 0, fontSize: "var(--fs-section)" }}>Phases ({phases.length}/12)</h2>
+        <Button tone="secondary" onClick={addPhase} disabled={phases.length >= 12}>+ Add phase</Button>
       </div>
 
-      {/* Step 1 */}
-      {step === 1 && (
-        <Card pad={24}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-            <Field label="Plan Name" required hint="Example: Autumn Derby Endurance & Speed Conditioning">
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter plan name..." />
-            </Field>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-              <Field label="Assigned Racehorse" required>
-                <Select
-                  value={horseId}
-                  onChange={(e) => setHorseId(e.target.value)}
-                  options={horses.map((h) => ({
-                    value: h.id,
-                    label: `${h.name} (${h.code || h.horseCode})${h.isLocked ? " - Medical Lock 🔒" : ""}`,
-                  }))}
-                />
-              </Field>
-
-              <Field label="Target Race Distance (meters)" required>
-                <Input
-                  type="number"
-                  value={targetDistance}
-                  onChange={(e) => setTargetDistance(Number(e.target.value))}
-                  min={600}
-                  max={3200}
-                  step={200}
-                />
-              </Field>
-            </div>
-
-            <Field label="Core Conditioning Objective" required>
-              <Textarea
-                rows={2}
-                value={target}
-                onChange={(e) => setTarget(e.target.value)}
-                placeholder="State the core objective, e.g., Build aerobic capacity and race-pace rhythm..."
-              />
-            </Field>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-              <Field label="Start Date" required>
-                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-              </Field>
-              <Field label="Target End Date" required>
-                <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-              </Field>
-            </div>
-
-            <Field label="Trainer Notes & Tactical Considerations">
-              <Textarea
-                rows={2}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Track surface preferences, nutritional requirements, or special jockey instructions..."
-              />
-            </Field>
-
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1rem" }}>
-              <Button tone="primary" onClick={() => setStep(2)}>
-                Next: Phase Schedule →
-              </Button>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* Step 2 */}
-      {step === 2 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          {phases.map((ph, idx) => (
-            <Card key={ph.id} pad={20}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>Phase #{idx + 1}</h3>
-                  {phases.length > 1 && (
-                    <Button tone="danger" onClick={() => handleRemovePhase(idx)}>
-                      Remove Phase
-                    </Button>
-                  )}
-                </div>
-
-                <Field label="Phase Title" required>
-                  <Input
-                    value={ph.name}
-                    onChange={(e) => handlePhaseChange(idx, "name", e.target.value)}
-                    placeholder="e.g. Phase 1: Aerobic Base & Stamina..."
-                  />
-                </Field>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                  <Field label="Max Target Heart Rate (bpm)">
-                    <Input
-                      type="number"
-                      value={ph.targetHeartRateMax}
-                      onChange={(e) => handlePhaseChange(idx, "targetHeartRateMax", Number(e.target.value))}
-                    />
-                  </Field>
-
-                  <Field label="Target Speed (km/h)">
-                    <Input
-                      type="number"
-                      value={ph.targetSpeedKmh}
-                      onChange={(e) => handlePhaseChange(idx, "targetSpeedKmh", Number(e.target.value))}
-                    />
-                  </Field>
-                </div>
-
-                <Field label="Workout Focus in this Phase">
-                  <Textarea
-                    rows={2}
-                    value={ph.focus}
-                    onChange={(e) => handlePhaseChange(idx, "focus", e.target.value)}
-                    placeholder="e.g. Long-distance steady canter, uphill conditioning..."
-                  />
-                </Field>
-              </div>
-            </Card>
-          ))}
-
-          <Button tone="secondary" onClick={handleAddPhase}>
-            + Add New Phase
-          </Button>
-
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: "1rem" }}>
-            <Button tone="ghost" onClick={() => setStep(1)}>
-              ← Back
-            </Button>
-            <Button tone="primary" onClick={() => setStep(3)}>
-              Next: Health Review & Finalize →
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Step 3 */}
-      {step === 3 && (
-        <Card pad={24}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-            <h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 700 }}>Review & Medical Clearance Verification</h3>
-            {isHorseLocked ? (
-              <div
-                style={{
-                  padding: "1rem",
-                  borderRadius: 8,
-                  background: "rgba(239, 68, 68, 0.1)",
-                  border: "1px solid var(--danger)",
-                  color: "var(--danger)",
-                }}
-              >
-                <div style={{ fontWeight: 700, fontSize: "1rem", marginBottom: "0.25rem" }}>
-                  🔒 MEDICAL LOCK ACTIVE
-                </div>
-                <div style={{ fontSize: "0.875rem" }}>
-                  Horse <strong>{selectedHorse?.name}</strong> is currently under Veterinary Medical Lock:
-                  <div style={{ marginTop: "0.25rem", fontStyle: "italic" }}>
-                    &ldquo;{selectedHorse?.lockReason || "Under protective clinical training suspension"}&rdquo;
-                  </div>
-                  <ul style={{ margin: "0.5rem 0 0", paddingLeft: "1.25rem" }}>
-                    <li>You are strictly prohibited from activating this plan to ACTIVE status.</li>
-                    <li>You may only <strong>Save as Draft</strong> until the Veterinarian removes the lock.</li>
-                  </ul>
-                </div>
-              </div>
-            ) : (
-              <div
-                style={{
-                  padding: "1rem",
-                  borderRadius: 8,
-                  background: "rgba(34, 197, 94, 0.1)",
-                  border: "1px solid var(--ok)",
-                  color: "var(--ok)",
-                }}
-              >
-                <div style={{ fontWeight: 700, fontSize: "0.9375rem" }}>
-                  ✓ Medical Clearance Confirmed: No active veterinary training suspensions found for {selectedHorse?.name}.
-                </div>
-              </div>
+      {phases.map((ph, i) => (
+        <Card key={ph.id} pad={20}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+            <strong>Phase #{i + 1}</strong>
+            {phases.length > 1 && (
+              <Button tone="ghost" size="sm" onClick={() => removePhase(i)}>Remove phase</Button>
             )}
-
-            <div style={{ background: "var(--surface-sunken)", padding: "1rem", borderRadius: 8, fontSize: "0.875rem" }}>
-              <div><strong>Plan Name:</strong> {name || "Untitled"}</div>
-              <div><strong>Assigned Horse:</strong> {selectedHorse?.name} ({selectedHorse?.code || selectedHorse?.horseCode})</div>
-              <div><strong>Target Distance:</strong> {targetDistance}m</div>
-              <div><strong>Duration:</strong> {startDate} to {endDate}</div>
-              <div><strong>Phases:</strong> {phases.length}</div>
-            </div>
-
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "1rem" }}>
-              <Button tone="ghost" onClick={() => setStep(2)}>
-                ← Back
-              </Button>
-
-              <div style={{ display: "flex", gap: "0.75rem" }}>
-                <Button tone="secondary" onClick={() => void handleSave(false)} disabled={submitting}>
-                  Save as Draft
-                </Button>
-                <Button
-                  tone="primary"
-                  onClick={() => void handleSave(true)}
-                  disabled={submitting || isHorseLocked}
-                >
-                  Save & Activate Plan
-                </Button>
-              </div>
-            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
+            <Field label="Phase name" required>
+              <Input value={ph.name} maxLength={100} onChange={(e) => updatePhase(i, { name: e.target.value })} />
+            </Field>
+            <Field label="Phase type" required>
+              <Select
+                value={ph.type}
+                onChange={(e) => updatePhase(i, { type: e.target.value as PhaseType })}
+                options={(Object.keys(PHASE_TYPE_LABEL) as PhaseType[]).map((t) => ({ value: t, label: PHASE_TYPE_LABEL[t] }))}
+              />
+            </Field>
+            <Field label="From" required>
+              <Input type="date" min={startDate} max={endDate} value={ph.startDate} onChange={(e) => updatePhase(i, { startDate: e.target.value })} />
+            </Field>
+            <Field label="To" required>
+              <Input type="date" min={ph.startDate} max={endDate} value={ph.endDate} onChange={(e) => updatePhase(i, { endDate: e.target.value })} />
+            </Field>
+            <Field label="Sessions per week" required hint="1 – 14">
+              <Input type="number" min={1} max={14} value={ph.sessionsPerWeek} onChange={(e) => updatePhase(i, { sessionsPerWeek: Number(e.target.value) })} />
+            </Field>
+            <Field label="Max distance per week (m)" required hint="500 – 60 000">
+              <Input
+                type="number"
+                min={500}
+                max={60000}
+                step={100}
+                value={ph.maxWeeklyDistance}
+                onChange={(e) => updatePhase(i, { maxWeeklyDistance: Number(e.target.value) })}
+              />
+            </Field>
+            <Field label="Main surface" required>
+              <Select
+                value={ph.surface}
+                onChange={(e) => updatePhase(i, { surface: e.target.value as PhaseSurface })}
+                options={(Object.keys(SURFACE_LABEL) as PhaseSurface[]).map((s) => ({ value: s, label: SURFACE_LABEL[s] }))}
+              />
+            </Field>
+            <Field label="Target speed (km/h)" hint="10 – 70, optional">
+              <Input
+                type="number"
+                min={10}
+                max={70}
+                step={0.1}
+                value={ph.targetSpeedKmh ?? ""}
+                onChange={(e) => updatePhase(i, { targetSpeedKmh: e.target.value === "" ? undefined : Number(e.target.value) })}
+              />
+            </Field>
+          </div>
+          <div style={{ marginTop: "1rem" }}>
+            <Field label="Phase goal" hint="Up to 500 characters">
+              <Textarea rows={2} maxLength={500} value={ph.goal ?? ""} onChange={(e) => updatePhase(i, { goal: e.target.value })} />
+            </Field>
           </div>
         </Card>
-      )}
+      ))}
+
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", padding: "0.75rem 0" }}>
+        <Button tone="ghost" onClick={cancel}>Cancel</Button>
+        <Button tone="secondary" onClick={() => void save(false)} disabled={submitting || !horseId}>
+          {editing && existing?.status === "ACTIVE" ? "Save" : "Save draft"}
+        </Button>
+        {canActivateAfterSave && (
+          <Button tone="primary" onClick={() => void save(true)} disabled={submitting || !horseId}>
+            Save and activate
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

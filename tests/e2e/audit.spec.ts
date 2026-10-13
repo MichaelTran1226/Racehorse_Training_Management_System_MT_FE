@@ -13,7 +13,7 @@ test('audit filters, pagination, detail and date validation', async ({ page }, t
   page.on('pageerror', error => errors.push(error.message));
   await signIn(page);
   const actorName = await page.evaluate(() => {
-    const key = 'equiflow.mock.db.v1';
+    const key = 'equiflow.mock.db.v2';
     const db = JSON.parse(localStorage.getItem(key)!);
     const actor = db.accounts.find((a: { email: string }) => a.email === 'viet.do@gmail.com').fullName;
     db.audit = Array.from({ length: 25 }, (_, n) => ({ at: new Date(Date.UTC(2026, 8, 30, 12, n)).toISOString(), actor, action: n % 2 ? 'AUTH_LOGIN' : 'ACCOUNT_EDITED', detail: `Event ${n}` }));
@@ -65,7 +65,7 @@ test('audit permission denied and explicit grant without accounts permission', a
   await page.goto('/audit');
   await expect(page.getByText('403', { exact: false }).first()).toBeVisible();
   await page.evaluate(() => {
-    const key = 'equiflow.mock.db.v1';
+    const key = 'equiflow.mock.db.v2';
     const db = JSON.parse(localStorage.getItem(key)!);
     db.accounts.find((a: { id: string }) => a.id === 'nam').permissions.viewAudit = true;
     localStorage.setItem(key, JSON.stringify(db));
@@ -80,7 +80,7 @@ test('audit permission denied and explicit grant without accounts permission', a
 test('audit load failure can be retried', async ({ page }) => {
   await signIn(page);
   const saved = await page.evaluate(() => {
-    const key = 'equiflow.mock.db.v1';
+    const key = 'equiflow.mock.db.v2';
     const raw = localStorage.getItem(key)!;
     const db = JSON.parse(raw);
     db.audit = null;
@@ -89,7 +89,7 @@ test('audit load failure can be retried', async ({ page }) => {
   });
   await page.goto('/audit');
   await expect(page.getByText('Audit history could not be loaded')).toBeVisible();
-  await page.evaluate(raw => localStorage.setItem('equiflow.mock.db.v1', raw), saved);
+  await page.evaluate(raw => localStorage.setItem('equiflow.mock.db.v2', raw), saved);
   await page.getByRole('button', { name: 'Try again' }).click();
   await expect(page.locator('span[role=status]')).toContainText('1 events');
   await expect(page.getByText('Audit history could not be loaded')).toHaveCount(0);

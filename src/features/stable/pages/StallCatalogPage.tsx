@@ -1,131 +1,553 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { Button } from "@/shared/components/ui/Button";
-import { DataTable } from "@/shared/components/ui/DataTable";
 import { Badge } from "@/shared/components/ui/Badge";
-import { getStalls, deleteStall as apiDeleteStall } from "../api";
+import { Alert } from "@/shared/components/ui/Alert";
+import { Modal } from "@/shared/components/ui/Modal";
+import { ConfirmModal } from "@/shared/components/ui/ConfirmModal";
+import { DataTable } from "@/shared/components/ui/DataTable";
+import { Field } from "@/shared/components/form/Field";
+import { Input } from "@/shared/components/form/Input";
+import { Select } from "@/shared/components/form/Select";
+import { Textarea } from "@/shared/components/form/Textarea";
+import { Checkbox } from "@/shared/components/form/Checkbox";
+import { useToast } from "@/shared/components/ui/Toast";
 import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
-import type { Stall, StallAllocation } from "../types";
+import { messageFor } from "@/shared/lib/messages";
+import {
+  createStall,
+  createZone,
+  getStalls,
+  getZones,
+  setStallStatus,
+  setZoneActive,
+  updateStall,
+  updateZone,
+} from "../api";
+import type { SettableStallStatus, Stall, Zone } from "../types";
 
-export default function StallCatalogPage() {
-  const [selectedZone, setSelectedZone] = useState<string>("");
-  const [stalls, setStalls] = useState<Stall[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+const STATUS_BADGE: Record<string, { label: string; tone: "ok" | "warn" | "neutral" }> = {
+  AVAILABLE: { label: "Active", tone: "ok" },
+  OCCUPIED: { label: "Active", tone: "ok" },
+  MAINTENANCE: { label: "Maintenance", tone: "warn" },
+  INACTIVE: { label: "Inactive", tone: "neutral" },
+};
 
-  const currentUser = useCurrentUser();
-  const isClubManager = currentUser.role === "CLUB_MANAGER";
+const STATUS_OPTIONS: Array<{ value: SettableStallStatus; label: string }> = [
+  { value: "AVAILABLE", label: "Active" },
+  { value: "MAINTENANCE", label: "Maintenance" },
+  { value: "INACTIVE", label: "Inactive" },
+];
 
-  const loadStalls = useCallback(() => {
-    setIsLoading(true);
-    getStalls({ zone: selectedZone || undefined })
-      .then(setStalls)
-      .catch(console.error)
-      .finally(() => setIsLoading(false));
-  }, [selectedZone]);
+function confirmDiscard(dirty: boolean) {
+  return !dirty || window.confirm("Discard the changes you entered?");
+}
 
-  useEffect(() => {
-    loadStalls();
-  }, [loadStalls]);
+/** DL-1.14 Thêm / Sửa khu chuồng. */
+function ZoneDialog({ zone, onClose, onSaved }: { zone?: Zone; onClose: () => void; onSaved: (z: Zone) => void }) {
+  const toast = useToast();
+  const [code, setCode] = useState(zone?.code ?? "");
+  const [name, setName] = useState(zone?.name ?? "");
+  const [rows, setRows] = useState(String(zone?.rows ?? 1));
+  const [cols, setCols] = useState(String(zone?.cols ?? 1));
+  const [description, setDescription] = useState(zone?.description ?? "");
+  const [sortOrder, setSortOrder] = useState(String(zone?.sortOrder ?? 0));
+  const [autoCreate, setAutoCreate] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [dirty, setDirty] = useState(false);
 
-  const handleDelete = async (id: string) => {
-    try {
-      await apiDeleteStall(id);
-      loadStalls();
-    } catch (e) {
-      console.error(e);
-      alert("Failed to delete stall.");
-    }
+  const errors = {
+    code: zone || /^[A-Z0-9-]{1,20}$/.test(code) ? "" : "Zone code: upper-case letters, digits and hyphens, at most 20 characters.",
+    name: name.trim().length >= 2 && name.trim().length <= 100 ? "" : "Zone name must be 2 to 100 characters.",
+    rows: Number(rows) >= 1 && Number(rows) <= 30 && Number.isInteger(Number(rows)) ? "" : "Rows must be between 1 and 30.",
+    cols: Number(cols) >= 1 && Number(cols) <= 30 && Number.isInteger(Number(cols)) ? "" : "Columns must be between 1 and 30.",
+    description: description.length <= 500 ? "" : "Description can be at most 500 characters.",
+    sortOrder: Number(sortOrder) >= 0 && Number(sortOrder) <= 9999 ? "" : "Display order must be between 0 and 9999.",
+  };
+  const valid = Object.values(errors).every((e) => !e);
+  const touch = <T,>(set: (v: T) => void) => (v: T) => {
+    set(v);
+    setDirty(true);
   };
 
-  const zones = Array.from(new Set(stalls.map((s: Stall) => s.zone))).sort();
+  async function save() {
+    setBusy(true);
+    setError("");
+    const body = {
+      name: name.trim(),
+      rows: Number(rows),
+      cols: Number(cols),
+      description: description.trim() || undefined,
+      sortOrder: Number(sortOrder),
+    };
+    try {
+      const saved = zone ? await updateZone(zone.id, body) : await createZone({ ...body, code, autoCreateStalls: autoCreate });
+      toast.show("Saved.", "ok");
+      onSaved(saved);
+    } catch (err) {
+      setError(messageFor(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const close = () => confirmDiscard(dirty) && onClose();
+  return (
+    <Modal
+      title={zone ? `Edit zone ${zone.code}` : "Add barn zone"}
+      width={560}
+      onClose={close}
+      foot={
+        <>
+          <Button tone="secondary" onClick={close}>Cancel</Button>
+          <Button disabled={!valid || busy} onClick={save}>{busy ? "Saving…" : "Save"}</Button>
+        </>
+      }
+    >
+      <div style={{ display: "grid", gap: "0.9rem" }}>
+        {error && <Alert tone="danger" title={error} />}
+        <Field label="Zone code" required error={dirty ? errors.code : undefined} hint={zone ? "The code cannot change." : undefined}>
+          <Input value={code} disabled={!!zone} onChange={(e) => touch(setCode)(e.target.value.toUpperCase())} />
+        </Field>
+        <Field label="Zone name" required error={dirty ? errors.name : undefined}>
+          <Input value={name} onChange={(e) => touch(setName)(e.target.value)} />
+        </Field>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <Field label="Rows" required error={errors.rows || undefined}>
+            <Input type="number" min={1} max={30} value={rows} onChange={(e) => touch(setRows)(e.target.value)} />
+          </Field>
+          <Field label="Columns" required error={errors.cols || undefined}>
+            <Input type="number" min={1} max={30} value={cols} onChange={(e) => touch(setCols)(e.target.value)} />
+          </Field>
+        </div>
+        {!zone && (
+          <Checkbox
+            checked={autoCreate}
+            onChange={touch(setAutoCreate)}
+            label={`Create a stall for every grid position (${code || "CODE"}-01 …)`}
+          />
+        )}
+        <Field label="Description" error={errors.description || undefined}>
+          <Textarea rows={2} value={description} onChange={(e) => touch(setDescription)(e.target.value)} />
+        </Field>
+        <Field label="Display order" required error={errors.sortOrder || undefined}>
+          <Input type="number" min={0} max={9999} value={sortOrder} onChange={(e) => touch(setSortOrder)(e.target.value)} />
+        </Field>
+      </div>
+    </Modal>
+  );
+}
+
+/** DL-1.15 Thêm / Sửa ô chuồng. */
+function StallDialog({
+  zone,
+  stall,
+  onClose,
+  onSaved,
+}: {
+  zone: Zone;
+  stall?: Stall;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const toast = useToast();
+  const [code, setCode] = useState(stall?.code ?? `${zone.code}-`);
+  const [row, setRow] = useState(String(stall?.row ?? 1));
+  const [col, setCol] = useState(String(stall?.col ?? 1));
+  const [status, setStatus] = useState<SettableStallStatus>(
+    stall && stall.status !== "OCCUPIED" ? (stall.status as SettableStallStatus) : "AVAILABLE",
+  );
+  const [notes, setNotes] = useState(stall?.notes ?? "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [dirty, setDirty] = useState(false);
+  const occupied = !!stall?.allocations.length;
+
+  const errors = {
+    code: /^[A-Z0-9-]{2,20}$/.test(code) ? "" : "Stall code: 2 to 20 upper-case letters, digits or hyphens.",
+    row: Number(row) >= 1 && Number(row) <= zone.rows ? "" : `Row must be between 1 and ${zone.rows}.`,
+    col: Number(col) >= 1 && Number(col) <= zone.cols ? "" : `Column must be between 1 and ${zone.cols}.`,
+    notes: notes.length <= 500 ? "" : "Notes can be at most 500 characters.",
+  };
+  const valid = Object.values(errors).every((e) => !e);
+  const touch = <T,>(set: (v: T) => void) => (v: T) => {
+    set(v);
+    setDirty(true);
+  };
+
+  async function save() {
+    setBusy(true);
+    setError("");
+    const body = { code, row: Number(row), col: Number(col), status, notes: notes.trim() || undefined };
+    try {
+      if (stall) await updateStall(stall.id, body);
+      else await createStall({ ...body, zoneId: zone.id });
+      toast.show("Saved.", "ok");
+      onSaved();
+    } catch (err) {
+      setError(messageFor(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const close = () => confirmDiscard(dirty) && onClose();
+  return (
+    <Modal
+      title={stall ? `Edit stall ${stall.code}` : "Add stall"}
+      subtitle={`Zone: ${zone.name}`}
+      width={560}
+      onClose={close}
+      foot={
+        <>
+          <Button tone="secondary" onClick={close}>Cancel</Button>
+          <Button disabled={!valid || busy} onClick={save}>{busy ? "Saving…" : "Save"}</Button>
+        </>
+      }
+    >
+      <div style={{ display: "grid", gap: "0.9rem" }}>
+        {error && <Alert tone="danger" title={error} />}
+        <Field label="Stall code" required error={dirty ? errors.code : undefined}>
+          <Input value={code} onChange={(e) => touch(setCode)(e.target.value.toUpperCase())} />
+        </Field>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <Field label="Row" required error={errors.row || undefined}>
+            <Input type="number" min={1} max={zone.rows} value={row} onChange={(e) => touch(setRow)(e.target.value)} />
+          </Field>
+          <Field label="Column" required error={errors.col || undefined}>
+            <Input type="number" min={1} max={zone.cols} value={col} onChange={(e) => touch(setCol)(e.target.value)} />
+          </Field>
+        </div>
+        <Field label="Status" required hint={occupied ? "A stall with a horse can only be Active." : undefined}>
+          <Select
+            value={status}
+            disabled={occupied}
+            onChange={(e) => touch(setStatus)(e.target.value as SettableStallStatus)}
+            options={STATUS_OPTIONS}
+          />
+        </Field>
+        <Field label="Notes" error={errors.notes || undefined}>
+          <Textarea rows={3} value={notes} onChange={(e) => touch(setNotes)(e.target.value)} />
+        </Field>
+      </div>
+    </Modal>
+  );
+}
+
+/** SC-1.07 Danh mục Khu chuồng & Ô chuồng: CM toàn quyền; HT, VET, GROOM chỉ xem. Không có xóa ô (Q-1.C). */
+export default function StallCatalogPage() {
+  const user = useCurrentUser();
+  const isManager = user.role === "CLUB_MANAGER";
+  const toast = useToast();
+
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [zoneId, setZoneId] = useState("");
+  const [stalls, setStalls] = useState<Stall[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [occupancy, setOccupancy] = useState("ALL");
+  const [zoneDialog, setZoneDialog] = useState<"add" | "edit" | null>(null);
+  const [stallDialog, setStallDialog] = useState<{ stall?: Stall } | null>(null);
+  const [statusChange, setStatusChange] = useState<{ stall: Stall; status: SettableStallStatus } | null>(null);
+  const [zoneToggle, setZoneToggle] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const loadZones = useCallback(async () => {
+    try {
+      const list = await getZones(true);
+      setZones(list);
+      setZoneId((cur) => (list.some((z) => z.id === cur) ? cur : (list[0]?.id ?? "")));
+      if (list.length === 0) setLoading(false);
+    } catch (err) {
+      setError(messageFor(err));
+      setLoading(false);
+    }
+  }, []);
+
+  const loadStalls = useCallback(async () => {
+    if (!zoneId) return;
+    setLoading(true);
+    try {
+      setStalls(await getStalls({ zoneId, includeInactive: true }));
+      setError("");
+    } catch (err) {
+      setError(messageFor(err));
+    } finally {
+      setLoading(false);
+    }
+  }, [zoneId]);
+
+  useEffect(() => {
+    void loadZones();
+  }, [loadZones]);
+  useEffect(() => {
+    void loadStalls();
+  }, [loadStalls]);
+
+  const zone = zones.find((z) => z.id === zoneId);
+  const rows = useMemo(
+    () =>
+      stalls.filter((s) => {
+        const statusOk =
+          statusFilter === "ALL" ||
+          (statusFilter === "AVAILABLE" ? s.status === "AVAILABLE" || s.status === "OCCUPIED" : s.status === statusFilter);
+        const occOk = occupancy === "ALL" || (occupancy === "OCCUPIED" ? s.allocations.length > 0 : s.allocations.length === 0);
+        return statusOk && occOk;
+      }),
+    [stalls, statusFilter, occupancy],
+  );
+
+  async function applyStatus() {
+    if (!statusChange) return;
+    setBusy(true);
+    try {
+      await setStallStatus(statusChange.stall.id, statusChange.status);
+      toast.show(`Stall ${statusChange.stall.code} status updated.`, "ok");
+      setStatusChange(null);
+      void loadStalls();
+      void loadZones();
+    } catch (err) {
+      toast.show(messageFor(err), "danger");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function toggleZone() {
+    if (!zone) return;
+    setBusy(true);
+    try {
+      await setZoneActive(zone.id, !zone.isActive);
+      toast.show(zone.isActive ? `Zone ${zone.name} deactivated.` : `Zone ${zone.name} reactivated.`, "ok");
+      setZoneToggle(false);
+      void loadZones();
+    } catch (err) {
+      toast.show(messageFor(err), "danger");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const occupiedInZone = stalls.filter((s) => s.allocations.length > 0).length;
 
   return (
-    <div className="flex flex-col h-full bg-slate-50">
+    <div style={{ display: "grid", gap: 16 }}>
       <PageHeader
-        title="Stall & Barn Directory"
-        action={
-          isClubManager && (
-            <Button tone="primary" onClick={() => {}}>Add Stall</Button>
-          )
-        }
+        title="Barn zones & stalls"
+        action={isManager && <Button icon="plus" onClick={() => setZoneDialog("add")}>Add zone</Button>}
       />
-      
-      <div className="p-6 flex-1 flex flex-col md:flex-row gap-6">
-        <div className="md:w-64 flex-shrink-0 space-y-2">
-          <h3 className="font-semibold text-slate-900 mb-4 px-2">Barn Zones</h3>
-          <button
-            onClick={() => setSelectedZone("")}
-            className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${selectedZone === "" ? "bg-green-100 text-green-800" : "hover:bg-slate-100 text-slate-700"}`}
-          >
-            All Zones
-          </button>
-          {zones.map((z: string) => (
-            <button
-              key={z}
-              onClick={() => setSelectedZone(z)}
-              className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${selectedZone === z ? "bg-green-100 text-green-800" : "hover:bg-slate-100 text-slate-700"}`}
-            >
-              {z}
-            </button>
-          ))}
-        </div>
+      {error && (
+        <Alert tone="danger" title="Could not load data." action={<Button size="sm" onClick={() => void loadZones()}>Try again</Button>}>
+          {error}
+        </Alert>
+      )}
 
-        <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-          <DataTable<Stall>
-            caption="List of barn stalls"
-            rowKey={(row: Stall) => row.id}
-            columns={[
-              { key: "code", header: "Stall Code", render: (row: Stall) => row.code },
-              { key: "zone", header: "Barn Zone", render: (row: Stall) => row.zone },
-              { 
-                key: "status", 
-                header: "Status",
-                render: (row: Stall) => {
-                  const tone = row.status === "AVAILABLE" ? "ok" : row.status === "OCCUPIED" ? "warn" : "neutral";
-                  return (
-                    <Badge tone={tone}>
-                      {row.status === "AVAILABLE" ? "Available" : row.status === "OCCUPIED" ? "Occupied" : "Maintenance"}
-                    </Badge>
-                  );
-                }
-              },
-              { 
-                key: "allocations",
-                header: "Occupant Horse",
-                render: (row: Stall) => {
-                  const alloc = row.allocations.find((a: StallAllocation) => a.isActive);
-                  return alloc ? <span>{alloc.horse.name}</span> : <span className="text-slate-400">Vacant</span>;
-                }
-              },
-              { key: "notes", header: "Notes", render: (row: Stall) => row.notes || "" },
-              ...(isClubManager ? [{
-                key: "actions",
-                header: "",
-                align: "right" as const,
-                render: (row: Stall) => (
-                  <div className="flex justify-end gap-2">
-                    <Button tone="ghost" size="sm" onClick={() => {}}>Edit</Button>
-                    <Button 
-                      tone="danger" 
-                      size="sm"
-                      onClick={() => {
-                        if (confirm(`Delete stall ${row.code}?`)) {
-                          handleDelete(row.id);
-                        }
-                      }}
+      {zones.length === 0 && !loading ? (
+        <div style={{ padding: 40, textAlign: "center", border: "2px dashed var(--border)", borderRadius: "var(--r-lg)" }}>
+          No barn zones yet.{isManager ? " Click Add zone to start." : ""}
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(220px, 30%) 1fr", gap: 16, alignItems: "start" }}>
+          <div style={{ display: "grid", gap: 8 }}>
+            {zones.map((z) => (
+              <button
+                key={z.id}
+                type="button"
+                onClick={() => setZoneId(z.id)}
+                style={{
+                  textAlign: "left",
+                  padding: "10px 12px",
+                  borderRadius: "var(--r-lg)",
+                  border: `${z.id === zoneId ? 2 : 1}px solid ${z.id === zoneId ? "var(--brand)" : "var(--border)"}`,
+                  background: "var(--surface)",
+                  cursor: "pointer",
+                  opacity: z.isActive ? 1 : 0.6,
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                  <strong>{z.code}</strong>
+                  <Badge tone={z.isActive ? "ok" : "neutral"}>{z.isActive ? "In use" : "Inactive"}</Badge>
+                </div>
+                <div style={{ fontSize: "var(--fs-body)" }}>{z.name}</div>
+                <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>
+                  Grid {z.rows} × {z.cols} · {z.stallCount ?? 0} stalls
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {zone && (
+            <div style={{ display: "grid", gap: 12 }}>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <div style={{ width: 170 }}>
+                    <Select
+                      aria-label="Stall status"
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      options={[{ value: "ALL", label: "All statuses" }, ...STATUS_OPTIONS]}
+                    />
+                  </div>
+                  <div style={{ width: 170 }}>
+                    <Select
+                      aria-label="Occupancy"
+                      value={occupancy}
+                      onChange={(e) => setOccupancy(e.target.value)}
+                      options={[
+                        { value: "ALL", label: "Occupied or empty" },
+                        { value: "OCCUPIED", label: "With a horse" },
+                        { value: "EMPTY", label: "Empty" },
+                      ]}
+                    />
+                  </div>
+                </div>
+                {isManager && (
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <Button tone="secondary" onClick={() => setZoneDialog("edit")}>Edit zone</Button>
+                    <Button
+                      tone="ghost"
+                      blockedReason={
+                        zone.isActive && occupiedInZone > 0
+                          ? `The zone still houses ${occupiedInZone} horse(s). Move them out first.`
+                          : undefined
+                      }
+                      onClick={() => setZoneToggle(true)}
                     >
-                      Delete
+                      {zone.isActive ? "Deactivate zone" : "Reactivate zone"}
+                    </Button>
+                    <Button
+                      icon="plus"
+                      blockedReason={zone.isActive ? undefined : "This zone is inactive."}
+                      onClick={() => setStallDialog({})}
+                    >
+                      Add stall
                     </Button>
                   </div>
-                )
-              }] : [])
-            ]}
-            rows={stalls}
-            loading={isLoading}
-            empty={<div className="p-8 text-center text-slate-400">No stalls found in this barn zone.</div>}
-          />
+                )}
+              </div>
+
+              <DataTable
+                caption={`Stalls of ${zone.name}`}
+                rowKey={(s: Stall) => s.id}
+                loading={loading}
+                rows={rows}
+                empty={stalls.length === 0 ? "This zone has no stalls yet." : "No stall matches the filters."}
+                columns={[
+                  { key: "code", header: "Stall code", render: (s: Stall) => <strong>{s.code}</strong> },
+                  {
+                    key: "pos",
+                    header: "Position",
+                    render: (s: Stall) => (s.row && s.col ? `Row ${s.row} – Col ${s.col}` : "—"),
+                  },
+                  {
+                    key: "status",
+                    header: "Status",
+                    render: (s: Stall) => <Badge tone={STATUS_BADGE[s.status].tone}>{STATUS_BADGE[s.status].label}</Badge>,
+                  },
+                  {
+                    key: "horse",
+                    header: "Horse",
+                    render: (s: Stall) => s.allocations[0]?.horse.name ?? <span style={{ color: "var(--text-muted)" }}>Empty</span>,
+                  },
+                  {
+                    key: "notes",
+                    header: "Notes",
+                    render: (s: Stall) => (s.notes ? (s.notes.length > 80 ? `${s.notes.slice(0, 80)}…` : s.notes) : "—"),
+                  },
+                  ...(isManager
+                    ? [
+                        {
+                          key: "actions",
+                          header: "",
+                          align: "right" as const,
+                          render: (s: Stall) => (
+                            <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                              <Button tone="ghost" size="sm" onClick={() => setStallDialog({ stall: s })}>Edit</Button>
+                              <div style={{ width: 140 }}>
+                                <Select
+                                  aria-label={`Change status of ${s.code}`}
+                                  value=""
+                                  onChange={(e) =>
+                                    e.target.value && setStatusChange({ stall: s, status: e.target.value as SettableStallStatus })
+                                  }
+                                  options={[
+                                    { value: "", label: "Change status…" },
+                                    ...STATUS_OPTIONS.filter(
+                                      (o) => o.value !== (s.status === "OCCUPIED" ? "AVAILABLE" : s.status),
+                                    ),
+                                  ]}
+                                />
+                              </div>
+                            </div>
+                          ),
+                        },
+                      ]
+                    : []),
+                ]}
+              />
+            </div>
+          )}
         </div>
-      </div>
+      )}
+
+      {zoneDialog && (
+        <ZoneDialog
+          zone={zoneDialog === "edit" ? zone : undefined}
+          onClose={() => setZoneDialog(null)}
+          onSaved={(z) => {
+            setZoneDialog(null);
+            setZoneId(z.id);
+            void loadZones();
+            void loadStalls();
+          }}
+        />
+      )}
+      {stallDialog && zone && (
+        <StallDialog
+          zone={zone}
+          stall={stallDialog.stall}
+          onClose={() => setStallDialog(null)}
+          onSaved={() => {
+            setStallDialog(null);
+            void loadStalls();
+            void loadZones();
+          }}
+        />
+      )}
+      {statusChange && (
+        <ConfirmModal
+          title={`Change stall ${statusChange.stall.code} to ${STATUS_OPTIONS.find((o) => o.value === statusChange.status)?.label}?`}
+          tone="warn"
+          confirmLabel={busy ? "Saving…" : "Confirm"}
+          cancelLabel="Cancel"
+          busy={busy}
+          onConfirm={applyStatus}
+          onCancel={() => setStatusChange(null)}
+        >
+          {statusChange.status === "INACTIVE"
+            ? "An inactive stall is hidden from the stable map and cannot receive a horse. Its history is kept."
+            : statusChange.status === "MAINTENANCE"
+              ? "A stall under maintenance cannot receive a horse."
+              : "The stall can receive a horse again."}
+        </ConfirmModal>
+      )}
+      {zoneToggle && zone && (
+        <ConfirmModal
+          title={zone.isActive ? `Deactivate zone ${zone.name}?` : `Reactivate zone ${zone.name}?`}
+          tone="warn"
+          confirmLabel={busy ? "Saving…" : "Confirm"}
+          cancelLabel="Cancel"
+          busy={busy}
+          onConfirm={toggleZone}
+          onCancel={() => setZoneToggle(false)}
+        >
+          {zone.isActive
+            ? "Stalls of an inactive zone cannot receive horses and the zone is hidden from the stable map."
+            : "The zone and its active stalls appear on the stable map again."}
+        </ConfirmModal>
+      )}
     </div>
   );
 }

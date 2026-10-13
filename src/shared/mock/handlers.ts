@@ -16,8 +16,10 @@ import { buildMockProfile, getMockMedicalStore, saveMockMedicalStore } from "@/s
 import {
   getStoredHorses,
   addStoredHorse,
-  deleteStoredHorse,
   saveStoredHorses,
+  horseStatusOf,
+  getDeletedHorses,
+  saveDeletedHorses,
   getStoredLocks,
   placeHorseTrainingLock,
   liftHorseTrainingLock,
@@ -28,6 +30,8 @@ import {
   saveStoredPreventiveCatalogs,
   getStoredPreventiveSchedules,
   saveStoredPreventiveSchedules,
+  getStoredHorseCatalog,
+  saveStoredHorseCatalog,
 } from "@/shared/mock/horsesData";
 import type { FollowUpItem, MedicalRecord, PrescriptionItem, TreatmentPhase } from "@/features/health/types";
 import {
@@ -35,13 +39,9 @@ import {
   saveStoredPlans,
   getStoredWorkouts,
   saveStoredWorkouts,
-  getStoredTrialRuns,
-  saveStoredTrialRuns,
-  getStoredAlerts,
-  saveStoredAlerts,
-  getStoredFitnessMetrics,
+  type MockPlan,
+  type MockWorkout,
 } from "@/shared/mock/trainingData";
-import type { ExerciseSession, TrialRunSchedule } from "@/features/training/types";
 
 const OTP_CODE = "123456";
 const OTP_TTL = 10 * 60 * 1000;
@@ -158,6 +158,17 @@ const DELETABLE: Account["status"][] = ["INVITED", "PENDING_EMAIL", "REJECTED"];
 // ------------------------------------------------------------------ các route
 
 const routes: Route[] = [
+  // ---- Chuồng trại (chỉ đọc): đủ để Sơ đồ chuồng và Dashboard chạy ở chế độ mock.
+  { method: "GET", pattern: /^\/stalls\/zones$/, handler: () => mockZones() },
+  {
+    method: "GET",
+    pattern: /^\/stalls\/grooms$/,
+    handler: ({ db }) =>
+      db.accounts
+        .filter((a) => a.role === "GROOM" && a.status === "ACTIVE")
+        .map((a) => ({ id: a.id, fullName: a.fullName, email: a.email, horseCount: getStoredHorses().filter((h) => h.assignedGroomId === a.id).length })),
+  },
+  { method: "GET", pattern: /^\/stalls$/, handler: ({ db, url }) => mockStalls(db, url) },
   {
     method: "GET", pattern: /^\/audit-logs$/,
     handler: ({ db, url }) => {
@@ -728,77 +739,6 @@ const routes: Route[] = [
   },
 
   // ===== FLOW 3: MEDICAL & HEALTH ROUTES =====
-  {
-    method: "GET",
-    pattern: /^\/medical\/health-board$/,
-    handler({ url }) {
-      const stored = getStoredHorses();
-      const healthGroupFilter = url.searchParams.get("healthGroup");
-      const isLockedFilter = url.searchParams.get("isLocked");
-      const search = url.searchParams.get("search")?.toLowerCase().trim();
-
-      let qualifiedCount = 0;
-      let observationCount = 0;
-      let injuredCount = 0;
-      let isolatedCount = 0;
-      let lockedCount = 0;
-
-      const mapped = stored.map((horse) => {
-        const isLocked = Boolean(horse.isLocked);
-        if (isLocked) lockedCount++;
-
-        let healthGroup: "QUALIFIED" | "OBSERVATION" | "INJURED" | "ISOLATED" = "QUALIFIED";
-        if (horse.healthGroup === "WATCH") {
-          healthGroup = "OBSERVATION";
-          observationCount++;
-        } else if (horse.healthGroup === "INJURED") {
-          healthGroup = "INJURED";
-          injuredCount++;
-        } else if (horse.healthGroup === "QUARANTINED") {
-          healthGroup = "ISOLATED";
-          isolatedCount++;
-        } else {
-          qualifiedCount++;
-        }
-
-        return {
-          id: horse.id,
-          name: horse.name,
-          microchipRfid: horse.microchipRfid || horse.rfid || horse.code,
-          status: horse.statusText || "ACTIVE",
-          healthGroup,
-          isMedicalLocked: isLocked,
-          stallCode: horse.stall || null,
-          zone: horse.zone || null,
-        };
-      });
-
-      let filtered = mapped;
-      if (healthGroupFilter) {
-        filtered = filtered.filter((h) => h.healthGroup === healthGroupFilter);
-      }
-      if (isLockedFilter === "true") {
-        filtered = filtered.filter((h) => h.isMedicalLocked);
-      }
-      if (search) {
-        filtered = filtered.filter(
-          (h) => h.name.toLowerCase().includes(search) || h.microchipRfid.toLowerCase().includes(search),
-        );
-      }
-
-      return {
-        summary: {
-          qualifiedCount,
-          observationCount,
-          injuredCount,
-          isolatedCount,
-          lockedCount,
-          total: mapped.length,
-        },
-        data: filtered,
-      };
-    },
-  },
   {
     method: "GET",
     pattern: /^\/medical\/horses\/([^/]+)\/injuries$/,
@@ -1571,6 +1511,138 @@ const routes: Route[] = [
     },
   },
 
+  // ---- Flow 1: SC-1.06 Danh mục Giống & Màu lông (bản giả của /horse-catalogs)
+  {
+    method: "GET",
+    pattern: /^\/horse-catalogs$/,
+    handler({ db, url }) {
+      currentUser(db);
+      const type = url.searchParams.get("type");
+      const status = url.searchParams.get("status") ?? "ALL";
+      const q = (url.searchParams.get("search") ?? "").toLowerCase();
+      const horses = getStoredHorses() as Array<{ breed?: string; color?: string }>;
+      return getStoredHorseCatalog()
+        .filter(
+          (i) =>
+            (!type || i.type === type) &&
+            (status === "ALL" || (status === "ACTIVE") === i.isActive) &&
+            (!q || i.code.toLowerCase().includes(q) || i.name.toLowerCase().includes(q)),
+        )
+        .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+        .map((i) => ({
+          ...i,
+          horseCount: horses.filter(
+            (h) => (i.type === "BREED" ? h.breed : h.color)?.toLowerCase() === i.name.toLowerCase(),
+          ).length,
+        }));
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/horse-catalogs$/,
+    handler({ db, body }) {
+      if (currentUser(db).role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Forbidden");
+      const items = getStoredHorseCatalog();
+      const type = String(body.type) as "BREED" | "COLOR";
+      const code = String(body.code ?? "").toUpperCase();
+      const name = String(body.name ?? "").trim();
+      if (items.some((i) => i.type === type && i.code === code)) throw new ApiError(409, "DUPLICATE_CATALOG_CODE", "Mã đã tồn tại.");
+      if (items.some((i) => i.type === type && i.name.toLowerCase() === name.toLowerCase())) {
+        throw new ApiError(409, "DUPLICATE_CATALOG_NAME", "Tên đã tồn tại.");
+      }
+      const item = {
+        id: `${type.toLowerCase()}-${Date.now()}`,
+        type,
+        code,
+        name,
+        description: (body.description as string) || null,
+        sortOrder: Number(body.sortOrder ?? 0),
+        isActive: true,
+      };
+      saveStoredHorseCatalog([...items, item]);
+      return item;
+    },
+  },
+  {
+    method: "PUT",
+    pattern: /^\/horse-catalogs\/([^/]+)$/,
+    handler({ db, params, body }) {
+      if (currentUser(db).role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Forbidden");
+      const items = getStoredHorseCatalog();
+      const item = items.find((i) => i.id === params[0]);
+      if (!item) throw new ApiError(404, "CATALOG_ITEM_NOT_FOUND", "Không tìm thấy mục danh mục.");
+      Object.assign(item, {
+        ...(body.name !== undefined && { name: String(body.name).trim() }),
+        ...(body.description !== undefined && { description: (body.description as string) || null }),
+        ...(body.sortOrder !== undefined && { sortOrder: Number(body.sortOrder) }),
+      });
+      saveStoredHorseCatalog(items);
+      return item;
+    },
+  },
+  {
+    method: "PATCH",
+    pattern: /^\/horse-catalogs\/([^/]+)\/status$/,
+    handler({ db, params, body }) {
+      if (currentUser(db).role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Forbidden");
+      const items = getStoredHorseCatalog();
+      const item = items.find((i) => i.id === params[0]);
+      if (!item) throw new ApiError(404, "CATALOG_ITEM_NOT_FOUND", "Không tìm thấy mục danh mục.");
+      item.isActive = Boolean(body.isActive);
+      saveStoredHorseCatalog(items);
+      return item;
+    },
+  },
+
+  // ---- SC-3.01 Sơ đồ sức khỏe (bản giả của GET /medical/health-board, dựng từ kho ngựa giả)
+  {
+    method: "GET",
+    pattern: /^\/medical\/health-board$/,
+    handler({ db }) {
+      currentUser(db);
+      const GROUP: Record<string, "QUALIFIED" | "OBSERVATION" | "INJURED" | "ISOLATED"> = {
+        UNDER_OBSERVATION: "OBSERVATION",
+        INJURED: "INJURED",
+        ISOLATED: "ISOLATED",
+      };
+      const data = getStoredHorses()
+        .filter((h) => horseStatusOf(h) !== "RETIRED")
+        .map((h) => {
+          const status = horseStatusOf(h);
+          return {
+            id: h.id,
+            name: h.name,
+            horseCode: h.horseCode ?? h.code,
+            microchipRfid: h.microchipRfid ?? h.code,
+            status,
+            healthGroup: GROUP[status] ?? "QUALIFIED",
+            isMedicalLocked: h.isLocked,
+            lock: h.isLocked ? { lockedAt: new Date().toISOString(), recheckDate: null, veterinarianName: null } : null,
+            stallCode: h.stall || null,
+            zone: h.zone ?? null,
+            openInjuries: [],
+            latestRecord: null,
+            preventiveDue: [],
+            hasOverduePreventive: false,
+            latestObservation: null,
+          };
+        });
+      const count = (g: string) => data.filter((h) => h.healthGroup === g).length;
+      return {
+        summary: {
+          qualifiedCount: count("QUALIFIED"),
+          observationCount: count("OBSERVATION"),
+          injuredCount: count("INJURED"),
+          isolatedCount: count("ISOLATED"),
+          lockedCount: data.filter((h) => h.isMedicalLocked).length,
+          overdueCount: 0,
+          total: data.length,
+        },
+        data,
+      };
+    },
+  },
+
   // ---- Flow 1: Horse Profile Mock Routes (P1-07)
   {
     method: "GET",
@@ -1587,12 +1659,7 @@ const routes: Route[] = [
       const limit = parseInt(url.searchParams.get("limit") || "20", 10);
 
       let list = stored.map((h: any) => {
-        let st = h.statusText || h.status;
-        if (h.healthGroup === "FIT") st = "ACTIVE";
-        else if (h.healthGroup === "WATCH") st = "UNDER_OBSERVATION";
-        else if (h.healthGroup === "QUARANTINED") st = "ISOLATED";
-        else if (h.healthGroup === "INJURED") st = "INJURED";
-        else if (!st) st = "RESTING";
+        const st = horseStatusOf(h);
 
         let microchip = h.microchip || h.code;
         let microchipRfid = h.code || h.microchip || "985141002341001";
@@ -1619,11 +1686,11 @@ const routes: Route[] = [
           status: st,
           isMedicalLocked: Boolean(h.isLocked),
           ownerId: h.ownerId || "owner-1",
-          ownerName: h.ownerName || "Robert Sterling (Horse Owner)",
-          owner: { id: h.ownerId || "owner-1", fullName: h.ownerName || "Robert Sterling (Horse Owner)", email: "owner@gmail.com" },
+          ownerName: h.ownerName || "Phan Đức Long",
+          owner: { id: h.ownerId || "owner-1", fullName: h.ownerName || "Phan Đức Long", email: "owner@gmail.com" },
           stallCode: user.role === "HORSE_OWNER" ? null : (h.stall || "STALL-A01"),
           zone: user.role === "HORSE_OWNER" ? null : "Zone A - Barn 1",
-          primaryGroom: user.role === "HORSE_OWNER" ? null : "Michael Groom",
+          primaryGroom: user.role === "HORSE_OWNER" ? null : "Lê Văn Phúc",
           createdAt: h.createdAt || new Date().toISOString(),
           updatedAt: h.updatedAt || new Date().toISOString(),
         };
@@ -1673,6 +1740,47 @@ const routes: Route[] = [
   },
   {
     method: "GET",
+    pattern: /^\/horses\/deleted$/,
+    handler({ db, url }) {
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Only Club Manager can view deleted horses.");
+      const search = url.searchParams.get("search")?.toLowerCase().trim() || "";
+      const from = url.searchParams.get("from");
+      const to = url.searchParams.get("to");
+      const page = parseInt(url.searchParams.get("page") || "1", 10);
+      const limit = parseInt(url.searchParams.get("limit") || "20", 10);
+      let list = getDeletedHorses().sort((a, b) => b.deletedAt.localeCompare(a.deletedAt));
+      if (search) {
+        list = list.filter(
+          (h) =>
+            h.name.toLowerCase().includes(search) ||
+            (h.horseCode || "").toLowerCase().includes(search) ||
+            (h.microchip || h.code || "").includes(search),
+        );
+      }
+      if (from) list = list.filter((h) => h.deletedAt.slice(0, 10) >= from);
+      if (to) list = list.filter((h) => h.deletedAt.slice(0, 10) <= to);
+      const total = list.length;
+      return {
+        items: list.slice((page - 1) * limit, page * limit).map((h) => ({
+          id: h.id,
+          horseCode: h.horseCode || null,
+          name: h.name,
+          microchip: h.microchip || h.code,
+          status: horseStatusOf(h),
+          deletedAt: h.deletedAt,
+          deletedBy: h.deletedBy,
+          deleteReason: h.deleteReason,
+        })),
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    },
+  },
+  {
+    method: "GET",
     pattern: /^\/horses\/([^/]+)$/,
     handler({ db, params }) {
       const user = currentUser(db);
@@ -1684,12 +1792,7 @@ const routes: Route[] = [
         throw new ApiError(404, "HORSE_NOT_FOUND", "Horse profile not found or permission denied.");
       }
 
-      let st = h.statusText || h.status;
-      if (h.healthGroup === "FIT") st = "ACTIVE";
-      else if (h.healthGroup === "WATCH") st = "UNDER_OBSERVATION";
-      else if (h.healthGroup === "QUARANTINED") st = "ISOLATED";
-      else if (h.healthGroup === "INJURED") st = "INJURED";
-      else if (!st) st = "RESTING";
+      const st = horseStatusOf(h);
 
       let microchip = h.microchip || h.code;
       let microchipRfid = h.code || h.microchip || "985141002341001";
@@ -1714,13 +1817,14 @@ const routes: Route[] = [
         gender: h.gender || "Colt",
         color: h.color || "Bay Dark",
         status: st,
+        retireReason: h.retireReason ?? null,
         isMedicalLocked: Boolean(h.isLocked),
         ownerId: h.ownerId || "owner-1",
-        ownerName: h.ownerName || "Robert Sterling (Horse Owner)",
-        owner: { id: h.ownerId || "owner-1", fullName: h.ownerName || "Robert Sterling (Horse Owner)", email: "owner@gmail.com" },
+        ownerName: h.ownerName || "Phan Đức Long",
+        owner: { id: h.ownerId || "owner-1", fullName: h.ownerName || "Phan Đức Long", email: "owner@gmail.com" },
         stallCode: user.role === "HORSE_OWNER" ? null : (h.stall || "STALL-A01"),
         zone: user.role === "HORSE_OWNER" ? null : "Zone A - Barn 1",
-        primaryGroom: user.role === "HORSE_OWNER" ? null : "Michael Groom",
+        primaryGroom: user.role === "HORSE_OWNER" ? null : "Lê Văn Phúc",
         createdAt: h.createdAt || new Date().toISOString(),
         updatedAt: h.updatedAt || new Date().toISOString(),
       };
@@ -1739,12 +1843,7 @@ const routes: Route[] = [
         throw new ApiError(404, "HORSE_NOT_FOUND", "Horse profile not found or permission denied.");
       }
 
-      let st = h.statusText || h.status;
-      if (h.healthGroup === "FIT") st = "ACTIVE";
-      else if (h.healthGroup === "WATCH") st = "UNDER_OBSERVATION";
-      else if (h.healthGroup === "QUARANTINED") st = "ISOLATED";
-      else if (h.healthGroup === "INJURED") st = "INJURED";
-      else if (!st) st = "RESTING";
+      const st = horseStatusOf(h);
 
       const horse = {
         id: h.id,
@@ -1758,14 +1857,14 @@ const routes: Route[] = [
         isMedicalLocked: Boolean(h.isLocked),
         stallCode: user.role === "HORSE_OWNER" ? null : (h.stall || "STALL-A01"),
         zone: user.role === "HORSE_OWNER" ? null : "Zone A - Barn 1",
-        primaryGroom: user.role === "HORSE_OWNER" ? null : "Michael Groom",
+        primaryGroom: user.role === "HORSE_OWNER" ? null : "Lê Văn Phúc",
       };
 
       const statusHistory = [
         {
           id: `sh-${h.id}-1`,
           timestamp: h.updatedAt || new Date().toISOString(),
-          changedBy: "Dr. Sarah Connor (Veterinarian)",
+          changedBy: "Dr. Võ Thanh Hải",
           action: "HORSE_STATUS_CHANGED",
           oldStatus: "RESTING",
           newStatus: st,
@@ -1777,9 +1876,9 @@ const routes: Route[] = [
           id: `oh-${h.id}-1`,
           timestamp: h.createdAt || new Date(Date.now() - 60 * 86400000).toISOString(),
           previousOwner: "EquiFlow Racing Stable",
-          newOwner: h.ownerName || "Robert Sterling (Horse Owner)",
+          newOwner: h.ownerName || "Phan Đức Long",
           reason: "Purchased at Autumn Yearling Auction",
-          transferredBy: "Michael Tran (Club Manager)",
+          transferredBy: "Hoàng Văn Sơn",
         },
       ];
 
@@ -1788,7 +1887,7 @@ const routes: Route[] = [
           id: `stall-${h.id}-1`,
           stallCode: h.stall || "STALL-A01",
           zone: "Zone A - Barn 1",
-          groomName: "John Smith (Groom Hand)",
+          groomName: "Lê Văn Phúc",
           startDate: h.createdAt || new Date(Date.now() - 30 * 86400000).toISOString(),
           endDate: null,
           isActive: true,
@@ -1800,7 +1899,7 @@ const routes: Route[] = [
           {
             id: `mr-${h.id}-1`,
             examinationDate: new Date(Date.now() - 5 * 86400000).toISOString(),
-            veterinarianName: "Dr. Sarah Connor",
+            veterinarianName: "Dr. Lê Minh Châu",
             symptoms: h.isLocked ? (h.lockReason || "Left forelimb swelling and lameness") : "Routine pre-training health screening",
             clinicalDiagnosis: h.isLocked ? "Acute desmitis of suspensory ligament" : "Clinically sound, fit for regular conditioning",
             treatmentProtocol: h.isLocked ? "Cryotherapy, bandage support, rest" : "Routine maintenance",
@@ -1825,7 +1924,7 @@ const routes: Route[] = [
             lockCode: "KH-000001",
             lockedAt: new Date(Date.now() - 5 * 86400000).toISOString(),
             lockReason: h.lockReason || "Suspensory ligament acute desmitis during intense trial run",
-            veterinarianName: "Dr. Sarah Connor",
+            veterinarianName: "Dr. Lê Minh Châu",
             isLocked: true,
           },
         ] : [],
@@ -1841,7 +1940,7 @@ const routes: Route[] = [
           startDate: new Date(Date.now() - 20 * 86400000).toISOString(),
           endDate: new Date(Date.now() + 10 * 86400000).toISOString(),
           status: h.isLocked ? "SUSPENDED" : "ACTIVE",
-          trainerName: "David Nguyen (Head Trainer)",
+          trainerName: "Đinh Quang Trung",
           totalWorkouts: 8,
           completedWorkouts: 6,
         },
@@ -1861,7 +1960,7 @@ const routes: Route[] = [
             id: `tl-${h.id}-lock`,
             category: "MEDICAL" as const,
             title: "Veterinary Medical Lock enforced (KH-000001)",
-            description: `Reason: ${h.lockReason || "Acute desmitis"}. Issued by Dr. Sarah Connor.`,
+            description: `Reason: ${h.lockReason || "Acute desmitis"}. Issued by Dr. Lê Minh Châu.`,
             timestamp: new Date(Date.now() - 5 * 86400000).toISOString(),
             badgeTone: "danger" as const,
           },
@@ -1870,7 +1969,7 @@ const routes: Route[] = [
           id: `tl-${h.id}-plan`,
           category: "TRAINING" as const,
           title: "Training plan issued: Endurance & Speed Conditioning",
-          description: `Status: ${h.isLocked ? "SUSPENDED" : "ACTIVE"}. Surface: TURF. Trainer: David Nguyen.`,
+          description: `Status: ${h.isLocked ? "SUSPENDED" : "ACTIVE"}. Surface: TURF. Trainer: Trần Văn Nam.`,
           timestamp: new Date(Date.now() - 20 * 86400000).toISOString(),
           badgeTone: "ok" as const,
         },
@@ -1878,7 +1977,7 @@ const routes: Route[] = [
           id: `tl-${h.id}-med`,
           category: "MEDICAL" as const,
           title: "Clinical examination completed",
-          description: `Diagnosis: ${h.isLocked ? "Acute desmitis" : "Clinically sound"}. Examined by Dr. Sarah Connor.`,
+          description: `Diagnosis: ${h.isLocked ? "Acute desmitis" : "Clinically sound"}. Examined by Dr. Lê Minh Châu.`,
           timestamp: new Date(Date.now() - 5 * 86400000).toISOString(),
           badgeTone: "warn" as const,
         },
@@ -1935,8 +2034,8 @@ const routes: Route[] = [
         rfid: rfid || null,
         stall: body.stallCode || "STALL-A01",
         healthGroup: "FIT",
-        status: body.status || "RESTING",
-        statusText: body.status || "RESTING",
+        status: "RESTING",
+        statusText: "RESTING",
         isLocked: false,
         restingHeartRate: 38,
         temp: 38.0,
@@ -1995,7 +2094,6 @@ const routes: Route[] = [
       if (body.dob) existing.dob = String(body.dob);
       if (body.gender) existing.gender = String(body.gender);
       if (body.color) existing.color = String(body.color);
-      if (body.status) (existing as any).status = body.status;
 
       saveStoredHorses(stored);
       audit(db, user.fullName, "HORSE_UPDATED", `Updated horse profile ${existing.name}`);
@@ -2003,23 +2101,83 @@ const routes: Route[] = [
     },
   },
   {
+    // DL-1.10 Xóa mềm: chuyển hồ sơ sang kho "đã xóa" (giống BE: deletedAt + lý do), khôi phục được.
     method: "DELETE",
     pattern: /^\/horses\/([^/]+)$/,
-    handler({ db, params }) {
+    handler({ db, params, body }) {
       const user = currentUser(db);
       if (user.role !== "CLUB_MANAGER") {
         throw new ApiError(403, "FORBIDDEN", "Only Club Manager can delete horse profiles.");
       }
+      const reason = String(body.reason || "").trim();
+      if (reason.length < 10 || reason.length > 500) {
+        throw new ApiError(400, "VALIDATION", "Reason must be 10 to 500 characters.");
+      }
       const stored = getStoredHorses();
       const existing = stored.find((h) => h.id === params[0]);
       if (!existing) throw new ApiError(404, "HORSE_NOT_FOUND", "Horse profile not found.");
+      const typed = String(body.confirmName || "").trim().replace(/\s+/g, " ").toLowerCase();
+      if (typed !== existing.name.toLowerCase()) {
+        throw new ApiError(400, "CONFIRM_NAME_MISMATCH", "The name does not match.");
+      }
       if (existing.isLocked) {
         throw new ApiError(400, "HORSE_LOCKED", "Cannot delete horse profile while an active Medical Lock is in effect.");
       }
 
-      deleteStoredHorse(params[0]);
-      audit(db, user.fullName, "HORSE_DELETED", `Deleted horse profile ${existing.name}`);
-      return { success: true, message: `Successfully deleted horse ${existing.name}.` };
+      saveStoredHorses(stored.filter((h) => h.id !== existing.id));
+      saveDeletedHorses([
+        {
+          ...existing,
+          status: horseStatusOf(existing),
+          deletedAt: new Date().toISOString(),
+          deletedBy: { id: user.id, fullName: user.fullName },
+          deletedById: user.id,
+          deleteReason: reason,
+        },
+        ...getDeletedHorses().filter((h) => h.id !== existing.id),
+      ]);
+      audit(db, user.fullName, "HORSE_DELETED", `Soft-deleted horse profile ${existing.name}. Reason: ${reason}`);
+      return { success: true, id: existing.id, name: existing.name, message: `Đã xóa hồ sơ ngựa ${existing.name}.` };
+    },
+  },
+  {
+    // DL-1.11 Khôi phục (lý do 10-500) hoặc Hoàn tác trong 60 giây (undo = true).
+    method: "POST",
+    pattern: /^\/horses\/([^/]+)\/restore$/,
+    handler({ db, params, body }) {
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") {
+        throw new ApiError(403, "FORBIDDEN", "Only Club Manager can restore horse profiles.");
+      }
+      const deleted = getDeletedHorses();
+      const target = deleted.find((h) => h.id === params[0]);
+      if (!target) throw new ApiError(404, "HORSE_NOT_FOUND", "Không tìm thấy hồ sơ đã xóa.");
+
+      let reason: string;
+      if (body.undo) {
+        const expired = Date.now() - new Date(target.deletedAt).getTime() > 60_000;
+        if (expired || target.deletedById !== user.id) {
+          throw new ApiError(400, "UNDO_EXPIRED", "Đã hết thời gian hoàn tác.");
+        }
+        reason = "Hoàn tác thao tác xóa";
+      } else {
+        reason = String(body.reason || "").trim();
+        if (reason.length < 10 || reason.length > 500) {
+          throw new ApiError(400, "REASON_REQUIRED", "Lý do phải từ 10 đến 500 ký tự.");
+        }
+      }
+
+      const stored = getStoredHorses();
+      if (stored.some((h) => h.name.toLowerCase() === target.name.toLowerCase())) {
+        throw new ApiError(409, "RESTORE_CONFLICT", `Tên ngựa ${target.name} đã được dùng cho ngựa khác.`, { field: "name" });
+      }
+
+      // Bỏ các trường xóa; ngựa về trạng thái lúc bị xóa, chưa có ô chuồng.
+      const { deletedAt: _a, deletedBy: _b, deletedById: _c, deleteReason: _d, ...horse } = target;
+      saveStoredHorses([{ ...horse, stall: "" }, ...stored]);
+      saveDeletedHorses(deleted.filter((h) => h.id !== target.id));
+      audit(db, user.fullName, "HORSE_RESTORED", `Restored horse profile ${target.name}. Reason: ${reason}`);
+      return { success: true, message: `Đã khôi phục hồ sơ ngựa ${target.name}.` };
     },
   },
   {
@@ -2046,7 +2204,7 @@ const routes: Route[] = [
       const accounts = db.accounts;
       const newOwner = accounts.find((a) => a.id === newOwnerId) || {
         id: newOwnerId,
-        fullName: newOwnerId === "usr-owner-002" ? "Alexander Hamilton (Equine Syndicate)" : "Robert Sterling (Horse Owner)",
+        fullName: newOwnerId === "usr-owner-002" ? "Alexander Hamilton (Equine Syndicate)" : "Phan Đức Long",
         email: "owner@gmail.com",
       };
 
@@ -2061,6 +2219,7 @@ const routes: Route[] = [
     },
   },
   {
+    // Bảng chuyển trạng thái Flow 1 §4.2 (bản giả của src/horses/horse-rules.ts ở BE).
     method: "PATCH",
     pattern: /^\/horses\/([^/]+)\/status$/,
     handler({ db, params, body }) {
@@ -2068,328 +2227,1006 @@ const routes: Route[] = [
       const stored = getStoredHorses();
       const existing = stored.find((h) => h.id === params[0]);
       if (!existing) throw new ApiError(404, "HORSE_NOT_FOUND", "Horse profile not found.");
-      
-      const newStatus = String(body.status);
-      (existing as any).status = newStatus;
-      
+
+      const OPERATIONAL = ["RESTING", "IN_TRAINING", "ACTIVE"];
+      const MEDICAL = ["UNDER_OBSERVATION", "INJURED", "ISOLATED"];
+      const from = horseStatusOf(existing);
+      const to = String(body.status);
+      const reason = String(body.reason || "").trim();
+      const locked = Boolean(existing.isLocked);
+      const retireReason = body.retireReason ? String(body.retireReason) : "";
+      const deny = (code: string, msg: string): never => {
+        throw new ApiError(403, code, msg);
+      };
+      const needReason = () => {
+        if (reason.length < 10) throw new ApiError(400, "REASON_REQUIRED", "Lý do phải từ 10 đến 500 ký tự.");
+      };
+
+      if (from === to) throw new ApiError(400, "SAME_STATUS", `Horse is already in status ${to}.`);
+      if (from === "RETIRED") {
+        if (user.role !== "CLUB_MANAGER" || to !== "RESTING") deny("HORSE_RETIRED", "Horse is no longer managed.");
+        if (existing.retireReason === "DECEASED") {
+          throw new ApiError(400, "HORSE_DECEASED", "Không thể kích hoạt lại hồ sơ ngựa đã chết.");
+        }
+        needReason();
+      } else if (user.role === "CLUB_MANAGER") {
+        if (to !== "RETIRED") deny("ROLE_RESTRICTION", "Club Manager can only stop managing or reactivate.");
+        if (!retireReason) throw new ApiError(400, "RETIRE_REASON_REQUIRED", "Vui lòng chọn lý do ngừng quản lý.");
+        if (locked && retireReason !== "DECEASED") deny("MEDICAL_LOCK_ACTIVE", "Locked: only Deceased is allowed.");
+        needReason();
+      } else if (user.role === "HEAD_TRAINER") {
+        if (!OPERATIONAL.includes(from) || !OPERATIONAL.includes(to)) deny("ROLE_RESTRICTION", "Head Trainer: operational statuses only.");
+        if (locked) deny("MEDICAL_LOCK_ACTIVE", "Horse is under a Training Lock.");
+      } else if (user.role === "VETERINARIAN") {
+        const toMedical = MEDICAL.includes(to);
+        const backToWork = MEDICAL.includes(from) && (to === "RESTING" || to === "IN_TRAINING");
+        if (!toMedical && !backToWork) deny("ROLE_RESTRICTION", "Veterinarian: medical statuses only.");
+        if (backToWork && locked) deny("MEDICAL_LOCK_ACTIVE", "Horse is under a Training Lock.");
+        needReason();
+      } else {
+        deny("ROLE_RESTRICTION", "Your role cannot change horse status.");
+      }
+
+      const effects: string[] = [];
+      existing.status = to;
+      if (to === "RETIRED") {
+        existing.retireReason = retireReason;
+        if (existing.stall) effects.push(`Trả ô chuồng ${existing.stall}`);
+        existing.stall = "";
+        if (locked) {
+          existing.isLocked = false;
+          existing.lockReason = undefined;
+          effects.push("Kết thúc Khóa huấn luyện");
+        }
+        if ((retireReason === "SOLD" || retireReason === "TRANSFERRED") && existing.ownerId) {
+          existing.ownerId = undefined;
+          existing.ownerName = undefined;
+          effects.push("Kết thúc sở hữu của 1 chủ sở hữu");
+        }
+      } else if (from === "RETIRED") {
+        existing.retireReason = null;
+      }
+
       saveStoredHorses(stored);
-      audit(db, user.fullName, "HORSE_STATUS_CHANGED", `Changed status of ${existing.name} to ${newStatus}`);
-      return { success: true, message: `Status updated to ${newStatus}`, data: existing };
+      audit(db, user.fullName, "HORSE_STATUS_CHANGED", `Changed status of ${existing.name} from ${from} to ${to}. Reason: ${reason || "None"}`);
+      return { success: true, message: `Status updated to ${to}`, data: { ...existing, status: to }, effects };
     },
   },
-  // ===== FLOW 2: TRAINING PLANS & TELEMETRY =====
+  // ===== FLOW 2: TRAINING (mô phỏng src/training của BE, cùng mã lỗi) =====
   {
     method: "GET",
     pattern: /^\/training\/plans$/,
-    handler({ url }) {
+    handler({ db, url }) {
+      const user = currentUser(db);
+      trainingRole(user, ["CLUB_MANAGER", "HEAD_TRAINER", "VETERINARIAN", "HORSE_OWNER"]);
+      sweepTraining();
       const horseId = url.searchParams.get("horseId");
       const status = url.searchParams.get("status");
-      const search = url.searchParams.get("search");
-      let plans = getStoredPlans();
+      const search = url.searchParams.get("search")?.toLowerCase();
+      let plans = getStoredPlans().map(decoratePlan);
+      if (user.role === "HORSE_OWNER") plans = plans.filter((p) => p.horseOwnerId === user.id);
       if (horseId) plans = plans.filter((p) => p.horseId === horseId);
       if (status) plans = plans.filter((p) => p.status === status);
       if (search) {
-        const s = search.toLowerCase();
         plans = plans.filter(
-          (p) =>
-            p.name.toLowerCase().includes(s) ||
-            p.horseName.toLowerCase().includes(s) ||
-            p.horseCode.toLowerCase().includes(s)
+          (p) => p.phaseName.toLowerCase().includes(search) || (p.horse?.name ?? "").toLowerCase().includes(search),
         );
       }
-      return {
-        items: plans,
-        total: plans.length,
-        page: 1,
-        pageSize: 20,
-        totalPages: Math.ceil(plans.length / 20) || 1,
-      };
+      plans.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      return { items: plans, total: plans.length, page: 1, pageSize: 100, totalPages: 1 };
     },
   },
   {
     method: "GET",
     pattern: /^\/training\/plans\/([^/]+)$/,
-    handler({ params }) {
-      const p = getStoredPlans().find((x) => x.id === params[0]);
-      if (!p) throw new ApiError(404, "NOT_FOUND", "Training plan not found");
-      const workouts = getStoredWorkouts().filter((w) => w.planId === p.id);
-      return {
-        ...p,
-        workoutSessions: workouts,
-      };
+    handler({ db, params }) {
+      const user = currentUser(db);
+      trainingRole(user, ["CLUB_MANAGER", "HEAD_TRAINER", "VETERINARIAN", "HORSE_OWNER"]);
+      const plan = getStoredPlans().find((p) => p.id === params[0]);
+      const p = plan ? decoratePlan(plan) : null;
+      if (!p || (user.role === "HORSE_OWNER" && p.horseOwnerId !== user.id)) {
+        throw new ApiError(404, "PLAN_NOT_FOUND", "Training plan not found.");
+      }
+      const lockedHorse = getStoredHorses().find((h) => h.id === p.horseId);
+      if (p.horse && lockedHorse?.isLocked) {
+        (p.horse as Record<string, unknown>).medicalLocks = [
+          { lockedAt: lockedHorse.lockDate ?? new Date().toISOString(), lockReason: lockedHorse.lockReason ?? "" },
+        ];
+      }
+      const workoutSessions = getStoredWorkouts()
+        .filter((w) => w.trainingPlanId === p.id)
+        .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate))
+        .map(decorateWorkout);
+      return { ...p, workoutSessions };
     },
   },
   {
     method: "POST",
     pattern: /^\/training\/plans$/,
-    handler({ body }) {
-      const horses = getStoredHorses();
-      const horse = horses.find((h) => h.id === body.horseId);
-      if (horse?.isLocked && body.status === "ACTIVE") {
-        throw new ApiError(
-          400,
-          "MEDICAL_LOCK_ACTIVE",
-          `Horse is currently under an active Medical Lock (RULE-MED-01). Reason: ${horse.lockReason || "Medical hold"}. Training plans cannot be created or activated while locked.`
-        );
+    handler({ db, body }) {
+      const user = currentUser(db);
+      trainingRole(user, ["HEAD_TRAINER"]);
+      const horse = mockHorse(String(body.horseId));
+      if (horse.status === "RETIRED") throw new ApiError(400, "HORSE_RETIRED", "Ngựa đã ngừng quản lý.");
+      if (!Array.isArray(body.phases) || body.phases.length === 0) {
+        throw new ApiError(400, "PHASES_REQUIRED", "Giáo án phải có ít nhất 1 giai đoạn.");
       }
-      const plans = getStoredPlans();
-      const newPlan = {
+      if (String(body.startDate) > String(body.endDate)) {
+        throw new ApiError(400, "INVALID_DATE_RANGE", "Plan start date cannot be later than end date.");
+      }
+      if (String(body.objective ?? "").trim().length < 10) {
+        throw new ApiError(400, "VALIDATION", "Mục tiêu phải từ 10 đến 1000 ký tự.");
+      }
+      const plan: MockPlan = {
         id: `plan-${Date.now()}`,
-        planCode: `PLAN-2026-${Math.floor(100 + Math.random() * 900)}`,
-        name: body.phaseName || body.name || "New Training Plan",
-        horseId: body.horseId || "horse-1",
-        horseName: horse?.name || body.horseName || "Thunderbolt Swift",
-        horseCode: horse?.code || body.horseCode || "HR-000001",
-        target: body.target || "",
-        targetDistanceMeters: body.targetDistance || body.targetDistanceMeters || 1600,
-        startDate: body.startDate || new Date().toISOString().split("T")[0],
-        endDate: body.endDate || new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
-        status: body.status || "APPROVED",
-        phases: body.phases || [],
-        headTrainerId: "trainer-1",
-        headTrainerName: "David Nguyen (Head Trainer)",
-        notes: body.notes || "",
-        createdAt: new Date().toISOString().split("T")[0],
-        updatedAt: new Date().toISOString().split("T")[0],
-        isLockedByMedical: Boolean(horse?.isLocked),
-        workoutSessions: [],
+        planCode: `GA-${String(getStoredPlans().length + 1).padStart(6, "0")}`,
+        horseId: horse.id,
+        trainerUserId: user.id,
+        phaseName: String(body.phaseName),
+        objective: String(body.objective).trim(),
+        notes: body.notes ? String(body.notes) : null,
+        phases: (body.phases as Record<string, unknown>[]).map((ph, i) => ({ ...ph, id: ph.id || `ph-${Date.now()}-${i}` })),
+        targetDistance: body.targetDistance as number | undefined,
+        targetSpeed: body.targetSpeed as number | undefined,
+        startDate: new Date(String(body.startDate)).toISOString(),
+        endDate: new Date(String(body.endDate)).toISOString(),
+        status: "DRAFT",
+        cancelReason: null,
+        completionSummary: null,
+        createdAt: new Date().toISOString(),
       };
-      plans.unshift(newPlan as any);
-      saveStoredPlans(plans);
-      return newPlan;
+      saveStoredPlans([plan, ...getStoredPlans()]);
+      audit(db, user.fullName, "CREATE_TRAINING_PLAN", `Created training plan "${plan.phaseName}" for ${horse.name}`);
+      return decoratePlan(plan);
     },
   },
   {
     method: "PUT",
     pattern: /^\/training\/plans\/([^/]+)$/,
-    handler({ params, body }) {
+    handler({ db, params, body }) {
+      trainingRole(currentUser(db), ["HEAD_TRAINER"]);
       const plans = getStoredPlans();
       const p = plans.find((x) => x.id === params[0]);
-      if (!p) throw new ApiError(404, "NOT_FOUND", "Training plan not found");
-      const horses = getStoredHorses();
-      const horse = horses.find((h) => h.id === p.horseId);
-      if (horse?.isLocked && (body.status === "ACTIVE" || body.status === "APPROVED")) {
-        throw new ApiError(
-          400,
-          "MEDICAL_LOCK_ACTIVE",
-          `Cannot activate training plan: Horse is currently under an active Medical Lock (RULE-MED-01).`
-        );
+      if (!p) throw new ApiError(404, "PLAN_NOT_FOUND", "Training plan not found.");
+      if (p.status !== "DRAFT" && p.status !== "ACTIVE") {
+        throw new ApiError(400, "PLAN_CLOSED", "Giáo án đã hoàn thành hoặc đã hủy nên không sửa được.");
       }
-      Object.assign(p, body);
-      p.updatedAt = new Date().toISOString().split("T")[0];
+      if (body.phaseName) p.phaseName = String(body.phaseName);
+      if (body.objective !== undefined) p.objective = String(body.objective);
+      if (body.notes !== undefined) p.notes = body.notes ? String(body.notes) : null;
+      if (body.phases) {
+        p.phases = (body.phases as Record<string, unknown>[]).map((ph, i) => ({ ...ph, id: ph.id || `ph-${Date.now()}-${i}` }));
+      }
+      if (body.startDate) p.startDate = new Date(String(body.startDate)).toISOString();
+      if (body.endDate) p.endDate = new Date(String(body.endDate)).toISOString();
       saveStoredPlans(plans);
-      return p;
-    },
-  },
-  {
-    method: "DELETE",
-    pattern: /^\/training\/plans\/([^/]+)$/,
-    handler({ params }) {
-      const plans = getStoredPlans();
-      const idx = plans.findIndex((x) => x.id === params[0]);
-      if (idx === -1) throw new ApiError(404, "NOT_FOUND", "Training plan not found");
-      plans.splice(idx, 1);
-      saveStoredPlans(plans);
-      return { message: "Training plan deleted successfully." };
+      return decoratePlan(p);
     },
   },
   {
     method: "PATCH",
     pattern: /^\/training\/plans\/([^/]+)\/status$/,
-    handler({ params, body }) {
+    handler({ db, params, body }) {
+      const user = currentUser(db);
+      trainingRole(user, ["HEAD_TRAINER"]);
       const plans = getStoredPlans();
-      const p = plans.find((x) => x.id === params[0]);
-      if (!p) throw new ApiError(404, "NOT_FOUND", "Training plan not found");
-      if (body.status === "ACTIVE" && p.isLockedByMedical) {
-        throw new ApiError(400, "LOCKED", "Cannot activate training plan: Horse is under active Veterinary Medical Lock!");
+      const plan = plans.find((x) => x.id === params[0]);
+      if (!plan) throw new ApiError(404, "PLAN_NOT_FOUND", "Training plan not found.");
+      const to = String(body.status);
+      const workouts = getStoredWorkouts();
+      const mine = workouts.filter((w) => w.trainingPlanId === plan.id);
+
+      if (to === "ACTIVE") {
+        if (plan.status !== "DRAFT") throw new ApiError(400, "INVALID_PLAN_TRANSITION", "Chỉ kích hoạt được giáo án đang ở Nháp.");
+        const horse = mockHorse(plan.horseId);
+        if (horse.isLocked) throw new ApiError(409, "MEDICAL_LOCK_ACTIVE", "Ngựa đang bị Khóa huấn luyện y tế. Không thể kích hoạt giáo án.");
+        if (horse.status === "RETIRED") throw new ApiError(400, "HORSE_RETIRED", "Ngựa đã ngừng quản lý.");
+        const other = plans.find((x) => x.horseId === plan.horseId && x.status === "ACTIVE" && x.id !== plan.id);
+        if (other) throw new ApiError(409, "HORSE_HAS_ACTIVE_PLAN", `Ngựa đang áp dụng giáo án ${other.phaseName}.`, { planId: other.id });
+        if (mine.filter((w) => w.status !== "CANCELLED").length === 0) {
+          throw new ApiError(400, "PLAN_HAS_NO_WORKOUTS", "Giáo án phải có ít nhất 1 buổi tập trước khi kích hoạt.");
+        }
+        if (plan.endDate.slice(0, 10) < todayIso()) throw new ApiError(400, "PLAN_ENDED", "Ngày kết thúc của giáo án đã qua.");
+        if (MEDICAL.includes(horse.status) && !body.vetConsulted) {
+          throw new ApiError(409, "VET_CONFIRMATION_REQUIRED", `Ngựa đang ở trạng thái ${horse.status}.`, { horseStatus: horse.status });
+        }
+        if (body.moveHorseToTraining && horse.status === "RESTING") {
+          const horses = getStoredHorses();
+          const h = horses.find((x) => x.id === horse.id);
+          if (h) h.status = "IN_TRAINING";
+          saveStoredHorses(horses);
+        }
+      } else if (to === "COMPLETED" || to === "CANCELLED") {
+        const from = to === "COMPLETED" ? ["ACTIVE"] : ["DRAFT", "ACTIVE"];
+        if (!from.includes(plan.status)) throw new ApiError(400, "INVALID_PLAN_TRANSITION", "Trạng thái giáo án không cho phép thao tác này.");
+        if (to === "COMPLETED") {
+          if (String(body.summary ?? "").trim().length < 10) throw new ApiError(400, "SUMMARY_REQUIRED", "Nhận xét phải từ 10 đến 2000 ký tự.");
+          plan.completionSummary = String(body.summary).trim();
+        } else {
+          if (String(body.reason ?? "").trim().length < 10) throw new ApiError(400, "REASON_REQUIRED", "Lý do phải từ 10 đến 500 ký tự.");
+          plan.cancelReason = String(body.reason).trim();
+        }
+        for (const w of mine) {
+          if (PENDING.includes(w.status)) {
+            w.status = "CANCELLED";
+            w.statusReason = "Giáo án đã kết thúc";
+          }
+        }
+        saveStoredWorkouts(workouts);
+      } else {
+        throw new ApiError(400, "VALIDATION", "Trạng thái không hợp lệ.");
       }
-      p.status = String(body.status) as any;
-      if (body.status === "CANCELLED") p.cancelledReason = String(body.reason || "");
-      if (body.status === "COMPLETED") p.completedAt = new Date().toISOString().split("T")[0];
-      p.updatedAt = new Date().toISOString().split("T")[0];
+      plan.status = to as MockPlan["status"];
       saveStoredPlans(plans);
-      return p;
+      audit(db, user.fullName, `TRAINING_PLAN_${to}`, `Training plan "${plan.phaseName}" -> ${to}`);
+      return decoratePlan(plan);
     },
   },
   {
     method: "POST",
     pattern: /^\/training\/plans\/([^/]+)\/clone$/,
-    handler({ params, body }) {
-      const plans = getStoredPlans();
-      const source = plans.find((x) => x.id === params[0]);
-      if (!source) throw new ApiError(404, "NOT_FOUND", "Source training plan not found");
-      const cloned = {
-        ...JSON.parse(JSON.stringify(source)),
+    handler({ db, params, body }) {
+      const user = currentUser(db);
+      trainingRole(user, ["HEAD_TRAINER"]);
+      const source = getStoredPlans().find((x) => x.id === params[0]);
+      if (!source) throw new ApiError(404, "PLAN_NOT_FOUND", "Training plan not found.");
+      const horse = mockHorse(String(body.targetHorseId));
+      if (horse.status === "RETIRED") throw new ApiError(400, "HORSE_RETIRED", "Ngựa đã ngừng quản lý.");
+      const start = body.startDate ? new Date(String(body.startDate)) : new Date(`${todayIso()}T00:00:00+07:00`);
+      if (start.toISOString().slice(0, 10) < todayIso()) {
+        throw new ApiError(400, "START_DATE_IN_PAST", "Ngày bắt đầu không được trước ngày hiện tại.");
+      }
+      const shift = start.getTime() - new Date(source.startDate).getTime();
+      const plan: MockPlan = {
+        ...source,
         id: `plan-${Date.now()}`,
-        planCode: `PLAN-2026-${Math.floor(100 + Math.random() * 900)}`,
-        name: `${source.name} (Copy)`,
-        horseId: String(body.targetHorseId),
-        horseName: String(body.targetHorseName),
+        horseId: horse.id,
+        trainerUserId: user.id,
+        phaseName: body.name ? String(body.name) : `${source.phaseName} (bản sao)`,
+        startDate: start.toISOString(),
+        endDate: new Date(new Date(source.endDate).getTime() + shift).toISOString(),
         status: "DRAFT",
-        createdAt: new Date().toISOString().split("T")[0],
-        updatedAt: new Date().toISOString().split("T")[0],
+        cancelReason: null,
+        completionSummary: null,
+        createdAt: new Date().toISOString(),
       };
-      plans.unshift(cloned);
-      saveStoredPlans(plans);
-      return cloned;
+      if (body.copyWorkouts !== false) {
+        const copies = getStoredWorkouts()
+          .filter((w) => w.trainingPlanId === source.id && w.status !== "CANCELLED")
+          .map((w) => ({ ...w, date: new Date(new Date(w.scheduledDate).getTime() + shift) }))
+          .filter(({ date }) => date.getTime() >= Date.now())
+          .map(({ date, ...w }, i) => {
+            const blocked = horse.isLocked && isHeavyMock(w);
+            return {
+              ...w,
+              id: `w-${Date.now()}-${i}`,
+              trainingPlanId: plan.id,
+              horseId: horse.id,
+              scheduledDate: date.toISOString(),
+              status: (blocked ? "BLOCKED" : "SCHEDULED") as MockWorkout["status"],
+              statusReason: blocked ? "Ngựa đang bị Khóa huấn luyện y tế" : null,
+              actualTimeSeconds: null,
+              heartRatePeak: null,
+              heartRateRecovery: null,
+              averageSpeedKmh: null,
+              topSpeedKmh: null,
+              performanceScore: null,
+              resultRecordedAt: null,
+              abnormalSigns: false,
+              abnormalNotes: null,
+            };
+          });
+        saveStoredWorkouts([...getStoredWorkouts(), ...copies]);
+      }
+      saveStoredPlans([plan, ...getStoredPlans()]);
+      return decoratePlan(plan);
+    },
+  },
+  {
+    method: "DELETE",
+    pattern: /^\/training\/plans\/([^/]+)$/,
+    handler({ db, params }) {
+      trainingRole(currentUser(db), ["HEAD_TRAINER"]);
+      const plan = getStoredPlans().find((x) => x.id === params[0]);
+      if (!plan) throw new ApiError(404, "PLAN_NOT_FOUND", "Training plan not found.");
+      const done = getStoredWorkouts().some((w) => w.trainingPlanId === plan.id && w.status === "COMPLETED");
+      if (plan.status !== "DRAFT" || done) {
+        throw new ApiError(409, "PLAN_NOT_DELETABLE", "Chỉ xóa được giáo án Nháp chưa có buổi tập hoàn thành.");
+      }
+      saveStoredPlans(getStoredPlans().filter((x) => x.id !== plan.id));
+      saveStoredWorkouts(getStoredWorkouts().filter((w) => w.trainingPlanId !== plan.id));
+      return { message: "Training plan deleted successfully." };
     },
   },
   {
     method: "GET",
     pattern: /^\/training\/workouts$/,
-    handler({ url }) {
-      const planId = url.searchParams.get("planId");
-      const horseId = url.searchParams.get("horseId");
-      const date = url.searchParams.get("date");
-      const status = url.searchParams.get("status");
-      let workouts = getStoredWorkouts();
-      if (planId) workouts = workouts.filter((w) => w.planId === planId);
-      if (horseId) workouts = workouts.filter((w) => w.horseId === horseId);
-      if (date) workouts = workouts.filter((w) => w.sessionDate === date);
-      if (status) workouts = workouts.filter((w) => w.status === status);
-      return workouts;
+    handler({ db, url }) {
+      const user = currentUser(db);
+      sweepTraining();
+      return listWorkouts(user, url);
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/training\/trial-runs$/,
+    handler({ db, url }) {
+      const user = currentUser(db);
+      trainingRole(user, ["CLUB_MANAGER", "HEAD_TRAINER", "VETERINARIAN"]);
+      return listWorkouts(user, url).filter((w) => w.workoutType === "TRIAL");
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/training\/grooms$/,
+    handler({ db }) {
+      trainingRole(currentUser(db), ["HEAD_TRAINER"]);
+      return db.accounts
+        .filter((a) => a.role === "GROOM" && a.status === "ACTIVE")
+        .map((a) => ({ id: a.id, fullName: a.fullName, email: a.email }));
     },
   },
   {
     method: "GET",
     pattern: /^\/training\/workouts\/([^/]+)$/,
-    handler({ params }) {
+    handler({ db, params }) {
+      const user = currentUser(db);
       const w = getStoredWorkouts().find((x) => x.id === params[0]);
-      if (!w) throw new ApiError(404, "NOT_FOUND", "Workout session not found");
-      return w;
+      if (!w || (user.role === "GROOM" && w.assignedStaffUserId !== user.id)) {
+        throw new ApiError(404, "WORKOUT_NOT_FOUND", "Workout session not found.");
+      }
+      return decorateWorkout(w);
     },
   },
   {
     method: "POST",
     pattern: /^\/training\/plans\/([^/]+)\/workouts$/,
-    handler({ params, body }) {
+    handler({ db, params, body }) {
+      const user = currentUser(db);
+      trainingRole(user, ["HEAD_TRAINER"]);
       const plan = getStoredPlans().find((x) => x.id === params[0]);
-      if (!plan) throw new ApiError(404, "NOT_FOUND", "Training plan not found");
-      const horses = getStoredHorses();
-      const horse = horses.find((h) => h.id === plan.horseId);
-      if (horse?.isLocked) {
-        throw new ApiError(
-          400,
-          "MEDICAL_LOCK_ACTIVE",
-          `Cannot schedule workout: Horse is currently under an active Medical Lock (RULE-MED-01). Reason: ${horse.lockReason || "Medical hold"}.`
-        );
-      }
-      const workouts = getStoredWorkouts();
-      const newWorkout: ExerciseSession = {
-        id: `ses-${Date.now()}`,
-        planId: plan.id,
-        planName: plan.name,
+      if (!plan) throw new ApiError(404, "PLAN_NOT_FOUND", "Training plan not found.");
+      const type = String(body.workoutType);
+      const draft: MockWorkout = {
+        id: `w-${Date.now()}`,
+        trainingPlanId: plan.id,
         horseId: plan.horseId,
-        horseName: plan.horseName,
-        horseCode: plan.horseCode,
-        sessionDate: String(body.scheduledDate || new Date().toISOString().split("T")[0]),
-        startTime: "07:00",
-        endTime: "08:00",
-        sessionType: (body.workoutType as any) || "CANTER",
-        intensity: (body.intensity as any) || "MODERATE",
-        status: (body.status as any) || "SCHEDULED",
-        targetDistanceMeters: Number(body.distanceMeters || 1200),
-        notes: body.trainerNotes ? String(body.trainerNotes) : undefined,
-        trackType: (body.trackSurface as any) || "TURF",
-        jockeyName: body.jockeyName ? String(body.jockeyName) : undefined,
+        phaseId: body.phaseId ? String(body.phaseId) : null,
+        scheduledDate: new Date(String(body.scheduledDate)).toISOString(),
+        workoutType: type,
+        intensity: type === "BREEZE" || type === "TRIAL" ? "HEAVY" : String(body.intensity),
+        trackSurface: type === "SWIM" || type === "TREADMILL" ? "NONE" : String(body.trackSurface),
+        distanceMeters: Number(body.distanceMeters),
+        repetitions: Number(body.repetitions ?? 1),
+        targetSpeedKmh: body.targetSpeedKmh == null ? null : Number(body.targetSpeedKmh),
+        jockeyName: body.jockeyName ? String(body.jockeyName) : null,
+        assignedStaffUserId: String(body.assignedStaffUserId ?? ""),
+        trainerNotes: body.trainerNotes ? String(body.trainerNotes) : null,
+        status: "SCHEDULED",
+        statusReason: null,
+        medicalOverride: false,
+        abnormalSigns: false,
       };
-      workouts.push(newWorkout);
-      saveStoredWorkouts(workouts);
-      return newWorkout;
+      draft.medicalOverride = assertWorkoutAllowedMock(db, plan, draft, Boolean(body.vetConsulted));
+      assertWarningsMock(db, plan, draft, Boolean(body.acknowledgeWarnings));
+      saveStoredWorkouts([...getStoredWorkouts(), draft]);
+      audit(db, user.fullName, "CREATE_WORKOUT_SESSION", `Scheduled ${type} for plan "${plan.phaseName}"`);
+      return decorateWorkout(draft);
     },
   },
   {
-    method: "PATCH",
-    pattern: /^\/training\/workouts\/([^/]+)$/,
-    handler({ params, body }) {
-      const workouts = getStoredWorkouts();
-      const w = workouts.find((x) => x.id === params[0]);
-      if (!w) throw new ApiError(404, "NOT_FOUND", "Workout session not found");
-      Object.assign(w, body);
-      if (body.status === "COMPLETED" && !w.result) {
-        w.result = {
-          id: `res-${Date.now()}`,
-          sessionId: w.id,
-          actualDistanceMeters: w.targetDistanceMeters || 1200,
-          actualDurationSeconds: Number(body.actualTimeSeconds || 75),
-          avgSpeedKmh: Number(body.averageSpeedKmh || 42),
-          maxSpeedKmh: Number(body.topSpeedKmh || 50),
-          avgHeartRate: 140,
-          maxHeartRate: Number(body.heartRatePeak || 170),
-          performanceScore: Number(body.performanceScore || 8),
-          hasAbnormalSigns: false,
-          alertSentToVet: false,
-          recordedAt: new Date().toISOString().replace("T", " ").substring(0, 16),
-          recordedBy: "David Nguyen (Head Trainer)",
-        };
+    method: "POST",
+    pattern: /^\/training\/workouts\/([^/]+)\/cancel$/,
+    handler({ db, params, body }) {
+      trainingRole(currentUser(db), ["HEAD_TRAINER"]);
+      const rows = getStoredWorkouts();
+      const w = rows.find((x) => x.id === params[0]);
+      if (!w) throw new ApiError(404, "WORKOUT_NOT_FOUND", "Workout session not found.");
+      if (!PENDING.includes(w.status)) throw new ApiError(400, "WORKOUT_NOT_CANCELLABLE", "Buổi tập đã hoàn thành hoặc đã hủy.");
+      if (!body.reason) throw new ApiError(400, "VALIDATION", "Vui lòng chọn lý do.");
+      if (body.reason === "OTHER" && String(body.note ?? "").trim().length < 10) {
+        throw new ApiError(400, "NOTE_REQUIRED", "Ghi chú phải từ 10 đến 500 ký tự.");
       }
-      saveStoredWorkouts(workouts);
-      return w;
+      w.status = "CANCELLED";
+      w.statusReason = [String(body.reason), body.note ? String(body.note) : ""].filter(Boolean).join(": ");
+      saveStoredWorkouts(rows);
+      return decorateWorkout(w);
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/training\/workouts\/([^/]+)\/restore$/,
+    handler({ db, params, body }) {
+      trainingRole(currentUser(db), ["HEAD_TRAINER"]);
+      const rows = getStoredWorkouts();
+      const w = rows.find((x) => x.id === params[0]);
+      if (!w) throw new ApiError(404, "WORKOUT_NOT_FOUND", "Workout session not found.");
+      if (w.status !== "BLOCKED") throw new ApiError(400, "WORKOUT_NOT_BLOCKED", "Chỉ khôi phục được buổi tập Bị chặn.");
+      const plan = getStoredPlans().find((x) => x.id === w.trainingPlanId)!;
+      const draft = { ...w, scheduledDate: body.scheduledDate ? new Date(String(body.scheduledDate)).toISOString() : w.scheduledDate };
+      assertWorkoutAllowedMock(db, plan, draft, Boolean(w.medicalOverride), w.id);
+      w.status = "SCHEDULED";
+      w.scheduledDate = draft.scheduledDate;
+      w.statusReason = null;
+      saveStoredWorkouts(rows);
+      return decorateWorkout(w);
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/training\/workouts\/([^/]+)\/result$/,
+    handler({ db, params, body }) {
+      const user = currentUser(db);
+      trainingRole(user, ["HEAD_TRAINER"]);
+      const rows = getStoredWorkouts();
+      const w = rows.find((x) => x.id === params[0]);
+      if (!w) throw new ApiError(404, "WORKOUT_NOT_FOUND", "Workout session not found.");
+      if (w.status === "SCHEDULED" && new Date(w.scheduledDate).getTime() > Date.now()) {
+        throw new ApiError(400, "WORKOUT_NOT_STARTED", "Chỉ ghi kết quả khi buổi tập đã tới giờ bắt đầu.");
+      }
+      if (w.status === "BLOCKED" || w.status === "CANCELLED") {
+        throw new ApiError(400, "WORKOUT_NOT_RECORDABLE", "Buổi tập bị chặn hoặc đã hủy nên không ghi kết quả.");
+      }
+      if (w.status === "MISSED" && Date.now() - new Date(w.scheduledDate).getTime() > 8 * 24 * 3600_000) {
+        throw new ApiError(400, "LATE_RESULT_EXPIRED", "Đã quá 7 ngày, không thể ghi kết quả cho buổi tập bỏ lỡ.");
+      }
+      const editing = w.status === "COMPLETED";
+      if (editing && w.resultRecordedAt && Date.now() - new Date(w.resultRecordedAt).getTime() > 48 * 3600_000) {
+        throw new ApiError(400, "RESULT_EDIT_EXPIRED", "Chỉ sửa được kết quả trong 48 giờ sau khi ghi.");
+      }
+      const noTime = ["WALK", "SWIM", "TREADMILL"].includes(String(w.workoutType));
+      if (body.actualTimeSeconds == null && !noTime) throw new ApiError(400, "TIME_REQUIRED", "Thời gian chạy là bắt buộc.");
+      if (body.heartRatePeak != null && body.heartRateRecovery != null && Number(body.heartRateRecovery) > Number(body.heartRatePeak)) {
+        throw new ApiError(400, "RECOVERY_ABOVE_PEAK", "Nhịp tim sau 10 phút không được lớn hơn nhịp tim tối đa.");
+      }
+      const signs = Array.isArray(body.abnormalSignTypes) ? (body.abnormalSignTypes as string[]) : [];
+      if (signs.length > 0 && String(body.abnormalNotes ?? "").trim().length < 10) {
+        throw new ApiError(400, "ABNORMAL_NOTES_REQUIRED", "Vui lòng mô tả dấu hiệu bất thường.");
+      }
+      const distance = Number(body.actualDistanceMeters);
+      const time = body.actualTimeSeconds == null ? null : Number(body.actualTimeSeconds);
+      const nowIso = new Date().toISOString();
+      Object.assign(w, {
+        status: "COMPLETED",
+        actualDistanceMeters: distance,
+        actualTimeSeconds: time,
+        averageSpeedKmh: time ? Math.round((distance / time) * 3.6 * 10) / 10 : null,
+        actualSurface: body.actualSurface ?? w.trackSurface,
+        trackCondition: body.trackCondition ?? null,
+        heartRatePeak: body.heartRatePeak ?? null,
+        heartRateRecovery: body.heartRateRecovery ?? null,
+        performanceScore: Number(body.performanceScore),
+        completionLevel: String(body.completionLevel),
+        resultNotes: String(body.trainerNotes ?? ""),
+        abnormalSignTypes: signs,
+        abnormalSigns: signs.length > 0,
+        abnormalNotes: signs.length > 0 ? String(body.abnormalNotes) : null,
+        ...(editing
+          ? { resultUpdatedAt: nowIso, resultUpdatedById: user.id }
+          : { resultRecordedAt: nowIso, resultRecordedById: user.id }),
+      });
+      saveStoredWorkouts(rows);
+      audit(db, user.fullName, "RECORD_WORKOUT_RESULT", `Recorded result for workout ${w.id}`);
+      return decorateWorkout(w);
     },
   },
   {
     method: "GET",
     pattern: /^\/training\/horses\/([^/]+)\/fitness-metrics$/,
-    handler({ params }) {
-      return getStoredFitnessMetrics(params[0]);
+    handler({ db, params, url }) {
+      const user = currentUser(db);
+      const h = mockHorse(params[0]);
+      const weeks = [4, 12, 26].includes(Number(url.searchParams.get("weeks"))) ? Number(url.searchParams.get("weeks")) : 12;
+      const from = Date.now() - weeks * 7 * 24 * 3600_000;
+      const done = getStoredWorkouts()
+        .filter((w) => w.horseId === h.id && w.status === "COMPLETED")
+        .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate));
+      const points = done
+        .filter((w) => new Date(w.scheduledDate).getTime() >= from)
+        .map((w) => ({
+          workoutId: w.id,
+          date: w.scheduledDate,
+          workoutType: w.workoutType,
+          distanceMeters: w.actualDistanceMeters ?? w.distanceMeters * (w.repetitions ?? 1),
+          timeSeconds: w.actualTimeSeconds ?? null,
+          avgSpeedKmh: ["CANTER", "BREEZE", "TRIAL"].includes(String(w.workoutType)) ? (w.averageSpeedKmh ?? null) : null,
+          maxHeartRate: w.heartRatePeak ?? null,
+          recoveryHeartRate: w.heartRateRecovery ?? null,
+          performanceScore: user.role === "GROOM" ? null : (w.performanceScore ?? null),
+          load: loadMock(w),
+          hasAlert: Boolean(w.abnormalSigns),
+        }));
+      const weekly = new Map<string, number>();
+      for (const pt of points) {
+        const key = mondayOf(pt.date);
+        weekly.set(key, Math.round(((weekly.get(key) ?? 0) + pt.load) * 10) / 10);
+      }
+      const load7d = sumLoadMock(done, 7, 0);
+      const avg4w = sumLoadMock(done, 35, 7) / 4;
+      const last4 = points.slice(-4);
+      const avg = (xs: (number | null)[]) => {
+        const v = xs.filter((x): x is number => x != null);
+        return v.length ? Math.round((v.reduce((a, b) => a + b, 0) / v.length) * 10) / 10 : null;
+      };
+      const best = points.reduce<{ value: number; date: string } | null>(
+        (m, pt) => (pt.avgSpeedKmh != null && (!m || pt.avgSpeedKmh > m.value) ? { value: pt.avgSpeedKmh, date: pt.date } : m),
+        null,
+      );
+      const stored = getStoredHorses().find((x) => x.id === h.id);
+      return {
+        horse: { id: h.id, name: h.name, horseCode: h.horseCode, status: h.status, isMedicalLocked: h.isLocked },
+        points,
+        weeklyLoad: [...weekly.entries()].map(([weekStart, load]) => ({ weekStart, load })),
+        lockPeriods: stored?.isLocked ? [{ from: stored.lockDate ?? new Date().toISOString(), to: null }] : [],
+        summary: {
+          bestAvgSpeed: best,
+          avgScoreLast4: avg(last4.map((pt) => pt.performanceScore)),
+          avgRecoveryLast4: avg(last4.map((pt) => pt.recoveryHeartRate)),
+          load7d,
+          loadChangePct: avg4w > 0 ? Math.round(((load7d - avg4w) / avg4w) * 100) : null,
+        },
+      };
     },
   },
   {
     method: "GET",
-    pattern: /^\/training\/trial-runs$/,
-    handler() {
-      return getStoredTrialRuns();
+    pattern: /^\/training\/overview$/,
+    handler({ db }) {
+      trainingRole(currentUser(db), ["CLUB_MANAGER", "HEAD_TRAINER", "VETERINARIAN"]);
+      sweepTraining();
+      const today = todayIso();
+      const horses = getStoredHorses().filter((h) => horseStatusOf(h) !== "RETIRED");
+      const plans = getStoredPlans().filter((p) => p.status === "ACTIVE");
+      const all = getStoredWorkouts();
+      const rows = horses.map((h) => {
+        const plan = plans.find((p) => p.horseId === h.id);
+        const phases = (plan && Array.isArray(plan.phases) ? plan.phases : []) as { name: string; startDate: string; endDate: string }[];
+        const ph = phases.find((x) => x.startDate <= today && today <= x.endDate);
+        const done = all.filter((w) => w.horseId === h.id && w.status === "COMPLETED").sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate));
+        const scored = done.filter((w) => w.performanceScore != null);
+        const prev3 = scored.slice(-4, -1).map((w) => w.performanceScore as number);
+        const load7d = sumLoadMock(done, 7, 0);
+        const avg4w = sumLoadMock(done, 35, 7) / 4;
+        const next = all
+          .filter((w) => w.horseId === h.id && w.status === "SCHEDULED" && new Date(w.scheduledDate).getTime() >= Date.now())
+          .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate))[0];
+        const dayMs = 24 * 3600_000;
+        return {
+          horse: { id: h.id, name: h.name, horseCode: h.horseCode ?? h.code, status: horseStatusOf(h), isMedicalLocked: Boolean(h.isLocked) },
+          plan: plan ? { id: plan.id, planCode: plan.planCode, name: plan.phaseName } : null,
+          currentPhase: ph
+            ? {
+                name: ph.name,
+                week: Math.floor((Date.parse(today) - Date.parse(ph.startDate)) / (7 * dayMs)) + 1,
+                weeks: Math.ceil((Date.parse(ph.endDate) - Date.parse(ph.startDate) + dayMs) / (7 * dayMs)),
+              }
+            : null,
+          progress: plan ? progressMock(plan.id) : null,
+          latestScore: scored[scored.length - 1]?.performanceScore ?? null,
+          previousAvgScore: prev3.length ? Math.round((prev3.reduce((a, b) => a + b, 0) / prev3.length) * 10) / 10 : null,
+          load7d,
+          loadSpike: avg4w > 0 && load7d > avg4w * 1.3,
+          nextWorkout: next ? { date: next.scheduledDate, workoutType: next.workoutType } : null,
+        };
+      });
+      const todays = all.filter((w) => clubDay(w.scheduledDate) === today && w.status !== "CANCELLED");
+      const in7 = new Date(Date.now() + 8 * 24 * 3600_000).toISOString().slice(0, 10);
+      return {
+        kpis: {
+          activePlans: plans.length,
+          managedHorses: horses.length,
+          todayCompleted: todays.filter((w) => w.status === "COMPLETED").length,
+          todayTotal: todays.length,
+          blockedNext7Days: all.filter((w) => w.status === "BLOCKED" && clubDay(w.scheduledDate) >= today && clubDay(w.scheduledDate) < in7).length,
+          loadSpikeHorses: rows.filter((r) => r.loadSpike).length,
+        },
+        rows,
+      };
     },
   },
   {
     method: "POST",
-    pattern: /^\/training\/trial-runs$/,
-    handler({ body }) {
-      const trials = getStoredTrialRuns();
-      const newTrial: TrialRunSchedule = {
-        id: `trial-${Date.now()}`,
-        runCode: `TR-2026-W${Math.floor(35 + Math.random() * 15)}-${Math.floor(1 + Math.random() * 9)}`,
-        runDate: String(body.runDate || new Date().toISOString().split("T")[0]),
-        trackType: (body.trackType as any) || "TURF",
-        orderNumber: trials.length + 1,
-        distanceMeters: Number(body.distanceMeters || 1200),
-        startTime: String(body.startTime || "07:00"),
-        status: "PENDING",
-        horses: (body.horses as any) || [],
-        coordinatorName: "David Nguyen (Head Trainer)",
-        notes: body.notes ? String(body.notes) : "",
+    pattern: /^\/training\/plans\/([^/]+)\/workouts\/repeat$/,
+    handler({ db, params, body }) {
+      const user = currentUser(db);
+      trainingRole(user, ["HEAD_TRAINER"]);
+      const plan = getStoredPlans().find((x) => x.id === params[0]);
+      if (!plan) throw new ApiError(404, "PLAN_NOT_FOUND", "Training plan not found.");
+      const weekdays = Array.isArray(body.weekdays) ? (body.weekdays as number[]) : [];
+      if (weekdays.length === 0) throw new ApiError(400, "VALIDATION", "Vui lòng chọn ít nhất 1 thứ trong tuần.");
+      const first = new Date(String(body.scheduledDate));
+      const time = new Date(first.getTime() + 7 * 3600_000).toISOString().slice(11, 16);
+      const until = String(body.until).slice(0, 10);
+      const dates: string[] = [];
+      for (let d = clubDay(first.toISOString()); d <= until; d = new Date(Date.parse(`${d}T00:00:00Z`) + 24 * 3600_000).toISOString().slice(0, 10)) {
+        const weekday = new Date(`${d}T00:00:00Z`).getUTCDay() || 7;
+        if (weekdays.includes(weekday)) dates.push(d);
+      }
+      if (dates.length > 60) throw new ApiError(400, "TOO_MANY_REPEATS", "Mỗi lần chỉ tạo tối đa 60 buổi tập.");
+      const skippable = ["MEDICAL_LOCK_ACTIVE", "HORSE_RETIRED", "TRIAL_SLOT_TAKEN", "MAX_WORKOUTS_PER_DAY", "DATE_IN_PAST", "OUTSIDE_PHASE_DATES", "OUTSIDE_PLAN_DATES"];
+      let created = 0;
+      const skipped: { date: string; reason: string }[] = [];
+      dates.forEach((d, i) => {
+        const type = String(body.workoutType);
+        const draft: MockWorkout = {
+          id: `w-${Date.now()}-${i}`,
+          trainingPlanId: plan.id,
+          horseId: plan.horseId,
+          phaseId: String(body.phaseId),
+          scheduledDate: new Date(`${d}T${time}:00+07:00`).toISOString(),
+          workoutType: type,
+          intensity: type === "BREEZE" || type === "TRIAL" ? "HEAVY" : String(body.intensity),
+          trackSurface: type === "SWIM" || type === "TREADMILL" ? "NONE" : String(body.trackSurface),
+          distanceMeters: Number(body.distanceMeters),
+          repetitions: Number(body.repetitions ?? 1),
+          targetSpeedKmh: body.targetSpeedKmh == null ? null : Number(body.targetSpeedKmh),
+          jockeyName: body.jockeyName ? String(body.jockeyName) : null,
+          assignedStaffUserId: String(body.assignedStaffUserId ?? ""),
+          trainerNotes: body.trainerNotes ? String(body.trainerNotes) : null,
+          status: "SCHEDULED",
+          statusReason: null,
+          medicalOverride: false,
+          abnormalSigns: false,
+          abnormalSignTypes: [],
+        };
+        try {
+          draft.medicalOverride = assertWorkoutAllowedMock(db, plan, draft, Boolean(body.vetConsulted));
+          saveStoredWorkouts([...getStoredWorkouts(), draft]);
+          created += 1;
+        } catch (e) {
+          if (!(e instanceof ApiError) || !skippable.includes(e.code)) throw e;
+          skipped.push({ date: d, reason: e.message });
+        }
+      });
+      return { created, skipped };
+    },
+  },
+  {
+    method: "PATCH",
+    pattern: /^\/training\/workouts\/([^/]+)$/,
+    handler({ db, params, body }) {
+      trainingRole(currentUser(db), ["HEAD_TRAINER"]);
+      const rows = getStoredWorkouts();
+      const w = rows.find((x) => x.id === params[0]);
+      if (!w) throw new ApiError(404, "WORKOUT_NOT_FOUND", "Workout session not found.");
+      if (w.status !== "SCHEDULED" || new Date(w.scheduledDate).getTime() <= Date.now()) {
+        throw new ApiError(400, "WORKOUT_NOT_EDITABLE", "Chỉ sửa được buổi tập Đã lên lịch và chưa tới giờ bắt đầu.");
+      }
+      const plan = getStoredPlans().find((x) => x.id === w.trainingPlanId)!;
+      const type = String(body.workoutType ?? w.workoutType);
+      const next: MockWorkout = {
+        ...w,
+        ...(body.scheduledDate ? { scheduledDate: new Date(String(body.scheduledDate)).toISOString() } : {}),
+        phaseId: body.phaseId ? String(body.phaseId) : w.phaseId,
+        workoutType: type,
+        intensity: type === "BREEZE" || type === "TRIAL" ? "HEAVY" : String(body.intensity ?? w.intensity),
+        trackSurface: type === "SWIM" || type === "TREADMILL" ? "NONE" : String(body.trackSurface ?? w.trackSurface),
+        distanceMeters: Number(body.distanceMeters ?? w.distanceMeters),
+        repetitions: Number(body.repetitions ?? w.repetitions ?? 1),
+        targetSpeedKmh: body.targetSpeedKmh === undefined ? w.targetSpeedKmh : body.targetSpeedKmh == null ? null : Number(body.targetSpeedKmh),
+        jockeyName: body.jockeyName === undefined ? w.jockeyName : body.jockeyName ? String(body.jockeyName) : null,
+        assignedStaffUserId: String(body.assignedStaffUserId ?? w.assignedStaffUserId ?? ""),
+        trainerNotes: body.trainerNotes === undefined ? w.trainerNotes : String(body.trainerNotes),
       };
-      trials.push(newTrial);
-      saveStoredTrialRuns(trials);
-      return newTrial;
+      next.medicalOverride = assertWorkoutAllowedMock(db, plan, next, Boolean(body.vetConsulted ?? w.medicalOverride), w.id);
+      assertWarningsMock(db, plan, next, Boolean(body.acknowledgeWarnings), w.id);
+      Object.assign(w, next);
+      saveStoredWorkouts(rows);
+      return decorateWorkout(w);
     },
   },
   {
     method: "GET",
     pattern: /^\/training\/alerts$/,
-    handler() {
-      return getStoredAlerts();
+    handler({ db }) {
+      trainingRole(currentUser(db), ["HEAD_TRAINER", "VETERINARIAN"]);
+      return getStoredWorkouts()
+        .filter((w) => w.abnormalSigns)
+        .sort((a, b) => String(b.resultRecordedAt).localeCompare(String(a.resultRecordedAt)))
+        .map(decorateWorkout);
     },
   },
   {
     method: "PATCH",
     pattern: /^\/training\/alerts\/([^/]+)$/,
-    handler({ params, body }) {
-      const alerts = getStoredAlerts();
-      const a = alerts.find((x) => x.id === params[0]);
-      if (!a) throw new ApiError(404, "NOT_FOUND", "Training alert not found");
-      a.acknowledgedByVet = true;
-      if (body.vetNotes) a.vetNotes = String(body.vetNotes);
-      saveStoredAlerts(alerts);
-      return a;
+    handler({ db, params, body }) {
+      trainingRole(currentUser(db), ["VETERINARIAN"]);
+      const rows = getStoredWorkouts();
+      const w = rows.find((x) => x.id === params[0] && x.abnormalSigns);
+      if (!w) throw new ApiError(404, "ALERT_NOT_FOUND", "Training alert not found.");
+      w.vetAcknowledgedAt = new Date().toISOString();
+      w.vetNotes = String(body.vetNotes ?? "");
+      saveStoredWorkouts(rows);
+      return decorateWorkout(w);
     },
   },
 ];
+
+// ------------------------------------------------------------------ Flow 2: hàm phụ của mock huấn luyện
+
+const MEDICAL = ["UNDER_OBSERVATION", "INJURED", "ISOLATED"];
+const PENDING = ["SCHEDULED", "BLOCKED", "MISSED"];
+
+function todayIso(): string {
+  return new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function clubDay(iso: string): string {
+  return new Date(new Date(iso).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function trainingRole(user: Account, roles: string[]): void {
+  if (!roles.includes(user.role)) throw new ApiError(403, "FORBIDDEN", "This action is not part of your permissions.");
+}
+
+function isHeavyMock(w: Pick<MockWorkout, "workoutType" | "intensity">): boolean {
+  return w.intensity === "HEAVY" || w.workoutType === "BREEZE" || w.workoutType === "TRIAL";
+}
+
+function mockHorse(id: string) {
+  const h = getStoredHorses().find((x) => x.id === id);
+  if (!h) throw new ApiError(404, "HORSE_NOT_FOUND", "Target horse not found.");
+  return { id: h.id, name: h.name, horseCode: h.horseCode ?? h.code, status: horseStatusOf(h), isLocked: Boolean(h.isLocked), ownerId: h.ownerId };
+}
+
+function decoratePlan(p: MockPlan) {
+  const h = getStoredHorses().find((x) => x.id === p.horseId);
+  return {
+    ...p,
+    horseOwnerId: h?.ownerId,
+    horse: h ? { id: h.id, name: h.name, horseCode: h.horseCode ?? h.code, status: horseStatusOf(h), isMedicalLocked: Boolean(h.isLocked) } : undefined,
+    trainer: { fullName: "Đinh Quang Trung" },
+    _count: { workoutSessions: getStoredWorkouts().filter((w) => w.trainingPlanId === p.id).length },
+    progress: progressMock(p.id),
+  };
+}
+
+function decorateWorkout(w: MockWorkout) {
+  const h = getStoredHorses().find((x) => x.id === w.horseId);
+  const plan = getStoredPlans().find((x) => x.id === w.trainingPlanId);
+  const groom = getDb().accounts.find((a) => a.id === w.assignedStaffUserId);
+  return {
+    ...w,
+    horse: h
+      ? {
+          id: h.id,
+          name: h.name,
+          horseCode: h.horseCode ?? h.code,
+          status: horseStatusOf(h),
+          isMedicalLocked: Boolean(h.isLocked),
+          stallAllocations: h.stall ? [{ stall: { code: h.stall } }] : [],
+        }
+      : undefined,
+    assignedStaff: groom ? { id: groom.id, fullName: groom.fullName } : null,
+    trainingPlan: plan ? { id: plan.id, phaseName: plan.phaseName, status: plan.status, phases: plan.phases } : null,
+    resultRecordedBy: nameOf(w.resultRecordedById),
+    resultUpdatedBy: nameOf(w.resultUpdatedById),
+  };
+}
+
+function listWorkouts(user: Account, url: URL) {
+  const q = (k: string) => url.searchParams.get(k);
+  let rows = getStoredWorkouts();
+  if (q("planId")) rows = rows.filter((w) => w.trainingPlanId === q("planId"));
+  if (q("horseId")) rows = rows.filter((w) => w.horseId === q("horseId"));
+  if (q("status")) rows = rows.filter((w) => w.status === q("status"));
+  if (q("date")) rows = rows.filter((w) => clubDay(w.scheduledDate) === q("date"));
+  if (q("from")) rows = rows.filter((w) => clubDay(w.scheduledDate) >= String(q("from")));
+  if (q("to")) rows = rows.filter((w) => clubDay(w.scheduledDate) <= String(q("to")));
+  if (user.role === "GROOM") rows = rows.filter((w) => w.assignedStaffUserId === user.id);
+  if (user.role === "HORSE_OWNER") {
+    const mine = new Set(getStoredHorses().filter((h) => h.ownerId === user.id).map((h) => h.id));
+    rows = rows.filter((w) => mine.has(w.horseId));
+  }
+  return rows
+    .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate))
+    .map((w) => ({ ...decorateWorkout(w), ...(user.role === "GROOM" ? { performanceScore: null } : {}) }));
+}
+
+function nameOf(userId?: string | null) {
+  if (!userId) return null;
+  const a = getDb().accounts.find((x) => x.id === userId);
+  return a ? { fullName: a.fullName } : null;
+}
+
+/** Hoàn thành / đã đến hạn (không tính buổi đã hủy). */
+function progressMock(planId: string) {
+  const due = getStoredWorkouts().filter(
+    (w) => w.trainingPlanId === planId && w.status !== "CANCELLED" && new Date(w.scheduledDate).getTime() <= Date.now(),
+  );
+  return { completed: due.filter((w) => w.status === "COMPLETED").length, due: due.length };
+}
+
+/** Điểm tải = km × số hiệp × hệ số cường độ (1/2/3). */
+function loadMock(w: MockWorkout): number {
+  const factor = w.intensity === "HEAVY" ? 3 : w.intensity === "LIGHT" ? 1 : 2;
+  const km = w.actualDistanceMeters ? w.actualDistanceMeters / 1000 : (w.distanceMeters * (w.repetitions ?? 1)) / 1000;
+  return Math.round(km * factor * 10) / 10;
+}
+
+/** Tổng tải các buổi trong khoảng (fromDaysAgo, toDaysAgo]. */
+function sumLoadMock(rows: MockWorkout[], fromDaysAgo: number, toDaysAgo: number): number {
+  const from = Date.now() - fromDaysAgo * 24 * 3600_000;
+  const to = Date.now() - toDaysAgo * 24 * 3600_000;
+  const total = rows
+    .filter((w) => new Date(w.scheduledDate).getTime() > from && new Date(w.scheduledDate).getTime() <= to)
+    .reduce((sum, w) => sum + loadMock(w), 0);
+  return Math.round(total * 10) / 10;
+}
+
+/** Thứ Hai (YYYY-MM-DD, giờ câu lạc bộ) của tuần chứa thời điểm iso. */
+function mondayOf(iso: string): string {
+  const day = clubDay(iso);
+  const d = new Date(`${day}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+  return d.toISOString().slice(0, 10);
+}
+
+/** Cảnh báo không chặn (DL-2.01 mục 6): vượt định mức tuần, nhân viên trùng giờ. */
+function assertWarningsMock(db: Db, plan: MockPlan, w: MockWorkout, acknowledged: boolean, selfId?: string): void {
+  const warnings: string[] = [];
+  const phases = (Array.isArray(plan.phases) ? plan.phases : []) as { id: string; maxWeeklyDistance: number }[];
+  const ph = phases.find((x) => x.id === w.phaseId);
+  const others = getStoredWorkouts().filter((x) => x.id !== selfId && x.status !== "CANCELLED");
+  if (ph) {
+    const monday = mondayOf(w.scheduledDate);
+    const total =
+      others
+        .filter((x) => x.horseId === w.horseId && mondayOf(x.scheduledDate) === monday)
+        .reduce((sum, x) => sum + x.distanceMeters * (x.repetitions ?? 1), 0) +
+      w.distanceMeters * (w.repetitions ?? 1);
+    if (total > ph.maxWeeklyDistance) warnings.push(`Tổng cự ly tuần ${total} m vượt định mức ${ph.maxWeeklyDistance} m.`);
+  }
+  const t = new Date(w.scheduledDate).getTime();
+  const busy = others.find(
+    (x) => x.assignedStaffUserId === w.assignedStaffUserId && Math.abs(new Date(x.scheduledDate).getTime() - t) < 30 * 60_000,
+  );
+  if (busy) {
+    const groom = db.accounts.find((a) => a.id === w.assignedStaffUserId);
+    warnings.push(`Nhân viên ${groom?.fullName ?? ""} đã có buổi tập trùng giờ.`);
+  }
+  if (warnings.length > 0 && !acknowledged) {
+    throw new ApiError(409, "WARNINGS_NEED_CONFIRMATION", warnings.join(" "), { warnings });
+  }
+}
+
+/** Buổi Đã lên lịch quá hết ngày hôm sau -> Bỏ lỡ (giống sweepOverdue của BE). */
+function sweepTraining(): void {
+  const rows = getStoredWorkouts();
+  const yesterday = new Date(Date.now() + 7 * 60 * 60 * 1000 - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  let changed = false;
+  for (const w of rows) {
+    if (w.status === "SCHEDULED" && clubDay(w.scheduledDate) < yesterday) {
+      w.status = "MISSED";
+      changed = true;
+    }
+  }
+  if (changed) saveStoredWorkouts(rows);
+}
+
+/** Kiểm tra DL-2.01 theo thứ tự của BE. Trả về medicalOverride. */
+function assertWorkoutAllowedMock(db: Db, plan: MockPlan, w: MockWorkout, vetConsulted: boolean, selfId?: string): boolean {
+  if (plan.status !== "DRAFT" && plan.status !== "ACTIVE") {
+    throw new ApiError(400, "PLAN_CLOSED", "Giáo án đã hoàn thành hoặc đã hủy nên không xếp thêm buổi tập.");
+  }
+  const horse = mockHorse(plan.horseId);
+  const heavy = isHeavyMock(w);
+  if (horse.isLocked && heavy) {
+    throw new ApiError(409, "MEDICAL_LOCK_ACTIVE", "Ngựa đang bị Khóa huấn luyện y tế. Không thể xếp bài tập nặng.");
+  }
+  if (horse.status === "RETIRED") throw new ApiError(400, "HORSE_RETIRED", "Ngựa đã ngừng quản lý.");
+  const day = clubDay(w.scheduledDate);
+  if (day < todayIso()) throw new ApiError(400, "DATE_IN_PAST", "Không thể xếp buổi tập vào ngày đã qua.");
+  const hhmm = new Date(new Date(w.scheduledDate).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(11, 16);
+  if (hhmm < "04:00" || hhmm > "20:00") throw new ApiError(400, "OUTSIDE_TRAINING_HOURS", "Giờ bắt đầu phải từ 04:00 đến 20:00.");
+  if (day < clubDay(plan.startDate) || day > clubDay(plan.endDate)) {
+    throw new ApiError(400, "OUTSIDE_PLAN_DATES", "Ngày tập phải nằm trong thời gian của giáo án.");
+  }
+  if (w.workoutType === "BREEZE" || w.workoutType === "TRIAL") {
+    if (w.targetSpeedKmh == null) throw new ApiError(400, "TARGET_SPEED_REQUIRED", "Tốc độ mục tiêu là bắt buộc với bài chạy tốc độ và chạy thử.");
+    if (!w.jockeyName) throw new ApiError(400, "JOCKEY_REQUIRED", "Vui lòng nhập tên nài ngựa.");
+  }
+  const phases = (Array.isArray(plan.phases) ? plan.phases : []) as { id: string; name: string; startDate: string; endDate: string }[];
+  if (phases.length > 0) {
+    const ph = phases.find((x) => x.id === w.phaseId);
+    if (!ph) throw new ApiError(400, "PHASE_REQUIRED", "Vui lòng chọn giai đoạn.");
+    if (day < ph.startDate || day > ph.endDate) {
+      throw new ApiError(400, "OUTSIDE_PHASE_DATES", `Ngày tập phải nằm trong giai đoạn ${ph.name}.`);
+    }
+  }
+  const groom = db.accounts.find((a) => a.id === w.assignedStaffUserId);
+  if (!groom || groom.role !== "GROOM" || groom.status !== "ACTIVE") {
+    throw new ApiError(400, "INVALID_GROOM", "Vui lòng chọn nhân viên chăm sóc đang hoạt động.");
+  }
+  const others = getStoredWorkouts().filter((x) => x.id !== selfId && x.status !== "CANCELLED");
+  if (w.workoutType === "TRIAL") {
+    const slot = 15 * 60 * 1000;
+    const t = new Date(w.scheduledDate).getTime();
+    const clash = others.find(
+      (x) => x.workoutType === "TRIAL" && x.trackSurface === w.trackSurface && Math.abs(new Date(x.scheduledDate).getTime() - t) < slot,
+    );
+    if (clash) throw new ApiError(409, "TRIAL_SLOT_TAKEN", "Mặt sân đã có lượt chạy thử trong khung 15 phút này.");
+  }
+  if (others.filter((x) => x.horseId === plan.horseId && clubDay(x.scheduledDate) === day).length >= 3) {
+    throw new ApiError(409, "MAX_WORKOUTS_PER_DAY", "Mỗi ngựa tối đa 3 buổi tập mỗi ngày.");
+  }
+  const medical = MEDICAL.includes(horse.status) && heavy;
+  if (medical && !vetConsulted) {
+    throw new ApiError(409, "VET_CONFIRMATION_REQUIRED", `Ngựa đang ở trạng thái ${horse.status}.`, { horseStatus: horse.status });
+  }
+  return medical;
+}
 
 // Yêu cầu cấp quyền kèm thông tin người gửi (giống `include: { account }` của backend).
 function withAccount(db: Db, r: Db["requests"][number]) {
   const a = db.accounts.find((x) => x.id === r.accountId);
   return { ...r, account: a ? { id: a.id, fullName: a.fullName, email: a.email, role: a.role } : null };
+}
+
+// ------------------------------------------------------------------ chuồng trại (mock chỉ đọc)
+
+const MOCK_ZONES = [
+  { id: "zone-a", code: "A", name: "Barn A", rows: 2, cols: 4, sortOrder: 1 },
+  { id: "zone-b", code: "B", name: "Barn B", rows: 2, cols: 4, sortOrder: 2 },
+  { id: "zone-c", code: "C", name: "Isolation barn", rows: 1, cols: 3, sortOrder: 3 },
+];
+
+function mockStallList(db: Db) {
+  const horses = getStoredHorses();
+  return MOCK_ZONES.flatMap((z) =>
+    Array.from({ length: z.rows * z.cols }, (_, i) => {
+      const code = `STALL-${z.code}${String(i + 1).padStart(2, "0")}`;
+      const horse = horses.find((h) => h.stall === code);
+      const groom = horse?.assignedGroomId ? db.accounts.find((a) => a.id === horse.assignedGroomId) : undefined;
+      return {
+        id: `stall-${z.code}${i + 1}`,
+        code,
+        zone: z.code,
+        zoneId: z.id,
+        row: Math.floor(i / z.cols) + 1,
+        col: (i % z.cols) + 1,
+        status: horse ? "OCCUPIED" : z.code === "B" && i === 7 ? "MAINTENANCE" : "AVAILABLE",
+        notes: null,
+        zoneRef: { id: z.id, code: z.code, name: z.name, rows: z.rows, cols: z.cols, isActive: true },
+        allocations: horse
+          ? [
+              {
+                id: `alloc-${horse.id}`,
+                stallId: `stall-${z.code}${i + 1}`,
+                horseId: horse.id,
+                assignedGroomUserId: groom?.id ?? null,
+                startDate: "2026-09-01T00:00:00.000Z",
+                endDate: null,
+                isActive: true,
+                horse: { id: horse.id, horseCode: horse.code, name: horse.name, status: horseStatusOf(horse), isMedicalLocked: horse.isLocked },
+                assignedGroom: groom ? { id: groom.id, fullName: groom.fullName, email: groom.email } : null,
+              },
+            ]
+          : [],
+      };
+    }),
+  );
+}
+
+function mockZones() {
+  const stalls = mockStallList(getDb());
+  return MOCK_ZONES.map((z) => ({
+    ...z,
+    description: null,
+    isActive: true,
+    stallCount: stalls.filter((s) => s.zoneId === z.id).length,
+    occupiedCount: stalls.filter((s) => s.zoneId === z.id && s.allocations.length > 0).length,
+  }));
+}
+
+function mockStalls(db: Db, url: URL) {
+  const zoneId = url.searchParams.get("zoneId");
+  const search = (url.searchParams.get("search") ?? "").toLowerCase();
+  return mockStallList(db).filter(
+    (s) =>
+      (!zoneId || s.zoneId === zoneId) &&
+      (!search || s.code.toLowerCase().includes(search) || s.allocations.some((a) => a.horse.name.toLowerCase().includes(search))),
+  );
 }
 
 // ------------------------------------------------------------------ điểm vào

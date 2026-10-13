@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthLayout, HERO_TEAM } from "@/shared/components/layout/AuthLayout";
-import { formatDateTime } from "@/shared/lib/format";
+import { formatDateTime, formatTime } from "@/shared/lib/format";
 import { useQueryParams } from "@/shared/lib/hooks";
 import { verifyEmail } from "../api";
 import { signupFlow } from "../flow";
@@ -29,7 +29,7 @@ export default function VerifyEmailPage() {
         email={email}
         purpose="signup"
         sentTitle="Code sent"
-        sentBody={(t) => `Sent at ${formatDateTime(t.sentAt)}. The code can be used once and expires at ${formatDateTime(t.expiresAt).split(" · ")[1]}.`}
+        sentBody={(t) => `Sent at ${formatDateTime(t.sentAt)}. The code can be used once and expires at ${formatTime(t.expiresAt)}.`}
         submitLabel="Verify email"
         onVerify={async (code) => {
           const result = await verifyEmail(email, code);

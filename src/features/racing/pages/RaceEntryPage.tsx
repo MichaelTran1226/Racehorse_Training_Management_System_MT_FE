@@ -6,7 +6,6 @@ export default function RaceEntryPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
-        eyebrow="SCHEDULED SPRINT MODULE"
         title="Tournament Registration & Race Entries"
         description="This operational module is scheduled for implementation in accordance with the project sprint plan."
       />

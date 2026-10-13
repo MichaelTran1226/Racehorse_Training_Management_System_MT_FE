@@ -1,4 +1,6 @@
-export type StallStatus = "AVAILABLE" | "OCCUPIED" | "MAINTENANCE";
+/** OCCUPIED do hệ thống đặt khi gán ngựa; CM chọn Hoạt động / Bảo trì / Ngừng dùng (SC-1.07). */
+export type StallStatus = "AVAILABLE" | "OCCUPIED" | "MAINTENANCE" | "INACTIVE";
+export type SettableStallStatus = "AVAILABLE" | "MAINTENANCE" | "INACTIVE";
 
 export interface StallAllocation {
   id: string;
@@ -10,9 +12,10 @@ export interface StallAllocation {
   isActive: boolean;
   horse: {
     id: string;
-    code: string;
+    horseCode?: string | null;
     name: string;
     status: string;
+    isMedicalLocked?: boolean;
   };
   assignedGroom?: {
     id: string;
@@ -21,25 +24,56 @@ export interface StallAllocation {
   } | null;
 }
 
+export interface Zone {
+  id: string;
+  code: string;
+  name: string;
+  rows: number;
+  cols: number;
+  description?: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  stallCount?: number;
+  occupiedCount?: number;
+}
+
 export interface Stall {
   id: string;
   code: string;
   zone: string;
+  zoneId?: string | null;
+  row?: number | null;
+  col?: number | null;
   status: StallStatus;
   notes?: string | null;
+  zoneRef?: Pick<Zone, "id" | "code" | "name" | "rows" | "cols" | "isActive"> | null;
   allocations: StallAllocation[];
 }
 
+export interface ZoneInput {
+  code?: string;
+  name: string;
+  rows: number;
+  cols: number;
+  description?: string;
+  sortOrder?: number;
+  autoCreateStalls?: boolean;
+}
+
 export interface CreateStallDto {
+  zoneId: string;
   code: string;
-  zone: string;
+  row: number;
+  col: number;
+  status?: SettableStallStatus;
   notes?: string;
 }
 
 export interface UpdateStallDto {
   code?: string;
-  zone?: string;
-  status?: StallStatus;
+  row?: number;
+  col?: number;
+  status?: SettableStallStatus;
   notes?: string;
 }
 
@@ -58,3 +92,10 @@ export interface TransferHorseDto {
 export interface ReturnStallDto {
   notes?: string;
 }
+
+export const STALL_STATUS_LABEL: Record<StallStatus, string> = {
+  AVAILABLE: "Active",
+  OCCUPIED: "Active",
+  MAINTENANCE: "Maintenance",
+  INACTIVE: "Inactive",
+};

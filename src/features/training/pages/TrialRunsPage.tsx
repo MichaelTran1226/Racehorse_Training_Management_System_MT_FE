@@ -1,233 +1,132 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
+import { Card } from "@/shared/components/ui/Card";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Field } from "@/shared/components/form/Field";
 import { Input } from "@/shared/components/form/Input";
-import { Modal } from "@/shared/components/ui/Modal";
-import { Select } from "@/shared/components/form/Select";
-import { useAuth } from "@/shared/components/layout/AuthProvider";
+import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
 import { useToast } from "@/shared/components/ui/Toast";
-import { trainingApi } from "../api";
-import type { TrackType, TrialRunSchedule } from "../types";
+import { messageFor } from "@/shared/lib/messages";
+import { todayClub, trainingApi } from "../api";
+import { SESSION_STATUS_LABEL, TRACK_LABEL } from "../types";
+import type { ExerciseSession } from "../types";
 
+function plusDays(date: string, days: number): string {
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Lượt chạy thử (tab của SC-2.05): mỗi lượt là một buổi tập loại "Trial run".
+ * Lên lịch ở Lịch tập; hệ thống chặn 2 lượt trên cùng mặt sân trong khung 15 phút (Q-2.04).
+ */
 export default function TrialRunsPage() {
-  const { user } = useAuth();
+  const user = useCurrentUser();
   const toast = useToast();
-  const isTrainer = user?.role === "HEAD_TRAINER" || user?.role === "CLUB_MANAGER";
+  const [from, setFrom] = useState(todayClub());
+  const [to, setTo] = useState(plusDays(todayClub(), 14));
+  const [trials, setTrials] = useState<ExerciseSession[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [trials, setTrials] = useState<TrialRunSchedule[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  // Create Trial Modal
-  const [isOpenModal, setIsOpenModal] = useState<boolean>(false);
-  const [runDate, setRunDate] = useState<string>(() => new Date().toISOString().split("T")[0]);
-  const [startTime, setStartTime] = useState<string>("07:00");
-  const [trackType, setTrackType] = useState<TrackType>("TURF");
-  const [distance, setDistance] = useState<number>(1200);
-  const [notes, setNotes] = useState<string>("");
-
-  const loadTrials = useCallback(async () => {
+  const latestRequest = useRef(0);
+  const load = useCallback(async () => {
+    const requestId = ++latestRequest.current;
+    setLoading(true);
     try {
-      setLoading(true);
-      const data = await trainingApi.getTrialRuns();
-      setTrials(data);
-    } catch {
-      toast.show("Unable to load trial runs", "danger");
+      const data = await trainingApi.getTrialRuns({ from, to });
+      if (requestId === latestRequest.current) setTrials(data);
+    } catch (err) {
+      if (requestId === latestRequest.current) toast.show(messageFor(err), "danger");
     } finally {
-      setLoading(false);
+      if (requestId === latestRequest.current) setLoading(false);
     }
-  }, [toast]);
+  }, [from, to, toast]);
 
   useEffect(() => {
-    void loadTrials();
-  }, [loadTrials]);
+    void load();
+  }, [load]);
 
-  const handleCreateTrial = async () => {
-    try {
-      await trainingApi.createTrialRun({
-        runDate,
-        trackType,
-        distanceMeters: distance,
-        startTime,
-        notes,
-        horses: [
-          { horseId: "horse-1", horseName: "Thunderbolt Swift", jockeyName: "Alex Turner", gateNumber: 1 },
-          { horseId: "horse-3", horseName: "Shadowfax Wonder", jockeyName: "Kyle Bennett", gateNumber: 2 },
-        ],
-      });
-      toast.show("Trial run scheduled successfully", "ok");
-      setIsOpenModal(false);
-      void loadTrials();
-    } catch {
-      toast.show("Failed to schedule trial run", "danger");
-    }
-  };
+  // Nhóm theo ngày + mặt sân để điều phối.
+  const groups = new Map<string, ExerciseSession[]>();
+  for (const t of trials) {
+    const key = `${t.sessionDate} · ${TRACK_LABEL[t.trackType]}`;
+    groups.set(key, [...(groups.get(key) ?? []), t]);
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-      {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Trial Runs Coordination</h1>
-          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
-            Schedule barrier break trial runs by surface, allocate starting gates, and coordinate jockeys
+          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>Trial Runs</h1>
+          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
+            One trial run per track surface in any 15-minute window. Schedule them from the training schedule (type “Trial run”).
           </p>
         </div>
-
         <div style={{ display: "flex", gap: "0.75rem" }}>
           <Link to="/training/calendar">
-            <Button tone="secondary">← Master Calendar</Button>
-          </Link>
-          {isTrainer && (
-            <Button tone="primary" onClick={() => setIsOpenModal(true)}>
-              + Schedule Trial Run
+            <Button tone={user.role === "HEAD_TRAINER" ? "primary" : "secondary"}>
+              {user.role === "HEAD_TRAINER" ? "+ Schedule in calendar" : "← Schedule"}
             </Button>
-          )}
+          </Link>
         </div>
       </div>
 
-      {/* Trial Run List */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-        {loading ? (
-          <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Loading trial runs...</div>
-        ) : trials.length === 0 ? (
-          <EmptyState
-            title="No Trial Runs Scheduled"
-            description="Click 'Schedule Trial Run' to coordinate a performance evaluation heat."
-          />
-        ) : (
-          trials.map((trial) => (
-            <div
-              key={trial.id}
-              style={{
-                padding: "1.5rem",
-                background: "var(--surface)",
-                borderRadius: "var(--radius-card)",
-                border: "1px solid var(--border)",
-                display: "flex",
-                flexDirection: "column",
-                gap: "1rem",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                    <span style={{ fontSize: "1.125rem", fontWeight: 700 }}>
-                      Heat #{trial.orderNumber} · {trial.runCode}
-                    </span>
-                    <Badge tone={trial.trackType === "TURF" ? "ok" : "warn"}>
-                      {trial.trackType === "TURF" ? "Turf Track (Grass)" : "Sand Track (Dirt)"}
-                    </Badge>
-                    <Badge tone="neutral">{trial.distanceMeters}m</Badge>
-                    <Badge tone={trial.status === "PENDING" ? "info" : "ok"}>
-                      {trial.status === "PENDING" ? "Pending Start" : "Completed"}
-                    </Badge>
-                  </div>
-                  <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-                    Date: <strong>{trial.runDate}</strong> · Time: <strong>{trial.startTime}</strong> · Coordinator:{" "}
-                    <strong>{trial.coordinatorName}</strong>
-                  </div>
-                </div>
+      <Card pad={16}>
+        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+          <Field label="From">
+            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          </Field>
+          <Field label="To">
+            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          </Field>
+        </div>
+      </Card>
 
-                {isTrainer && trial.status === "PENDING" && (
-                  <Button tone="primary" onClick={() => toast.show("Trial heat started!", "ok")}>
-                    Start Trial Heat
-                  </Button>
-                )}
-              </div>
-
-              {trial.notes && (
-                <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", background: "var(--surface-sunken)", padding: "0.5rem 0.75rem", borderRadius: 4 }}>
-                  {trial.notes}
-                </div>
-              )}
-
-              {/* Horse gate table */}
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.875rem" }}>
-                  <thead>
-                    <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-sunken)" }}>
-                      <th style={{ padding: "0.5rem 0.75rem" }}>Gate</th>
-                      <th style={{ padding: "0.5rem 0.75rem" }}>Racehorse</th>
-                      <th style={{ padding: "0.5rem 0.75rem" }}>Jockey</th>
-                      <th style={{ padding: "0.5rem 0.75rem" }}>Finish Timing</th>
+      {loading ? (
+        <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Loading trial runs...</div>
+      ) : trials.length === 0 ? (
+        <EmptyState title="No trial runs in this period" description="Trial runs appear here once they are scheduled." />
+      ) : (
+        [...groups.entries()].map(([key, rows]) => (
+          <Card key={key} pad={20}>
+            <h3 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>{key}</h3>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "var(--fs-body)" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-sunken)" }}>
+                    <th style={{ padding: "0.5rem 0.75rem" }}>Time</th>
+                    <th style={{ padding: "0.5rem 0.75rem" }}>Horse</th>
+                    <th style={{ padding: "0.5rem 0.75rem" }}>Jockey</th>
+                    <th style={{ padding: "0.5rem 0.75rem" }}>Distance / target</th>
+                    <th style={{ padding: "0.5rem 0.75rem" }}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((t) => (
+                    <tr key={t.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                      <td style={{ padding: "0.5rem 0.75rem", fontWeight: 700 }}>{t.startTime}</td>
+                      <td style={{ padding: "0.5rem 0.75rem" }}>
+                        <Link to={`/horses/${t.horseId}`}>{t.horseName}</Link>
+                      </td>
+                      <td style={{ padding: "0.5rem 0.75rem" }}>{t.jockeyName || "—"}</td>
+                      <td style={{ padding: "0.5rem 0.75rem" }}>
+                        {t.targetDistanceMeters}m{t.targetSpeedKmh ? ` · ${t.targetSpeedKmh} km/h` : ""}
+                      </td>
+                      <td style={{ padding: "0.5rem 0.75rem" }}>
+                        <Badge tone={t.status === "BLOCKED" ? "danger" : t.status === "COMPLETED" ? "ok" : "info"}>
+                          {SESSION_STATUS_LABEL[t.status]}
+                        </Badge>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {trial.horses.map((entry) => (
-                      <tr key={entry.horseId} style={{ borderBottom: "1px solid var(--border)" }}>
-                        <td style={{ padding: "0.5rem 0.75rem", fontWeight: 700, color: "var(--accent)" }}>
-                          Gate {entry.gateNumber}
-                        </td>
-                        <td style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{entry.horseName}</td>
-                        <td style={{ padding: "0.5rem 0.75rem" }}>{entry.jockeyName}</td>
-                        <td style={{ padding: "0.5rem 0.75rem", color: "var(--text-muted)" }}>
-                          {entry.timingSeconds ? `${entry.timingSeconds}s` : "Pending"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ))
-        )}
-      </div>
-
-      {/* Modal create */}
-      {isOpenModal && (
-        <Modal onClose={() => setIsOpenModal(false)} title="Schedule New Trial Run">
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-              <Field label="Trial Date" required>
-                <Input type="date" value={runDate} onChange={(e) => setRunDate(e.target.value)} />
-              </Field>
-
-              <Field label="Start Time" required>
-                <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
-              </Field>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-              <Field label="Track Surface" required>
-                <Select
-                  value={trackType}
-                  onChange={(e) => setTrackType(e.target.value as TrackType)}
-                  options={[
-                    { value: "TURF", label: "Natural Turf (Grass)" },
-                    { value: "SAND", label: "Sand Track (Dirt)" },
-                  ]}
-                />
-              </Field>
-
-              <Field label="Distance (meters)" required>
-                <Input
-                  type="number"
-                  value={distance}
-                  onChange={(e) => setDistance(Number(e.target.value))}
-                  min={800}
-                  max={2400}
-                  step={200}
-                />
-              </Field>
-            </div>
-
-            <Field label="Coordination Notes">
-              <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Trial objectives, pace targets..." />
-            </Field>
-
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "0.5rem" }}>
-              <Button tone="ghost" onClick={() => setIsOpenModal(false)}>
-                Cancel
-              </Button>
-              <Button tone="primary" onClick={() => void handleCreateTrial()}>
-                Schedule Heat
-              </Button>
-            </div>
-          </div>
-        </Modal>
+          </Card>
+        ))
       )}
     </div>
   );
