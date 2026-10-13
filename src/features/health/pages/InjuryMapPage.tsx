@@ -20,7 +20,7 @@ import styles from "./InjuryMapPage.module.css";
 const STAGE_COLORS: Record<InjuryStage, string> = {
   ACUTE: "var(--danger)",
   SUBACUTE: "var(--warn)",
-  RECOVERING: "#b89428",
+  RECOVERING: "var(--warn)",
   HEALED: "var(--ok)",
 };
 
@@ -71,6 +71,7 @@ interface PointInjury extends InjuryItem {
 import { getHorseInjuries, createInjury, updateInjury, deleteInjury } from "../api";
 import { getHorseById, getHorses } from "@/features/horses/api";
 import type { Horse } from "@/features/horses/types";
+import { formatDate } from "@/shared/lib/format";
 
 export default function InjuryMapPage() {
   const { id = "horse-1" } = useParams();
@@ -280,7 +281,7 @@ export default function InjuryMapPage() {
     try {
       const payload: any = { stage: newStage };
       if (stageNotes.trim()) {
-        payload.description = `${selectedInjury.notes || ""}\n- [${new Date().toLocaleDateString("en-US")}]: ${stageNotes.trim()}`;
+        payload.description = `${selectedInjury.notes || ""}\n- [${formatDate(new Date())}]: ${stageNotes.trim()}`;
       }
       
       await updateInjury(selectedInjury.id, payload);
@@ -315,11 +316,11 @@ export default function InjuryMapPage() {
             {horse ? "Medical Record" : "Herd Health"}
           </Button>
           <div>
-            <h1 style={{ fontSize: "20px", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
+            <h1 style={{ fontSize: "var(--fs-section)", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
               <span>2D Anatomical Injury Map</span>
               {horse && <span>{` · ${horse.name} (${horse.horseCode || horse.id.slice(0,6)})`}</span>}
             </h1>
-            <span style={{ fontSize: "13px", color: "var(--muted)" }}>
+            <span style={{ fontSize: "var(--fs-body)", color: "var(--muted)" }}>
               {horse
                 ? `Pinpoint anatomical lesions and monitor clinical progression for ${horse.name}.`
                 : "Pinpoint anatomical lesions and monitor clinical progression across recovery phases."}
@@ -358,7 +359,7 @@ export default function InjuryMapPage() {
         <div className={styles.modelCard}>
           <div className={styles.toolbar}>
             <div className={styles.toggleGroup}>
-              <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--muted)" }}>View:</span>
+              <span style={{ fontSize: "var(--fs-body)", fontWeight: 600, color: "var(--muted)" }}>View:</span>
               <Button
                 size="sm"
                 tone={view === "LEFT" ? "primary" : "ghost"}
@@ -376,7 +377,7 @@ export default function InjuryMapPage() {
             </div>
 
             <div className={styles.toggleGroup}>
-              <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--muted)" }}>Anatomy Layer:</span>
+              <span style={{ fontSize: "var(--fs-body)", fontWeight: 600, color: "var(--muted)" }}>Anatomy Layer:</span>
               <Button
                 size="sm"
                 tone={layer === "MUSCLE" ? "primary" : "ghost"}
@@ -408,17 +409,17 @@ export default function InjuryMapPage() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                background: "rgba(234, 179, 8, 0.14)",
+                background: "var(--warn-bg)",
                 border: "1px solid var(--warn)",
                 color: "var(--ink)",
                 padding: "8px 14px",
-                borderRadius: "6px",
+                borderRadius: "var(--r-sm)",
                 marginBottom: "12px",
-                fontSize: "13px",
+                fontSize: "var(--fs-body)",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: "16px" }}>📍</span>
+                <span style={{ display: "inline-flex" }}><Icon name="pin" size={18} /></span>
                 <span>
                   <strong>Repositioning Mode:</strong> Click any spot on the {layer === "MUSCLE" ? "Muscular" : "Skeletal"} model to relocate pin #{visibleInjuries.findIndex((i) => i.id === repositioningId) + 1} ({injuries.find((i) => i.id === repositioningId)?.region}).
                 </span>
@@ -436,17 +437,17 @@ export default function InjuryMapPage() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                background: "rgba(34, 197, 94, 0.14)",
+                background: "var(--ok-bg)",
                 border: "1px solid var(--ok)",
                 color: "var(--ink)",
                 padding: "8px 14px",
-                borderRadius: "6px",
+                borderRadius: "var(--r-sm)",
                 marginBottom: "12px",
-                fontSize: "13px",
+                fontSize: "var(--fs-body)",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: "16px" }}>🎯</span>
+                <span style={{ display: "inline-flex" }}><Icon name="flag" size={18} /></span>
                 <span>
                   <strong>Marking Mode Active:</strong> Click anywhere on the {layer === "MUSCLE" ? "Muscular" : "Skeletal"} model to place a new injury point.
                 </span>
@@ -490,7 +491,7 @@ export default function InjuryMapPage() {
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap", fontSize: "12px" }}>
+          <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap", fontSize: "var(--fs-caption)" }}>
             <span style={{ fontWeight: 600 }}>Recovery Stage Legend:</span>
             <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ width: 10, height: 10, borderRadius: "50%", background: STAGE_COLORS.ACUTE }} />
@@ -516,13 +517,13 @@ export default function InjuryMapPage() {
           {/* List of points */}
           <div className={styles.panelCard}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <strong style={{ fontSize: "15px" }}>
+              <strong style={{ fontSize: "var(--fs-body)" }}>
                 Injury Points ({visibleInjuries.length}) · {layer === "MUSCLE" ? "Muscular" : "Skeletal"}
               </strong>
             </div>
 
             {visibleInjuries.length === 0 ? (
-              <div style={{ color: "var(--muted)", fontSize: "13px" }}>
+              <div style={{ color: "var(--muted)", fontSize: "var(--fs-body)" }}>
                 No injury points recorded on the {layer === "MUSCLE" ? "Muscular" : "Skeletal"} layer ({view === "LEFT" ? "Left View" : "Right View"}).
               </div>
             ) : (
@@ -535,10 +536,10 @@ export default function InjuryMapPage() {
                     style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
                   >
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: "13px" }}>
+                      <div style={{ fontWeight: 600, fontSize: "var(--fs-body)" }}>
                         #{idx + 1} {inj.region}
                       </div>
-                      <div style={{ fontSize: "12px", color: "var(--muted)" }}>{inj.injuryType}</div>
+                      <div style={{ fontSize: "var(--fs-caption)", color: "var(--muted)" }}>{inj.injuryType}</div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <Badge tone={inj.stage === "ACUTE" ? "danger" : inj.stage === "HEALED" ? "ok" : "warn"} dot>
@@ -579,7 +580,7 @@ export default function InjuryMapPage() {
           {selectedInjury && (
             <div className={styles.panelCard}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-                <strong style={{ fontSize: "15px" }}>Injury Details</strong>
+                <strong style={{ fontSize: "var(--fs-body)" }}>Injury Details</strong>
                 {isVet && (
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     <Button
@@ -612,7 +613,7 @@ export default function InjuryMapPage() {
                 )}
               </div>
 
-              <div style={{ fontSize: "13px", display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ fontSize: "var(--fs-body)", display: "flex", flexDirection: "column", gap: 8 }}>
                 <div>Region: <strong>{selectedInjury.region}</strong> ({selectedInjury.view === "LEFT" ? "Left View" : "Right View"} · {selectedInjury.layer === "MUSCLE" ? "Muscular" : "Skeletal"} Layer)</div>
                 <div>Condition: <strong>{selectedInjury.injuryType}</strong></div>
                 <div>
@@ -621,10 +622,10 @@ export default function InjuryMapPage() {
                 <div>
                   Stage: <Badge tone={selectedInjury.stage === "ACUTE" ? "danger" : "ok"} dot>{STAGE_LABELS[selectedInjury.stage]}</Badge>
                 </div>
-                <div>Detected Date: <strong>{new Date(selectedInjury.detectedDate).toLocaleDateString("en-US")}</strong></div>
+                <div>Detected Date: <strong>{formatDate(selectedInjury.detectedDate)}</strong></div>
 
                 {selectedInjury.notes && (
-                  <div style={{ background: "var(--surface-2)", padding: "8px 10px", borderRadius: "6px", marginTop: 4 }}>
+                  <div style={{ background: "var(--surface-2)", padding: "8px 10px", borderRadius: "var(--r-sm)", marginTop: 4 }}>
                     <strong>Clinical Notes / Progress:</strong>
                     <div style={{ whiteSpace: "pre-line", marginTop: 4 }}>{selectedInjury.notes}</div>
                   </div>
@@ -634,13 +635,13 @@ export default function InjuryMapPage() {
                   <div className={styles.timelineNode}>
                     <div className={styles.timelineDot} />
                     <strong>Initial Diagnosis</strong>
-                    <span style={{ fontSize: "11px", color: "var(--muted)" }}>{selectedInjury.detectedDate}</span>
+                    <span style={{ fontSize: "var(--fs-caption)", color: "var(--muted)" }}>{selectedInjury.detectedDate}</span>
                   </div>
                   {selectedInjury.updatedDate && (
                     <div className={styles.timelineNode}>
                       <div className={styles.timelineDot} />
                       <strong>Phase Update: {STAGE_LABELS[selectedInjury.stage]}</strong>
-                      <span style={{ fontSize: "11px", color: "var(--muted)" }}>{selectedInjury.updatedDate}</span>
+                      <span style={{ fontSize: "var(--fs-caption)", color: "var(--muted)" }}>{selectedInjury.updatedDate}</span>
                     </div>
                   )}
                 </div>
@@ -756,9 +757,9 @@ export default function InjuryMapPage() {
             </div>
           }
         >
-          <div style={{ fontSize: "14px", lineHeight: "1.6", color: "var(--ink)" }}>
+          <div style={{ fontSize: "var(--fs-body)", lineHeight: "1.6", color: "var(--ink)" }}>
             Are you sure you want to delete this injury pin?
-            <div style={{ margin: "12px 0", padding: "10px 12px", background: "var(--surface-2)", borderRadius: "6px" }}>
+            <div style={{ margin: "12px 0", padding: "10px 12px", background: "var(--surface-2)", borderRadius: "var(--r-sm)" }}>
               {(() => {
                 const target = injuries.find((i) => i.id === deleteTargetId);
                 if (!target) return null;

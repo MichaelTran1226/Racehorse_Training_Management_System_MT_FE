@@ -12,12 +12,12 @@
   border: 1px solid var(--border-strong);
   color: var(--border-strong);
   font-family: var(--font-numeric);
-  font-size: 11px;
+  font-size: var(--fs-caption);
   font-weight: 700;
 }
 .done { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
 .on { background: var(--brand); border-color: var(--brand); color: var(--text-on-brand); }
-.label { font-size: 10.5px; text-align: center; line-height: 1.4; max-width: 108px; color: var(--muted); font-weight: 500; }
+.label { font-size: var(--fs-caption); text-align: center; line-height: 1.4; max-width: 108px; color: var(--muted); font-weight: 500; }
 .labelOn { color: var(--text); font-weight: 700; }
 .labelDone { color: var(--text-2); }
 .line { flex: 1; height: 1px; background: var(--border); margin-top: 13px; min-width: 20px; }

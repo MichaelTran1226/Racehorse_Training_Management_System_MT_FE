@@ -90,7 +90,6 @@ export default function DeletedHorsesPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
-        eyebrow="HORSE ROSTER · FLOW 1"
         title="Deleted horse profiles."
         description="Profiles deleted by mistake. Restoring brings the horse back in the status it had when deleted, without a stall or groom."
         action={

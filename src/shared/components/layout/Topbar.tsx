@@ -23,7 +23,7 @@ interface TopbarProps {
   onLogout: () => void;
 }
 
-// Topbar floating navigation bar: Home icon button -> Breadcrumb -> Search -> Divider -> Bell -> Theme -> Logout
+// Topbar phẳng 64px: (menu khi hẹp) · breadcrumb trang con · ô tìm · chuông · đổi theme · đăng xuất.
 export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
   const { user } = useAuth();
   const { theme, toggle: toggleTheme } = useTheme();
@@ -99,146 +99,111 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
     return subscribeNotifications(sync);
   }, [user?.role]);
 
+  // Trang cấp 1 đã có tiêu đề H1 nên không cần breadcrumb; chỉ trang con (Accounts › Tên) mới hiện.
+  const trail = breadcrumb.slice(1);
+  const showTrail = trail.length >= 2;
+
   return (
-    <div className={styles.wrapper}>
-      <header className={styles.bar}>
-        {/* Left: Mobile Menu + Home Button + Breadcrumbs */}
-        <div className={styles.leftGroup}>
-          <button
-            type="button"
-            aria-label="Open menu"
-            onClick={onMenu}
-            className={styles.menu}
-          >
-            <Icon name="list" size={16} />
-          </button>
+    <header className={styles.bar}>
+      <div className={styles.leftGroup}>
+        <button type="button" aria-label="Open menu" onClick={onMenu} className={styles.menu}>
+          <Icon name="list" size={18} />
+        </button>
 
-          {/* Home Button -> Navigates to /dashboard */}
-          <button
-            type="button"
-            aria-label="Dashboard"
-            title="Dashboard"
-            onClick={() => navigate("/dashboard")}
-            className={styles.homeBtn}
-          >
-            <Icon name="home" size={16} />
-          </button>
-
-          {/* Breadcrumbs with chevron separators and clickable navigation links */}
+        {showTrail && (
           <nav aria-label="Breadcrumb" className={styles.crumbs}>
             <ol>
-              {breadcrumb.map((part, i) => {
-                const last = i === breadcrumb.length - 1;
-                const isOnlyOne = breadcrumb.length === 1;
+              {trail.map((part, i) => {
+                const last = i === trail.length - 1;
                 const label = typeof part === "string" ? part : part.label;
-                const href = typeof part === "object" ? part.href : i === 0 ? "/dashboard" : undefined;
-
+                const href = typeof part === "object" ? part.href : undefined;
                 return (
-                  <li key={i} className={cx(!isOnlyOne && last && styles.current)} aria-current={last ? "page" : undefined}>
+                  <li key={i} aria-current={last ? "page" : undefined}>
                     {i > 0 && (
                       <span className={styles.sep} aria-hidden="true">
-                        <Icon name="chevronRight" size={13} strokeWidth={2.2} />
+                        <Icon name="chevronRight" size={14} />
                       </span>
                     )}
                     {!last && href ? (
-                      <Link to={href} className={styles.crumbLink} title={`Go to ${label}`}>
+                      <Link to={href} className={styles.crumbLink}>
                         {label}
                       </Link>
                     ) : (
-                      <span className={isOnlyOne ? styles.workspaceTitle : last ? styles.currentLabel : styles.crumbText}>
-                        {label}
-                      </span>
+                      <span className={last ? styles.currentLabel : styles.crumbText}>{label}</span>
                     )}
                   </li>
                 );
               })}
             </ol>
           </nav>
-        </div>
+        )}
+      </div>
 
-        {/* Right: Search + Divider + Notifications + Theme + Logout */}
-        <div className={styles.tools}>
-          <div className={styles.search} ref={searchContainerRef}>
-            <span className={styles.searchIcon}>
-              <Icon name="search" size={14} />
-            </span>
-            <input
-              type="text"
-              aria-label="Search horses, plans, people"
-              placeholder="Search horses, plans, people..."
-              onFocus={() => {
-                setAllStoredHorses(getStoredHorses());
-                setSearchOpen(true);
-              }}
-              onClick={() => {
-                setAllStoredHorses(getStoredHorses());
-                setSearchOpen(true);
-              }}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setSearchOpen(true);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") {
-                  setSearchOpen(false);
-                } else if (e.key === "Enter" && filteredHorses.length > 0) {
-                  navigate(`/medical/horses/${filteredHorses[0].id}`);
-                  setSearchOpen(false);
-                  setSearchQuery("");
-                }
-              }}
-              style={{ paddingRight: searchQuery ? 28 : 12 }}
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                aria-label="Clear search"
-                style={{
-                  position: "absolute",
-                  right: 8,
-                  background: "none",
-                  border: "none",
-                  color: "var(--muted-2)",
-                  cursor: "pointer",
-                  padding: 2,
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
-                <Icon name="x" size={12} />
-              </button>
-            )}
-
-            <SearchSuggestionsPopover
-              horses={filteredHorses}
-              user={user}
-              query={searchQuery}
-              open={searchOpen}
-              onClose={() => setSearchOpen(false)}
-              onSelect={(horse) => {
-                navigate(`/medical/horses/${horse.id}`);
+      <div className={styles.tools}>
+        <div className={styles.search} ref={searchContainerRef}>
+          <span className={styles.searchIcon}>
+            <Icon name="search" size={16} />
+          </span>
+          <input
+            type="text"
+            aria-label="Search horses, plans, people"
+            placeholder="Search horses, plans, people"
+            className={cx(searchQuery && styles.hasValue)}
+            onFocus={() => {
+              setAllStoredHorses(getStoredHorses());
+              setSearchOpen(true);
+            }}
+            onClick={() => {
+              setAllStoredHorses(getStoredHorses());
+              setSearchOpen(true);
+            }}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setSearchOpen(true);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setSearchOpen(false);
+              } else if (e.key === "Enter" && filteredHorses.length > 0) {
+                navigate(`/medical/horses/${filteredHorses[0].id}`);
                 setSearchOpen(false);
                 setSearchQuery("");
-              }}
-              triggerRef={searchContainerRef}
-            />
-          </div>
+              }
+            }}
+          />
+          {searchQuery && (
+            <button type="button" onClick={() => setSearchQuery("")} aria-label="Clear search" className={styles.clear}>
+              <Icon name="x" size={14} />
+            </button>
+          )}
 
-          {/* Thin Vertical Divider */}
-          <div className={styles.divider} aria-hidden="true" />
+          <SearchSuggestionsPopover
+            horses={filteredHorses}
+            user={user}
+            query={searchQuery}
+            open={searchOpen}
+            onClose={() => setSearchOpen(false)}
+            onSelect={(horse) => {
+              navigate(`/medical/horses/${horse.id}`);
+              setSearchOpen(false);
+              setSearchQuery("");
+            }}
+            triggerRef={searchContainerRef}
+          />
+        </div>
 
-          {/* Notifications Button */}
-          <div style={{ position: "relative" }}>
-            <div ref={bellTriggerRef} style={{ display: "inline-flex" }}>
+        <div className={styles.divider} aria-hidden="true" />
+
+        <div className={styles.bellWrap}>
+          <div ref={bellTriggerRef} className={styles.bellTrigger}>
               <button
                 type="button"
-                aria-label="Notifications"
+                aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
                 title="Notifications"
                 onClick={() => setPopoverOpen((prev) => !prev)}
                 className={styles.actionBtn}
               >
-                <Icon name="bell" size={16} />
+                <Icon name="bell" size={18} />
                 {unreadCount > 0 && <span className={styles.badge}>{unreadCount}</span>}
               </button>
             </div>
@@ -259,7 +224,7 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
             onClick={toggleTheme}
             className={styles.actionBtn}
           >
-            <Icon name={theme === "dark" ? "sun" : "moon"} size={16} />
+            <Icon name={theme === "dark" ? "sun" : "moon"} size={18} />
           </button>
 
           {/* Logout Button */}
@@ -270,10 +235,9 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
             onClick={onLogout}
             className={styles.actionBtn}
           >
-            <Icon name="logout" size={16} />
+            <Icon name="logout" size={18} />
           </button>
         </div>
-      </header>
-    </div>
+    </header>
   );
 }

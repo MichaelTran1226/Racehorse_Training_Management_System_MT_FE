@@ -45,12 +45,23 @@ export interface ListRecordsResponse {
 export interface HealthBoardHorse {
   id: string;
   name: string;
+  horseCode?: string | null;
   microchipRfid: string;
   status: string;
   healthGroup: "QUALIFIED" | "OBSERVATION" | "INJURED" | "ISOLATED";
   isMedicalLocked: boolean;
+  lock: { lockCode?: string | null; lockedAt: string; recheckDate?: string | null; veterinarianName?: string | null } | null;
+  stallId?: string | null;
   stallCode?: string | null;
   zone?: string | null;
+  zoneId?: string | null;
+  row?: number | null;
+  col?: number | null;
+  openInjuries: Array<{ zone: string; stage: string }>;
+  latestRecord: { id: string; examinationDate: string; diagnosis: string } | null;
+  preventiveDue: Array<{ name: string; dueDate: string; overdue: boolean }>;
+  hasOverduePreventive: boolean;
+  latestObservation: { text: string; at: string; groomName?: string | null } | null;
 }
 
 export interface HealthBoardResponse {
@@ -60,20 +71,15 @@ export interface HealthBoardResponse {
     injuredCount: number;
     isolatedCount: number;
     lockedCount: number;
+    overdueCount: number;
     total: number;
   };
   data: HealthBoardHorse[];
+  generatedAt?: string;
 }
 
-// P2-01: Sơ đồ sức khỏe đàn ngựa (Health Board)
-export const getHealthBoard = (params?: { healthGroup?: string; isLocked?: string; search?: string }) => {
-  const query = new URLSearchParams();
-  if (params?.healthGroup) query.set("healthGroup", params.healthGroup);
-  if (params?.isLocked) query.set("isLocked", params.isLocked);
-  if (params?.search) query.set("search", params.search);
-  const qStr = query.toString();
-  return api<HealthBoardResponse>("GET", `/medical/health-board${qStr ? `?${qStr}` : ""}`);
-};
+// P1-14: Sơ đồ sức khỏe đàn ngựa (SC-3.01). Bộ lọc áp ở trình duyệt để thẻ đếm luôn tính cả đàn.
+export const getHealthBoard = () => api<HealthBoardResponse>("GET", "/medical/health-board");
 
 // P2-01: Hồ sơ y tế ngựa 6 tab (SC-3.02, API-004)
 export const getHorseMedicalProfile = (horseId: string) =>

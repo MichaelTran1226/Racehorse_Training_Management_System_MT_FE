@@ -13,11 +13,11 @@ export const SERIES_LABEL: Record<FitnessSeries, string> = {
 };
 
 const COLORS: Record<FitnessSeries, string> = {
-  speed: "#2563eb",
-  score: "#16a34a",
-  peakHr: "#dc2626",
-  recoveryHr: "#ea580c",
-  load: "#94a3b8",
+  speed: "var(--info)",
+  score: "var(--ok)",
+  peakHr: "var(--danger)",
+  recoveryHr: "var(--warn)",
+  load: "var(--border-field)",
 };
 
 const W = 760;
@@ -51,12 +51,12 @@ export function FitnessChart({ data, series, from, to }: { data: FitnessData; se
         const a = Math.max(from, new Date(l.from).getTime());
         const b = Math.min(to, l.to ? new Date(l.to).getTime() : to);
         if (b <= a) return null;
-        return <rect key={l.from} x={x(a)} y={PAD.top} width={x(b) - x(a)} height={plotH} fill="rgba(239,68,68,0.12)" />;
+        return <rect key={l.from} x={x(a)} y={PAD.top} width={x(b) - x(a)} height={plotH} fill="var(--danger-bg)" />;
       })}
       {/* Trục */}
-      <line x1={PAD.left} y1={H - PAD.bottom} x2={W - PAD.right} y2={H - PAD.bottom} stroke="var(--border, #cbd5e1)" />
+      <line x1={PAD.left} y1={H - PAD.bottom} x2={W - PAD.right} y2={H - PAD.bottom} stroke="var(--border)" />
       {ticks.map((t) => (
-        <text key={t} x={x(t)} y={H - 10} fontSize="11" textAnchor="middle" fill="var(--text-muted, #64748b)">
+        <text key={t} x={x(t)} y={H - 10} fontSize="11" textAnchor="middle" fill="var(--text-muted)">
           {clubParts(new Date(t).toISOString()).date.slice(5)}
         </text>
       ))}
@@ -89,7 +89,7 @@ export function FitnessChart({ data, series, from, to }: { data: FitnessData; se
                 cx={x(new Date(d.p.date).getTime())}
                 cy={y(d.v)}
                 r={4}
-                fill={d.p.hasAlert ? "#dc2626" : COLORS[s]}
+                fill={d.p.hasAlert ? "var(--danger)" : COLORS[s]}
                 style={{ cursor: "pointer" }}
                 onClick={() => navigate(`/training/sessions/${d.p.workoutId}/result`)}
               >

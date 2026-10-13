@@ -1,33 +1,32 @@
+/* Bảng theo DESIGN.md: tiêu đề 40px viết thường đầu câu, hàng 56px, hover nhẹ, không sọc. */
 .scroll { overflow-x: auto; }
-.table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.table { width: 100%; border-collapse: collapse; font-size: var(--fs-body); }
 .th {
   text-align: left;
-  padding: 11px 22px;
+  height: 40px;
+  padding: 0 16px;
   background: var(--surface-table-head);
-  border-bottom: 1px solid var(--border-soft);
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: var(--ls-table-head);
-  text-transform: uppercase;
-  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  color: var(--text-2);
   white-space: nowrap;
 }
-.td { padding: 13px 22px; border-bottom: 1px solid var(--border-soft); color: var(--text-2); vertical-align: middle; }
+.td { height: var(--row-h); padding: 8px 16px; border-bottom: 1px solid var(--border-soft); color: var(--text); vertical-align: middle; }
 .row:last-child .td { border-bottom: 0; }
 .row { transition: background var(--dur-fast) var(--ease); }
 .row:hover { background: var(--surface-row-hover); }
 .right { text-align: right; }
 
-.skeleton { display: block; height: 12px; border-radius: 6px; background: var(--surface-3); animation: pulse 1.2s ease-in-out infinite; }
-@keyframes pulse { 50% { opacity: 0.45; } }
-@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+.skeleton { display: block; height: 12px; border-radius: var(--r-xs); background: var(--surface-3); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.5; } }
 
-.primary { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.primary { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .primaryText { min-width: 0; }
-.primaryText strong { display: block; font-size: 12px; font-weight: 700; color: var(--text); letter-spacing: -0.15px; }
-.primaryText span { font-size: 10.5px; color: var(--muted); }
+.primaryText strong { display: block; font-size: var(--fs-body); line-height: 22px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.primaryText span { display: block; font-size: var(--fs-caption); line-height: 18px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 @media (max-width: 1280px) {
   .narrow { display: none; }
-  .th, .td { padding-left: 17px; padding-right: 17px; }
+  .th, .td { padding-left: 12px; padding-right: 12px; }
 }

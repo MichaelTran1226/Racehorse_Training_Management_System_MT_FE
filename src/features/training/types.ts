@@ -35,7 +35,7 @@ export const SESSION_STATUS_TONE: Record<SessionStatus, Tone> = {
 export const SESSION_STATUS_LABEL: Record<SessionStatus, string> = {
   SCHEDULED: "Scheduled",
   COMPLETED: "Completed",
-  BLOCKED: "Blocked – Medical Lock",
+  BLOCKED: "Blocked – Training Lock",
   MISSED: "Missed",
   CANCELLED: "Cancelled",
 };

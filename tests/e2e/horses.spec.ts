@@ -10,7 +10,8 @@ async function signIn(page: Page, email: string) {
 
 async function deleteThunderbolt(page: Page) {
   await page.goto('/horses/horse-1');
-  await page.getByRole('button', { name: 'Delete profile' }).click();
+  await page.getByRole('button', { name: 'More' }).click();
+  await page.getByRole('menuitem', { name: 'Delete profile' }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Reason for deletion').fill('Created by mistake during the import');
   await dialog.getByLabel(/Type the horse name/).fill('thunderbolt  swift');

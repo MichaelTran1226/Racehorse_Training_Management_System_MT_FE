@@ -7,6 +7,7 @@ import { Textarea } from "@/shared/components/form/Textarea";
 import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
 import { messageFor } from "@/shared/lib/messages";
+import { formatDate } from "@/shared/lib/format";
 
 const APPLIED_STATUS_OPTIONS = [
   { value: "INJURED", label: "Injured" },
@@ -137,7 +138,7 @@ export function TrainingLockModal({
     >
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {error && (
-          <div style={{ color: "var(--danger)", fontSize: "13px", padding: "8px", background: "var(--danger-bg)", borderRadius: "4px" }}>
+          <div style={{ color: "var(--danger)", fontSize: "var(--fs-body)", padding: "8px", background: "var(--danger-bg)", borderRadius: "4px" }}>
             {error}
           </div>
         )}
@@ -211,8 +212,8 @@ export function TrainingLockModal({
         {mode === "extend" && (
           <>
             {currentReviewDate && (
-              <div style={{ fontSize: "13px", color: "var(--muted)" }}>
-                Current review date: <strong>{new Date(currentReviewDate).toLocaleDateString("en-US")}</strong>
+              <div style={{ fontSize: "var(--fs-body)", color: "var(--muted)" }}>
+                Current review date: <strong>{formatDate(currentReviewDate)}</strong>
               </div>
             )}
 

@@ -33,8 +33,8 @@ export default function PlanHistoryPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Plan History</h1>
-          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
+          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>Plan History</h1>
+          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
             Completed and cancelled training plans with the trainer's summary or reason.
           </p>
         </div>
@@ -45,7 +45,7 @@ export default function PlanHistoryPage() {
 
       <Card pad={16}>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <span style={{ fontWeight: 600, fontSize: "0.875rem" }}>Horse:</span>
+          <span style={{ fontWeight: 600, fontSize: "var(--fs-body)" }}>Horse:</span>
           <div style={{ width: 280 }}>
             <Select
               value={horseId}
@@ -64,15 +64,15 @@ export default function PlanHistoryPage() {
         shown.map((p) => (
           <Card key={p.id} pad={20}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
-              <span style={{ fontSize: "1.125rem", fontWeight: 700 }}>{p.name}</span>
+              <span style={{ fontSize: "var(--fs-section)", fontWeight: 700 }}>{p.name}</span>
               <Badge tone="neutral">{p.planCode}</Badge>
               <Badge tone={p.status === "COMPLETED" ? "ok" : "danger"}>{p.status === "COMPLETED" ? "Completed" : "Cancelled"}</Badge>
             </div>
-            <div style={{ fontSize: "0.875rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+            <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)", marginTop: "0.25rem" }}>
               Horse: <strong>{p.horseName}</strong> · {p.startDate} → {p.endDate} · {p.workoutCount} workout(s)
             </div>
             {(p.completionSummary || p.cancelledReason) && (
-              <div style={{ fontSize: "0.875rem", marginTop: "0.75rem", background: "var(--surface-sunken)", padding: "0.75rem", borderRadius: 6 }}>
+              <div style={{ fontSize: "var(--fs-body)", marginTop: "0.75rem", background: "var(--surface-sunken)", padding: "0.75rem", borderRadius: "var(--r-sm)" }}>
                 <strong>{p.status === "COMPLETED" ? "Summary:" : "Reason:"}</strong> {p.completionSummary || p.cancelledReason}
               </div>
             )}

@@ -1,8 +1,9 @@
-// Định dạng ngày giờ theo quy ước của design: "10/09/2026", "08:30", "10/09/2026 · 08:30".
+// Một kiểu ngày giờ cho toàn app: "13 Oct 2026", "16:02", "13 Oct 2026, 16:02".
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
@@ -14,7 +15,15 @@ function toDate(value: string | number | Date): Date {
 
 export function formatDate(value: string | number | Date): string {
   const d = toDate(value);
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+  if (Number.isNaN(d.getTime())) return "—";
+  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+// "13 Oct" — ngày trong năm hiện tại, dùng ở chỗ hẹp.
+export function formatShortDate(value: string | number | Date): string {
+  const d = toDate(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`;
 }
 
 export function formatTime(value: string | number | Date): string {
@@ -23,7 +32,7 @@ export function formatTime(value: string | number | Date): string {
 }
 
 export function formatDateTime(value: string | number | Date): string {
-  return `${formatDate(value)} · ${formatTime(value)}`;
+  return `${formatDate(value)}, ${formatTime(value)}`;
 }
 
 // "Saturday, 19 September 2026"
@@ -44,8 +53,11 @@ export function padCount(n: number): string {
 }
 
 // "Trần Văn Nam" => "TVN"? Design dùng 2 chữ cuối: "Văn Nam" => "VN".
+// Bỏ phần trong ngoặc và ký tự không phải chữ: "Michael Tran (Club Manager)" => "MT".
 export function initials(name: string): string {
   return name
+    .replace(/\(.*?\)/g, " ")
+    .replace(/[^\p{L}\s]/gu, " ")
     .split(" ")
     .filter(Boolean)
     .slice(-2)

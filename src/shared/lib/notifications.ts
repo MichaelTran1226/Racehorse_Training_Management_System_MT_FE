@@ -13,7 +13,7 @@ export interface AppNotification {
 }
 
 // Version v6 to automatically purge any legacy notifications and ensure full English
-const NOTIFICATIONS_STORAGE_KEY = "equiflow.notifications.v6";
+const NOTIFICATIONS_STORAGE_KEY = "equiflow.notifications.v7";
 const NOTIFICATIONS_EVENT = "equiflow:notifications_updated";
 
 if (typeof window !== "undefined") {
@@ -39,7 +39,7 @@ const INITIAL_ROLE_NOTIFICATIONS: AppNotification[] = [
     read: false,
     link: "/locks",
     targetRoles: ["VETERINARIAN", "HEAD_TRAINER"],
-    senderName: "Dr. Sarah Connor (Lead Vet)",
+    senderName: "Dr. Lê Minh Châu (Lead Vet)",
   },
   {
     id: "notif-vet-2",
@@ -50,7 +50,7 @@ const INITIAL_ROLE_NOTIFICATIONS: AppNotification[] = [
     read: false,
     link: "/herd",
     targetRoles: ["VETERINARIAN"],
-    senderName: "Emma Watson (Equine Groom)",
+    senderName: "Phạm Thị Bình (Equine Groom)",
   },
   {
     id: "notif-vet-3",
@@ -68,7 +68,7 @@ const INITIAL_ROLE_NOTIFICATIONS: AppNotification[] = [
   {
     id: "notif-mgr-1",
     title: "New Account Registration Request",
-    message: "Robert Chen (HORSE_OWNER) submitted membership application (REQ-2609-012).",
+    message: "Nguyễn Hoàng Anh (HORSE_OWNER) submitted membership application (REQ-2609-012).",
     category: "ACCOUNT",
     createdAt: new Date(Date.now() - 40 * 60000).toISOString(),
     read: false,
@@ -79,13 +79,13 @@ const INITIAL_ROLE_NOTIFICATIONS: AppNotification[] = [
   {
     id: "notif-mgr-2",
     title: "Permission Access Request",
-    message: "David Nguyen requested access permission to screen: Audit Log (Ref: 403-2609-0071).",
+    message: "Trần Văn Nam requested access permission to screen: Audit Log (Ref: 403-2609-0071).",
     category: "ACCOUNT",
     createdAt: new Date(Date.now() - 4 * 3600000).toISOString(),
     read: false,
     link: "/accounts",
     targetRoles: ["CLUB_MANAGER"],
-    senderName: "David Nguyen (Head Trainer)",
+    senderName: "Đinh Quang Trung",
   },
   {
     id: "notif-mgr-3",
@@ -109,7 +109,7 @@ const INITIAL_ROLE_NOTIFICATIONS: AppNotification[] = [
     read: false,
     link: "/locks",
     targetRoles: ["HEAD_TRAINER"],
-    senderName: "Dr. Sarah Connor (Lead Vet)",
+    senderName: "Dr. Lê Minh Châu (Lead Vet)",
   },
   {
     id: "notif-trn-2",

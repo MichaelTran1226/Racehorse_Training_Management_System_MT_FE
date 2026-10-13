@@ -9,6 +9,8 @@ import type {
   ChangeHorseStatusPayload,
   DeletedHorseFilter,
   DeletedHorseListResponse,
+  HorseCatalogItem,
+  HorseCatalogType,
 } from "./types";
 
 export async function getHorses(filter?: HorseListFilter): Promise<HorseListResponse> {
@@ -20,6 +22,7 @@ export async function getHorses(filter?: HorseListFilter): Promise<HorseListResp
   }
   if (filter?.breed && filter.breed !== "ALL") params.set("breed", filter.breed);
   if (filter?.gender && filter.gender !== "ALL") params.set("gender", filter.gender);
+  if (filter?.noStall) params.set("noStall", filter.noStall);
   if (filter?.sortBy) params.set("sortBy", filter.sortBy);
   if (filter?.sortOrder) params.set("sortOrder", filter.sortOrder);
   if (filter?.page) params.set("page", String(filter.page));
@@ -102,3 +105,31 @@ export async function getHorseHistory(id: string): Promise<HorseHistoryResponse>
   return await api<HorseHistoryResponse>("GET", `/horses/${id}/history`);
 }
 
+
+// SC-1.06 Danh mục Giống & Màu lông (mọi vai trò xem, CM sửa).
+export async function getHorseCatalog(
+  type: HorseCatalogType,
+  status: "ACTIVE" | "INACTIVE" | "ALL" = "ALL",
+  search?: string,
+): Promise<HorseCatalogItem[]> {
+  const params = new URLSearchParams({ type, status });
+  if (search) params.set("search", search);
+  return api<HorseCatalogItem[]>("GET", `/horse-catalogs?${params.toString()}`);
+}
+
+export async function createHorseCatalogItem(
+  input: Pick<HorseCatalogItem, "type" | "code" | "name" | "sortOrder"> & { description?: string },
+): Promise<HorseCatalogItem> {
+  return api<HorseCatalogItem>("POST", "/horse-catalogs", input);
+}
+
+export async function updateHorseCatalogItem(
+  id: string,
+  input: { name?: string; description?: string; sortOrder?: number },
+): Promise<HorseCatalogItem> {
+  return api<HorseCatalogItem>("PUT", `/horse-catalogs/${id}`, input);
+}
+
+export async function setHorseCatalogItemActive(id: string, isActive: boolean): Promise<HorseCatalogItem> {
+  return api<HorseCatalogItem>("PATCH", `/horse-catalogs/${id}/status`, { isActive });
+}

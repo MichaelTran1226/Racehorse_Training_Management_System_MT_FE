@@ -21,6 +21,7 @@ import { VitalsDisplay } from "../components/VitalsDisplay";
 import { HorseAnatomyGraphic } from "../components/HorseAnatomyGraphic";
 import type { HorseMedicalProfile, ObservationNote } from "../types";
 import styles from "./MedicalRecordPage.module.css";
+import { formatDate, formatDateTime } from "@/shared/lib/format";
 
 const TABS = [
   { id: "overview", label: "Overview" },
@@ -165,7 +166,7 @@ export default function MedicalRecordPage() {
                     <Button tone="ghost" icon="clock" onClick={() => setLockModalMode("extend")}>
                       Extend Review Date
                     </Button>
-                    <Button tone="primary" icon="unlock" onClick={() => setLockModalMode("lift")}>
+                    <Button tone="secondary" icon="unlock" onClick={() => setLockModalMode("lift")}>
                       Lift Training Lock
                     </Button>
                   </>
@@ -181,15 +182,15 @@ export default function MedicalRecordPage() {
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <Icon name="alert" size={20} />
               <div>
-                <strong>ACTIVE TRAINING LOCK ORDER IN FORCE ({horse.activeLock.lockCode})</strong>
+                <strong>Training Lock in effect ({horse.activeLock.lockCode})</strong>
                 <div>
                   Reason: {horse.activeLock.lockReason} · Placed by: {horse.activeLock.lockedBy} (
-                  {new Date(horse.activeLock.lockedAt).toLocaleDateString("en-US")})
+                  {formatDate(horse.activeLock.lockedAt)})
                 </div>
               </div>
             </div>
             <div>
-              Review Date: <strong>{new Date(horse.activeLock.reviewDate).toLocaleDateString("en-US")}</strong>
+              Review Date: <strong>{formatDate(horse.activeLock.reviewDate)}</strong>
             </div>
           </div>
         )}
@@ -208,7 +209,7 @@ export default function MedicalRecordPage() {
                 <Icon name="activity" size={18} />
                 Activity Level & Care Directives
               </h2>
-              <div style={{ fontSize: "14px", display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ fontSize: "var(--fs-body)", display: "flex", flexDirection: "column", gap: 10 }}>
                 <div>
                   Allowed activity level:{" "}
                   <Badge tone="brand">
@@ -240,7 +241,7 @@ export default function MedicalRecordPage() {
                   Active Medications
                 </h2>
                 {overview.activeMedications.length === 0 ? (
-                  <div style={{ color: "var(--muted)", fontSize: "13px" }}>Currently no active medications.</div>
+                  <div style={{ color: "var(--muted)", fontSize: "var(--fs-body)" }}>Currently no active medications.</div>
                 ) : (
                   <div className={styles.tableContainer}>
                     <table className={styles.dataTable}>
@@ -324,7 +325,7 @@ export default function MedicalRecordPage() {
                         <td>
                           <strong>{r.recordNumber}</strong>
                         </td>
-                        <td>{new Date(r.examinationDate).toLocaleDateString("en-US")}</td>
+                        <td>{formatDate(r.examinationDate)}</td>
                         <td>{r.examinationType}</td>
                         <td>{r.diagnosis || "None"}</td>
                         <td>
@@ -368,7 +369,7 @@ export default function MedicalRecordPage() {
               style={{
                 height: 220,
                 background: "var(--surface-sunken)",
-                borderRadius: 12,
+                borderRadius: "var(--r-lg)",
                 overflow: "hidden",
                 border: "1px solid var(--border)",
                 cursor: "pointer",
@@ -384,10 +385,10 @@ export default function MedicalRecordPage() {
                   bottom: 8,
                   right: 8,
                   background: "rgba(0, 0, 0, 0.75)",
-                  color: "#ffffff",
-                  fontSize: "0.72rem",
+                  color: "var(--text-on-brand)",
+                  fontSize: "var(--fs-caption)",
                   padding: "4px 8px",
-                  borderRadius: 6,
+                  borderRadius: "var(--r-sm)",
                   fontWeight: 600,
                   display: "flex",
                   alignItems: "center",
@@ -410,22 +411,22 @@ export default function MedicalRecordPage() {
                     display: "inline-block",
                   }}
                 />
-                <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 700 }}>
+                <h3 style={{ margin: 0, fontSize: "var(--fs-section)", fontWeight: 700 }}>
                   2D Musculoskeletal Anatomical Model (SC-3.05)
                 </h3>
               </div>
-              <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
+              <p style={{ margin: 0, fontSize: "var(--fs-body)", color: "var(--text-muted)", lineHeight: 1.5 }}>
                 Interactive dual-layer biomechanical mapping (Skeletal & Muscular systems) supporting coordinate-precise lesion tagging, progressive staging (Acute → Healed), and veterinary clinical evaluation.
               </p>
 
               <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginTop: "0.25rem" }}>
-                <div style={{ padding: "0.5rem 0.85rem", background: "var(--surface-sunken)", borderRadius: 8, fontSize: "0.8rem" }}>
+                <div style={{ padding: "0.5rem 0.85rem", background: "var(--surface-sunken)", borderRadius: "var(--r)", fontSize: "var(--fs-body)" }}>
                   Active Lesions: <strong>{injuries.filter((i) => i.stage !== "HEALED").length}</strong>
                 </div>
-                <div style={{ padding: "0.5rem 0.85rem", background: "var(--surface-sunken)", borderRadius: 8, fontSize: "0.8rem" }}>
+                <div style={{ padding: "0.5rem 0.85rem", background: "var(--surface-sunken)", borderRadius: "var(--r)", fontSize: "var(--fs-body)" }}>
                   Healed Lesions: <strong>{injuries.filter((i) => i.stage === "HEALED").length}</strong>
                 </div>
-                <div style={{ padding: "0.5rem 0.85rem", background: "var(--surface-sunken)", borderRadius: 8, fontSize: "0.8rem" }}>
+                <div style={{ padding: "0.5rem 0.85rem", background: "var(--surface-sunken)", borderRadius: "var(--r)", fontSize: "var(--fs-body)" }}>
                   Total Documented: <strong>{injuries.length}</strong>
                 </div>
               </div>
@@ -497,7 +498,7 @@ export default function MedicalRecordPage() {
                             {inj.stage === "ACUTE" ? "Acute" : inj.stage === "SUBACUTE" ? "Subacute" : inj.stage === "RECOVERING" ? "Recovering" : "Healed"}
                           </Badge>
                         </td>
-                        <td>{new Date(inj.detectedDate).toLocaleDateString("en-US")}</td>
+                        <td>{formatDate(inj.detectedDate)}</td>
                         <td>{inj.notes || "—"}</td>
                       </tr>
                     ))}
@@ -540,11 +541,11 @@ export default function MedicalRecordPage() {
                       <tr key={lk.id}>
                         <td><strong>{lk.lockCode}</strong></td>
                         <td><Badge tone="danger">{lk.appliedMedicalStatus}</Badge></td>
-                        <td>{new Date(lk.lockedAt).toLocaleDateString("en-US")}</td>
+                        <td>{formatDate(lk.lockedAt)}</td>
                         <td>{lk.lockedBy}</td>
                         <td>{lk.lockReason}</td>
-                        <td>{new Date(lk.reviewDate).toLocaleDateString("en-US")}</td>
-                        <td>{lk.releasedAt ? new Date(lk.releasedAt).toLocaleDateString("en-US") : "Active"}</td>
+                        <td>{formatDate(lk.reviewDate)}</td>
+                        <td>{lk.releasedAt ? formatDate(lk.releasedAt) : "Active"}</td>
                         <td>{lk.releaseReason || "—"}</td>
                       </tr>
                     ))}
@@ -585,9 +586,9 @@ export default function MedicalRecordPage() {
                       <tr key={p.id}>
                         <td><strong>{p.type}</strong></td>
                         <td>{p.category}</td>
-                        <td>{p.lastAdministeredDate ? new Date(p.lastAdministeredDate).toLocaleDateString("en-US") : "—"}</td>
+                        <td>{p.lastAdministeredDate ? formatDate(p.lastAdministeredDate) : "—"}</td>
                         <td>{p.administeredBy || "—"}</td>
-                        <td>{new Date(p.dueDate).toLocaleDateString("en-US")}</td>
+                        <td>{formatDate(p.dueDate)}</td>
                         <td>
                           <Badge tone={p.status === "OVERDUE" ? "danger" : p.status === "DUE_SOON" ? "warn" : "ok"} dot>
                             {p.status === "OVERDUE" ? "Overdue" : p.status === "DUE_SOON" ? "Due Soon" : "Up to Date"}
@@ -614,7 +615,7 @@ export default function MedicalRecordPage() {
               </h2>
 
               <div className={styles.filtersRow}>
-                <span style={{ fontSize: "13px", color: "var(--muted)" }}>Urgency:</span>
+                <span style={{ fontSize: "var(--fs-body)", color: "var(--muted)" }}>Urgency:</span>
                 <Button
                   size="sm"
                   tone={obsUrgency === "" ? "primary" : "ghost"}
@@ -655,16 +656,16 @@ export default function MedicalRecordPage() {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <strong>{o.groomName}</strong>
-                        <span style={{ fontSize: "12px", color: "var(--muted)" }}>({o.shift})</span>
+                        <span style={{ fontSize: "var(--fs-caption)", color: "var(--muted)" }}>({o.shift})</span>
                         <Badge tone={o.urgency === "URGENT" ? "danger" : o.urgency === "ATTENTION" ? "warn" : "neutral"} dot>
                           {o.urgency === "URGENT" ? "Urgent" : o.urgency === "ATTENTION" ? "Attention" : "Normal"}
                         </Badge>
                       </div>
-                      <span style={{ fontSize: "12px", color: "var(--muted)" }}>
-                        {new Date(o.observedAt).toLocaleString("en-US")}
+                      <span style={{ fontSize: "var(--fs-caption)", color: "var(--muted)" }}>
+                        {formatDateTime(o.observedAt)}
                       </span>
                     </div>
-                    <div style={{ fontSize: "13px", color: "var(--text)" }}>{o.content}</div>
+                    <div style={{ fontSize: "var(--fs-body)", color: "var(--text)" }}>{o.content}</div>
                   </div>
                 ))}
               </div>

@@ -111,15 +111,15 @@ export default function PlanDetailPage() {
         <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
           <div>
             <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
-              <h1 style={{ margin: 0, fontSize: "1.5rem" }}>{plan.name}</h1>
+              <h1 style={{ margin: 0, fontSize: "var(--fs-kpi)" }}>{plan.name}</h1>
               <Badge tone="neutral">{plan.planCode}</Badge>
               <Badge tone={PLAN_STATUS_TONE[plan.status]}>{PLAN_STATUS_LABEL[plan.status]}</Badge>
             </div>
-            <div style={{ fontSize: "0.875rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+            <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)", marginTop: "0.25rem" }}>
               Horse: <Link to={`/horses/${plan.horseId}`}>{plan.horseName}</Link> · {plan.startDate} → {plan.endDate} · Trainer:{" "}
               {plan.headTrainerName}
             </div>
-            {plan.objective && <div style={{ fontSize: "0.875rem", marginTop: "0.25rem" }}>Objective: {plan.objective}</div>}
+            {plan.objective && <div style={{ fontSize: "var(--fs-body)", marginTop: "0.25rem" }}>Objective: {plan.objective}</div>}
             <div style={{ maxWidth: 320, marginTop: "0.5rem" }}>
               <ProgressBar done={plan.progress.completed} total={plan.progress.due} />
             </div>
@@ -222,7 +222,7 @@ export default function PlanDetailPage() {
             <EmptyState title="No workouts yet." />
           ) : (
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.8125rem" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "var(--fs-body)" }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-sunken)" }}>
                     {["Date", "Phase", "Type", "Intensity", "Distance × reps", "Target speed", "Surface", "Jockey", "Groom", "Status", "Result", ""].map((h) => (
@@ -304,11 +304,11 @@ export default function PlanDetailPage() {
                   <span>{EXERCISE_TYPE_LABEL[s.sessionType]}</span>
                   {s.result?.performanceScore != null && <Badge tone="info">{s.result.performanceScore}/10</Badge>}
                   {s.result?.hasAbnormalSigns && <Badge tone="danger">Abnormal signs</Badge>}
-                  <span style={{ color: "var(--text-muted)", fontSize: "0.8125rem" }}>by {s.result?.recordedBy ?? "—"}</span>
+                  <span style={{ color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>by {s.result?.recordedBy ?? "—"}</span>
                 </div>
                 <div style={{ marginTop: "0.35rem" }}>{s.result?.headTrainerFeedback || "—"}</div>
                 {s.result?.hasAbnormalSigns && (
-                  <div style={{ marginTop: "0.35rem", color: "var(--danger)", fontSize: "0.875rem" }}>
+                  <div style={{ marginTop: "0.35rem", color: "var(--danger)", fontSize: "var(--fs-body)" }}>
                     {s.result.abnormalSignTypes.map((x) => ABNORMAL_SIGN_LABEL[x]).join(", ")}: {s.result.abnormalSignsDescription}
                   </div>
                 )}
@@ -363,21 +363,21 @@ function PhaseCard({ phase, sessions, current }: { phase: TrainingPhase; session
 
   return (
     <Card pad={16}>
-      <div style={{ border: current ? "2px solid var(--accent)" : "none", borderRadius: 8, padding: current ? "0.5rem" : 0 }}>
+      <div style={{ border: current ? "2px solid var(--brand)" : "none", borderRadius: "var(--r)", padding: current ? "0.5rem" : 0 }}>
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
           <strong>{phase.name}</strong>
           <Badge tone="neutral">{PHASE_TYPE_LABEL[phase.type] ?? phase.type}</Badge>
           {current && <Badge tone="info">Current</Badge>}
         </div>
-        <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>
+        <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>
           {phase.startDate} → {phase.endDate}
         </div>
-        {phase.goal && <div style={{ fontSize: "0.875rem", marginTop: "0.35rem" }}>{phase.goal}</div>}
-        <div style={{ fontSize: "0.8125rem", marginTop: "0.5rem" }}>
+        {phase.goal && <div style={{ fontSize: "var(--fs-body)", marginTop: "0.35rem" }}>{phase.goal}</div>}
+        <div style={{ fontSize: "var(--fs-body)", marginTop: "0.5rem" }}>
           Quota: {phase.sessionsPerWeek}/week · max {phase.maxWeeklyDistance} m/week · {TRACK_LABEL[phase.surface] ?? phase.surface}
           {phase.targetSpeedKmh ? ` · ${phase.targetSpeedKmh} km/h` : ""}
         </div>
-        <div style={{ fontSize: "0.8125rem" }}>
+        <div style={{ fontSize: "var(--fs-body)" }}>
           Actual: {done.length} workout(s) completed · {run} m run
         </div>
         {overWeeks.map((w) => (

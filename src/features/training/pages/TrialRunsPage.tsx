@@ -60,8 +60,8 @@ export default function TrialRunsPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Trial Runs</h1>
-          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
+          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>Trial Runs</h1>
+          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
             One trial run per track surface in any 15-minute window. Schedule them from the training schedule (type “Trial run”).
           </p>
         </div>
@@ -92,9 +92,9 @@ export default function TrialRunsPage() {
       ) : (
         [...groups.entries()].map(([key, rows]) => (
           <Card key={key} pad={20}>
-            <h3 style={{ margin: "0 0 0.75rem", fontSize: "1.0625rem" }}>{key}</h3>
+            <h3 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>{key}</h3>
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.875rem" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "var(--fs-body)" }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-sunken)" }}>
                     <th style={{ padding: "0.5rem 0.75rem" }}>Time</th>

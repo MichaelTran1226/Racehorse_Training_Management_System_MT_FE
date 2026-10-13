@@ -98,7 +98,7 @@ export function AddTreatmentPhaseModal({ onClose, onSubmit }: AddTreatmentPhaseM
     >
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {error && (
-          <div style={{ color: "var(--danger)", fontSize: "13px", padding: "8px", background: "var(--danger-bg)", borderRadius: "4px" }}>
+          <div style={{ color: "var(--danger)", fontSize: "var(--fs-body)", padding: "8px", background: "var(--danger-bg)", borderRadius: "4px" }}>
             {error}
           </div>
         )}
@@ -141,7 +141,7 @@ export function AddTreatmentPhaseModal({ onClose, onSubmit }: AddTreatmentPhaseM
 
         <div style={{ borderTop: "1px solid var(--border)", paddingTop: 10 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <span style={{ fontSize: "13px", fontWeight: 600 }}>Daily Care Instructions (for Groom)</span>
+            <span style={{ fontSize: "var(--fs-body)", fontWeight: 600 }}>Daily Care Instructions (for Groom)</span>
             <Button size="sm" tone="ghost" icon="plus" onClick={addInstruction}>
               Add Task
             </Button>

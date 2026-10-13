@@ -9,6 +9,7 @@ import { useAuth } from "@/shared/components/layout/AuthProvider";
 import { listRecords } from "../api";
 import type { MedicalRecord } from "../types";
 import styles from "./MedicalRecordPage.module.css";
+import { capitalize, formatDate } from "@/shared/lib/format";
 
 const STATUS_OPTIONS = [
   { value: "", label: "All Statuses" },
@@ -58,7 +59,7 @@ export default function RecordListPage() {
         <div className={styles.headerTop}>
           <div className={styles.titleArea}>
             <h1 className={styles.horseTitle}>Electronic Medical Records</h1>
-            <span style={{ fontSize: "14px", color: "var(--muted)" }}>
+            <span style={{ fontSize: "var(--fs-body)", color: "var(--muted)" }}>
               Manage clinical diagnoses, treatment protocols, prescriptions, and follow-up history for the entire herd.
             </span>
 
@@ -79,12 +80,15 @@ export default function RecordListPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by record number, horse name, diagnosis..."
+              icon="search"
+              aria-label="Search medical records"
+              placeholder="Record number, horse or diagnosis"
             />
           </div>
 
           <div style={{ width: "200px" }}>
             <Select
+              aria-label="Status"
               options={STATUS_OPTIONS}
               value={status}
               onChange={(e) => {
@@ -95,7 +99,7 @@ export default function RecordListPage() {
           </div>
 
           <Button tone="ghost" onClick={() => { setSearch(""); setStatus(""); setPage(1); }}>
-            Clear Filters
+            Clear filters
           </Button>
         </div>
       </div>
@@ -103,14 +107,14 @@ export default function RecordListPage() {
       {/* Main Records Table */}
       <div className={styles.sectionCard}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--muted)" }}>
+          <span style={{ fontSize: "var(--fs-body)", fontWeight: 600, color: "var(--muted)" }}>
             Showing {records.length} of {total} records
           </span>
         </div>
 
         {loading ? (
           <div style={{ textAlign: "center", padding: "40px", color: "var(--muted)" }}>
-            Loading medical records...
+            Loading medical records…
           </div>
         ) : records.length === 0 ? (
           <EmptyState
@@ -135,9 +139,9 @@ export default function RecordListPage() {
               <tbody>
                 {records.map((r) => (
                   <tr key={r.id} onClick={() => navigate(`/medical/records/${r.id}`)}>
-                    <td><strong>{r.recordNumber}</strong></td>
-                    <td>{r.horseName || r.horseId}</td>
-                    <td>{new Date(r.examinationDate).toLocaleDateString("en-US")}</td>
+                    <td className="num nowrap"><strong>{r.recordNumber}</strong></td>
+                    <td className="nowrap">{r.horseName || r.horseId}</td>
+                    <td className="num nowrap">{formatDate(r.examinationDate)}</td>
                     <td>{r.examinationType}</td>
                     <td>{r.diagnosis || "None recorded"}</td>
                     <td>
@@ -150,18 +154,17 @@ export default function RecordListPage() {
                             : "ok"
                         }
                       >
-                        {r.severity || "—"}
+                        {r.severity ? capitalize(r.severity) : "—"}
                       </Badge>
                     </td>
                     <td>
                       <Badge
                         tone={r.status === "OPEN" ? "info" : r.status === "CLOSED" ? "ok" : "neutral"}
-                        dot
                       >
                         {r.status === "OPEN" ? "In Treatment" : r.status === "CLOSED" ? "Closed" : "Draft"}
                       </Badge>
                     </td>
-                    <td>{r.vetName || "—"}</td>
+                    <td className="nowrap">{r.vetName || "—"}</td>
                   </tr>
                 ))}
               </tbody>

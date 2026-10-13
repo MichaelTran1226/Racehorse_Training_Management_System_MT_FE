@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createBrowserRouter, Navigate, Outlet, useParams, useRouteError } from "react-router-dom";
 import AuditLogPage from "@/features/dashboard/pages/AuditLogPage";
 import AccountListPage from "@/features/accounts/pages/AccountListPage";
@@ -23,29 +24,32 @@ import ComingSoonPage from "@/features/dashboard/pages/ComingSoonPage";
 import DashboardPage from "@/features/dashboard/pages/DashboardPage";
 import NotificationsPage from "@/features/dashboard/pages/NotificationsPage";
 import NotificationSettingsPage from "@/features/dashboard/pages/NotificationSettingsPage";
-import MedicalRecordPage from "@/features/health/pages/MedicalRecordPage";
-import RecordListPage from "@/features/health/pages/RecordListPage";
-import RecordDetailPage from "@/features/health/pages/RecordDetailPage";
-import RecordFormPage from "@/features/health/pages/RecordFormPage";
-import InjuryMapPage from "@/features/health/pages/InjuryMapPage";
-import TrainingLockPage from "@/features/health/pages/TrainingLockPage";
-import CareSchedulePage from "@/features/health/pages/CareSchedulePage";
-import HerdHealthPage from "@/features/health/pages/HerdHealthPage";
-import PlanListPage from "@/features/training/pages/PlanListPage";
-import PlanWizardPage from "@/features/training/pages/PlanWizardPage";
-import PlanHistoryPage from "@/features/training/pages/PlanHistoryPage";
-import WeeklyCalendarPage from "@/features/training/pages/WeeklyCalendarPage";
-import TrialRunsPage from "@/features/training/pages/TrialRunsPage";
-import SessionMetricsPage from "@/features/training/pages/SessionMetricsPage";
-import LiveMonitorPage from "@/features/training/pages/LiveMonitorPage";
-import AlertListPage from "@/features/training/pages/AlertListPage";
-import TrainingOverviewPage from "@/features/training/pages/TrainingOverviewPage";
-import PlanDetailPage from "@/features/training/pages/PlanDetailPage";
-import SessionResultPage from "@/features/training/pages/SessionResultPage";
-import FitnessChartPage from "@/features/training/pages/FitnessChartPage";
-import MyTrainingPage from "@/features/training/pages/MyTrainingPage";
+import HorseCatalogPage from "@/features/horses/pages/HorseCatalogPage";
 import StableMapPage from "@/features/stable/pages/StableMapPage";
 import StallCatalogPage from "@/features/stable/pages/StallCatalogPage";
+import {
+  MedicalRecordPage,
+  RecordListPage,
+  RecordDetailPage,
+  RecordFormPage,
+  InjuryMapPage,
+  TrainingLockPage,
+  CareSchedulePage,
+  HerdHealthPage,
+  PlanListPage,
+  PlanWizardPage,
+  PlanHistoryPage,
+  WeeklyCalendarPage,
+  TrialRunsPage,
+  SessionMetricsPage,
+  LiveMonitorPage,
+  AlertListPage,
+  TrainingOverviewPage,
+  PlanDetailPage,
+  SessionResultPage,
+  FitnessChartPage,
+  MyTrainingPage,
+} from "./lazyPages";
 import { AppShell } from "@/shared/components/layout/AppShell";
 import { Providers } from "@/shared/components/layout/Providers";
 import { RoleGuard } from "./RoleGuard";
@@ -60,10 +64,10 @@ function RouteErrorBoundary() {
   console.error("Route error captured:", error);
   return (
     <div style={{ padding: "4rem 1.5rem", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
-      <h2 style={{ fontSize: "1.5rem", fontWeight: 700, margin: 0, color: "var(--ink, #0f172a)" }}>
+      <h2 style={{ fontSize: "var(--fs-kpi)", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
         Unexpected Display Conflict
       </h2>
-      <p style={{ color: "var(--muted, #64748b)", maxWidth: 520, margin: 0, fontSize: "0.9375rem", lineHeight: 1.6 }}>
+      <p style={{ color: "var(--muted)", maxWidth: 520, margin: 0, fontSize: "var(--fs-body)", lineHeight: 1.6 }}>
         The browser encountered a DOM reconciliation conflict (often caused by auto-translation extensions). Please reload or navigate back to the dashboard.
       </p>
       <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.5rem" }}>
@@ -72,10 +76,10 @@ function RouteErrorBoundary() {
           onClick={() => window.location.reload()}
           style={{
             padding: "0.625rem 1.25rem",
-            background: "var(--brand, #16a34a)",
-            color: "#fff",
+            background: "var(--brand)",
+            color: "var(--text-on-brand)",
             border: "none",
-            borderRadius: "6px",
+            borderRadius: "var(--r-sm)",
             cursor: "pointer",
             fontWeight: 600,
           }}
@@ -86,10 +90,10 @@ function RouteErrorBoundary() {
           href="/herd"
           style={{
             padding: "0.625rem 1.25rem",
-            background: "var(--surface, #f8fafc)",
-            color: "var(--ink, #0f172a)",
-            border: "1px solid var(--border, #cbd5e1)",
-            borderRadius: "6px",
+            background: "var(--surface)",
+            color: "var(--ink)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--r-sm)",
             textDecoration: "none",
             fontWeight: 600,
           }}
@@ -116,7 +120,10 @@ function AppLayout() {
     <AppShell>
       {/* RoleGuard chặn trang khi tài khoản không đủ quyền (hiện 403 ngay tại URL đó). */}
       <RoleGuard>
-        <Outlet />
+        {/* Nhóm Y tế và Huấn luyện tải theo route (React.lazy) để file JS đầu tiên nhẹ hơn. */}
+        <Suspense fallback={<p role="status" style={{ margin: 0, color: "var(--muted)" }}>Loading…</p>}>
+          <Outlet />
+        </Suspense>
       </RoleGuard>
     </AppShell>
   );
@@ -227,7 +234,9 @@ export const router = createBrowserRouter([
 
           // ---- Phân hệ Chuồng trại (Flow 4 & P1-09)
           { path: "/stables/map", element: <StableMapPage /> },
+          { path: "/stalls", element: <StableMapPage /> },
           { path: "/catalogs/stalls", element: <StallCatalogPage /> },
+          { path: "/catalogs/breeds", element: <HorseCatalogPage /> },
 
           { path: "*", element: <ComingSoonRoute /> },
         ],

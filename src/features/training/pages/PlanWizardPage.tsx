@@ -169,10 +169,10 @@ export default function PlanWizardPage() {
   return (
     <div style={{ maxWidth: 920, margin: "0 auto", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
       <div>
-        <h1 style={{ fontSize: "1.5rem", fontWeight: 700, margin: 0 }}>
+        <h1 style={{ fontSize: "var(--fs-kpi)", fontWeight: 700, margin: 0 }}>
           {editing ? `Edit ${existing?.planCode ?? "plan"}` : "Create Training Plan"}
         </h1>
-        <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
+        <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
           A new plan is saved as a draft. Add workouts, then activate it.
         </p>
       </div>
@@ -180,14 +180,14 @@ export default function PlanWizardPage() {
       {error && <Alert tone="danger" title="Cannot save">{error}</Alert>}
 
       <Card pad={24}>
-        <h2 style={{ margin: "0 0 1rem", fontSize: "1.125rem" }}>General information</h2>
+        <h2 style={{ margin: "0 0 1rem", fontSize: "var(--fs-section)" }}>General information</h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
           <Field label="Horse" required>
             <Select
               value={horseId}
               disabled={editing}
               onChange={(e) => change(setHorseId)(e.target.value)}
-              options={horses.map((h) => ({ value: h.id, label: `${h.name} (${h.horseCode ?? ""})${h.isMedicalLocked ? " 🔒" : ""}` }))}
+              options={horses.map((h) => ({ value: h.id, label: `${h.name} (${h.horseCode ?? ""})${h.isMedicalLocked ? " · Training Lock" : ""}` }))}
             />
           </Field>
           <Field label="Plan name" required hint="3-150 characters">
@@ -223,7 +223,7 @@ export default function PlanWizardPage() {
       </Card>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h2 style={{ margin: 0, fontSize: "1.125rem" }}>Phases ({phases.length}/12)</h2>
+        <h2 style={{ margin: 0, fontSize: "var(--fs-section)" }}>Phases ({phases.length}/12)</h2>
         <Button tone="secondary" onClick={addPhase} disabled={phases.length >= 12}>+ Add phase</Button>
       </div>
 

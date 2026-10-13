@@ -6,7 +6,6 @@ export default function RaceRecordPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
-        eyebrow="SCHEDULED SPRINT MODULE"
         title="Equine Race Record"
         description="This operational module is scheduled for implementation in accordance with the project sprint plan."
       />

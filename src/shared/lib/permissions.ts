@@ -58,18 +58,22 @@ export const PERMISSIONS: PermissionMeta[] = [
   },
   {
     key: "createPlan", group: "TRAINING", name: "Create and edit Training Plans", note: "Phases, distance, volume, surface",
+    ownerRoles: ["HEAD_TRAINER"], ownerReason: "Only a Head Trainer plans training.",
     revokeEffect: "Two active Training Plans stay in place but can no longer be edited by this account.",
   },
   {
     key: "assignSchedule", group: "TRAINING", name: "Assign the daily schedule", note: "Sessions, horses and the care team",
+    ownerRoles: ["HEAD_TRAINER"], ownerReason: "Only a Head Trainer schedules workouts.",
     revokeEffect: "Four sessions already scheduled this week stay in place; new sessions can no longer be assigned.",
   },
   {
     key: "recordMetrics", group: "TRAINING", name: "Record session metrics", note: "Heart rate, speed, actual distance",
+    ownerRoles: ["HEAD_TRAINER"], ownerReason: "Only a Head Trainer records workout results.",
     revokeEffect: "Metrics already recorded stay in place; new session metrics can no longer be entered.",
   },
   {
     key: "ackAlerts", group: "TRAINING", name: "Acknowledge Threshold Alerts", note: "Required to clear a red alert",
+    ownerRoles: ["VETERINARIAN"], ownerReason: "Only a Veterinarian reviews abnormal-sign alerts.",
     revokeEffect: "Open Threshold Alerts stay red until another account acknowledges them.",
   },
   {
@@ -117,11 +121,11 @@ export function permissionLock(role: Role, meta: PermissionMeta): PermissionLock
 }
 
 const DEFAULT_ON: Record<Role, PermissionKey[]> = {
-  HEAD_TRAINER: ["viewHorses", "editHorses", "createPlan", "assignSchedule", "recordMetrics", "ackAlerts", "viewMedical"],
+  HEAD_TRAINER: ["viewHorses", "editHorses", "createPlan", "assignSchedule", "recordMetrics", "viewMedical"],
   VETERINARIAN: ["viewHorses", "viewMedical", "placeLock", "liftLock", "ackAlerts"],
   GROOM: ["viewHorses"],
   HORSE_OWNER: ["viewHorses"],
-  CLUB_MANAGER: ["viewHorses", "editHorses", "deleteHorses", "viewMedical", "manageAccounts", "viewAudit", "ackAlerts"],
+  CLUB_MANAGER: ["viewHorses", "editHorses", "deleteHorses", "viewMedical", "manageAccounts", "viewAudit"],
 };
 
 export function defaultPermissions(role: Role): PermissionMap {
@@ -155,15 +159,15 @@ export const NOTIFY_META: NotifyMeta[] = [
 ];
 
 export function defaultNotify(role: Role): NotifyMap {
-  return { thresholdAlert: role === "HEAD_TRAINER", lockLifted: true, dailyDigest: false, raceResults: true };
+  return { thresholdAlert: role === "VETERINARIAN", lockLifted: true, dailyDigest: false, raceResults: true };
 }
 
-// Threshold Alert: bắt buộc bật với Head Trainer, các vai trò khác không nhận.
+// Threshold Alert (Q-0.04): bắt buộc bật với Bác sĩ thú y, các vai trò khác không nhận.
 export function notifyLock(role: Role, key: NotifyKey): PermissionLock {
   if (key !== "thresholdAlert") return { locked: false };
-  return role === "HEAD_TRAINER"
-    ? { locked: true, value: true, reason: "Mandatory for a Head Trainer; it cannot be switched off." }
-    : { locked: true, value: false, reason: "Threshold Alerts go to the Head Trainer only." };
+  return role === "VETERINARIAN"
+    ? { locked: true, value: true, reason: "Mandatory for a Veterinarian; it cannot be switched off." }
+    : { locked: true, value: false, reason: "Threshold Alerts go to the Veterinarian only." };
 }
 
 // ---------------------------------------------------------------- Điều hướng (Sidebar)
@@ -190,7 +194,15 @@ function item(id: string, label: string, icon: string, extra: { requires?: Permi
 
 export const ROLE_NAV: Record<Role, NavGroup[]> = {
   HEAD_TRAINER: [
-    { label: "WORKSPACE", items: [item("dashboard", "Dashboard", "home"), item("horses", "Horses", "horse", { requires: "viewHorses" })] },
+    {
+      label: "WORKSPACE",
+      items: [
+        item("dashboard", "Dashboard", "home"),
+        item("horses", "Horses", "horse", { requires: "viewHorses" }),
+        item("stalls", "Stall Map", "grid"),
+        item("herd", "Herd Health", "stethoscope", { requires: "viewMedical" }),
+      ],
+    },
     {
       label: "TRAINING",
       items: [
@@ -203,14 +215,17 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
     },
     {
       label: "MONITORING",
-      items: [item("monitor", "Session Telemetry", "activity"), item("alerts", "Threshold Alerts", "alert", { requires: "ackAlerts", alert: true })],
+      items: [item("monitor", "Session Telemetry", "activity"), item("alerts", "Threshold Alerts", "alert", { alert: true })],
     },
     { label: "RACING", items: [item("races", "Race Entries", "trophy")] },
     { label: "REPORTS", items: [item("progress", "Training Progress", "chart")] },
     { label: "OTHER", items: [item("profile", "My Profile", "user")] },
   ],
   VETERINARIAN: [
-    { label: "WORKSPACE", items: [item("dashboard", "Dashboard", "home"), item("horses", "Horses", "horse", { requires: "viewHorses" })] },
+    {
+      label: "WORKSPACE",
+      items: [item("dashboard", "Dashboard", "home"), item("horses", "Horses", "horse", { requires: "viewHorses" }), item("stalls", "Stall Map", "grid")],
+    },
     {
       label: "MEDICAL",
       items: [
@@ -258,7 +273,16 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
         item("catalog", "Supplies Catalog", "package", { requires: "manageAccounts" }),
       ],
     },
-    { label: "MASTER DATA", items: [item("horses", "Horses", "horse", { requires: "viewHorses" }), item("stalls", "Stall Map", "grid")] },
+    {
+      label: "MASTER DATA",
+      items: [
+        item("horses", "Horses", "horse", { requires: "viewHorses" }),
+        item("stalls", "Stall Map", "grid"),
+        item("catalogs/stalls", "Zones & Stalls", "layers"),
+        item("catalogs/breeds", "Breeds & Colours", "list"),
+        item("herd", "Herd Health", "stethoscope", { requires: "viewMedical" }),
+      ],
+    },
     { label: "TRAINING", items: [item("training", "Training Overview", "chart")] },
     {
       label: "REPORTS",
@@ -272,13 +296,17 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
   ],
 };
 
+// Mục đã có trong thiết kế nhưng chưa có màn hình (route rơi vào trang "Coming soon").
+// Ẩn khỏi sidebar để không có mục chết; đường dẫn vẫn giữ nguyên trong router.
+const NOT_BUILT = new Set(["/races", "/health-report", "/tasks", "/rations", "/incidents", "/supplies", "/costs", "/race-record", "/health", "/catalog", "/performance"]);
+
 // Sidebar chỉ hiện mục mà tài khoản được cấp quyền (xây từ danh sách quyền, không chỉ từ tên vai trò).
 export function navFor(role: Role, permissions: PermissionMap): NavGroup[] {
   const groups = role !== "CLUB_MANAGER" && permissions.viewAudit
     ? [...ROLE_NAV[role], { label: "AUDIT", items: [item("audit", "Audit Log", "history", { requires: "viewAudit" })] }]
     : ROLE_NAV[role];
   return groups
-    .map((g) => ({ ...g, items: g.items.filter((it) => !it.requires || permissions[it.requires]) }))
+    .map((g) => ({ ...g, items: g.items.filter((it) => !NOT_BUILT.has(it.href) && (!it.requires || permissions[it.requires])) }))
     .filter((g) => g.items.length > 0);
 }
 
@@ -353,6 +381,8 @@ export function screenAccess(role: Role, permissions: PermissionMap, pathname: s
     const seg2 = pathname.split("/")[2];
     if (seg2 === "preventive-types") href = "/vaccine";
     if (seg2 === "stalls") href = "/stalls";
+  } else if (href === "/stables") {
+    href = "/stalls";
   } else if (href === "/records" && pathname.startsWith("/records/horse")) {
     href = "/records"; // keep it as records
   }

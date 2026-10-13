@@ -170,7 +170,7 @@ export function ChangeStatusDialog({ horse, onSuccess }: ChangeStatusDialogProps
                 placeholder={reasonRequired ? "Clinical rationale (10-500 characters)..." : "Operational note..."}
               />
               {reasonError && reason.length > 0 && (
-                <div style={{ color: "var(--danger, #dc2626)", fontSize: "0.8rem", marginTop: "0.25rem" }}>{reasonError}</div>
+                <div style={{ color: "var(--danger)", fontSize: "var(--fs-body)", marginTop: "0.25rem" }}>{reasonError}</div>
               )}
             </div>
           </form>

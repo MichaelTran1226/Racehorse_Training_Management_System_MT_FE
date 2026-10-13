@@ -202,7 +202,7 @@ export function WorkoutDialog({ plans, plan: fixedPlan, session, defaultDate, on
               onChange={(e) => setPlanId(e.target.value)}
               options={(plans ?? []).map((p) => ({
                 value: p.id,
-                label: `${p.horseName} – ${p.name} (${p.status === "ACTIVE" ? "Active" : "Draft"})${p.isLockedByMedical ? " 🔒" : ""}`,
+                label: `${p.horseName} – ${p.name} (${p.status === "ACTIVE" ? "Active" : "Draft"})${p.isLockedByMedical ? " · Training Lock" : ""}`,
               }))}
             />
           </Field>

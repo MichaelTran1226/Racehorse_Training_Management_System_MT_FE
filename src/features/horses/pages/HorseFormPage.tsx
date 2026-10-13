@@ -10,36 +10,41 @@ import { Alert } from "@/shared/components/ui/Alert";
 import { ConfirmModal } from "@/shared/components/ui/ConfirmModal";
 import { useToast } from "@/shared/components/ui/Toast";
 import { ApiError } from "@/shared/lib/api";
-import { getHorseById, createHorse, updateHorse } from "../api";
-import type { Horse, CreateHorsePayload, UpdateHorsePayload } from "../types";
+import { getHorseById, createHorse, updateHorse, getHorseCatalog } from "../api";
+import type { Horse, CreateHorsePayload, UpdateHorsePayload, HorseCatalogItem } from "../types";
 
-const BREED_OPTIONS = [
-  { value: "Thoroughbred", label: "Thoroughbred" },
-  { value: "Arabian", label: "Arabian" },
-  { value: "Quarter Horse", label: "Quarter Horse" },
-  { value: "Warmblood", label: "Warmblood" },
-  { value: "Standardbred", label: "Standardbred" },
-  { value: "Appaloosa", label: "Appaloosa" },
-  { value: "Paint", label: "Paint" },
-];
 
 const GENDER_OPTIONS = [
-  { value: "Colt", label: "Colt (Young male < 4 yrs)" },
-  { value: "Stallion", label: "Stallion (Intact adult male)" },
-  { value: "Gelding", label: "Gelding (Castrated male)" },
-  { value: "Filly", label: "Filly (Young female < 4 yrs)" },
-  { value: "Mare", label: "Mare (Adult female)" },
+  { value: "Stallion", label: "Stallion (male)" },
+  { value: "Mare", label: "Mare (female)" },
+  { value: "Gelding", label: "Gelding (castrated male)" },
 ];
 
-const COLOR_OPTIONS = [
-  { value: "Bay", label: "Bay" },
-  { value: "Bay Dark", label: "Bay Dark" },
-  { value: "Chestnut", label: "Chestnut" },
-  { value: "Black", label: "Black" },
-  { value: "Grey", label: "Grey" },
-  { value: "Roan", label: "Roan" },
-  { value: "Palomino", label: "Palomino" },
-];
+/** Hồ sơ cũ còn giới tính Colt / Filly: quy về 3 giá trị của SC-1.02. */
+const LEGACY_GENDER: Record<string, string> = { Colt: "Stallion", Filly: "Mare" };
+
+/** Danh sách chọn từ danh mục SC-1.06; giá trị đang lưu đã ngừng dùng vẫn hiện kèm "(no longer in use)". */
+function catalogOptions(items: HorseCatalogItem[], current: string) {
+  const options = items.map((i) => ({ value: i.name, label: i.name }));
+  if (current && !items.some((i) => i.name.toLowerCase() === current.toLowerCase())) {
+    options.unshift({ value: current, label: `${current} (no longer in use)` });
+  }
+  return [{ value: "", label: "— Select —" }, ...options];
+}
+
+function generateMicrochip15(): string {
+  const random12 = Math.floor(Math.random() * 1e12)
+    .toString()
+    .padStart(12, "0");
+  return `985${random12}`;
+}
+
+function generateRfidCode(): string {
+  const randStr = Math.random().toString(36).substring(2, 8).toUpperCase();
+  const numStr = Math.floor(1000 + Math.random() * 9000).toString();
+  return `RFID-${randStr}${numStr}`;
+}
+
 
 export default function HorseFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -53,19 +58,27 @@ export default function HorseFormPage() {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [retiredError, setRetiredError] = useState(false);
 
-  // Form fields
+  // Form fields (tự sinh mã microchip và rfid nếu tạo mới)
   const [horseCode, setHorseCode] = useState("");
   const [name, setName] = useState("");
-  const [breed, setBreed] = useState("Thoroughbred");
+  const [breed, setBreed] = useState("");
+  const [breeds, setBreeds] = useState<HorseCatalogItem[]>([]);
+  const [colors, setColors] = useState<HorseCatalogItem[]>([]);
   const [dob, setDob] = useState("");
-  const [gender, setGender] = useState("Colt");
-  const [color, setColor] = useState("Bay");
-  const [microchip, setMicrochip] = useState("");
-  const [rfid, setRfid] = useState("");
+  const [gender, setGender] = useState("Stallion");
+  const [color, setColor] = useState("");
+  const [microchip, setMicrochip] = useState(() => (isEdit ? "" : generateMicrochip15()));
+  const [rfid, setRfid] = useState(() => (isEdit ? "" : generateRfidCode()));
 
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState("");
+
+  const now = new Date();
+  const todayStr = now.toISOString().split("T")[0];
+  const twelveYearsAgo = new Date();
+  twelveYearsAgo.setFullYear(now.getFullYear() - 12);
+  const minDobStr = twelveYearsAgo.toISOString().split("T")[0];
 
   useEffect(() => {
     if (!id) return;
@@ -79,10 +92,10 @@ export default function HorseFormPage() {
         }
         setHorseCode(horse.horseCode || "");
         setName(horse.name || "");
-        setBreed(horse.breed || "Thoroughbred");
+        setBreed(horse.breed || "");
         setDob(horse.dob ? horse.dob.split("T")[0] : "");
-        setGender(horse.gender || "Colt");
-        setColor(horse.color || "Bay");
+        setGender(LEGACY_GENDER[horse.gender] ?? horse.gender ?? "Stallion");
+        setColor(horse.color || "");
         setMicrochip(horse.microchip || horse.microchipRfid || "");
         setRfid(horse.rfid || "");
       })
@@ -98,6 +111,28 @@ export default function HorseFormPage() {
       active = false;
     };
   }, [id]);
+
+  // Giống / Màu lông lấy từ danh mục SC-1.06 (chỉ mục đang dùng).
+  useEffect(() => {
+    Promise.all([getHorseCatalog("BREED", "ACTIVE"), getHorseCatalog("COLOR", "ACTIVE")])
+      .then(([b, c]) => {
+        setBreeds(b);
+        setColors(c);
+      })
+      .catch(() => setGeneralError("Could not load the breed and coat colour lists. Reload the page."));
+  }, []);
+
+  // Cảnh báo người dùng khi reload hoặc tắt tab mà có thay đổi chưa lưu (FR-1.26)
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
 
   function validate(): boolean {
     const errs: Record<string, string> = {};
@@ -119,13 +154,13 @@ export default function HorseFormPage() {
     } else {
       const birth = new Date(dob);
       const now = new Date();
-      const fortyYearsAgo = new Date();
-      fortyYearsAgo.setFullYear(now.getFullYear() - 40);
+      const twelveYearsAgo = new Date();
+      twelveYearsAgo.setFullYear(now.getFullYear() - 12);
 
       if (birth > now) {
         errs.dob = "Date of birth cannot be in the future.";
-      } else if (birth < fortyYearsAgo) {
-        errs.dob = "Date of birth cannot exceed 40 years ago.";
+      } else if (birth < twelveYearsAgo) {
+        errs.dob = "A horse can be registered up to 12 years old.";
       }
     }
 
@@ -137,9 +172,10 @@ export default function HorseFormPage() {
       errs.color = "Please select a coat color.";
     }
 
-    if (!microchip.trim()) {
+    // Microchip: khi tạo, để trống thì hệ thống tự sinh; khi sửa phải giữ số thật (không tự sinh số mới).
+    if (isEdit && !microchip.trim()) {
       errs.microchip = "Microchip number is required.";
-    } else if (!/^\d{15}$/.test(microchip.trim())) {
+    } else if (microchip.trim() && !/^\d{15}$/.test(microchip.trim())) {
       errs.microchip = "Microchip number must consist of exactly 15 digits.";
     }
 
@@ -156,6 +192,10 @@ export default function HorseFormPage() {
     setSubmitting(true);
     setGeneralError("");
 
+    // Chỉ tự sinh khi tạo mới. Khi sửa: gửi đúng giá trị đang có, RFID để trống = không đổi.
+    const finalMicrochip = isEdit ? microchip.trim() : microchip.trim() || generateMicrochip15();
+    const finalRfid = rfid.trim() ? rfid.trim().toUpperCase() : isEdit ? undefined : generateRfidCode();
+
     try {
       if (isEdit && id) {
         const payload: UpdateHorsePayload = {
@@ -164,8 +204,8 @@ export default function HorseFormPage() {
           dob,
           gender,
           color,
-          microchip: microchip.trim(),
-          rfid: rfid.trim() ? rfid.trim().toUpperCase() : undefined,
+          microchip: finalMicrochip,
+          rfid: finalRfid,
         };
         const saved = await updateHorse(id, payload);
         toast.show(`Horse profile ${saved.name} updated successfully.`, "ok");
@@ -178,8 +218,8 @@ export default function HorseFormPage() {
           dob,
           gender,
           color,
-          microchip: microchip.trim(),
-          rfid: rfid.trim() ? rfid.trim().toUpperCase() : undefined,
+          microchip: finalMicrochip,
+          rfid: finalRfid,
         };
         const saved = await createHorse(payload);
         toast.show(`Horse profile ${saved.name} created successfully.`, "ok");
@@ -187,8 +227,8 @@ export default function HorseFormPage() {
         if (andAddAnother) {
           setName("");
           setDob("");
-          setMicrochip("");
-          setRfid("");
+          setMicrochip(generateMicrochip15());
+          setRfid(generateRfidCode());
           setErrors({});
           setIsDirty(false);
         } else {
@@ -229,7 +269,6 @@ export default function HorseFormPage() {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
         <PageHeader
-          eyebrow="HORSE ROSTER · FLOW 1"
           title="Retired Horse Record"
           description="This horse has been retired. Please reactivate prior to performing profile edits."
         />
@@ -250,9 +289,9 @@ export default function HorseFormPage() {
   if (loading) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-        <PageHeader eyebrow="HORSE ROSTER · FLOW 1" title={isEdit ? "Update Horse Profile" : "Register New Racehorse"} />
+        <PageHeader title={isEdit ? "Edit horse profile" : "Register horse"} />
         <Card pad={32}>
-          <p style={{ color: "var(--ink-muted, #64748b)" }}>Loading horse profile data...</p>
+          <p style={{ color: "var(--ink-muted)" }}>Loading horse profile data...</p>
         </Card>
       </div>
     );
@@ -261,12 +300,11 @@ export default function HorseFormPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
-        eyebrow="HORSE ROSTER · FLOW 1"
-        title={isEdit ? `Update Horse Profile: ${name || horseCode}` : "Register New Racehorse"}
+        title={isEdit ? `Edit ${name || horseCode}` : "Register horse"}
         description={
           isEdit
-            ? "Update baseline pedigree and identity records for this racehorse."
-            : "Enter baseline identity credentials. System will automatically generate a HR-XXXXXX code upon save."
+            ? "Update the identity details of this horse."
+            : "Enter the identity details. The HR- code is created when you save."
         }
         action={
           <div style={{ display: "flex", gap: "0.75rem" }}>
@@ -303,8 +341,8 @@ export default function HorseFormPage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1.5rem" }}>
           {/* Column 1: Identity */}
           <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-            <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, borderBottom: "1px solid var(--border, #e2e8f0)", paddingBottom: "0.5rem" }}>
-              1. Identity Credentials
+            <h3 style={{ margin: 0, fontSize: "var(--fs-body-lg)", fontWeight: 700, borderBottom: "1px solid var(--border)", paddingBottom: "0.5rem" }}>
+              Identity & Microchip Credentials
             </h3>
 
             <Field label="Horse Code (ID)" hint="System auto-generates code formatted as HR-XXXXXX upon save">
@@ -328,45 +366,85 @@ export default function HorseFormPage() {
               />
             </Field>
 
-            <Field label="Microchip Number *" error={errors.microchip} hint="Exact 15-digit biological ID">
-              <Input
-                placeholder="Enter 15 digits..."
-                value={microchip}
-                invalid={Boolean(errors.microchip)}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, "").slice(0, 15);
-                  setMicrochip(val);
-                  setIsDirty(true);
-                  if (errors.microchip) setErrors((prev) => ({ ...prev, microchip: "" }));
-                }}
-              />
+            <Field
+              label="Microchip Number *"
+              error={errors.microchip}
+              hint={isEdit ? "Exactly 15 digits." : "Exactly 15 digits. Leave it as generated or type the implanted chip number."}
+            >
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <Input
+                  placeholder="15 digits"
+                  value={microchip}
+                  invalid={Boolean(errors.microchip)}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, "").slice(0, 15);
+                    setMicrochip(val);
+                    setIsDirty(true);
+                    if (errors.microchip) setErrors((prev) => ({ ...prev, microchip: "" }));
+                  }}
+                />
+                {!isEdit && (
+                  <Button
+                    type="button"
+                    tone="secondary"
+                    onClick={() => {
+                      setMicrochip(generateMicrochip15());
+                      setIsDirty(true);
+                      if (errors.microchip) setErrors((prev) => ({ ...prev, microchip: "" }));
+                    }}
+                    title="Generate a new 15-digit number"
+                  >
+                    Generate
+                  </Button>
+                )}
+              </div>
             </Field>
 
-            <Field label="RFID Tag Code (Optional)" error={errors.rfid} hint="4-32 letters, digits or hyphens, e.g. RFID-985141002341">
-              <Input
-                placeholder="e.g. RFID-985141002341..."
-                value={rfid}
-                invalid={Boolean(errors.rfid)}
-                onChange={(e) => {
-                  const val = e.target.value.toUpperCase();
-                  setRfid(val);
-                  setIsDirty(true);
-                  if (errors.rfid) setErrors((prev) => ({ ...prev, rfid: "" }));
-                }}
-              />
+            <Field
+              label="RFID Tag Code (optional)"
+              error={errors.rfid}
+              hint="4-32 upper-case letters, digits or hyphens."
+            >
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <Input
+                  placeholder="e.g. RFID-985141002341..."
+                  value={rfid}
+                  invalid={Boolean(errors.rfid)}
+                  onChange={(e) => {
+                    const val = e.target.value.toUpperCase();
+                    setRfid(val);
+                    setIsDirty(true);
+                    if (errors.rfid) setErrors((prev) => ({ ...prev, rfid: "" }));
+                  }}
+                />
+                {!isEdit && (
+                  <Button
+                    type="button"
+                    tone="secondary"
+                    onClick={() => {
+                      setRfid(generateRfidCode());
+                      setIsDirty(true);
+                      if (errors.rfid) setErrors((prev) => ({ ...prev, rfid: "" }));
+                    }}
+                    title="Generate a new RFID code"
+                  >
+                    Generate
+                  </Button>
+                )}
+              </div>
             </Field>
           </div>
 
           {/* Column 2: Traits & Pedigree */}
           <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-            <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, borderBottom: "1px solid var(--border, #e2e8f0)", paddingBottom: "0.5rem" }}>
-              2. Biological Traits & Pedigree
+            <h3 style={{ margin: 0, fontSize: "var(--fs-body-lg)", fontWeight: 700, borderBottom: "1px solid var(--border)", paddingBottom: "0.5rem" }}>
+              Biological Traits & Conformation
             </h3>
 
             <Field label="Breed *" error={errors.breed}>
               <Select
                 value={breed}
-                options={BREED_OPTIONS}
+                options={catalogOptions(breeds, breed)}
                 onChange={(e) => {
                   setBreed(e.target.value);
                   setIsDirty(true);
@@ -374,10 +452,16 @@ export default function HorseFormPage() {
               />
             </Field>
 
-            <Field label="Date of Birth *" error={errors.dob} hint="Must not be in the future or older than 40 years">
+            <Field
+              label="Date of Birth *"
+              error={errors.dob}
+              hint={`Up to 12 years old (${minDobStr} – ${todayStr})`}
+            >
               <Input
                 type="date"
                 value={dob}
+                min={minDobStr}
+                max={todayStr}
                 invalid={Boolean(errors.dob)}
                 onChange={(e) => {
                   setDob(e.target.value);
@@ -401,7 +485,7 @@ export default function HorseFormPage() {
             <Field label="Coat Color *" error={errors.color}>
               <Select
                 value={color}
-                options={COLOR_OPTIONS}
+                options={catalogOptions(colors, color)}
                 onChange={(e) => {
                   setColor(e.target.value);
                   setIsDirty(true);
@@ -411,7 +495,7 @@ export default function HorseFormPage() {
           </div>
         </div>
 
-        <div style={{ marginTop: "2rem", paddingTop: "1rem", borderTop: "1px solid var(--border, #e2e8f0)", display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
+        <div style={{ marginTop: "2rem", paddingTop: "1rem", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
           <Button tone="secondary" onClick={handleCancel}>
             Cancel
           </Button>
@@ -448,7 +532,7 @@ export default function HorseFormPage() {
           }}
           onCancel={() => setShowCancelConfirm(false)}
         >
-          <p style={{ margin: 0, color: "var(--ink-muted, #64748b)" }}>
+          <p style={{ margin: 0, color: "var(--ink-muted)" }}>
             You have unsaved changes on this form. If you leave now, all input will be lost. Are you sure you want to discard?
           </p>
         </ConfirmModal>

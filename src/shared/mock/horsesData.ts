@@ -36,7 +36,7 @@ export interface HerdHorse {
   hasOverdueRoutine?: boolean;
 }
 
-const HORSES_STORAGE_KEY = "equiflow.herd.horses.v5";
+const HORSES_STORAGE_KEY = "equiflow.herd.horses.v6";
 const DELETED_HORSES_STORAGE_KEY = "equiflow.herd.deleted.v1";
 
 const HORSE_STATUS_VALUES = ["ACTIVE", "IN_TRAINING", "UNDER_OBSERVATION", "INJURED", "ISOLATED", "RESTING", "RETIRED"];
@@ -77,7 +77,7 @@ export function saveDeletedHorses(horses: DeletedHerdHorse[]): void {
   }
 }
 const INJURIES_STORAGE_PREFIX = "equiflow.injuries.v5.";
-const LOCKS_STORAGE_KEY = "equiflow.locks.v5";
+const LOCKS_STORAGE_KEY = "equiflow.locks.v6";
 
 export interface StoredTrainingLock {
   id: string;
@@ -136,8 +136,8 @@ export const DEFAULT_HERD_HORSES: HerdHorse[] = [
     stall: "STALL-A01",
     zone: "Zone A - Barn 1",
     ownerId: "owner-1",
-    ownerName: "Robert Sterling (Horse Owner)",
-    primaryGroom: "John Smith (Groom Hand)",
+    ownerName: "Phan Đức Long",
+    primaryGroom: "Lê Văn Phúc",
     lastExamDate: "2026-10-02",
     unresolvedInjuriesCount: 0,
     hasOverdueRoutine: false,
@@ -163,8 +163,8 @@ export const DEFAULT_HERD_HORSES: HerdHorse[] = [
     stall: "STALL-A02",
     zone: "Zone A - Barn 1",
     ownerId: "owner-1",
-    ownerName: "Robert Sterling (Horse Owner)",
-    primaryGroom: "John Smith (Groom Hand)",
+    ownerName: "Phan Đức Long",
+    primaryGroom: "Lê Văn Phúc",
     lastExamDate: "2026-10-05",
     unresolvedInjuriesCount: 1,
     hasOverdueRoutine: false,
@@ -187,8 +187,8 @@ export const DEFAULT_HERD_HORSES: HerdHorse[] = [
     stall: "STALL-B01",
     zone: "Zone B - Barn 2",
     ownerId: "owner-1",
-    ownerName: "Robert Sterling (Horse Owner)",
-    primaryGroom: "John Smith (Groom Hand)",
+    ownerName: "Phan Đức Long",
+    primaryGroom: "Lê Văn Phúc",
     lastExamDate: "2026-09-28",
     unresolvedInjuriesCount: 1,
     hasOverdueRoutine: false,
@@ -238,7 +238,7 @@ export function addStoredHorse(horse: HerdHorse): void {
         horseCode: horse.code,
         appliedMedicalStatus: horse.healthGroup,
         lockedAt: horse.lockDate || new Date().toISOString().split("T")[0],
-        lockedBy: "Chief Veterinarian (Dr. Sarah Connor)",
+        lockedBy: "Chief Veterinarian (Dr. Lê Minh Châu)",
         lockReason: horse.lockReason || "Under protective clinical training suspension",
         reviewDate: horse.reviewDate || new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
         status: "ACTIVE",
@@ -327,14 +327,14 @@ export function getInjuriesForHorse(horseId: string): any[] {
             stage: "ACUTE",
             severity: "MODERATE",
             notes: "Initial acute heat and focal sensitivity along mid-metacarpal zone.",
-            evaluator: "Dr. Sarah Connor (Veterinarian)",
+            evaluator: "Dr. Võ Thanh Hải",
           },
           {
             date: "2026-10-06",
             stage: "RECOVERING",
             severity: "MILD",
             notes: "Reduced heat and improved weight-bearing; progressive trotting allowed.",
-            evaluator: "Dr. Sarah Connor (Veterinarian)",
+            evaluator: "Dr. Võ Thanh Hải",
           },
         ],
       },
@@ -396,7 +396,7 @@ export function getStoredLocks(): StoredTrainingLock[] {
         horseCode: h.code,
         appliedMedicalStatus: h.healthGroup,
         lockedAt: h.lockDate || new Date().toISOString().split("T")[0],
-        lockedBy: "Dr. Sarah Connor (Veterinarian)",
+        lockedBy: "Dr. Võ Thanh Hải",
         lockReason: h.lockReason || "Under protective clinical training suspension",
         reviewDate: h.reviewDate || new Date(Date.now() + 11 * 86400000).toISOString().split("T")[0],
         unlockConditions: "Complete clinical ultrasound resolution and soundness on flexion test",
@@ -480,7 +480,7 @@ export function placeHorseTrainingLock(
     horseCode: horse?.code || horseId,
     appliedMedicalStatus: input.appliedStatus,
     lockedAt: nowStr,
-    lockedBy: input.lockedBy || "Chief Veterinarian (Dr. Sarah Connor)",
+    lockedBy: input.lockedBy || "Chief Veterinarian (Dr. Lê Minh Châu)",
     lockReason: input.reason,
     reviewDate: input.reviewDate,
     unlockConditions: input.unlockConditions,
@@ -501,7 +501,7 @@ export function placeHorseTrainingLock(
       category: "LOCK",
       link: "/locks",
       targetRoles: ["VETERINARIAN", "HEAD_TRAINER", "CLUB_MANAGER"],
-      senderName: input.lockedBy || "Dr. Sarah Connor (Lead Vet)",
+      senderName: input.lockedBy || "Dr. Lê Minh Châu (Lead Vet)",
     });
   } catch {
     // ignore
@@ -717,7 +717,7 @@ const INITIAL_PREVENTIVE_SCHEDULES: StoredPreventiveSchedule[] = [
     productAdministered: "Equi-Flu/Tetanus Duo 2ml",
     batchNumber: "LOT-2026-TF09",
     performedByMode: "SELF",
-    performedByName: "Dr. Sarah Connor",
+    performedByName: "Dr. Lê Minh Châu",
     status: "PENDING",
     notes: "Đã tiêm phòng mũi định kỳ đầu mùa thi đấu, không phản ứng phụ.",
   },
@@ -729,7 +729,7 @@ const INITIAL_PREVENTIVE_SCHEDULES: StoredPreventiveSchedule[] = [
     dueDate: new Date(Date.now() + 10 * 86400000).toISOString(),
     lastCompletedDate: new Date(Date.now() - 35 * 86400000).toISOString(),
     performedByMode: "EXTERNAL",
-    performedByName: "Master Farrier Kenji Sato",
+    performedByName: "Farrier Nguyễn Văn Tài",
     status: "PENDING",
     notes: "Lịch gọt móng định kỳ chuẩn bị trước giải Derby.",
   },
@@ -744,7 +744,7 @@ const INITIAL_PREVENTIVE_SCHEDULES: StoredPreventiveSchedule[] = [
     productAdministered: "Equimax Paste 14g",
     batchNumber: "LOT-2026-DW03",
     performedByMode: "SELF",
-    performedByName: "Dr. Sarah Connor",
+    performedByName: "Dr. Lê Minh Châu",
     status: "COMPLETED",
     notes: "Đã cho uống thuốc tẩy giun đầy đủ liều lượng theo thể trọng.",
   },
@@ -800,3 +800,52 @@ export function saveStoredPreventiveSchedules(items: StoredPreventiveSchedule[])
   }
 }
 
+
+// ---- SC-1.06 Danh mục Giống & Màu lông (bản giả của bảng HorseCatalogItem ở BE)
+export interface StoredHorseCatalogItem {
+  id: string;
+  type: "BREED" | "COLOR";
+  code: string;
+  name: string;
+  description?: string | null;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+const HORSE_CATALOG_KEY = "equiflow_mock_horse_catalog";
+
+function seedHorseCatalog(): StoredHorseCatalogItem[] {
+  const make = (type: "BREED" | "COLOR", names: string[]) =>
+    names.map((name, i) => ({
+      id: `${type.toLowerCase()}-${i + 1}`,
+      type,
+      code: name.toUpperCase().replace(/[^A-Z0-9]+/g, "_"),
+      name,
+      sortOrder: i + 1,
+      isActive: true,
+    }));
+  return [
+    ...make("BREED", ["Thoroughbred", "Arabian", "Arabian Cross", "Quarter Horse", "Warmblood", "Standardbred", "Appaloosa", "Paint"]),
+    ...make("COLOR", ["Bay", "Bay Dark", "Chestnut", "Black", "Grey", "Gray Roaming", "Roan", "Palomino"]),
+  ];
+}
+
+export function getStoredHorseCatalog(): StoredHorseCatalogItem[] {
+  try {
+    const raw = localStorage.getItem(HORSE_CATALOG_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {
+    // fallback
+  }
+  const seeded = seedHorseCatalog();
+  saveStoredHorseCatalog(seeded);
+  return seeded;
+}
+
+export function saveStoredHorseCatalog(items: StoredHorseCatalogItem[]): void {
+  try {
+    localStorage.setItem(HORSE_CATALOG_KEY, JSON.stringify(items));
+  } catch {
+    // localStorage unavailable
+  }
+}

@@ -14,6 +14,7 @@ import { getHorses } from "@/features/horses/api";
 import type { Horse } from "@/features/horses/types";
 import { todayClub, trainingApi } from "../api";
 import type { TrainingPlan } from "../types";
+import { Icon } from "@/shared/components/ui/Icon";
 
 interface DialogProps {
   plan: TrainingPlan;
@@ -74,11 +75,13 @@ export function ActivatePlanDialog({ plan, onClose, onDone }: DialogProps) {
         <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "0.35rem" }}>
           {checks.map((c) => (
             <li key={c.text} style={{ color: c.ok ? "var(--ok)" : "var(--danger)" }}>
-              {c.ok ? "✔" : "✖"} {c.text}
+              <Icon name={c.ok ? "check" : "x"} size={14} style={{ display: "inline-block", verticalAlign: "-2px", marginRight: 6 }} />
+                {c.ok ? "" : <span className="sr-only">Not met: </span>}
+                {c.text}
             </li>
           ))}
           <li style={{ color: "var(--text-muted)" }}>• No other active plan for {plan.horseName} (checked when you confirm)</li>
-          {medical && <li style={{ color: "var(--warn)" }}>⚠ The horse is in status {plan.horseStatus}.</li>}
+          {medical && <li style={{ color: "var(--warn)" }}><Icon name="alert" size={14} style={{ display: "inline-block", verticalAlign: "-2px", marginRight: 6 }} />The horse is in status {plan.horseStatus}.</li>}
         </ul>
         {plan.horseStatus === "RESTING" && (
           <Checkbox label="Also move the horse from Resting to In Training" checked={moveHorse} onChange={setMoveHorse} />
@@ -130,11 +133,11 @@ export function ClosePlanDialog({ kind, plan, onClose, onDone }: DialogProps & {
     >
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
         {kind === "complete" && (
-          <p style={{ margin: 0, fontSize: "0.875rem" }}>
+          <p style={{ margin: 0, fontSize: "var(--fs-body)" }}>
             {plan.progress.completed}/{plan.progress.due} due workouts completed.
           </p>
         )}
-        <p style={{ margin: 0, fontSize: "0.875rem" }}>
+        <p style={{ margin: 0, fontSize: "var(--fs-body)" }}>
           Workouts that have not happened yet will be cancelled. Results of completed workouts are kept.
         </p>
         <Field label={kind === "complete" ? "Summary" : "Reason for cancelling"} required hint={`10-${max} characters`}>
@@ -197,7 +200,7 @@ export function ClonePlanDialog({ plan, onClose, onDone }: DialogProps) {
           <Select
             value={horseId}
             onChange={(e) => setHorseId(e.target.value)}
-            options={horses.map((h) => ({ value: h.id, label: `${h.name} (${h.horseCode ?? ""})${h.isMedicalLocked ? " – Training Lock 🔒" : ""}` }))}
+            options={horses.map((h) => ({ value: h.id, label: `${h.name} (${h.horseCode ?? ""})${h.isMedicalLocked ? " · Training Lock" : ""}` }))}
           />
         </Field>
         <Field label="New plan name" required hint="3-150 characters">

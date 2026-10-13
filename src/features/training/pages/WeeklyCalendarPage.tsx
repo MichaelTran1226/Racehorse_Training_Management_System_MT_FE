@@ -127,10 +127,16 @@ export default function WeeklyCalendarPage() {
         cursor: "pointer",
         display: "block",
         padding: "0.6rem 0.75rem",
-        borderRadius: 8,
+        borderRadius: "var(--r)",
         border: `1px solid ${overlapping.has(s.id) ? "var(--warn)" : "var(--border)"}`,
-        borderLeft: `5px solid ${s.status === "BLOCKED" ? "var(--danger)" : s.status === "COMPLETED" ? "var(--ok)" : "var(--accent)"}`,
-        background: selected?.id === s.id ? "var(--surface-sunken)" : "var(--surface)",
+        background:
+          selected?.id === s.id
+            ? "var(--surface-3)"
+            : s.status === "BLOCKED"
+              ? "var(--danger-bg)"
+              : s.status === "COMPLETED"
+                ? "var(--ok-bg)"
+                : "var(--brand-50)",
         textDecoration: s.status === "CANCELLED" ? "line-through" : undefined,
         width: "100%",
         boxSizing: "border-box",
@@ -141,9 +147,9 @@ export default function WeeklyCalendarPage() {
         <strong>{s.startTime} {s.horseName}</strong>
         <Badge tone={SESSION_STATUS_TONE[s.status]}>{SESSION_STATUS_LABEL[s.status]}</Badge>
       </div>
-      <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>
-        {EXERCISE_TYPE_LABEL[s.sessionType]} {isHeavy(s.sessionType, s.intensity) && "⚡"} · {s.targetDistanceMeters} m × {s.repetitions} · {TRACK_LABEL[s.trackType]} · {s.groomName ?? "—"}
-        {overlapping.has(s.id) && " · ⚠ groom overlap"}
+      <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>
+        {EXERCISE_TYPE_LABEL[s.sessionType]} {isHeavy(s.sessionType, s.intensity) && "· heavy"} · {s.targetDistanceMeters} m × {s.repetitions} · {TRACK_LABEL[s.trackType]} · {s.groomName ?? "—"}
+        {overlapping.has(s.id) && " · groom overlap"}
       </div>
     </button>
   );
@@ -155,8 +161,8 @@ export default function WeeklyCalendarPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Training Schedule</h1>
-          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
+          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>Training Schedule</h1>
+          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
             Workouts by day or week. Heavy workouts are blocked while a horse is under a Training Lock.
           </p>
         </div>
@@ -224,7 +230,7 @@ export default function WeeklyCalendarPage() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(140px, 1fr))", gap: "0.5rem", overflowX: "auto" }}>
               {days.map((d) => (
                 <div key={d} style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                  <div style={{ fontWeight: 700, fontSize: "0.8125rem", color: d === todayClub() ? "var(--accent)" : undefined }}>{d.slice(5)}</div>
+                  <div style={{ fontWeight: 700, fontSize: "var(--fs-body)", color: d === todayClub() ? "var(--brand)" : undefined }}>{d.slice(5)}</div>
                   {shown.filter((s) => s.sessionDate === d).map((s) => (
                     <SessionBlock key={s.id} s={s} />
                   ))}
@@ -238,9 +244,9 @@ export default function WeeklyCalendarPage() {
           <Card pad={16}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <strong>{selected.horseName}</strong>
-              <Button tone="ghost" size="sm" onClick={() => setSelected(null)} aria-label="Close">✕</Button>
+              <Button tone="ghost" size="sm" onClick={() => setSelected(null)} aria-label="Close" icon="x" />
             </div>
-            <div style={{ fontSize: "0.875rem", display: "flex", flexDirection: "column", gap: "0.25rem", marginTop: "0.5rem" }}>
+            <div style={{ fontSize: "var(--fs-body)", display: "flex", flexDirection: "column", gap: "0.25rem", marginTop: "0.5rem" }}>
               <div>{selected.sessionDate} {selected.startTime} · {EXERCISE_TYPE_LABEL[selected.sessionType]} · {INTENSITY_LABEL[selected.intensity]}</div>
               <div>{selected.targetDistanceMeters} m × {selected.repetitions}{selected.targetSpeedKmh ? ` · ${selected.targetSpeedKmh} km/h` : ""}</div>
               <div>{TRACK_LABEL[selected.trackType]} · Jockey: {selected.jockeyName || "—"} · Groom: {selected.groomName || "—"}</div>

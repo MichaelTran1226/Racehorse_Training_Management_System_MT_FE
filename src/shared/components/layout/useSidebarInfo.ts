@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "@/shared/lib/api";
-import { formatDate, padCount } from "@/shared/lib/format";
+import { formatShortDate } from "@/shared/lib/format";
 import { ROLE_LABEL } from "@/shared/lib/permissions";
 import type { AuthUser, PublicAccount } from "@/shared/types/auth";
 import { getUnreadNotificationsCount } from "@/shared/lib/notifications";
@@ -8,6 +8,7 @@ import { getUnreadNotificationsCount } from "@/shared/lib/notifications";
 export interface SidebarNote {
   title: string;
   body: string;
+  href: string;
 }
 
 interface SidebarInfo {
@@ -16,7 +17,7 @@ interface SidebarInfo {
 }
 
 // Thông tin phụ của khung app: ghi chú dưới sidebar + số thông báo trên chuông.
-// Đang là dữ liệu mẫu theo vai trò; riêng Club Manager đếm số yêu cầu đang chờ duyệt thật.
+// Chỉ hiện ghi chú khi có dữ liệu thật: Club Manager thấy số yêu cầu đang chờ duyệt.
 export function useSidebarInfo(user: AuthUser | null, pathname: string): SidebarInfo {
   const [pending, setPending] = useState<{ count: number; first?: string }>({ count: 0 });
   const canManage = Boolean(user?.permissions.manageAccounts);
@@ -31,7 +32,7 @@ export function useSidebarInfo(user: AuthUser | null, pathname: string): Sidebar
         const first = waiting[0];
         setPending({
           count: waiting.length,
-          first: first ? `${ROLE_LABEL[first.role]} · sent ${formatDate(first.requestedAt ?? first.createdAt).slice(0, 5)}` : undefined,
+          first: first ? `${ROLE_LABEL[first.role]} · sent ${formatShortDate(first.requestedAt ?? first.createdAt)}` : undefined,
         });
       })
       .catch(() => {
@@ -45,12 +46,9 @@ export function useSidebarInfo(user: AuthUser | null, pathname: string): Sidebar
   const unreadCount = getUnreadNotificationsCount(user?.role);
 
   if (!user) return { note: null, notifications: 0 };
-  if (user.role === "HEAD_TRAINER") {
-    return { note: { title: "04 sessions left today", body: "Barn A: 3 · Barn B: 1" }, notifications: unreadCount };
-  }
   if (canManage) {
     return {
-      note: pending.count > 0 ? { title: `${padCount(pending.count)} ${pending.count === 1 ? "request" : "requests"} waiting`, body: pending.first ?? "" } : null,
+      note: pending.count > 0 ? { title: `${pending.count} ${pending.count === 1 ? "request" : "requests"} waiting`, body: pending.first ?? "", href: "/accounts" } : null,
       notifications: pending.count || unreadCount,
     };
   }

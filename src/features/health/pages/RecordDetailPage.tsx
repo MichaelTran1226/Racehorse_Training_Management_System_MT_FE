@@ -27,6 +27,7 @@ import { StopPrescriptionModal } from "../components/StopPrescriptionModal";
 import { VitalsDisplay } from "../components/VitalsDisplay";
 import type { MedicalRecord, PrescriptionItem } from "../types";
 import styles from "./MedicalRecordPage.module.css";
+import { formatDate, formatDateTime } from "@/shared/lib/format";
 
 const RECORD_TABS = [
   { id: "diagnosis", label: "Exam & Diagnosis" },
@@ -156,10 +157,10 @@ export default function RecordDetailPage() {
               </span>
               <span className={styles.metaItem}>
                 <Icon name="calendar" size={14} /> Exam Date:{" "}
-                <strong>{new Date(record.examinationDate).toLocaleDateString("en-US")}</strong>
+                <strong>{formatDate(record.examinationDate)}</strong>
               </span>
               <span className={styles.metaItem}>
-                <Icon name="user" size={14} /> Attending Vet: <strong>{record.vetName || "Dr. Sarah Connor"}</strong>
+                <Icon name="user" size={14} /> Attending Vet: <strong>{record.vetName || "—"}</strong>
               </span>
             </div>
           </div>
@@ -213,7 +214,7 @@ export default function RecordDetailPage() {
               <Icon name="clipboard" size={18} />
               Clinical Examination Information
             </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14, fontSize: "14px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14, fontSize: "var(--fs-body)" }}>
               <div>
                 <span style={{ color: "var(--muted)" }}>Exam Type:</span> <strong>{record.examinationType}</strong>
               </div>
@@ -223,14 +224,14 @@ export default function RecordDetailPage() {
               </div>
               <div style={{ gridColumn: "1 / -1" }}>
                 <span style={{ color: "var(--muted)" }}>Reason for Examination:</span>{" "}
-                <div style={{ marginTop: 4, padding: "8px 12px", background: "var(--surface-2)", borderRadius: "6px" }}>
+                <div style={{ marginTop: 4, padding: "8px 12px", background: "var(--surface-2)", borderRadius: "var(--r-sm)" }}>
                   {record.examinationReason}
                 </div>
               </div>
               {record.symptoms && (
                 <div style={{ gridColumn: "1 / -1" }}>
                   <span style={{ color: "var(--muted)" }}>Clinical Symptoms:</span>{" "}
-                  <div style={{ marginTop: 4, padding: "8px 12px", background: "var(--surface-2)", borderRadius: "6px" }}>
+                  <div style={{ marginTop: 4, padding: "8px 12px", background: "var(--surface-2)", borderRadius: "var(--r-sm)" }}>
                     {record.symptoms}
                   </div>
                 </div>
@@ -267,7 +268,7 @@ export default function RecordDetailPage() {
                     {record.labTests.map((t, idx) => (
                       <tr key={idx}>
                         <td><strong>{t.testType}</strong></td>
-                        <td>{new Date(t.testDate).toLocaleDateString("en-US")}</td>
+                        <td>{formatDate(t.testDate)}</td>
                         <td>{t.result}</td>
                       </tr>
                     ))}
@@ -283,13 +284,13 @@ export default function RecordDetailPage() {
               <Icon name="stethoscope" size={18} />
               Definitive Diagnosis & Prognosis
             </h2>
-            <div style={{ fontSize: "14px", display: "flex", flexDirection: "column", gap: 10 }}>
-              <div style={{ padding: "12px", background: "var(--surface-2)", borderRadius: "6px", fontSize: "15px" }}>
+            <div style={{ fontSize: "var(--fs-body)", display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ padding: "12px", background: "var(--surface-2)", borderRadius: "var(--r-sm)", fontSize: "var(--fs-body)" }}>
                 <strong>Diagnosis:</strong> {record.diagnosis || "No detailed diagnosis recorded"}
               </div>
 
               {record.conclusion && (
-                <div style={{ padding: "12px", background: "var(--ok-bg)", border: "1px solid var(--ok)", borderRadius: "6px" }}>
+                <div style={{ padding: "12px", background: "var(--ok-bg)", border: "1px solid var(--ok)", borderRadius: "var(--r-sm)" }}>
                   <strong style={{ color: "var(--ok)" }}>Treatment Conclusion:</strong> {record.conclusion}
                   {record.treatmentResult && (
                     <div style={{ marginTop: 6 }}>
@@ -331,7 +332,7 @@ export default function RecordDetailPage() {
                     key={idx}
                     style={{
                       border: "1px solid var(--border)",
-                      borderRadius: "8px",
+                      borderRadius: "var(--r)",
                       padding: "16px",
                       background: "var(--surface)",
                       display: "flex",
@@ -341,18 +342,18 @@ export default function RecordDetailPage() {
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <strong>{phase.phaseName}</strong>
-                      <span style={{ fontSize: "12px", color: "var(--muted)" }}>
-                        {new Date(phase.startDate).toLocaleDateString("en-US")} —{" "}
-                        {new Date(phase.endDate).toLocaleDateString("en-US")}
+                      <span style={{ fontSize: "var(--fs-caption)", color: "var(--muted)" }}>
+                        {formatDate(phase.startDate)} —{" "}
+                        {formatDate(phase.endDate)}
                       </span>
                     </div>
 
-                    <div style={{ fontSize: "13px" }}>
+                    <div style={{ fontSize: "var(--fs-body)" }}>
                       Activity: <Badge tone="brand">{phase.allowedActivity}</Badge> · Objective: {phase.target}
                     </div>
 
                     {phase.careInstructions.length > 0 && (
-                      <div style={{ fontSize: "13px", marginTop: 4 }}>
+                      <div style={{ fontSize: "var(--fs-body)", marginTop: 4 }}>
                         <span style={{ color: "var(--muted)" }}>Care Directives:</span>
                         <ul style={{ margin: "4px 0 0 16px", padding: 0 }}>
                           {phase.careInstructions.map((c, i) => (
@@ -474,7 +475,7 @@ export default function RecordDetailPage() {
                     style={{
                       padding: "14px 16px",
                       border: "1px solid var(--border)",
-                      borderRadius: "8px",
+                      borderRadius: "var(--r)",
                       background: "var(--surface)",
                       display: "flex",
                       flexDirection: "column",
@@ -483,21 +484,21 @@ export default function RecordDetailPage() {
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ fontWeight: 600 }}>Follow-up Exam #{idx + 1}</span>
-                      <span style={{ fontSize: "12px", color: "var(--muted)" }}>
-                        {new Date(fu.followUpDate).toLocaleString("en-US")}
+                      <span style={{ fontSize: "var(--fs-caption)", color: "var(--muted)" }}>
+                        {formatDateTime(fu.followUpDate)}
                       </span>
                     </div>
 
-                    <div style={{ fontSize: "13px", color: "var(--text-2)" }}>
+                    <div style={{ fontSize: "var(--fs-body)", color: "var(--text-2)" }}>
                       Temperature: <strong>{fu.temperature}°C</strong> · Heart Rate: <strong>{fu.restingHeartRate} bpm</strong> · Respiratory Rate: <strong>{fu.respiratoryRate} breaths/min</strong>
                     </div>
 
-                    <div style={{ fontSize: "13px" }}>
+                    <div style={{ fontSize: "var(--fs-body)" }}>
                       <strong>Clinical Progress:</strong> {fu.progressNotes}
                     </div>
 
                     {fu.adjustments && (
-                      <div style={{ fontSize: "13px", color: "var(--brand)" }}>
+                      <div style={{ fontSize: "var(--fs-body)", color: "var(--brand)" }}>
                         <strong>Protocol Adjustments:</strong> {fu.adjustments}
                       </div>
                     )}

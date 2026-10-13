@@ -1,264 +1,279 @@
-/* EquiFlow tokens — nguồn: EquiFlow Design System (colors, typography, layout, dark). Không sửa tay giá trị; đổi ở design system rồi đồng bộ lại. */
-/* EquiFlow — bảng màu.
-   Giữ nguyên token olive của prototype (assets/css/redesign.css :root) và bổ sung
-   hai màu từ logo Five Gates: than chì --ink và burgundy --accent.
-   Tỉ lệ tương phản WCAG ghi kèm từng cặp; xem thêm guidelines/contrast.md. */
+/* EquiFlow tokens — nguồn: docs/ui-design/DESIGN.md (bản đã duyệt). Đổi giá trị ở đây là đổi toàn app;
+   trong trang/component KHÔNG viết mã màu, cỡ chữ, bo góc trực tiếp — luôn dùng var(--…).
+   Tỉ lệ tương phản WCAG ghi kèm từng cặp (chữ thường cần ≥ 4.5:1, viền control ≥ 3:1). */
 
+/* ============================================================ Màu */
 :root{
   /* ---- Nền & bề mặt ---- */
-  --page:#f5f6f2;          /* nền trang */
-  --surface:#ffffff;       /* bề mặt card/panel */
-  --surface-2:#f8f9f6;     /* bề mặt chìm: card__foot, thead */
-  --surface-3:#edf0e8;     /* bề mặt nhấn: segmented track, empty icon */
-  --surface-table-head:#f9faf7;
-  --surface-row-hover:#f8faf4;
-  --border:#e7eae2;
-  --border-soft:#e8ece3;   /* viền card */
-  --border-strong:#cdd5c8;
-  --border-field:#dfe5d9;
+  --page:#F5F6F3;           /* nền ứng dụng (Canvas) */
+  --surface:#FFFFFF;        /* thẻ, bảng, form */
+  --surface-2:#F8FAF8;      /* tiêu đề bảng, chân thẻ, nền nhạt */
+  --surface-3:#EEF1EE;      /* track segmented, skeleton, ô icon */
+  --surface-table-head:#F8FAF8;
+  --surface-row-hover:#F5F8F5;
+  --border:#DCE3DD;         /* đường kẻ 1px */
+  --border-soft:#E8EDE9;    /* kẻ giữa các hàng */
+  --border-strong:#C9D3CB;  /* viền nút phụ */
+  --border-field:#8C978F;   /* viền ô nhập — 3.0:1 trên trắng ✓ WCAG 1.4.11 */
 
   /* ---- Chữ ---- */
-  --text:#273c30;          /* 10.8:1 trên --page  ✓AA/AAA */
-  --text-2:#4c5c51;        /* 7.3:1 trên trắng    ✓AA/AAA */
-  --muted:#6a776d;         /* 4.7:1 trên trắng    ✓AA (≥13px) */
-  --muted-2:#748174;       /* 4.1:1 — CHỈ dùng cho icon, đường kẻ, chữ ≥18px */
-  --text-on-brand:#ffffff; /* 7.6:1 trên --brand  ✓AA/AAA */
+  --text:#202B28;           /* 14.9:1 trên trắng ✓ */
+  --text-2:#4A5550;         /* 7.6:1 ✓ chữ phụ */
+  --muted:#65716B;          /* 5.1:1 ✓ ghi chú, metadata */
+  --muted-2:#65716B;        /* trước là 4.1:1 — gộp vào --muted để chữ luôn đạt AA */
+  --text-on-brand:#FFFFFF;  /* 7.9:1 trên --brand ✓ */
 
-  /* ---- Thương hiệu: olive (màu nền UI) ---- */
-  --brand:#315d45;         /* 7.6:1 trên trắng ✓ */
-  --brand-600:#244b36;     /* hover */
-  --brand-700:#193b2a;     /* nền đậm */
-  --brand-100:#dce8d5;
-  --brand-50:#edf3e7;
-  --brand-ring:#8bac70;    /* focus ring 3px, offset 3px */
+  /* ---- Thương hiệu: Forest (màu nhấn duy nhất của UI) ---- */
+  --brand:#315D4B;          /* nút chính, mục menu đang chọn, link */
+  --brand-600:#234437;      /* hover, chữ thương hiệu */
+  --brand-700:#1B3529;
+  --brand-100:#D5E4DA;
+  --brand-50:#EAF1EC;       /* hàng/mục được chọn */
+  --brand-ring:#315D4B;     /* focus 2px, offset 2px */
 
-  /* ---- Logo Five Gates: than chì + burgundy ---- */
-  --ink:#2B2E33;           /* 13.6:1 trên trắng ✓ — logo, H1, tiêu đề lớn */
-  --ink-70:#5a5e66;
-  --accent:#8C2F39;        /* 8.1:1 trên trắng ✓ — NHẤN thương hiệu, dùng tiết chế */
-  --accent-600:#74252d;    /* hover */
-  --accent-100:#f3e2e4;
-  --accent-50:#faf0f1;
+  /* ---- Logo Five Gates: than chì + burgundy (chỉ cho logo/nhấn rất tiết chế) ---- */
+  --ink:#202B28;
+  --ink-70:#4A5550;
+  --accent:#922D3C;         /* = critical; không dùng cho trạng thái "đang chọn" */
+  --accent-600:#7A2432;
+  --accent-100:#F3D9DD;
+  --accent-50:#FAE9EB;
 
-  /* ---- Trạng thái ---- */
-  --ok:#3e7048;      --ok-bg:#edf4e7;      /* 5.2:1 ✓ */
-  --warn:#966221;    --warn-bg:#fcf2df;    /* 4.7:1 ✓ */
-  --danger:#ab4f43;  --danger-bg:#fcf0ed;  /* 4.8:1 ✓ */
-  --danger-600:#a2332b;
-  --info:#47697c;    --info-bg:#edf3f5;    /* 5.2:1 ✓ */
-  --violet:#736789;  --violet-bg:#f0edf4;  /* 4.5:1 ✓ */
-  --slate:#5a6a72;   --slate-bg:#eaeef0;   /* 5.4:1 ✓ */
+  /* ---- Trạng thái (một màu = một nghĩa) ---- */
+  --ok:#276442;      --ok-bg:#E8F3EB;      /* Ready to Race, thành công — 6.6:1 ✓ */
+  --warn:#875B15;    --warn-bg:#FFF4DD;    /* Under Observation, cần chú ý — 5.5:1 ✓ */
+  --danger:#922D3C;  --danger-bg:#FAE9EB;  /* Injured, Training Lock, phá hủy — 6.8:1 ✓ */
+  --danger-600:#7A2432;
+  --info:#3F6475;    --info-bg:#EAF1F4;    /* thông báo trung tính — 6.0:1 ✓ */
+  --violet:#65517D;  --violet-bg:#F1EDF6;  /* Isolated / cách ly — 6.9:1 ✓ */
+  --slate:#4A5550;   --slate-bg:#EEF1EE;   /* Resting, Retired, nháp */
 
-  /* ---- Sức khỏe chiến mã (4 trạng thái nghiệp vụ) ---- */
-  --health-fit:var(--ok);            --health-fit-bg:var(--ok-bg);            /* Đủ điều kiện */
-  --health-watch:var(--warn);        --health-watch-bg:var(--warn-bg);        /* Cần theo dõi */
-  --health-injured:var(--danger);    --health-injured-bg:var(--danger-bg);    /* Chấn thương */
-  --health-quarantine:var(--violet); --health-quarantine-bg:var(--violet-bg); /* Cách ly */
-  --health-empty:var(--muted);       --health-empty-bg:var(--surface-2);      /* Chuồng trống */
+  /* ---- Sức khỏe chiến mã ---- */
+  --health-fit:var(--ok);            --health-fit-bg:var(--ok-bg);
+  --health-watch:var(--warn);        --health-watch-bg:var(--warn-bg);
+  --health-injured:var(--danger);    --health-injured-bg:var(--danger-bg);
+  --health-quarantine:var(--violet); --health-quarantine-bg:var(--violet-bg);
+  --health-empty:var(--muted);       --health-empty-bg:var(--surface-2);
 
-  /* ---- Điều hướng (sidebar sáng) ---- */
-  --nav-bg:#ffffff;
-  --nav-bg-2:#f2f5ed;
-  --nav-line:#e9ede5;
-  --nav-text:#647264;
-  --nav-text-2:#778372;
-  --nav-item-hover:#f0f4e9;
-  --nav-item-active-bg:#e9f0df;
-  --nav-item-active-text:#315336;
-  --nav-item-active-dot:#5c7748;
-  --topbar-bg:#fdfefa;
+  /* ---- Điều hướng (sidebar trắng, mục đang chọn tông forest) ---- */
+  --nav-bg:#FFFFFF;
+  --nav-bg-2:#FFFFFF;
+  --nav-line:#E8EDE9;
+  --nav-text:#3E4A45;
+  --nav-text-2:#65716B;
+  --nav-item-hover:#F1F4F1;
+  --nav-item-active-bg:#EAF1EC;
+  --nav-item-active-text:#234437;
+  --nav-item-active-dot:#315D4B;
+  --topbar-bg:#FFFFFF;
 
   /* ---- Biểu đồ ---- */
-  --chart-line:#648246;
-  --chart-line-muted:#c4cfb7;
-  --chart-bar:#75945e;
-  --chart-grid:#e7eae2;
+  --chart-line:#315D4B;
+  --chart-line-muted:#B9C6BD;
+  --chart-bar:#4F7A66;
+  --chart-grid:#E8EDE9;
 
   /* ---- Ảnh / lớp phủ ---- */
   --scrim-banner:linear-gradient(90deg,#173927fa 0%,#173927e8 28%,#17392765 58%,#17392700 80%); /* @kind other */
-  --scrim-modal:#1c352652;
-  --toast-bg:#244731;
-  --toast-border:#456443;
-  --toast-text:#e5f0eb;
-  --toast-icon-ok:#a9d6a4;
-  --toast-icon-warn:#e6c27e;
-  --toast-icon-danger:#eaa093;
-  --toast-icon-info:#a6c6d6;
+  --scrim-modal:#1B262352;
+  --toast-bg:#202B28;
+  --toast-border:#202B28;
+  --toast-text:#F5F6F3;
+  --toast-icon-ok:#A9D6B4;
+  --toast-icon-warn:#E6C27E;
+  --toast-icon-danger:#EBA3AD;
+  --toast-icon-info:#A6C6D6;
+  --text-on-photo:#FFFFFF;
+  --scrim-photo:#193B2A;
 
-  /* Chữ + lớp phủ trên ảnh: giữ nguyên ở cả hai theme vì ảnh không đổi. */
-  --text-on-photo:#ffffff;
-  --scrim-photo:#193b2a;
+  /* ---- Tên cũ còn được code dùng (trước đây không được định nghĩa → rơi về màu mặc định).
+         Giữ làm alias, code mới dùng tên ở trên. ---- */
+  --text-muted:var(--muted);
+  --text-main:var(--text);
+  --text-strong:var(--text);
+  --ink-muted:var(--muted);
+  --ink-secondary:var(--text-2);
+  --fg:var(--text);
+  --bg:var(--page);
+  --bg-card:var(--surface);
+  --surface-sunken:var(--surface-2);
+  --surface-subtle:var(--surface-2);
+  --border-subtle:var(--border-soft);
+  --brand-surface:var(--brand-50);
+  --brand-border:var(--brand-100);
+  --radius-card:var(--r-lg);
 }
-/* EquiFlow — kiểu chữ.
-   Manrope cho toàn bộ UI. DM Sans chỉ cho số liệu (tabular-nums).
-   Cỡ gốc 13px, line-height 1.6, letter-spacing -0.015em. */
 
+/* ============================================================ Chữ
+   Manrope cho toàn bộ UI; số và mã dùng chữ số đều (font-variant-numeric: tabular-nums).
+   Thang 12 / 14 / 16 / 18 / 22 / 28 / 32 — không dùng cỡ nào khác. */
 :root{
   --font:'Manrope','Segoe UI',sans-serif;
-  --mono:'DM Sans','Segoe UI',sans-serif; /* @kind font */
-  --font-numeric:'DM Sans','Segoe UI',sans-serif;
+  --mono:'Manrope','Segoe UI',sans-serif;  /* @kind font — mã số dùng tabular-nums, không đổi font */
+  --font-numeric:'Manrope','Segoe UI',sans-serif;
 
-  /* Thang cỡ */
-  --fs-eyebrow:9px;    /* IN HOA, letter-spacing 1.55px, w700 */
-  --fs-micro:10px;     /* badge, chú thích card, foot */
-  --fs-caption:11px;   /* label, alert, chip, nút */
-  --fs-body:12px;      /* body mặc định của bảng và form */
-  --fs-base:13px;      /* cỡ gốc <body> */
-  --fs-card-title:14px;/* card__head h2/h3 · w800 */
-  --fs-panel-title:20px;
-  --fs-h1:26px;        /* tiêu đề trang, ls -0.9px */
-  --fs-hero:27px;      /* welcome-line h1 / banner h2 */
-  --fs-kpi:33px;       /* số KPI — DM Sans w500-600 */
-  --fs-display:43px;   /* banner chủ sở hữu */
+  --fs-caption:12px;    /* metadata, tiêu đề cột, badge — nhỏ nhất được phép */
+  --fs-body:14px;       /* chữ thân, ô bảng, input, nút */
+  --fs-base:14px;
+  --fs-body-lg:16px;    /* tiêu đề trạng thái rỗng, câu dẫn */
+  --fs-section:18px;    /* tiêu đề khối */
+  --fs-kpi:22px;        /* số trên thẻ thống kê */
+  --fs-h1:28px;         /* tiêu đề trang */
+  --fs-display:32px;    /* tiêu đề trang đăng nhập */
+  /* tên cũ → thang mới */
+  --fs-eyebrow:var(--fs-caption);
+  --fs-micro:var(--fs-caption);
+  --fs-card-title:var(--fs-body-lg);
+  --fs-panel-title:var(--fs-section);
+  --fs-hero:var(--fs-h1);
 
-  /* Độ đậm */
   --fw-regular:400;   /* @kind other */
   --fw-medium:500;    /* @kind other */
   --fw-semibold:600;  /* @kind other */
   --fw-bold:700;      /* @kind other */
-  --fw-black:800;     /* @kind other */
+  --fw-black:700;     /* @kind other — không dùng 800 */
 
-  /* Line-height */
   --lh-tight:1.3;     /* @kind other */
-  --lh-title:1.45;    /* @kind other */
-  --lh-body:1.6;      /* @kind other */
-  --lh-relaxed:1.8;   /* @kind other */
+  --lh-title:1.3;     /* @kind other */
+  --lh-body:1.57;     /* @kind other — 22/14 */
+  --lh-relaxed:1.7;   /* @kind other */
 
-  /* Letter-spacing */
-  --ls-body:-0.015em;
-  --ls-h1:-0.9px;
-  --ls-hero:-1.05px;
-  --ls-card-title:-0.35px;
-  --ls-eyebrow:1.55px;
-  --ls-table-head:0.45px;
+  --ls-body:0;
+  --ls-h1:-0.01em;
+  --ls-hero:-0.01em;
+  --ls-card-title:0;
+  --ls-eyebrow:0;
+  --ls-table-head:0;
 }
-/* EquiFlow — hình khối, khoảng cách, bóng, chuyển động, khung ứng dụng. */
 
+/* ============================================================ Hình khối, khoảng cách, khung */
 :root{
-  /* Bo góc — giá trị lẻ có chủ đích, không làm tròn về 4/8px */
-  --r-sm:7px;    /* badge, chip, nút nhỏ, ô lưới chuồng */
-  --r:11px;      /* mặc định: input, alert, panel nhỏ */
-  --r-lg:17px;   /* card, panel lớn, banner */
-  --r-xl:22px;
-  --r-modal:19px;
-  --r-btn:8px;
-  --r-field:9px;
+  /* Bo góc theo DESIGN.md: input 6 · nút 7 · panel 10 */
+  --r-xs:4px;
+  --r-sm:6px;
+  --r:8px;
+  --r-lg:10px;
+  --r-xl:10px;
+  --r-modal:12px;
+  --r-btn:7px;
+  --r-field:6px;
   --r-pill:999px;
 
-  /* Khoảng cách — thang thực dụng rút từ prototype */
+  /* Khoảng cách: bội số của 4 */
   --sp-1:4px;
   --sp-2:8px;
   --sp-3:12px;
-  --sp-4:17px;   /* padding card ở ≤720px, gap lưới mobile */
-  --sp-5:22px;   /* padding card__body, gap lưới desktop */
-  --sp-6:28px;
-  --sp-7:34px;   /* padding ngang vùng nội dung */
-  --gap-grid:22px;
-  --gap-grid-sm:17px;
+  --sp-4:16px;
+  --sp-5:20px;
+  --sp-6:24px;
+  --sp-7:32px;
+  --sp-8:40px;
+  --gap-grid:20px;
+  --gap-grid-sm:16px;
 
   /* Khung ứng dụng */
-  --sidebar-w:248px;
-  --sidebar-w-md:226px;
-  --topbar-h:76px;
+  --sidebar-w:224px;
+  --sidebar-w-md:224px;
+  --topbar-h:64px;
   --topbar-h-sm:64px;
-  --content-max:1600px;
-  --content-pad:28px 34px 24px; /* @kind other */
+  --content-max:1464px;      /* 1400 nội dung + 2 × 32 padding */
+  --content-pad:28px 32px 40px; /* @kind other */
+  --control-h:44px;          /* nút, input, tab */
+  --control-h-sm:36px;       /* nút trong bảng, thanh lọc */
+  --row-h:56px;              /* hàng bảng */
 
-  /* Bóng */
-  --shadow-sm:0 2px 9px #2b402704;
-  --shadow:0 8px 30px #2b40270a;
-  --shadow-lg:0 24px 80px #1c352626;
-  --shadow-primary-hover:0 4px 12px #315d451a;
+  /* Bóng đổ: chỉ cho lớp nổi (menu, dialog, toast). Thẻ dùng viền 1px. */
+  --shadow-sm:none;
+  --shadow:none;
+  --shadow-pop:0 8px 24px rgba(32,43,40,.12);
+  --shadow-lg:0 16px 48px rgba(32,43,40,.18);
+  --shadow-primary-hover:none;
 
-  /* Chuyển động */
-  --ease:cubic-bezier(.22,.7,.24,1); /* @kind other */
-  --dur:.2s;      /* @kind other */
-  --dur-fast:.12s;/* @kind other */
+  /* Chuyển động: 120–180ms, tắt khi người dùng giảm chuyển động (global.css) */
+  --ease:cubic-bezier(.2,0,0,1); /* @kind other */
+  --dur:.18s;      /* @kind other */
+  --dur-fast:.12s; /* @kind other */
 
   /* Focus */
-  --focus-ring:3px solid var(--brand-ring); /* @kind other */
-  --focus-offset:3px;
+  --focus-ring:2px solid var(--brand-ring); /* @kind other */
+  --focus-offset:2px;
 
-  /* Breakpoint (tham chiếu — dùng trong @media) */
+  /* Breakpoint (desktop: 1280 / 1440 / 1920) */
   --bp-xl:1600px;
   --bp-lg:1250px;
   --bp-md:980px;
   --bp-sm:720px;
   --bp-xs:390px;
 }
-/* EquiFlow — dark mode. Bật bằng <html data-theme="dark"> (shared/lib/theme.ts + script trong index.html).
-   Đã sửa trong repo, cần đồng bộ ngược lên Design System: --text-on-brand (dark),
-   --toast-icon-*, --text-on-photo, --scrim-photo.
-   Nguyên tắc: giữ nguyên sắc olive, hạ độ sáng nền chứ không đổi tông màu;
-   chữ và nền trạng thái đảo vai trò (chữ sáng trên nền tối cùng sắc).
-   Mọi cặp bên dưới đã kiểm ≥4.5:1 cho chữ thường. */
 
+/* ============================================================ Dark mode
+   Bật bằng <html data-theme="dark"> (shared/lib/theme.ts + script trong index.html).
+   Giữ sắc forest, hạ độ sáng nền; chữ trạng thái sáng trên nền tối cùng sắc. Mọi cặp ≥ 4.5:1. */
 [data-theme="dark"],.theme-dark{
-  --page:#141a15;
-  --surface:#1b231d;
-  --surface-2:#202a22;
-  --surface-3:#273228;
-  --surface-table-head:#202a22;
-  --surface-row-hover:#243024;
-  --border:#2c3a2e;
-  --border-soft:#2c3a2e;
-  --border-strong:#3c4d3e;
-  --border-field:#39492c;
+  --page:#121815;
+  --surface:#1A221E;
+  --surface-2:#1F2924;
+  --surface-3:#26312B;
+  --surface-table-head:#1F2924;
+  --surface-row-hover:#222D27;
+  --border:#2E3B34;
+  --border-soft:#26312B;
+  --border-strong:#3C4B43;
+  --border-field:#6F7E75;   /* 3.4:1 trên --surface ✓ */
 
-  --text:#e6ece2;          /* 12.1:1 trên --surface */
-  --text-2:#c2cdbd;        /* 8.4:1 */
-  --muted:#93a291;         /* 4.9:1 */
-  --muted-2:#7a8878;       /* icon / đường kẻ */
-  --text-on-brand:#141a15; /* ~6:1 trên --brand #7fa578 (bản cũ #f2f7ec chỉ ~2.5:1) */
+  --text:#E6ECE8;           /* 13.6:1 ✓ */
+  --text-2:#C3CDC7;         /* 9.6:1 ✓ */
+  --muted:#98A69E;          /* 6.1:1 ✓ */
+  --muted-2:#98A69E;
+  --text-on-brand:#0F1613;  /* 7.8:1 trên --brand ✓ */
 
-  --brand:#7fa578;         /* nền sáng hơn để chữ tối đọc được */
-  --brand-600:#95b78c;
-  --brand-700:#6b8f64;
-  --brand-100:#2b3d2e;
-  --brand-50:#22301f;
-  --brand-ring:#9cc07e;
+  --brand:#8DBBA4;
+  --brand-600:#A7CDB9;
+  --brand-700:#BFDCCC;
+  --brand-100:#2A3D33;
+  --brand-50:#21302A;
+  --brand-ring:#8DBBA4;
 
-  --ink:#e8eaee;
-  --ink-70:#b3b8c0;
-  --accent:#d98b93;        /* burgundy sáng lên để đạt AA trên nền tối */
-  --accent-600:#e8a3aa;
-  --accent-100:#3a2429;
-  --accent-50:#2a1b1e;
+  --ink:#E6ECE8;
+  --ink-70:#C3CDC7;
+  --accent:#E79AA5;
+  --accent-600:#F0B3BC;
+  --accent-100:#3D2429;
+  --accent-50:#2E1D21;
 
-  --ok:#8cc08f;      --ok-bg:#20301f;
-  --warn:#d6a55f;    --warn-bg:#31271a;
-  --danger:#e09184;  --danger-bg:#33211f;
-  --danger-600:#eda79b;
-  --info:#8fb3c4;    --info-bg:#1e2a30;
-  --violet:#b3a5c8;  --violet-bg:#282333;
-  --slate:#a4b1b7;   --slate-bg:#242c2f;
+  --ok:#8CC9A0;      --ok-bg:#1D3126;
+  --warn:#DDB167;    --warn-bg:#33291A;
+  --danger:#E79AA5;  --danger-bg:#3A2228;
+  --danger-600:#F0B3BC;
+  --info:#93B8C9;    --info-bg:#1D2A31;
+  --violet:#BBA8D6;  --violet-bg:#2A2436;
+  --slate:#B4C0B9;   --slate-bg:#26312B;
 
-  --nav-bg:#161d17;
-  --nav-bg-2:#1e271f;
-  --nav-line:#28332a;
-  --nav-text:#9fae9d;
-  --nav-text-2:#7e8c7c;
-  --nav-item-hover:#222d23;
-  --nav-item-active-bg:#2a3a2b;
-  --nav-item-active-text:#d7e6cd;
-  --nav-item-active-dot:#8cae74;
-  --topbar-bg:#171f18;
+  --nav-bg:#151C18;
+  --nav-bg-2:#151C18;
+  --nav-line:#26312B;
+  --nav-text:#C3CDC7;
+  --nav-text-2:#98A69E;
+  --nav-item-hover:#1F2924;
+  --nav-item-active-bg:#21302A;
+  --nav-item-active-text:#BFDCCC;
+  --nav-item-active-dot:#8DBBA4;
+  --topbar-bg:#151C18;
 
-  --chart-line:#8cae6a;
-  --chart-line-muted:#4a5a45;
-  --chart-bar:#7f9f68;
-  --chart-grid:#2c3a2e;
+  --chart-line:#8DBBA4;
+  --chart-line-muted:#3C4B43;
+  --chart-bar:#6E9C86;
+  --chart-grid:#26312B;
 
-  --scrim-modal:#0a120c99;
-  --toast-bg:#eaf2e4;
-  --toast-border:#c9d8c0;
-  --toast-text:#1d2a1f;
-  --toast-icon-ok:#3e7048;       /* nền toast sáng → icon đậm */
-  --toast-icon-warn:#966221;
-  --toast-icon-danger:#ab4f43;
-  --toast-icon-info:#47697c;
+  --scrim-modal:#05080699;
+  --toast-bg:#E6ECE8;
+  --toast-border:#E6ECE8;
+  --toast-text:#1A221E;
+  --toast-icon-ok:#276442;
+  --toast-icon-warn:#875B15;
+  --toast-icon-danger:#922D3C;
+  --toast-icon-info:#3F6475;
 
-  --shadow-sm:0 2px 9px #00000040;
-  --shadow:0 8px 30px #00000052;
-  --shadow-lg:0 24px 80px #00000080;
+  --shadow-pop:0 8px 24px rgba(0,0,0,.45);
+  --shadow-lg:0 16px 48px rgba(0,0,0,.55);
 }

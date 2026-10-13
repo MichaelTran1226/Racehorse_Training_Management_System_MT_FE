@@ -121,7 +121,7 @@ export default function NotificationSettingsPage() {
 
       {/* Notice Banner */}
       <div className={styles.noticeBanner}>
-        <Icon name="info" size={18} style={{ color: "var(--accent, #0284c7)", marginTop: 2 }} />
+        <Icon name="info" size={18} style={{ color: "var(--info)", marginTop: 2 }} />
         <div>
           EquiFlow may still send critical veterinary safety holds, horse emergency status updates,
           and essential security notices regardless of individual preference.
@@ -412,11 +412,11 @@ export default function NotificationSettingsPage() {
                         }
                         style={{
                           padding: "6px 12px",
-                          borderRadius: 6,
+                          borderRadius: "var(--r-sm)",
                           border: "1px solid var(--border)",
                           background: "var(--surface)",
                           color: "var(--text)",
-                          fontSize: "13px",
+                          fontSize: "var(--fs-body)",
                         }}
                       >
                         <option value="INSTANT">Instant delivery</option>
@@ -499,7 +499,7 @@ export default function NotificationSettingsPage() {
 
       {/* Footer Info */}
       <div className={styles.footerBar}>
-        <div style={{ fontSize: "12.5px", color: "var(--text-muted)" }}>
+        <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>
           Preferences are saved automatically in your browser profile.
         </div>
         <Link to="/notifications">

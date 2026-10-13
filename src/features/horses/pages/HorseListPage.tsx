@@ -4,20 +4,25 @@ import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
 import { Card } from "@/shared/components/ui/Card";
 import { Badge } from "@/shared/components/ui/Badge";
-import { Button } from "@/shared/components/ui/Button";
+import { Button, LinkButton } from "@/shared/components/ui/Button";
 import { Input } from "@/shared/components/form/Input";
 import { Select } from "@/shared/components/form/Select";
+import { Checkbox } from "@/shared/components/form/Checkbox";
 import { Alert } from "@/shared/components/ui/Alert";
+import { DataTable, type Column } from "@/shared/components/ui/DataTable";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
+import { HealthBadge } from "@/shared/components/ui/HealthBadge";
+import { Menu } from "@/shared/components/ui/Menu";
 import { Pagination } from "@/shared/components/ui/Pagination";
-import { HEALTH_STATUS } from "@/shared/lib/status";
+import { Tabs } from "@/shared/components/ui/Tabs";
+import { messageFor } from "@/shared/lib/messages";
 import type { HealthStatus, HorseStatus } from "@/shared/types/enums";
-import { getHorses } from "../api";
+import { getHorseCatalog, getHorses } from "../api";
 import type { Horse, HorseListFilter } from "../types";
 
 const STATUS_FILTERS: Array<{ id: string; label: string }> = [
   { id: "ALL", label: "All" },
-  { id: "ACTIVE", label: "Active / Fit" },
+  { id: "ACTIVE", label: "Ready to Race" },
   { id: "IN_TRAINING", label: "In Training" },
   { id: "UNDER_OBSERVATION", label: "Under Observation" },
   { id: "INJURED", label: "Injured" },
@@ -27,28 +32,42 @@ const STATUS_FILTERS: Array<{ id: string; label: string }> = [
 ];
 
 const GENDER_OPTIONS = [
-  { value: "ALL", label: "All Genders" },
-  { value: "Colt", label: "Colt (Young male)" },
-  { value: "Stallion", label: "Stallion (Adult male)" },
+  { value: "ALL", label: "Sex: All" },
+  { value: "Stallion", label: "Stallion" },
+  { value: "Mare", label: "Mare" },
   { value: "Gelding", label: "Gelding" },
-  { value: "Filly", label: "Filly (Young female)" },
-  { value: "Mare", label: "Mare (Adult female)" },
 ];
 
 const LOCK_OPTIONS = [
-  { value: "ALL", label: "All Medical Locks" },
-  { value: "true", label: "Medical Lock Active 🔒" },
-  { value: "false", label: "Unlocked" },
+  { value: "ALL", label: "Training Lock: Any" },
+  { value: "true", label: "Under Training Lock" },
+  { value: "false", label: "Not locked" },
 ];
 
 const SORT_OPTIONS = [
-  { value: "name_asc", label: "Name (A → Z)" },
-  { value: "name_desc", label: "Name (Z → A)" },
-  { value: "horseCode_asc", label: "Horse ID (Ascending)" },
-  { value: "status_asc", label: "Health Status" },
-  { value: "dob_desc", label: "Age (Youngest first)" },
-  { value: "dob_asc", label: "Age (Oldest first)" },
+  { value: "name_asc", label: "Sort: Name A–Z" },
+  { value: "name_desc", label: "Sort: Name Z–A" },
+  { value: "horseCode_asc", label: "Sort: Horse ID" },
+  { value: "status_asc", label: "Sort: Status" },
+  { value: "dob_desc", label: "Sort: Youngest first" },
+  { value: "dob_asc", label: "Sort: Oldest first" },
 ];
+
+/** Tuổi tròn năm tính theo ngày sinh. */
+function ageOf(dob?: string): string {
+  if (!dob) return "—";
+  const d = new Date(dob);
+  if (Number.isNaN(d.getTime())) return "—";
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  if (now.getMonth() < d.getMonth() || (now.getMonth() === d.getMonth() && now.getDate() < d.getDate())) age -= 1;
+  return `${Math.max(age, 0)} y`;
+}
+
+/** Mã 15 số tách nhóm 3 cho dễ đọc: 985 141 002 341 001. */
+function groupDigits(code: string): string {
+  return /^\d{15}$/.test(code) ? code.replace(/(\d{3})(?=\d)/g, "$1 ") : code;
+}
 
 export default function HorseListPage() {
   const currentUser = useCurrentUser();
@@ -59,6 +78,8 @@ export default function HorseListPage() {
   const queryStatus = searchParams.get("status") || "ALL";
   const queryLock = searchParams.get("lock") || "ALL";
   const queryGender = searchParams.get("gender") || "ALL";
+  const queryBreed = searchParams.get("breed") || "ALL";
+  const queryNoStall = searchParams.get("noStall") === "true";
   const querySort = searchParams.get("sort") || "name_asc";
   const queryPage = parseInt(searchParams.get("page") || "1", 10);
   const queryLimit = parseInt(searchParams.get("limit") || "20", 10);
@@ -69,10 +90,24 @@ export default function HorseListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [breedOptions, setBreedOptions] = useState([{ value: "ALL", label: "Breed: All" }]);
+
+  // Bộ lọc Giống lấy từ danh mục SC-1.06 (cả mục đã ngừng dùng, vì ngựa cũ vẫn mang giá trị đó).
+  useEffect(() => {
+    getHorseCatalog("BREED", "ALL")
+      .then((items) => setBreedOptions([{ value: "ALL", label: "Breed: All" }, ...items.map((i) => ({ value: i.name, label: i.name }))]))
+      .catch(() => undefined);
+  }, []);
 
   const isOwner = currentUser.role === "HORSE_OWNER";
   const isGroom = currentUser.role === "GROOM";
   const canEdit = currentUser.permissions.editHorses || currentUser.role === "CLUB_MANAGER";
+  // C1-03: VET, GROOM không thấy chủ sở hữu. C1-04: nút y tế chỉ cho CM, HT, VET.
+  const showOwner = !["VETERINARIAN", "GROOM", "HORSE_OWNER"].includes(currentUser.role);
+  const showStall = !isOwner;
+  const canSeeMedical = ["CLUB_MANAGER", "HEAD_TRAINER", "VETERINARIAN"].includes(currentUser.role);
+  const filtered =
+    Boolean(querySearch) || queryStatus !== "ALL" || queryLock !== "ALL" || queryGender !== "ALL" || queryBreed !== "ALL" || queryNoStall;
 
   // URLSearchParams updater
   const updateUrl = useCallback(
@@ -111,6 +146,8 @@ export default function HorseListPage() {
       status: queryStatus !== "ALL" ? (queryStatus as HorseStatus) : undefined,
       isMedicalLocked: queryLock !== "ALL" ? queryLock : undefined,
       gender: queryGender !== "ALL" ? queryGender : undefined,
+      breed: queryBreed !== "ALL" ? queryBreed : undefined,
+      noStall: queryNoStall ? "true" : undefined,
       sortBy,
       sortOrder,
       page: queryPage,
@@ -123,12 +160,12 @@ export default function HorseListPage() {
         setTotal(res.total);
       })
       .catch((err) => {
-        setError(err.message || "Failed to load horse roster. Please try again.");
+        setError(messageFor(err));
       })
       .finally(() => {
         setLoading(false);
       });
-  }, [querySearch, queryStatus, queryLock, queryGender, querySort, queryPage, queryLimit]);
+  }, [querySearch, queryStatus, queryLock, queryGender, queryBreed, queryNoStall, querySort, queryPage, queryLimit]);
 
   useEffect(() => {
     loadData();
@@ -139,255 +176,253 @@ export default function HorseListPage() {
     setSearchParams(new URLSearchParams());
   }
 
+  const columns: Column<Horse>[] = [
+    {
+      key: "horse",
+      header: "Horse",
+      render: (h) => (
+        <div style={{ display: "grid", minWidth: 0 }}>
+          <Link to={`/horses/${h.id}`} className="nowrap" style={{ fontWeight: 600, color: "var(--text)" }}>
+            {h.name}
+          </Link>
+          <span className="num nowrap" style={{ fontSize: "var(--fs-caption)", lineHeight: "18px", color: "var(--muted)" }}>
+            {h.horseCode ? `${h.horseCode} · ` : ""}
+            {h.breed}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: "sex",
+      header: "Sex · Age",
+      render: (h) => (
+        <span className="num nowrap">
+          {h.gender || "—"} · {ageOf(h.dob)}
+        </span>
+      ),
+    },
+    ...(showStall
+      ? [
+          {
+            key: "stall",
+            header: "Stall",
+            render: (h: Horse) =>
+              h.stallCode ? (
+                <div style={{ display: "grid" }}>
+                  <span className="num nowrap" style={{ fontWeight: 600 }}>
+                    {h.stallCode}
+                  </span>
+                  {h.zone && (
+                    <span className="nowrap" style={{ fontSize: "var(--fs-caption)", lineHeight: "18px", color: "var(--muted)" }}>
+                      {h.zone}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <span style={{ color: "var(--muted)" }}>Not assigned</span>
+              ),
+          },
+        ]
+      : []),
+    ...(showOwner
+      ? [
+          {
+            key: "owner",
+            header: "Owner",
+            render: (h: Horse) => <span className="nowrap">{h.owner?.fullName ?? h.ownerName ?? "—"}</span>,
+          },
+        ]
+      : []),
+    {
+      key: "status",
+      header: "Status",
+      render: (h) =>
+        h.status ? <HealthBadge status={h.status as HealthStatus} /> : <span style={{ color: "var(--muted)" }}>—</span>,
+    },
+    {
+      key: "lock",
+      header: "Training Lock",
+      render: (h) =>
+        h.isMedicalLocked ? (
+          <Badge tone="danger" icon="lock">
+            Locked
+          </Badge>
+        ) : (
+          <span style={{ color: "var(--muted)" }} aria-label="Not locked">
+            —
+          </span>
+        ),
+    },
+    {
+      key: "chip",
+      header: "Microchip",
+      hideOnNarrow: true,
+      render: (h) => {
+        let chip = h.microchip || h.microchipRfid || "—";
+        if (isGroom && chip !== "—" && chip.length > 4) chip = "*".repeat(chip.length - 4) + chip.slice(-4);
+        return (
+          <span className="num nowrap" style={{ color: "var(--text-2)" }}>
+            {groupDigits(chip)}
+          </span>
+        );
+      },
+    },
+    {
+      key: "actions",
+      header: "",
+      width: 56,
+      align: "right",
+      render: (h) => (
+        <Menu
+          label={`Actions for ${h.name}`}
+          items={[
+            { label: "View profile", icon: "eye", to: `/horses/${h.id}` },
+            { label: "Medical records", icon: "file", to: `/medical/horses/${h.id}`, hidden: !canSeeMedical },
+            { label: "Fitness chart", icon: "chart", to: `/horses/${h.id}/fitness`, hidden: isOwner },
+            { label: "Edit profile", icon: "edit", to: `/horses/${h.id}/edit`, hidden: !canEdit || h.status === "RETIRED" },
+          ]}
+        />
+      ),
+    },
+  ];
+
+  const emptyTitle = filtered
+    ? "No horses match these filters"
+    : isOwner
+      ? "No horses are registered under your name yet"
+      : isGroom
+        ? "No horses are assigned to you yet"
+        : "No horses registered yet";
+  const emptyText = filtered
+    ? "Remove a filter or clear them all."
+    : canEdit
+      ? "Register a horse with its microchip number to start assigning stalls, training plans and vet care."
+      : "The Club Manager registers new horses and assigns them.";
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+    <div style={{ display: "grid", gap: 20 }}>
       <PageHeader
-        eyebrow="HORSE ROSTER · FLOW 1"
-        title="Racehorse Management Roster"
-        description="Manage horse identification, pedigree profiles, microchip/RFID tags, stabling assignments, and veterinary conditioning."
+        title={isOwner ? "My horses" : "Horses"}
+        description={
+          loading || error
+            ? "Identity, stall, status and Training Lock of every managed horse."
+            : `${total} ${total === 1 ? "horse" : "horses"}${filtered ? " match the current filters" : " managed"}.`
+        }
         action={
-          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-            <Link to="/herd">
-              <Button tone="secondary" size="md">
-                Herd Health Map
-              </Button>
-            </Link>
+          <>
             {currentUser.role === "CLUB_MANAGER" && (
-              <Link to="/horses/deleted">
-                <Button tone="secondary" size="md">
-                  Deleted horses
-                </Button>
-              </Link>
+              <LinkButton to="/horses/deleted" icon="trash">
+                Deleted horses
+              </LinkButton>
             )}
             {canEdit && (
-              <Link to="/horses/new">
-                <Button tone="primary" size="md">
-                  + Register Racehorse
-                </Button>
-              </Link>
+              <LinkButton to="/horses/new" tone="primary" icon="plus">
+                Register horse
+              </LinkButton>
             )}
-          </div>
+          </>
         }
       />
 
-      {/* Filter Toolbar */}
-      <Card pad={16}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          {/* Row 1: Quick status filter tabs */}
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-            {STATUS_FILTERS.map((st) => (
-              <Button
-                key={st.id}
-                size="sm"
-                tone={queryStatus === st.id ? "primary" : "secondary"}
-                onClick={() => updateUrl({ status: st.id, page: 1 })}
-              >
-                {st.label}
-              </Button>
-            ))}
+      <Card pad={0}>
+        <div style={{ padding: "0 20px", borderBottom: "1px solid var(--border)" }}>
+          <Tabs
+            label="Filter by status"
+            items={STATUS_FILTERS.map((s) => ({
+              id: s.id,
+              label: s.label,
+              count: s.id === queryStatus && !loading && !error ? total : undefined,
+            }))}
+            active={queryStatus}
+            onChange={(id) => updateUrl({ status: id, page: 1 })}
+          />
+        </div>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", padding: "16px 20px" }}>
+          <div style={{ flex: "1 1 240px", maxWidth: 320 }}>
+            <Input
+              icon="search"
+              aria-label="Search horses"
+              placeholder="Name, HR code, microchip or RFID"
+              value={searchInput}
+              onChange={(e) => handleSearchChange(e.target.value)}
+            />
           </div>
-
-          {/* Row 2: Search input + Select filters */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.75rem", alignItems: "center" }}>
-            <div style={{ gridColumn: "span 2", minWidth: 260 }}>
-              <Input
-                placeholder="Search by horse name, ID, microchip, RFID..."
-                value={searchInput}
-                onChange={(e) => handleSearchChange(e.target.value)}
-              />
-            </div>
-
+          <div style={{ width: 160 }}>
+            <Select aria-label="Breed" value={queryBreed} options={breedOptions} onChange={(e) => updateUrl({ breed: e.target.value, page: 1 })} />
+          </div>
+          <div style={{ width: 130 }}>
+            <Select aria-label="Sex" value={queryGender} options={GENDER_OPTIONS} onChange={(e) => updateUrl({ gender: e.target.value, page: 1 })} />
+          </div>
+          <div style={{ width: 190 }}>
             <Select
+              aria-label="Training Lock"
               value={queryLock}
               options={LOCK_OPTIONS}
               onChange={(e) => updateUrl({ lock: e.target.value, page: 1 })}
             />
-
-            <Select
-              value={queryGender}
-              options={GENDER_OPTIONS}
-              onChange={(e) => updateUrl({ gender: e.target.value, page: 1 })}
-            />
-
-            <Select
-              value={querySort}
-              options={SORT_OPTIONS}
-              onChange={(e) => updateUrl({ sort: e.target.value, page: 1 })}
-            />
-
-            {(querySearch || queryStatus !== "ALL" || queryLock !== "ALL" || queryGender !== "ALL") && (
-              <div>
-                <Button tone="secondary" size="sm" onClick={resetFilters}>
-                  Clear Filters
-                </Button>
-              </div>
-            )}
           </div>
-        </div>
-      </Card>
-
-      {/* Error alert with retry */}
-      {error && (
-        <Alert
-          tone="danger"
-          title="Failed to Load Roster"
-          action={
-            <Button size="sm" tone="secondary" onClick={loadData}>
-              Retry
-            </Button>
-          }
-        >
-          {error}
-        </Alert>
-      )}
-
-      {/* List content */}
-      {loading ? (
-        <Card pad={32}>
-          <p style={{ textAlign: "center", color: "var(--ink-muted, #64748b)" }}>
-            Loading racehorse roster...
-          </p>
-        </Card>
-      ) : horses.length === 0 ? (
-        <Card pad={32}>
-          <EmptyState
-            title={
-              querySearch || queryStatus !== "ALL" || queryLock !== "ALL" || queryGender !== "ALL"
-                ? "No horses matching filter criteria"
-                : isOwner
-                  ? "No racehorses currently registered under your ownership"
-                  : isGroom
-                    ? "You are not currently assigned to care for any horses"
-                    : "No racehorse profiles in the stable system"
-            }
-            description={
-              querySearch || queryStatus !== "ALL"
-                ? "Try adjusting your search keywords or resetting filters."
-                : canEdit
-                  ? "Click '+ Register Racehorse' above to initiate the first identity profile."
-                  : "Please contact the Club Manager for horse stabling allocation."
-            }
-            action={
-              (querySearch || queryStatus !== "ALL" || queryLock !== "ALL") ? (
-                <Button tone="secondary" onClick={resetFilters}>
-                  Clear Filters
-                </Button>
-              ) : canEdit ? (
-                <Link to="/horses/new">
-                  <Button tone="primary">+ Register Racehorse</Button>
-                </Link>
-              ) : undefined
-            }
-          />
-        </Card>
-      ) : (
-        <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "1rem" }}>
-            {horses.map((horse) => {
-              const statusCfg = HEALTH_STATUS[horse.status as HealthStatus] || {
-                label: horse.status,
-                tone: "neutral",
-              };
-
-              let displayMicrochip = horse.microchip || horse.microchipRfid || "—";
-              if (isGroom && displayMicrochip !== "—" && displayMicrochip.length > 4) {
-                displayMicrochip = "*".repeat(displayMicrochip.length - 4) + displayMicrochip.slice(-4);
-              }
-
-              return (
-                <Card key={horse.id} pad={20}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.5rem" }}>
-                      <div>
-                        <h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 700 }}>
-                          <Link
-                            to={`/horses/${horse.id}`}
-                            style={{ color: "inherit", textDecoration: "none" }}
-                          >
-                            {horse.name}
-                          </Link>
-                        </h3>
-                        <span style={{ fontSize: "0.8125rem", color: "var(--ink-muted, #64748b)" }}>
-                          {horse.horseCode ? `${horse.horseCode} · ` : ""}{horse.breed}
-                        </span>
-                      </div>
-
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.25rem" }}>
-                        <Badge tone={statusCfg.tone}>{statusCfg.label}</Badge>
-                        {horse.isMedicalLocked && <Badge tone="danger">Medical Lock 🔒</Badge>}
-                      </div>
-                    </div>
-
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", fontSize: "0.8125rem", color: "var(--ink-muted, #64748b)" }}>
-                      <div>
-                        <strong>Microchip:</strong>{" "}
-                        <span style={{ fontFamily: "monospace" }}>{displayMicrochip}</span>
-                      </div>
-                      <div>
-                        <strong>RFID:</strong>{" "}
-                        <span style={{ fontFamily: "monospace" }}>{horse.rfid || "—"}</span>
-                      </div>
-                      <div>
-                        <strong>Gender:</strong> {horse.gender}
-                      </div>
-                      <div>
-                        <strong>Color:</strong> {horse.color}
-                      </div>
-                      {!isOwner && (
-                        <div>
-                          <strong>Stall:</strong> {horse.stallCode || "Unassigned"}
-                        </div>
-                      )}
-                      <div>
-                        <strong>DOB:</strong> {horse.dob ? horse.dob.split("T")[0] : "—"}
-                      </div>
-                    </div>
-
-                    <div style={{ marginTop: "0.5rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border, #e2e8f0)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
-                      <Link
-                        to={`/horses/${horse.id}`}
-                        style={{ fontSize: "0.8125rem", color: "var(--brand, #16a34a)", fontWeight: 600, textDecoration: "none" }}
-                      >
-                        View Profile →
-                      </Link>
-
-                      <div style={{ display: "flex", gap: "0.75rem" }}>
-                        <Link
-                          to={`/medical/horses/${horse.id}`}
-                          style={{ fontSize: "0.8125rem", color: "var(--accent, #2563eb)", textDecoration: "none" }}
-                        >
-                          Medical Records
-                        </Link>
-                        {canEdit && horse.status !== "RETIRED" && (
-                          <Link
-                            to={`/horses/${horse.id}/edit`}
-                            style={{ fontSize: "0.8125rem", color: "var(--ink-muted, #64748b)", textDecoration: "none" }}
-                          >
-                            Edit
-                          </Link>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-
-          {/* Pagination */}
-          {total > queryLimit && (
-            <div style={{ marginTop: "1rem" }}>
-              <Pagination
-                page={queryPage}
-                pageSize={queryLimit}
-                total={total}
-                noun="horses"
-                onPage={(p) => updateUrl({ page: p })}
-              />
-            </div>
+          {(currentUser.role === "CLUB_MANAGER" || currentUser.role === "HEAD_TRAINER") && (
+            <Checkbox checked={queryNoStall} onChange={(v) => updateUrl({ noStall: v ? "true" : undefined, page: 1 })} label="No stall yet" />
           )}
-        </>
-      )}
+          <div style={{ width: 180, marginLeft: "auto" }}>
+            <Select aria-label="Sort" value={querySort} options={SORT_OPTIONS} onChange={(e) => updateUrl({ sort: e.target.value, page: 1 })} />
+          </div>
+          {filtered && (
+            <Button tone="ghost" size="sm" icon="x" onClick={resetFilters}>
+              Clear filters
+            </Button>
+          )}
+        </div>
+
+        {error ? (
+          <div style={{ padding: "0 20px 20px" }}>
+            <Alert
+              tone="danger"
+              title="Couldn’t load the horse list"
+              action={
+                <Button size="sm" tone="secondary" onClick={loadData}>
+                  Try again
+                </Button>
+              }
+            >
+              {error} Your search and filters are kept.
+            </Alert>
+          </div>
+        ) : (
+          <div style={{ borderTop: "1px solid var(--border)" }}>
+            <DataTable
+              caption="Horses"
+              columns={columns}
+              rows={horses}
+              rowKey={(h) => h.id}
+              loading={loading}
+              empty={
+                <EmptyState
+                  icon="horse"
+                  title={emptyTitle}
+                  description={emptyText}
+                  action={
+                    filtered ? (
+                      <Button tone="secondary" onClick={resetFilters}>
+                        Clear all filters
+                      </Button>
+                    ) : canEdit ? (
+                      <LinkButton to="/horses/new" tone="primary" icon="plus">
+                        Register horse
+                      </LinkButton>
+                    ) : undefined
+                  }
+                />
+              }
+            />
+          </div>
+        )}
+
+        {!loading && !error && total > queryLimit && (
+          <Pagination page={queryPage} pageSize={queryLimit} total={total} noun="horses" onPage={(p) => updateUrl({ page: p })} />
+        )}
+      </Card>
     </div>
   );
 }

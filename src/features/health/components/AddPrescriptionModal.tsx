@@ -7,6 +7,7 @@ import { Textarea } from "@/shared/components/form/Textarea";
 import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
 import type { PrescriptionInput } from "../types";
+import { formatDate } from "@/shared/lib/format";
 
 const UNIT_OPTIONS = [
   { value: "g", label: "g" },
@@ -103,7 +104,7 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
     >
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {error && (
-          <div style={{ color: "var(--danger)", fontSize: "13px", padding: "8px", background: "var(--danger-bg)", borderRadius: "4px" }}>
+          <div style={{ color: "var(--danger)", fontSize: "var(--fs-body)", padding: "8px", background: "var(--danger-bg)", borderRadius: "4px" }}>
             {error}
           </div>
         )}
@@ -166,9 +167,9 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
           style={{
             background: "var(--surface-2)",
             padding: "10px 14px",
-            borderRadius: "6px",
+            borderRadius: "var(--r-sm)",
             border: "1px solid var(--border)",
-            fontSize: "13px",
+            fontSize: "var(--fs-body)",
             display: "flex",
             justifyContent: "space-between",
           }}
@@ -177,7 +178,7 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
             Total medication required: <strong>{totalAmount} {unit}</strong>
           </span>
           <span>
-            Through: <strong>{endD.toLocaleDateString("en-US")}</strong>
+            Through: <strong>{formatDate(endD)}</strong>
           </span>
         </div>
 
@@ -193,8 +194,8 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
               value={withdrawalDays}
               onChange={(e) => setWithdrawalDays(Number(e.target.value))}
             />
-            <span style={{ fontSize: "12px", color: "var(--muted)" }}>
-              Clearance date: <strong>{withdrawalEndD.toLocaleDateString("en-US")}</strong>
+            <span style={{ fontSize: "var(--fs-caption)", color: "var(--muted)" }}>
+              Clearance date: <strong>{formatDate(withdrawalEndD)}</strong>
             </span>
           </div>
         </Field>

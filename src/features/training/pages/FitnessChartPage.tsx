@@ -73,9 +73,9 @@ export default function FitnessChartPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
-          <h1 style={{ margin: 0, fontSize: "1.5rem" }}>Fitness – {data.horse.name}</h1>
+          <h1 style={{ margin: 0, fontSize: "var(--fs-kpi)" }}>Fitness – {data.horse.name}</h1>
           <Badge tone={statusCfg.tone as never}>{statusCfg.label}</Badge>
-          {data.horse.isMedicalLocked && <Badge tone="danger">🔒 Training Lock</Badge>}
+          {data.horse.isMedicalLocked && <Badge tone="danger" icon="lock">Training Lock</Badge>}
         </div>
         <Link to={`/horses/${data.horse.id}`}><Button tone="secondary">Horse profile</Button></Link>
       </div>
@@ -102,23 +102,23 @@ export default function FitnessChartPage() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
         <Card pad={16}>
-          <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>Best average speed</div>
-          <div style={{ fontSize: "1.5rem", fontWeight: 700 }}>{s.bestAvgSpeed ? `${s.bestAvgSpeed.value} km/h` : "—"}</div>
-          {s.bestAvgSpeed && <div style={{ fontSize: "0.75rem" }}>{clubParts(s.bestAvgSpeed.date).date}</div>}
+          <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>Best average speed</div>
+          <div style={{ fontSize: "var(--fs-kpi)", fontWeight: 700 }}>{s.bestAvgSpeed ? `${s.bestAvgSpeed.value} km/h` : "—"}</div>
+          {s.bestAvgSpeed && <div style={{ fontSize: "var(--fs-caption)" }}>{clubParts(s.bestAvgSpeed.date).date}</div>}
         </Card>
         <Card pad={16}>
-          <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>Avg performance (last 4)</div>
-          <div style={{ fontSize: "1.5rem", fontWeight: 700 }}>{s.avgScoreLast4 != null ? `${s.avgScoreLast4}/10` : "—"}</div>
+          <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>Avg performance (last 4)</div>
+          <div style={{ fontSize: "var(--fs-kpi)", fontWeight: 700 }}>{s.avgScoreLast4 != null ? `${s.avgScoreLast4}/10` : "—"}</div>
         </Card>
         <Card pad={16}>
-          <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>Avg HR after 10 min (last 4)</div>
-          <div style={{ fontSize: "1.5rem", fontWeight: 700 }}>{s.avgRecoveryLast4 != null ? `${s.avgRecoveryLast4} bpm` : "—"}</div>
+          <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>Avg HR after 10 min (last 4)</div>
+          <div style={{ fontSize: "var(--fs-kpi)", fontWeight: 700 }}>{s.avgRecoveryLast4 != null ? `${s.avgRecoveryLast4} bpm` : "—"}</div>
         </Card>
         <Card pad={16}>
-          <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>Load, last 7 days</div>
-          <div style={{ fontSize: "1.5rem", fontWeight: 700 }}>{s.load7d}</div>
+          <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>Load, last 7 days</div>
+          <div style={{ fontSize: "var(--fs-kpi)", fontWeight: 700 }}>{s.load7d}</div>
           {s.loadChangePct != null && (
-            <div style={{ fontSize: "0.75rem", color: s.loadChangePct > 30 ? "var(--warn)" : "var(--text-muted)" }}>
+            <div style={{ fontSize: "var(--fs-caption)", color: s.loadChangePct > 30 ? "var(--warn)" : "var(--text-muted)" }}>
               {s.loadChangePct >= 0 ? "+" : ""}{s.loadChangePct}% vs 4-week average
             </div>
           )}
@@ -132,9 +132,9 @@ export default function FitnessChartPage() {
           <>
             <FitnessChart data={data} series={series} from={from} to={to} />
             {data.points.length < 3 && (
-              <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>At least 3 workouts are needed to see a trend.</div>
+              <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>At least 3 workouts are needed to see a trend.</div>
             )}
-            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Red bands: Training Lock periods. Click a point to open the result.</div>
+            <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>Red bands: Training Lock periods. Click a point to open the result.</div>
           </>
         )}
       </Card>
@@ -142,7 +142,7 @@ export default function FitnessChartPage() {
       {rows.length > 0 && (
         <Card pad={16}>
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.8125rem" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "var(--fs-body)" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-sunken)" }}>
                   {["Date", "Type", "Distance", "Time", "Avg speed", "Peak HR", "HR 10 min", "Performance", "Load"].map((h) => (

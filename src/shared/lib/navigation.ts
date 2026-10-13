@@ -105,6 +105,18 @@ export function breadcrumbFor(user: AuthUser, pathname: string, accountName?: st
   if (/^\/training\/sessions\/[^/]+\/result$/.test(pathname)) {
     return [homeSegment, { label: "Training Schedule", href: "/calendar" }, { label: "Workout Result" }];
   }
+  if (/^\/horses\/(?!new$|deleted$)[^/]+$/.test(pathname)) {
+    return [homeSegment, { label: "Horses", href: "/horses" }, { label: accountName ?? "Horse profile" }];
+  }
+  if (/^\/horses\/[^/]+\/edit$/.test(pathname)) {
+    return [homeSegment, { label: "Horses", href: "/horses" }, { label: "Edit profile" }];
+  }
+  if (pathname === "/horses/new") {
+    return [homeSegment, { label: "Horses", href: "/horses" }, { label: "Register horse" }];
+  }
+  if (pathname === "/horses/deleted") {
+    return [homeSegment, { label: "Horses", href: "/horses" }, { label: "Deleted horses" }];
+  }
   if (/^\/horses\/[^/]+\/fitness$/.test(pathname)) {
     return [homeSegment, { label: "Horses", href: "/horses" }, { label: "Fitness Chart" }];
   }
@@ -117,7 +129,7 @@ export function breadcrumbFor(user: AuthUser, pathname: string, accountName?: st
   }
 
   // 8. Tất cả các trang chức năng thông thường: đi thẳng từ Workspace > {Tên màn hình} (BỎ nhóm trung gian)
-  const access = screenAccess(user.role, user.permissions, pathname);
+  const access = screenAccess(user.role, user.permissions, ALIAS[pathname] ?? pathname);
   if (access.label) {
     return [
       homeSegment,
@@ -125,5 +137,19 @@ export function breadcrumbFor(user: AuthUser, pathname: string, accountName?: st
     ];
   }
 
-  return [homeSegment, { label: "Page not found" }];
+  return [homeSegment];
 }
+
+// Route bí danh trong router.tsx → đường dẫn của mục menu (để lấy đúng nhãn màn hình).
+const ALIAS: Record<string, string> = {
+  "/training/calendar": "/calendar",
+  "/training/trials": "/trials",
+  "/training/metrics": "/metrics",
+  "/training/plans": "/plans",
+  "/my/training": "/my-training",
+  "/stables/map": "/stalls",
+  "/medical/records": "/records",
+  "/medical/locks": "/locks",
+  "/medical/preventive": "/vaccine",
+  "/medical/herd": "/herd",
+};

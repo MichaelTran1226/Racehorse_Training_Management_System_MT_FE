@@ -63,8 +63,8 @@ export default function PlanListPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Training Plans</h1>
-          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
+          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>Training Plans</h1>
+          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
             Draft → Active → Completed / Cancelled. Open a plan to manage its phases and workouts.
           </p>
         </div>
@@ -125,7 +125,7 @@ export default function PlanListPage() {
           />
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.875rem" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "var(--fs-body)" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-sunken)" }}>
                   <th style={{ padding: "0.75rem 1rem" }}>Code</th>
@@ -150,7 +150,11 @@ export default function PlanListPage() {
                     <td style={{ padding: "0.75rem 1rem", fontWeight: 600 }}>{plan.name}</td>
                     <td style={{ padding: "0.75rem 1rem" }}>
                       {plan.horseName}
-                      {plan.isLockedByMedical && <span title="Training Lock"> 🔒</span>}
+                      {plan.isLockedByMedical && (
+                    <Badge tone="danger" icon="lock">
+                      Training Lock
+                    </Badge>
+                  )}
                     </td>
                     <td style={{ padding: "0.75rem 1rem", whiteSpace: "nowrap" }}>
                       {plan.startDate} – {plan.endDate}

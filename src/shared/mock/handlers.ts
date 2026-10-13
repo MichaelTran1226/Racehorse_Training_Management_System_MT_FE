@@ -30,6 +30,8 @@ import {
   saveStoredPreventiveCatalogs,
   getStoredPreventiveSchedules,
   saveStoredPreventiveSchedules,
+  getStoredHorseCatalog,
+  saveStoredHorseCatalog,
 } from "@/shared/mock/horsesData";
 import type { FollowUpItem, MedicalRecord, PrescriptionItem, TreatmentPhase } from "@/features/health/types";
 import {
@@ -156,6 +158,17 @@ const DELETABLE: Account["status"][] = ["INVITED", "PENDING_EMAIL", "REJECTED"];
 // ------------------------------------------------------------------ các route
 
 const routes: Route[] = [
+  // ---- Chuồng trại (chỉ đọc): đủ để Sơ đồ chuồng và Dashboard chạy ở chế độ mock.
+  { method: "GET", pattern: /^\/stalls\/zones$/, handler: () => mockZones() },
+  {
+    method: "GET",
+    pattern: /^\/stalls\/grooms$/,
+    handler: ({ db }) =>
+      db.accounts
+        .filter((a) => a.role === "GROOM" && a.status === "ACTIVE")
+        .map((a) => ({ id: a.id, fullName: a.fullName, email: a.email, horseCount: getStoredHorses().filter((h) => h.assignedGroomId === a.id).length })),
+  },
+  { method: "GET", pattern: /^\/stalls$/, handler: ({ db, url }) => mockStalls(db, url) },
   {
     method: "GET", pattern: /^\/audit-logs$/,
     handler: ({ db, url }) => {
@@ -726,77 +739,6 @@ const routes: Route[] = [
   },
 
   // ===== FLOW 3: MEDICAL & HEALTH ROUTES =====
-  {
-    method: "GET",
-    pattern: /^\/medical\/health-board$/,
-    handler({ url }) {
-      const stored = getStoredHorses();
-      const healthGroupFilter = url.searchParams.get("healthGroup");
-      const isLockedFilter = url.searchParams.get("isLocked");
-      const search = url.searchParams.get("search")?.toLowerCase().trim();
-
-      let qualifiedCount = 0;
-      let observationCount = 0;
-      let injuredCount = 0;
-      let isolatedCount = 0;
-      let lockedCount = 0;
-
-      const mapped = stored.map((horse) => {
-        const isLocked = Boolean(horse.isLocked);
-        if (isLocked) lockedCount++;
-
-        let healthGroup: "QUALIFIED" | "OBSERVATION" | "INJURED" | "ISOLATED" = "QUALIFIED";
-        if (horse.healthGroup === "WATCH") {
-          healthGroup = "OBSERVATION";
-          observationCount++;
-        } else if (horse.healthGroup === "INJURED") {
-          healthGroup = "INJURED";
-          injuredCount++;
-        } else if (horse.healthGroup === "QUARANTINED") {
-          healthGroup = "ISOLATED";
-          isolatedCount++;
-        } else {
-          qualifiedCount++;
-        }
-
-        return {
-          id: horse.id,
-          name: horse.name,
-          microchipRfid: horse.microchipRfid || horse.rfid || horse.code,
-          status: horse.statusText || "ACTIVE",
-          healthGroup,
-          isMedicalLocked: isLocked,
-          stallCode: horse.stall || null,
-          zone: horse.zone || null,
-        };
-      });
-
-      let filtered = mapped;
-      if (healthGroupFilter) {
-        filtered = filtered.filter((h) => h.healthGroup === healthGroupFilter);
-      }
-      if (isLockedFilter === "true") {
-        filtered = filtered.filter((h) => h.isMedicalLocked);
-      }
-      if (search) {
-        filtered = filtered.filter(
-          (h) => h.name.toLowerCase().includes(search) || h.microchipRfid.toLowerCase().includes(search),
-        );
-      }
-
-      return {
-        summary: {
-          qualifiedCount,
-          observationCount,
-          injuredCount,
-          isolatedCount,
-          lockedCount,
-          total: mapped.length,
-        },
-        data: filtered,
-      };
-    },
-  },
   {
     method: "GET",
     pattern: /^\/medical\/horses\/([^/]+)\/injuries$/,
@@ -1569,6 +1511,138 @@ const routes: Route[] = [
     },
   },
 
+  // ---- Flow 1: SC-1.06 Danh mục Giống & Màu lông (bản giả của /horse-catalogs)
+  {
+    method: "GET",
+    pattern: /^\/horse-catalogs$/,
+    handler({ db, url }) {
+      currentUser(db);
+      const type = url.searchParams.get("type");
+      const status = url.searchParams.get("status") ?? "ALL";
+      const q = (url.searchParams.get("search") ?? "").toLowerCase();
+      const horses = getStoredHorses() as Array<{ breed?: string; color?: string }>;
+      return getStoredHorseCatalog()
+        .filter(
+          (i) =>
+            (!type || i.type === type) &&
+            (status === "ALL" || (status === "ACTIVE") === i.isActive) &&
+            (!q || i.code.toLowerCase().includes(q) || i.name.toLowerCase().includes(q)),
+        )
+        .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+        .map((i) => ({
+          ...i,
+          horseCount: horses.filter(
+            (h) => (i.type === "BREED" ? h.breed : h.color)?.toLowerCase() === i.name.toLowerCase(),
+          ).length,
+        }));
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/horse-catalogs$/,
+    handler({ db, body }) {
+      if (currentUser(db).role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Forbidden");
+      const items = getStoredHorseCatalog();
+      const type = String(body.type) as "BREED" | "COLOR";
+      const code = String(body.code ?? "").toUpperCase();
+      const name = String(body.name ?? "").trim();
+      if (items.some((i) => i.type === type && i.code === code)) throw new ApiError(409, "DUPLICATE_CATALOG_CODE", "Mã đã tồn tại.");
+      if (items.some((i) => i.type === type && i.name.toLowerCase() === name.toLowerCase())) {
+        throw new ApiError(409, "DUPLICATE_CATALOG_NAME", "Tên đã tồn tại.");
+      }
+      const item = {
+        id: `${type.toLowerCase()}-${Date.now()}`,
+        type,
+        code,
+        name,
+        description: (body.description as string) || null,
+        sortOrder: Number(body.sortOrder ?? 0),
+        isActive: true,
+      };
+      saveStoredHorseCatalog([...items, item]);
+      return item;
+    },
+  },
+  {
+    method: "PUT",
+    pattern: /^\/horse-catalogs\/([^/]+)$/,
+    handler({ db, params, body }) {
+      if (currentUser(db).role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Forbidden");
+      const items = getStoredHorseCatalog();
+      const item = items.find((i) => i.id === params[0]);
+      if (!item) throw new ApiError(404, "CATALOG_ITEM_NOT_FOUND", "Không tìm thấy mục danh mục.");
+      Object.assign(item, {
+        ...(body.name !== undefined && { name: String(body.name).trim() }),
+        ...(body.description !== undefined && { description: (body.description as string) || null }),
+        ...(body.sortOrder !== undefined && { sortOrder: Number(body.sortOrder) }),
+      });
+      saveStoredHorseCatalog(items);
+      return item;
+    },
+  },
+  {
+    method: "PATCH",
+    pattern: /^\/horse-catalogs\/([^/]+)\/status$/,
+    handler({ db, params, body }) {
+      if (currentUser(db).role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Forbidden");
+      const items = getStoredHorseCatalog();
+      const item = items.find((i) => i.id === params[0]);
+      if (!item) throw new ApiError(404, "CATALOG_ITEM_NOT_FOUND", "Không tìm thấy mục danh mục.");
+      item.isActive = Boolean(body.isActive);
+      saveStoredHorseCatalog(items);
+      return item;
+    },
+  },
+
+  // ---- SC-3.01 Sơ đồ sức khỏe (bản giả của GET /medical/health-board, dựng từ kho ngựa giả)
+  {
+    method: "GET",
+    pattern: /^\/medical\/health-board$/,
+    handler({ db }) {
+      currentUser(db);
+      const GROUP: Record<string, "QUALIFIED" | "OBSERVATION" | "INJURED" | "ISOLATED"> = {
+        UNDER_OBSERVATION: "OBSERVATION",
+        INJURED: "INJURED",
+        ISOLATED: "ISOLATED",
+      };
+      const data = getStoredHorses()
+        .filter((h) => horseStatusOf(h) !== "RETIRED")
+        .map((h) => {
+          const status = horseStatusOf(h);
+          return {
+            id: h.id,
+            name: h.name,
+            horseCode: h.horseCode ?? h.code,
+            microchipRfid: h.microchipRfid ?? h.code,
+            status,
+            healthGroup: GROUP[status] ?? "QUALIFIED",
+            isMedicalLocked: h.isLocked,
+            lock: h.isLocked ? { lockedAt: new Date().toISOString(), recheckDate: null, veterinarianName: null } : null,
+            stallCode: h.stall || null,
+            zone: h.zone ?? null,
+            openInjuries: [],
+            latestRecord: null,
+            preventiveDue: [],
+            hasOverduePreventive: false,
+            latestObservation: null,
+          };
+        });
+      const count = (g: string) => data.filter((h) => h.healthGroup === g).length;
+      return {
+        summary: {
+          qualifiedCount: count("QUALIFIED"),
+          observationCount: count("OBSERVATION"),
+          injuredCount: count("INJURED"),
+          isolatedCount: count("ISOLATED"),
+          lockedCount: data.filter((h) => h.isMedicalLocked).length,
+          overdueCount: 0,
+          total: data.length,
+        },
+        data,
+      };
+    },
+  },
+
   // ---- Flow 1: Horse Profile Mock Routes (P1-07)
   {
     method: "GET",
@@ -1612,11 +1686,11 @@ const routes: Route[] = [
           status: st,
           isMedicalLocked: Boolean(h.isLocked),
           ownerId: h.ownerId || "owner-1",
-          ownerName: h.ownerName || "Robert Sterling (Horse Owner)",
-          owner: { id: h.ownerId || "owner-1", fullName: h.ownerName || "Robert Sterling (Horse Owner)", email: "owner@gmail.com" },
+          ownerName: h.ownerName || "Phan Đức Long",
+          owner: { id: h.ownerId || "owner-1", fullName: h.ownerName || "Phan Đức Long", email: "owner@gmail.com" },
           stallCode: user.role === "HORSE_OWNER" ? null : (h.stall || "STALL-A01"),
           zone: user.role === "HORSE_OWNER" ? null : "Zone A - Barn 1",
-          primaryGroom: user.role === "HORSE_OWNER" ? null : "Michael Groom",
+          primaryGroom: user.role === "HORSE_OWNER" ? null : "Lê Văn Phúc",
           createdAt: h.createdAt || new Date().toISOString(),
           updatedAt: h.updatedAt || new Date().toISOString(),
         };
@@ -1746,11 +1820,11 @@ const routes: Route[] = [
         retireReason: h.retireReason ?? null,
         isMedicalLocked: Boolean(h.isLocked),
         ownerId: h.ownerId || "owner-1",
-        ownerName: h.ownerName || "Robert Sterling (Horse Owner)",
-        owner: { id: h.ownerId || "owner-1", fullName: h.ownerName || "Robert Sterling (Horse Owner)", email: "owner@gmail.com" },
+        ownerName: h.ownerName || "Phan Đức Long",
+        owner: { id: h.ownerId || "owner-1", fullName: h.ownerName || "Phan Đức Long", email: "owner@gmail.com" },
         stallCode: user.role === "HORSE_OWNER" ? null : (h.stall || "STALL-A01"),
         zone: user.role === "HORSE_OWNER" ? null : "Zone A - Barn 1",
-        primaryGroom: user.role === "HORSE_OWNER" ? null : "Michael Groom",
+        primaryGroom: user.role === "HORSE_OWNER" ? null : "Lê Văn Phúc",
         createdAt: h.createdAt || new Date().toISOString(),
         updatedAt: h.updatedAt || new Date().toISOString(),
       };
@@ -1783,14 +1857,14 @@ const routes: Route[] = [
         isMedicalLocked: Boolean(h.isLocked),
         stallCode: user.role === "HORSE_OWNER" ? null : (h.stall || "STALL-A01"),
         zone: user.role === "HORSE_OWNER" ? null : "Zone A - Barn 1",
-        primaryGroom: user.role === "HORSE_OWNER" ? null : "Michael Groom",
+        primaryGroom: user.role === "HORSE_OWNER" ? null : "Lê Văn Phúc",
       };
 
       const statusHistory = [
         {
           id: `sh-${h.id}-1`,
           timestamp: h.updatedAt || new Date().toISOString(),
-          changedBy: "Dr. Sarah Connor (Veterinarian)",
+          changedBy: "Dr. Võ Thanh Hải",
           action: "HORSE_STATUS_CHANGED",
           oldStatus: "RESTING",
           newStatus: st,
@@ -1802,9 +1876,9 @@ const routes: Route[] = [
           id: `oh-${h.id}-1`,
           timestamp: h.createdAt || new Date(Date.now() - 60 * 86400000).toISOString(),
           previousOwner: "EquiFlow Racing Stable",
-          newOwner: h.ownerName || "Robert Sterling (Horse Owner)",
+          newOwner: h.ownerName || "Phan Đức Long",
           reason: "Purchased at Autumn Yearling Auction",
-          transferredBy: "Michael Tran (Club Manager)",
+          transferredBy: "Hoàng Văn Sơn",
         },
       ];
 
@@ -1813,7 +1887,7 @@ const routes: Route[] = [
           id: `stall-${h.id}-1`,
           stallCode: h.stall || "STALL-A01",
           zone: "Zone A - Barn 1",
-          groomName: "John Smith (Groom Hand)",
+          groomName: "Lê Văn Phúc",
           startDate: h.createdAt || new Date(Date.now() - 30 * 86400000).toISOString(),
           endDate: null,
           isActive: true,
@@ -1825,7 +1899,7 @@ const routes: Route[] = [
           {
             id: `mr-${h.id}-1`,
             examinationDate: new Date(Date.now() - 5 * 86400000).toISOString(),
-            veterinarianName: "Dr. Sarah Connor",
+            veterinarianName: "Dr. Lê Minh Châu",
             symptoms: h.isLocked ? (h.lockReason || "Left forelimb swelling and lameness") : "Routine pre-training health screening",
             clinicalDiagnosis: h.isLocked ? "Acute desmitis of suspensory ligament" : "Clinically sound, fit for regular conditioning",
             treatmentProtocol: h.isLocked ? "Cryotherapy, bandage support, rest" : "Routine maintenance",
@@ -1850,7 +1924,7 @@ const routes: Route[] = [
             lockCode: "KH-000001",
             lockedAt: new Date(Date.now() - 5 * 86400000).toISOString(),
             lockReason: h.lockReason || "Suspensory ligament acute desmitis during intense trial run",
-            veterinarianName: "Dr. Sarah Connor",
+            veterinarianName: "Dr. Lê Minh Châu",
             isLocked: true,
           },
         ] : [],
@@ -1866,7 +1940,7 @@ const routes: Route[] = [
           startDate: new Date(Date.now() - 20 * 86400000).toISOString(),
           endDate: new Date(Date.now() + 10 * 86400000).toISOString(),
           status: h.isLocked ? "SUSPENDED" : "ACTIVE",
-          trainerName: "David Nguyen (Head Trainer)",
+          trainerName: "Đinh Quang Trung",
           totalWorkouts: 8,
           completedWorkouts: 6,
         },
@@ -1886,7 +1960,7 @@ const routes: Route[] = [
             id: `tl-${h.id}-lock`,
             category: "MEDICAL" as const,
             title: "Veterinary Medical Lock enforced (KH-000001)",
-            description: `Reason: ${h.lockReason || "Acute desmitis"}. Issued by Dr. Sarah Connor.`,
+            description: `Reason: ${h.lockReason || "Acute desmitis"}. Issued by Dr. Lê Minh Châu.`,
             timestamp: new Date(Date.now() - 5 * 86400000).toISOString(),
             badgeTone: "danger" as const,
           },
@@ -1895,7 +1969,7 @@ const routes: Route[] = [
           id: `tl-${h.id}-plan`,
           category: "TRAINING" as const,
           title: "Training plan issued: Endurance & Speed Conditioning",
-          description: `Status: ${h.isLocked ? "SUSPENDED" : "ACTIVE"}. Surface: TURF. Trainer: David Nguyen.`,
+          description: `Status: ${h.isLocked ? "SUSPENDED" : "ACTIVE"}. Surface: TURF. Trainer: Trần Văn Nam.`,
           timestamp: new Date(Date.now() - 20 * 86400000).toISOString(),
           badgeTone: "ok" as const,
         },
@@ -1903,7 +1977,7 @@ const routes: Route[] = [
           id: `tl-${h.id}-med`,
           category: "MEDICAL" as const,
           title: "Clinical examination completed",
-          description: `Diagnosis: ${h.isLocked ? "Acute desmitis" : "Clinically sound"}. Examined by Dr. Sarah Connor.`,
+          description: `Diagnosis: ${h.isLocked ? "Acute desmitis" : "Clinically sound"}. Examined by Dr. Lê Minh Châu.`,
           timestamp: new Date(Date.now() - 5 * 86400000).toISOString(),
           badgeTone: "warn" as const,
         },
@@ -2130,7 +2204,7 @@ const routes: Route[] = [
       const accounts = db.accounts;
       const newOwner = accounts.find((a) => a.id === newOwnerId) || {
         id: newOwnerId,
-        fullName: newOwnerId === "usr-owner-002" ? "Alexander Hamilton (Equine Syndicate)" : "Robert Sterling (Horse Owner)",
+        fullName: newOwnerId === "usr-owner-002" ? "Alexander Hamilton (Equine Syndicate)" : "Phan Đức Long",
         email: "owner@gmail.com",
       };
 
@@ -2901,7 +2975,7 @@ function decoratePlan(p: MockPlan) {
     ...p,
     horseOwnerId: h?.ownerId,
     horse: h ? { id: h.id, name: h.name, horseCode: h.horseCode ?? h.code, status: horseStatusOf(h), isMedicalLocked: Boolean(h.isLocked) } : undefined,
-    trainer: { fullName: "David Nguyen (Head Trainer)" },
+    trainer: { fullName: "Đinh Quang Trung" },
     _count: { workoutSessions: getStoredWorkouts().filter((w) => w.trainingPlanId === p.id).length },
     progress: progressMock(p.id),
   };
@@ -3087,6 +3161,72 @@ function assertWorkoutAllowedMock(db: Db, plan: MockPlan, w: MockWorkout, vetCon
 function withAccount(db: Db, r: Db["requests"][number]) {
   const a = db.accounts.find((x) => x.id === r.accountId);
   return { ...r, account: a ? { id: a.id, fullName: a.fullName, email: a.email, role: a.role } : null };
+}
+
+// ------------------------------------------------------------------ chuồng trại (mock chỉ đọc)
+
+const MOCK_ZONES = [
+  { id: "zone-a", code: "A", name: "Barn A", rows: 2, cols: 4, sortOrder: 1 },
+  { id: "zone-b", code: "B", name: "Barn B", rows: 2, cols: 4, sortOrder: 2 },
+  { id: "zone-c", code: "C", name: "Isolation barn", rows: 1, cols: 3, sortOrder: 3 },
+];
+
+function mockStallList(db: Db) {
+  const horses = getStoredHorses();
+  return MOCK_ZONES.flatMap((z) =>
+    Array.from({ length: z.rows * z.cols }, (_, i) => {
+      const code = `STALL-${z.code}${String(i + 1).padStart(2, "0")}`;
+      const horse = horses.find((h) => h.stall === code);
+      const groom = horse?.assignedGroomId ? db.accounts.find((a) => a.id === horse.assignedGroomId) : undefined;
+      return {
+        id: `stall-${z.code}${i + 1}`,
+        code,
+        zone: z.code,
+        zoneId: z.id,
+        row: Math.floor(i / z.cols) + 1,
+        col: (i % z.cols) + 1,
+        status: horse ? "OCCUPIED" : z.code === "B" && i === 7 ? "MAINTENANCE" : "AVAILABLE",
+        notes: null,
+        zoneRef: { id: z.id, code: z.code, name: z.name, rows: z.rows, cols: z.cols, isActive: true },
+        allocations: horse
+          ? [
+              {
+                id: `alloc-${horse.id}`,
+                stallId: `stall-${z.code}${i + 1}`,
+                horseId: horse.id,
+                assignedGroomUserId: groom?.id ?? null,
+                startDate: "2026-09-01T00:00:00.000Z",
+                endDate: null,
+                isActive: true,
+                horse: { id: horse.id, horseCode: horse.code, name: horse.name, status: horseStatusOf(horse), isMedicalLocked: horse.isLocked },
+                assignedGroom: groom ? { id: groom.id, fullName: groom.fullName, email: groom.email } : null,
+              },
+            ]
+          : [],
+      };
+    }),
+  );
+}
+
+function mockZones() {
+  const stalls = mockStallList(getDb());
+  return MOCK_ZONES.map((z) => ({
+    ...z,
+    description: null,
+    isActive: true,
+    stallCount: stalls.filter((s) => s.zoneId === z.id).length,
+    occupiedCount: stalls.filter((s) => s.zoneId === z.id && s.allocations.length > 0).length,
+  }));
+}
+
+function mockStalls(db: Db, url: URL) {
+  const zoneId = url.searchParams.get("zoneId");
+  const search = (url.searchParams.get("search") ?? "").toLowerCase();
+  return mockStallList(db).filter(
+    (s) =>
+      (!zoneId || s.zoneId === zoneId) &&
+      (!search || s.code.toLowerCase().includes(search) || s.allocations.some((a) => a.horse.name.toLowerCase().includes(search))),
+  );
 }
 
 // ------------------------------------------------------------------ điểm vào

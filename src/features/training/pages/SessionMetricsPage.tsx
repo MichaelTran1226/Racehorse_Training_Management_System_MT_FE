@@ -64,8 +64,8 @@ export default function SessionMetricsPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Workout Results</h1>
-          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
+          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>Workout Results</h1>
+          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
             Record results after workouts; abnormal signs alert the Veterinarian. Values are entered by hand.
           </p>
         </div>
@@ -88,11 +88,11 @@ export default function SessionMetricsPage() {
 
       {user.role === "HEAD_TRAINER" && (
         <Card pad={16}>
-          <h2 style={{ margin: "0 0 0.75rem", fontSize: "1.0625rem" }}>Waiting for a result ({pending.length})</h2>
+          <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>Waiting for a result ({pending.length})</h2>
           {loading ? null : pending.length === 0 ? (
             <EmptyState title="Nothing to record right now." />
           ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8125rem", textAlign: "left" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "var(--fs-body)", textAlign: "left" }}>
               <tbody>{pending.map((s) => <Row key={s.id} s={s} action="Record result" />)}</tbody>
             </table>
           )}
@@ -100,13 +100,13 @@ export default function SessionMetricsPage() {
       )}
 
       <Card pad={16}>
-        <h2 style={{ margin: "0 0 0.75rem", fontSize: "1.0625rem" }}>Results – last 14 days ({recent.length})</h2>
+        <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>Results – last 14 days ({recent.length})</h2>
         {loading ? (
           <div style={{ color: "var(--text-muted)" }}>Loading...</div>
         ) : recent.length === 0 ? (
           <EmptyState title="No results in the last 14 days." />
         ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8125rem", textAlign: "left" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "var(--fs-body)", textAlign: "left" }}>
             <tbody>{recent.map((s) => <Row key={s.id} s={s} action="View result" />)}</tbody>
           </table>
         )}

@@ -7,6 +7,7 @@ import { Alert } from "@/shared/components/ui/Alert";
 import { Avatar } from "@/shared/components/ui/Avatar";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
+import { Menu } from "@/shared/components/ui/Menu";
 import { Card } from "@/shared/components/ui/Card";
 import { ConfirmModal } from "@/shared/components/ui/ConfirmModal";
 import { CellPrimary, DataTable } from "@/shared/components/ui/DataTable";
@@ -30,6 +31,7 @@ import { PermissionRequestsPanel } from "../components/PermissionRequestsPanel";
 import { ReasonConfirmModal } from "../components/ReasonConfirmModal";
 import { RoleFilter } from "../components/RoleFilter";
 import styles from "./AccountListPage.module.css";
+import { Icon } from "@/shared/components/ui/Icon";
 
 const PAGE_SIZE = 10;
 
@@ -186,7 +188,7 @@ export default function AccountListPage() {
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 4,
-                  fontSize: "11px",
+                  fontSize: "var(--fs-caption)",
                   color: owned.length > 0 ? "var(--brand)" : "var(--muted)",
                   fontWeight: 600,
                   marginTop: 2,
@@ -194,7 +196,7 @@ export default function AccountListPage() {
                 }}
                 title={owned.length > 0 ? owned.map((h) => `${h.name} (${h.code})`).join(", ") : "No horses assigned yet"}
               >
-                <span>🐴</span>
+                <Icon name="horse" size={14} />
                 <span>{owned.length > 0 ? `${owned.length} horse${owned.length > 1 ? "s" : ""} at club` : "0 horses assigned"}</span>
               </Link>
             </div>
@@ -248,16 +250,12 @@ export default function AccountListPage() {
       header: "Actions",
       align: "right",
       render: (r) => (
+        // Một hành động chính theo trạng thái để ngoài; các hành động khác trong menu "⋯" (DESIGN.md: một menu mỗi hàng).
         <div className={styles.actions}>
           {r.status === "PENDING_APPROVAL" && (
-            <>
-              <Button size="sm" icon="check" disabled={busy} onClick={() => run(r, "approve")}>
-                Approve
-              </Button>
-              <Button tone="ghost" size="sm" disabled={busy} onClick={() => setDialog({ kind: "decline", target: r })}>
-                Decline
-              </Button>
-            </>
+            <Button size="sm" icon="check" disabled={busy} onClick={() => run(r, "approve")}>
+              Approve
+            </Button>
           )}
           {r.status === "INVITED" && (
             <Button tone="secondary" size="sm" icon="mail" disabled={busy} onClick={() => onResendInvite(r)}>
@@ -274,29 +272,31 @@ export default function AccountListPage() {
               Reactivate
             </Button>
           )}
-          {r.status === "ACTIVE" && r.id !== me.id && (
-            <Button
-              tone="secondary"
-              size="sm"
-              icon="lock"
-              disabled={busy}
-              blockedReason={
-                r.role === "CLUB_MANAGER" && activeManagers <= 1
-                  ? "The club must keep at least one active Club Manager."
-                  : undefined
-              }
-              onClick={() => setDialog({ kind: "lock", target: r })}
-            >
-              Lock
-            </Button>
-          )}
-          <Button tone="ghost" size="sm" icon="edit" disabled={busy} aria-label={`Edit ${r.fullName}`} onClick={() => setDialog({ kind: "edit", target: r })}>
-            Edit
-          </Button>
-          <Link to={`/accounts/${r.id}/permissions`} className={styles.link}>
-            <span style={{ fontSize: 13, marginRight: 2 }}>🛡️</span>
-            Permissions
-          </Link>
+          <Menu
+            label={`Actions for ${r.fullName}`}
+            items={[
+              { label: "Edit account", icon: "edit", onSelect: () => setDialog({ kind: "edit", target: r }) },
+              { label: "Permissions", icon: "shield", to: `/accounts/${r.id}/permissions` },
+              {
+                label: "Decline request…",
+                icon: "x",
+                danger: true,
+                divider: true,
+                onSelect: () => setDialog({ kind: "decline", target: r }),
+                hidden: r.status !== "PENDING_APPROVAL",
+              },
+              {
+                label: "Lock account…",
+                icon: "lock",
+                danger: true,
+                divider: true,
+                onSelect: () => setDialog({ kind: "lock", target: r }),
+                hidden: !(r.status === "ACTIVE" && r.id !== me.id),
+                disabledReason:
+                  r.role === "CLUB_MANAGER" && activeManagers <= 1 ? "The club must keep at least one active Club Manager." : undefined,
+              },
+            ]}
+          />
         </div>
       ),
     },
@@ -320,7 +320,6 @@ export default function AccountListPage() {
   return (
     <>
       <PageHeader
-        eyebrow="MANAGEMENT WORKSPACE"
         title="Account Management"
         description="Manage club staff, horse owners, account approvals, and security access levels."
         showDate

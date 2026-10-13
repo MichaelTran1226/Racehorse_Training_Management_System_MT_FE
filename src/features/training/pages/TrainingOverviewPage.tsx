@@ -16,6 +16,7 @@ import { clubParts, trainingApi } from "../api";
 import { ProgressBar } from "../components/ProgressBar";
 import { EXERCISE_TYPE_LABEL } from "../types";
 import type { OverviewRow, TrainingOverview } from "../types";
+import { Icon } from "@/shared/components/ui/Icon";
 
 type SortKey = "name" | "progress" | "score" | "load" | "next";
 
@@ -74,8 +75,8 @@ export default function TrainingOverviewPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Training Overview</h1>
-          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
+          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>Training Overview</h1>
+          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
             Progress and fitness of every managed horse.
           </p>
         </div>
@@ -90,30 +91,30 @@ export default function TrainingOverviewPage() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
         <Link to="/training/plans?status=ACTIVE" style={{ color: "inherit", textDecoration: "none" }}>
           <Card pad={16}>
-            <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>Active plans</div>
-            <div style={{ fontSize: "1.75rem", fontWeight: 700 }}>{k.activePlans} / {k.managedHorses}</div>
-            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>horses managed</div>
+            <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>Active plans</div>
+            <div style={{ fontSize: "var(--fs-h1)", fontWeight: 700 }}>{k.activePlans} / {k.managedHorses}</div>
+            <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>horses managed</div>
           </Card>
         </Link>
         <Link to="/training/calendar" style={{ color: "inherit", textDecoration: "none" }}>
           <Card pad={16}>
-            <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>Workouts today</div>
-            <div style={{ fontSize: "1.75rem", fontWeight: 700 }}>{k.todayCompleted}/{k.todayTotal}</div>
-            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>completed</div>
+            <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>Workouts today</div>
+            <div style={{ fontSize: "var(--fs-h1)", fontWeight: 700 }}>{k.todayCompleted}/{k.todayTotal}</div>
+            <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>completed</div>
           </Card>
         </Link>
         <Link to="/training/calendar?status=BLOCKED" style={{ color: "inherit", textDecoration: "none" }}>
           <Card pad={16}>
-            <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>Blocked by Training Lock</div>
-            <div style={{ fontSize: "1.75rem", fontWeight: 700, color: k.blockedNext7Days ? "var(--danger)" : undefined }}>{k.blockedNext7Days}</div>
-            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>in the next 7 days</div>
+            <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>Blocked by Training Lock</div>
+            <div style={{ fontSize: "var(--fs-h1)", fontWeight: 700, color: k.blockedNext7Days ? "var(--danger)" : undefined }}>{k.blockedNext7Days}</div>
+            <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>in the next 7 days</div>
           </Card>
         </Link>
         <button type="button" onClick={() => setSpikeOnly(true)} style={{ all: "unset", cursor: "pointer" }}>
           <Card pad={16}>
-            <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>Sudden load increase</div>
-            <div style={{ fontSize: "1.75rem", fontWeight: 700, color: k.loadSpikeHorses ? "var(--warn)" : undefined }}>{k.loadSpikeHorses}</div>
-            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>horses above 130% of their 4-week average</div>
+            <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>Sudden load increase</div>
+            <div style={{ fontSize: "var(--fs-h1)", fontWeight: 700, color: k.loadSpikeHorses ? "var(--warn)" : undefined }}>{k.loadSpikeHorses}</div>
+            <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>horses above 130% of their 4-week average</div>
           </Card>
         </button>
       </div>
@@ -156,7 +157,7 @@ export default function TrainingOverviewPage() {
           <EmptyState title="No horses match the filter." />
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.8125rem" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "var(--fs-body)" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-sunken)" }}>
                   {["Horse", "Current plan", "Current phase", "Progress", "Latest score", "7-day load", "Next workout", ""].map((h) => (
@@ -178,7 +179,12 @@ export default function TrainingOverviewPage() {
                   return (
                     <tr key={r.horse.id} style={{ borderBottom: "1px solid var(--border)" }}>
                       <td style={{ padding: "0.6rem 0.75rem" }}>
-                        <Link to={`/horses/${r.horse.id}`}><strong>{r.horse.name}</strong></Link> {r.horse.isMedicalLocked && "🔒"}
+                        <Link to={`/horses/${r.horse.id}`}><strong>{r.horse.name}</strong></Link> {r.horse.isMedicalLocked && (
+                      <span title="Training Lock" style={{ color: "var(--danger)", display: "inline-flex", verticalAlign: "-2px" }}>
+                        <Icon name="lock" size={14} />
+                        <span className="sr-only">Training Lock</span>
+                      </span>
+                    )}
                         <div style={{ display: "flex", gap: "0.35rem", alignItems: "center" }}>
                           <span style={{ color: "var(--text-muted)" }}>{r.horse.horseCode}</span>
                           <Badge tone={st.tone as never}>{st.label}</Badge>

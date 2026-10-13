@@ -30,6 +30,10 @@ export interface Horse {
   ownerName?: string;
   stallCode?: string | null;
   zone?: string | null;
+  /** Phân bổ ô đang hiệu lực (Tab 2: Chuyển / Trả ô). */
+  allocationId?: string | null;
+  stallId?: string | null;
+  stallSince?: string | null;
   primaryGroom?: string | null;
   groomName?: string;
   medicalLocks?: Array<{
@@ -50,6 +54,8 @@ export interface HorseListFilter {
   breed?: string;
   gender?: string;
   ownerId?: string;
+  /** "true" = chỉ ngựa chưa có ô chuồng (DL-1.02). */
+  noStall?: string;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
   page?: number;
@@ -96,7 +102,9 @@ export interface HorseHistoryResponse {
     timestamp: string;
     changedBy: string;
     action: string;
-    notes?: string;
+    /** MANUAL / MEDICAL_LOCK / SYSTEM (Tab 4 cột Nguồn). */
+    source?: string;
+    notes?: string | null;
     oldStatus?: string | null;
     newStatus?: string | null;
   }>;
@@ -161,14 +169,30 @@ export interface HorseHistoryResponse {
     totalWorkouts: number;
     completedWorkouts: number;
   }>;
-  timeline: Array<{
-    id: string;
-    category: 'IDENTITY' | 'STATUS' | 'STALL' | 'MEDICAL' | 'TRAINING' | 'TOURNAMENT' | 'OWNERSHIP';
-    title: string;
-    description: string;
-    timestamp: string;
-    badgeTone?: 'ok' | 'warn' | 'danger' | 'info' | 'neutral';
-  }>;
+  timeline: TimelineEvent[];
+}
+
+export type TimelineCategory =
+  | "IDENTITY"
+  | "STATUS"
+  | "STALL"
+  | "CARE"
+  | "OWNERSHIP"
+  | "MEDICAL"
+  | "TRAINING"
+  | "TOURNAMENT";
+
+/** Một mục ở Tab 6 Dòng thời gian. */
+export interface TimelineEvent {
+  id: string;
+  category: TimelineCategory;
+  title: string;
+  description: string;
+  timestamp: string;
+  actor?: string | null;
+  /** Link sang màn chi tiết của Flow 2/3. */
+  link?: string | null;
+  badgeTone?: "ok" | "warn" | "danger" | "info" | "neutral";
 }
 
 /** Một dòng ở SC-1.05 Hồ sơ đã xóa. */
@@ -203,4 +227,18 @@ export interface ChangeHorseStatusPayload {
   status: HorseStatus;
   reason?: string;
   retireReason?: RetireReason;
+}
+
+/** SC-1.06 Danh mục Giống & Màu lông. Horse.breed / Horse.color lưu Tên của mục. */
+export type HorseCatalogType = "BREED" | "COLOR";
+
+export interface HorseCatalogItem {
+  id: string;
+  type: HorseCatalogType;
+  code: string;
+  name: string;
+  description?: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  horseCount?: number;
 }

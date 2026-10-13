@@ -23,7 +23,7 @@ const GENERIC: Record<string, string> = {
   CANNOT_DELETE_USED: "This account has been used, so it cannot be deleted. Deactivate it instead to keep its history.",
   INVALID_STATE: "The account changed in the meantime. Reload the list and try again.",
   OTP_COOLDOWN: "A new invitation was sent less than a minute ago. Wait a moment before sending another.",
-  NOT_FOUND: "This account no longer exists. Reload the list.",
+  NOT_FOUND: "This item no longer exists or could not be reached. Reload the page and try again.",
   LAST_MANAGER: "The club must keep at least one active Club Manager.",
   RESET_EXPIRED: "This reset session has expired. Request a new code.",
   ATTEMPTS_EXCEEDED: "Too many wrong passwords. Wait 15 minutes, or use Forgot password to unlock it now.",
@@ -45,6 +45,22 @@ const GENERIC: Record<string, string> = {
   RESTORE_CONFLICT: "Cannot restore because another horse now uses this name. Rename that horse, then try again.",
   STALL_OCCUPIED: "This stall already has a horse.",
   STALL_MAINTENANCE: "This stall is under maintenance.",
+  STALL_UNAVAILABLE: "This stall is under maintenance or no longer in use.",
+  STALL_NOT_FOUND: "This stall no longer exists. Reload the map.",
+  ALLOCATION_NOT_FOUND: "The horse is no longer in this stall. Reload the map.",
+  SAME_STALL: "Choose a stall other than the current one.",
+  HORSE_HAS_STALL: "The horse already has a stall. Use Move stall instead.",
+  ZONE_NOT_FOUND: "This barn zone no longer exists. Reload the list.",
+  ZONE_INACTIVE: "This barn zone is inactive. Reactivate it before adding stalls.",
+  ZONE_HAS_HORSES: "The zone still houses horses. Move them out first.",
+  DUPLICATE_ZONE_CODE: "This zone code already exists.",
+  DUPLICATE_ZONE_NAME: "This zone name already exists.",
+  DUPLICATE_STALL_CODE: "This stall code already exists.",
+  INVALID_BREED: "This breed does not exist or is no longer in use.",
+  INVALID_COLOR: "This coat colour does not exist or is no longer in use.",
+  DUPLICATE_CATALOG_CODE: "This code already exists.",
+  DUPLICATE_CATALOG_NAME: "This name already exists.",
+  CATALOG_ITEM_NOT_FOUND: "This item no longer exists. Reload the list.",
   // Flow 2 - giáo án & buổi tập
   PLAN_NOT_FOUND: "This training plan no longer exists. Reload the list.",
   PLAN_CLOSED: "This plan is completed or cancelled, so it cannot be changed.",
@@ -91,8 +107,23 @@ const GENERIC: Record<string, string> = {
   RECOVERY_ABOVE_PEAK: "Heart rate after 10 minutes cannot exceed the peak heart rate.",
 };
 
+// Câu có chèn dữ liệu BE gửi kèm (data), ví dụ tên ngựa đang ở ô chuồng.
+const DYNAMIC: Record<string, (d: Record<string, unknown>) => string | undefined> = {
+  STALL_OCCUPIED: (d) =>
+    d.horseName ? `Stall ${d.stallCode ?? ""} already houses ${d.horseName}. Move that horse first.`.replace("  ", " ") : undefined,
+  HORSE_HAS_STALL: (d) => (d.stallCode ? `The horse is already in stall ${d.stallCode}. Use Move stall instead.` : undefined),
+  ZONE_HAS_HORSES: (d) => (d.count ? `The zone still houses ${d.count} horse(s). Move them out first.` : undefined),
+  ZONE_ROWS_TOO_SMALL: (d) => `Rows cannot be fewer than ${d.min}: a stall already sits in row ${d.min}.`,
+  ZONE_COLS_TOO_SMALL: (d) => `Columns cannot be fewer than ${d.min}: a stall already sits in column ${d.min}.`,
+  ROW_OUT_OF_RANGE: (d) => `Row must be between 1 and ${d.max}.`,
+  COL_OUT_OF_RANGE: (d) => `Column must be between 1 and ${d.max}.`,
+  POSITION_TAKEN: (d) => `This grid position is already used by stall ${d.stallCode}.`,
+};
+
 export function messageFor(err: unknown): string {
-  if (err instanceof ApiError) return GENERIC[err.code] ?? err.message ?? "Something went wrong. Try again.";
+  if (err instanceof ApiError) {
+    return DYNAMIC[err.code]?.(err.data ?? {}) ?? GENERIC[err.code] ?? err.message ?? "Something went wrong. Try again.";
+  }
   return "Something went wrong. Try again.";
 }
 

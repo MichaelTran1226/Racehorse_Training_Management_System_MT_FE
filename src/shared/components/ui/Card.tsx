@@ -13,7 +13,7 @@ interface CardProps {
 }
 
 // Quy tắc design: card không lồng card, chân card (foot) nền surface-2 cho chú giải/phân trang.
-export function Card({ title, subtitle, action, foot, pad = 22, className, children }: CardProps) {
+export function Card({ title, subtitle, action, foot, pad = 20, className, children }: CardProps) {
   return (
     <section className={cx(styles.card, className)}>
       {(title || action) && (

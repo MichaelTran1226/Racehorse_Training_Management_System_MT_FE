@@ -137,7 +137,7 @@ export function RetireHorseModal({ horse, isOpen, onClose, onSuccess }: RetireHo
         {!reactivate && (
           <>
             {impacts.length > 0 && (
-              <div style={{ fontSize: "0.875rem" }}>
+              <div style={{ fontSize: "var(--fs-body)" }}>
                 <strong>Impact</strong>
                 <ul style={{ margin: "0.25rem 0 0", paddingLeft: "1.25rem" }}>
                   {impacts.map((i) => (

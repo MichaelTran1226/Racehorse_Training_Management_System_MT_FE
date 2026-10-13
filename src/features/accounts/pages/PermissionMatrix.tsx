@@ -76,7 +76,7 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
   if (state === "loading") {
     return (
       <>
-        <PageHeader eyebrow="MANAGEMENT WORKSPACE" title="Loading permissions…" />
+        <PageHeader title="Loading permissions…" />
         <Card>
           <div aria-busy="true" style={{ height: 240 }} />
         </Card>
@@ -87,7 +87,7 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
   if (state === "missing" || state === "error" || !account || !draft) {
     return (
       <>
-        <PageHeader eyebrow="MANAGEMENT WORKSPACE" title="Permissions of an account." />
+        <PageHeader title="Permissions of an account." />
         <Card>
           <EmptyState
             icon={state === "missing" ? "users" : "refresh"}
@@ -155,7 +155,6 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
   return (
     <>
       <PageHeader
-        eyebrow="MANAGEMENT WORKSPACE"
         title={`Permissions of ${account.fullName}.`}
         description={`${ROLE_LABEL[account.role]} · ${account.email} · active since ${formatDate(account.createdAt)}. Changes take effect at the next page load for that account.`}
       />

@@ -18,7 +18,8 @@ import type { TrainingAlert } from "../types";
 export default function AlertListPage() {
   const user = useCurrentUser();
   const toast = useToast();
-  const isVet = user.role === "VETERINARIAN";
+  // Q-0.04: chỉ Bác sĩ thú y (còn bật công tắc ackAlerts) ghi nhận cảnh báo; HT chỉ xem.
+  const isVet = user.role === "VETERINARIAN" && !!user.permissions.ackAlerts;
 
   const [alerts, setAlerts] = useState<TrainingAlert[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,8 +62,8 @@ export default function AlertListPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Abnormal-sign Alerts</h1>
-          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
+          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>Abnormal-sign Alerts</h1>
+          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
             Raised when the Head Trainer records abnormal signs after a workout. The Veterinarian reviews and responds.
           </p>
         </div>
@@ -85,7 +86,6 @@ export default function AlertListPage() {
                 background: "var(--surface)",
                 borderRadius: "var(--radius-card)",
                 border: "1px solid var(--border)",
-                borderLeft: alert.acknowledgedByVet ? "4px solid var(--ok)" : "4px solid var(--danger)",
                 display: "flex",
                 flexDirection: "column",
                 gap: "0.75rem",
@@ -93,12 +93,12 @@ export default function AlertListPage() {
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
-                  <span style={{ fontWeight: 700, fontSize: "1.125rem" }}>
+                  <span style={{ fontWeight: 700, fontSize: "var(--fs-section)" }}>
                     <Link to={`/medical/horses/${alert.horseId}`} style={{ color: "inherit", textDecoration: "none" }}>
                       {alert.horseName}
                     </Link>
                   </span>
-                  <span style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>
+                  <span style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>
                     {EXERCISE_TYPE_LABEL[alert.sessionType]} on {alert.sessionDate} · reported {formatDateTime(alert.createdAt)}
                   </span>
                 </div>
@@ -106,9 +106,9 @@ export default function AlertListPage() {
                   {alert.acknowledgedByVet ? "Vet acknowledged" : "Pending vet review"}
                 </Badge>
               </div>
-              <div style={{ fontSize: "0.9375rem" }}>{alert.message}</div>
+              <div style={{ fontSize: "var(--fs-body)" }}>{alert.message}</div>
               {alert.vetNotes && (
-                <div style={{ background: "var(--surface-sunken)", padding: "0.75rem", borderRadius: 6, fontSize: "0.875rem" }}>
+                <div style={{ background: "var(--surface-sunken)", padding: "0.75rem", borderRadius: "var(--r-sm)", fontSize: "var(--fs-body)" }}>
                   <strong>Veterinarian:</strong> {alert.vetNotes}
                 </div>
               )}
@@ -136,7 +136,7 @@ export default function AlertListPage() {
           }
         >
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <div style={{ background: "var(--surface-sunken)", padding: "0.75rem", borderRadius: 6, fontSize: "0.875rem" }}>
+            <div style={{ background: "var(--surface-sunken)", padding: "0.75rem", borderRadius: "var(--r-sm)", fontSize: "var(--fs-body)" }}>
               <strong>Reported:</strong> {selected.message}
             </div>
             <Field label="Clinical notes" required hint="If treatment is needed, create a medical record or Training Lock in the medical module.">

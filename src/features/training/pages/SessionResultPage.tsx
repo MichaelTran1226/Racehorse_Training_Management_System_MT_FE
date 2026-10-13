@@ -172,7 +172,7 @@ export default function SessionResultPage() {
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
-        <h1 style={{ margin: 0, fontSize: "1.5rem" }}>Workout result</h1>
+        <h1 style={{ margin: 0, fontSize: "var(--fs-kpi)" }}>Workout result</h1>
         <div style={{ display: "flex", gap: "0.5rem" }}>
           {user.role !== "GROOM" && (
             <Link to={`/horses/${session.horseId}/fitness`}><Button tone="secondary">Fitness chart</Button></Link>
@@ -184,8 +184,8 @@ export default function SessionResultPage() {
       </div>
 
       <Card pad={20}>
-        <h2 style={{ margin: "0 0 0.75rem", fontSize: "1.0625rem" }}>Workout</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.5rem", fontSize: "0.875rem" }}>
+        <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>Workout</h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.5rem", fontSize: "var(--fs-body)" }}>
           <div>Horse: <strong>{session.horseName}</strong></div>
           <div>Date: <strong>{session.sessionDate} {session.startTime}</strong></div>
           <div>Type: <strong>{EXERCISE_TYPE_LABEL[session.sessionType]}</strong> · {INTENSITY_LABEL[session.intensity]}</div>
@@ -209,7 +209,7 @@ export default function SessionResultPage() {
       {!editing && r && (
         <Card pad={20}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-            <h2 style={{ margin: 0, fontSize: "1.0625rem" }}>Result</h2>
+            <h2 style={{ margin: 0, fontSize: "var(--fs-body-lg)" }}>Result</h2>
             {isTrainer && (
               <Button
                 tone="secondary"
@@ -222,7 +222,7 @@ export default function SessionResultPage() {
               </Button>
             )}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.5rem", fontSize: "0.875rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.5rem", fontSize: "var(--fs-body)" }}>
             <div>Actual distance: <strong>{r.actualDistanceMeters ?? "—"} m</strong></div>
             <div>Time: <strong>{formatTime(r.actualDurationSeconds) || "—"}</strong></div>
             <div>Average speed: <strong>{r.avgSpeedKmh != null ? `${r.avgSpeedKmh} km/h` : "—"}</strong></div>
@@ -238,7 +238,7 @@ export default function SessionResultPage() {
               {r.abnormalSignTypes.map((x) => ABNORMAL_SIGN_LABEL[x]).join(", ")}: {r.abnormalSignsDescription}
             </Alert>
           )}
-          <div style={{ marginTop: "0.75rem", fontSize: "0.8125rem", color: "var(--text-muted)" }}>
+          <div style={{ marginTop: "0.75rem", fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>
             Recorded by {r.recordedBy ?? "—"}{r.recordedAt ? ` at ${formatDateTime(r.recordedAt)}` : ""}
             {r.updatedBy ? ` · last edited by ${r.updatedBy}${r.updatedAt ? ` at ${formatDateTime(r.updatedAt)}` : ""}` : ""}
           </div>
@@ -249,7 +249,7 @@ export default function SessionResultPage() {
         <>
           {error && <Alert tone="danger" title="Cannot save">{error}</Alert>}
           <Card pad={20}>
-            <h2 style={{ margin: "0 0 0.75rem", fontSize: "1.0625rem" }}>Actual figures</h2>
+            <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>Actual figures</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
               <Field label="Actual distance (m)" required hint="50 – 10 000, all reps">
                 <Input type="number" inputMode="numeric" value={distance} onChange={(e) => set(setDistance)(e.target.value)} />
@@ -292,7 +292,7 @@ export default function SessionResultPage() {
           </Card>
 
           <Card pad={20}>
-            <h2 style={{ margin: "0 0 0.75rem", fontSize: "1.0625rem" }}>Evaluation</h2>
+            <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>Evaluation</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
               <Field label="Performance score" required>
                 <Select
@@ -318,7 +318,7 @@ export default function SessionResultPage() {
               </Field>
             </div>
             <div style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              <strong style={{ fontSize: "0.875rem" }}>Abnormal signs</strong>
+              <strong style={{ fontSize: "var(--fs-body)" }}>Abnormal signs</strong>
               <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
                 {(Object.keys(ABNORMAL_SIGN_LABEL) as AbnormalSign[]).map((sign) => (
                   <Checkbox

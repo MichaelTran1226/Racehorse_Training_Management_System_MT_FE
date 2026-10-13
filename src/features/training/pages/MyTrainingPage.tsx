@@ -54,7 +54,7 @@ export default function MyTrainingPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem", maxWidth: 720, margin: "0 auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem" }}>
-        <h1 style={{ margin: 0, fontSize: "1.5rem" }}>My training schedule</h1>
+        <h1 style={{ margin: 0, fontSize: "var(--fs-kpi)" }}>My training schedule</h1>
         <Button size="sm" tone="secondary" onClick={() => void load()}>Refresh</Button>
       </div>
       <Tabs
@@ -80,14 +80,14 @@ export default function MyTrainingPage() {
           const cancelled = s.status === "CANCELLED";
           return (
             <Card key={s.id} pad={16}>
-              <div style={{ background: blocked ? "rgba(239,68,68,0.06)" : undefined, textDecoration: cancelled ? "line-through" : undefined }}>
+              <div style={{ background: blocked ? "var(--danger-bg)" : undefined, textDecoration: cancelled ? "line-through" : undefined }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", flexWrap: "wrap" }}>
-                  <strong style={{ fontSize: "1.125rem" }}>
+                  <strong style={{ fontSize: "var(--fs-section)" }}>
                     {tab === "week" ? `${s.sessionDate.slice(5)} ` : ""}{s.startTime} · {s.horseName}
                   </strong>
                   <Badge tone={SESSION_STATUS_TONE[s.status]}>{SESSION_STATUS_LABEL[s.status]}</Badge>
                 </div>
-                <div style={{ fontSize: "0.875rem", marginTop: "0.25rem" }}>
+                <div style={{ fontSize: "var(--fs-body)", marginTop: "0.25rem" }}>
                   Stall {s.stallCode ?? "—"} · {EXERCISE_TYPE_LABEL[s.sessionType]}{" "}
                   {isHeavy(s.sessionType, s.intensity) && <Badge tone="danger">Heavy</Badge>} · {s.targetDistanceMeters} m × {s.repetitions} ·{" "}
                   {TRACK_LABEL[s.trackType]} · Jockey: {s.jockeyName || "—"}
@@ -98,7 +98,7 @@ export default function MyTrainingPage() {
                   </div>
                 )}
                 {open === s.id ? (
-                  <div style={{ marginTop: "0.5rem", fontSize: "0.875rem" }}>
+                  <div style={{ marginTop: "0.5rem", fontSize: "var(--fs-body)" }}>
                     <div><strong>Instructions:</strong> {s.notes || "—"}</div>
                     {s.status === "COMPLETED" && (
                       <Link to={`/training/sessions/${s.id}/result`}>View result</Link>
