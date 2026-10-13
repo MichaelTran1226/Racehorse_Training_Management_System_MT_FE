@@ -12,11 +12,20 @@ export interface SessionButtons {
 
 const DAY = 24 * 60 * 60 * 1000;
 
+function startOfDay(d: Date): Date {
+  const res = new Date(d);
+  res.setHours(0, 0, 0, 0);
+  return res;
+}
+
 export function sessionButtons(s: ExerciseSession, role: string): SessionButtons {
   const ht = role === "HEAD_TRAINER";
   const planOpen = s.planStatus === undefined || s.planStatus === "DRAFT" || s.planStatus === "ACTIVE";
-  const started = new Date(s.scheduledAt).getTime() <= Date.now();
-  const missedInTime = s.status === "MISSED" && Date.now() - new Date(s.scheduledAt).getTime() < 8 * DAY;
+  const scheduledTime = new Date(s.scheduledAt).getTime();
+  const started = scheduledTime <= Date.now();
+  // Bug #62: BE tính hạn ghi muộn đến 00:00 ngày thứ 8 sau ngày tập (startOfClubDay + 8 ngày).
+  const deadline = startOfDay(new Date(s.scheduledAt)).getTime() + 8 * DAY;
+  const missedInTime = s.status === "MISSED" && Date.now() < deadline;
   return {
     edit: ht && planOpen && s.status === "SCHEDULED" && !started,
     cancel: ht && (s.status === "SCHEDULED" || s.status === "BLOCKED" || s.status === "MISSED"),

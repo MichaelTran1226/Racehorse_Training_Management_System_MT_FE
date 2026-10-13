@@ -150,6 +150,23 @@ export default function PlanDetailPage() {
             {isTrainer && open && (
               <Button tone="danger" onClick={() => setDialog({ kind: "cancel" })}>Cancel plan</Button>
             )}
+            {isTrainer && plan.status === "DRAFT" && (
+              <Button
+                tone="danger"
+                onClick={async () => {
+                  if (window.confirm(`Delete draft plan "${plan.name}"? This action cannot be undone.`)) {
+                    try {
+                      await trainingApi.deletePlan(plan.id);
+                      navigate("/training/plans");
+                    } catch (err) {
+                      setError(messageFor(err));
+                    }
+                  }
+                }}
+              >
+                Delete draft
+              </Button>
+            )}
             {isTrainer && <Button tone="ghost" onClick={() => setDialog({ kind: "clone" })}>Clone</Button>}
             <Link to={`/horses/${plan.horseId}/fitness`}>
               <Button tone="secondary">Fitness chart</Button>
