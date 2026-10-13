@@ -143,6 +143,7 @@ export function breadcrumbFor(user: AuthUser, pathname: string, accountName?: st
 // Route bí danh trong router.tsx → đường dẫn của mục menu (để lấy đúng nhãn màn hình).
 const ALIAS: Record<string, string> = {
   "/training/calendar": "/calendar",
+  "/training/schedule": "/calendar",
   "/training/trials": "/trials",
   "/training/metrics": "/metrics",
   "/training/plans": "/plans",

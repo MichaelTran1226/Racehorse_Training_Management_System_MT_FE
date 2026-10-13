@@ -56,11 +56,9 @@ function validate(name: string, objective: string, start: string, end: string, p
 
 /** SC-2.03 Tạo / Sửa giáo án (HT). Sửa được khi Nháp hoặc Đang áp dụng. */
 export default function PlanWizardPage() {
-  const { id } = useParams();
+  const { id } = useParams<{ id?: string }>();
   const editing = Boolean(id);
   const navigate = useNavigate();
-  const { id } = useParams<{ id?: string }>();
-  const isEditing = Boolean(id);
   const toast = useToast();
   const user = useCurrentUser();
 
