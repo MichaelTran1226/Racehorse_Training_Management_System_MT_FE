@@ -23,7 +23,7 @@ const GENERIC: Record<string, string> = {
   CANNOT_DELETE_USED: "This account has been used, so it cannot be deleted. Deactivate it instead to keep its history.",
   INVALID_STATE: "The account changed in the meantime. Reload the list and try again.",
   OTP_COOLDOWN: "A new invitation was sent less than a minute ago. Wait a moment before sending another.",
-  NOT_FOUND: "This item no longer exists or could not be reached. Reload the page and try again.",
+  NOT_FOUND: "The requested resource could not be found.",
   LAST_MANAGER: "The club must keep at least one active Club Manager.",
   RESET_EXPIRED: "This reset session has expired. Request a new code.",
   ATTEMPTS_EXCEEDED: "Too many wrong passwords. Wait 15 minutes, or use Forgot password to unlock it now.",
@@ -122,7 +122,16 @@ const DYNAMIC: Record<string, (d: Record<string, unknown>) => string | undefined
 
 export function messageFor(err: unknown): string {
   if (err instanceof ApiError) {
-    return DYNAMIC[err.code]?.(err.data ?? {}) ?? GENERIC[err.code] ?? err.message ?? "Something went wrong. Try again.";
+    if (
+      err.message &&
+      err.message !== err.code &&
+      err.message !== "Not Found" &&
+      err.message !== "Bad Request" &&
+      err.message !== "Forbidden resource"
+    ) {
+      return err.message;
+    }
+    return GENERIC[err.code] ?? err.message ?? "Something went wrong. Try again.";
   }
   return "Something went wrong. Try again.";
 }

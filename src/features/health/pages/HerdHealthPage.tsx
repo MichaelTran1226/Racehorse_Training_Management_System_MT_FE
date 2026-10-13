@@ -166,17 +166,17 @@ export default function HerdHealthPage() {
           <strong>{h.name}</strong>
           <span>
             {h.isMedicalLocked && (
-                <span title="Training Lock" style={{ color: "var(--danger)", display: "inline-flex" }}>
-                  <Icon name="lock" size={16} />
-                  <span className="sr-only">Training Lock</span>
-                </span>
-              )}
+              <span title="Training Lock" style={{ color: "var(--danger)", display: "inline-flex" }}>
+                <Icon name="lock" size={16} />
+                <span className="sr-only">Training Lock</span>
+              </span>
+            )}
             {h.hasOverduePreventive && (
-                <span title="Preventive care overdue" style={{ color: "var(--warn)", display: "inline-flex" }}>
-                  <Icon name="bell" size={16} />
-                  <span className="sr-only">Preventive care overdue</span>
-                </span>
-              )}
+              <span title="Preventive care overdue" style={{ color: "var(--warn)", display: "inline-flex" }}>
+                <Icon name="bell" size={16} />
+                <span className="sr-only">Preventive care overdue</span>
+              </span>
+            )}
           </span>
         </div>
         <span style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>

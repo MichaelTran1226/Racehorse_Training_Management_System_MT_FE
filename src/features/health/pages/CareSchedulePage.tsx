@@ -52,6 +52,9 @@ export default function CareSchedulePage() {
   const [selectedCare, setSelectedCare] = useState<PreventiveCareItem | null>(null);
   const [adminDate, setAdminDate] = useState<string>(() => new Date().toISOString().split("T")[0]);
   const [adminBy, setAdminBy] = useState<string>(user?.fullName || "");
+  const [performedByMode, setPerformedByMode] = useState<"SELF" | "EXTERNAL">("SELF");
+  const [productAdministered, setProductAdministered] = useState<string>("");
+  const [batchNumber, setBatchNumber] = useState<string>("");
   const [nextDue, setNextDue] = useState<string>(() => {
     const d = new Date();
     d.setMonth(d.getMonth() + 6);
@@ -92,6 +95,9 @@ export default function CareSchedulePage() {
     setSelectedCare(care);
     setAdminDate(new Date().toISOString().split("T")[0]);
     setAdminBy(user?.fullName || "Lead Veterinarian");
+    setPerformedByMode("SELF");
+    setProductAdministered(care.type || "");
+    setBatchNumber("");
     const nextDate = new Date();
     if (care.category === "VACCINATION") nextDate.setMonth(nextDate.getMonth() + 6);
     else if (care.category === "DEWORMING") nextDate.setMonth(nextDate.getMonth() + 3);
@@ -110,12 +116,16 @@ export default function CareSchedulePage() {
         administeredBy: adminBy,
         nextDueDate: nextDue,
         notes,
+        performedByMode,
+        productAdministered,
+        batchNumber,
       });
       toast.show(`Recorded completion: ${selectedCare.type}`, "ok");
       setSelectedCare(null);
       void loadData();
-    } catch {
-      toast.show("Error recording care completion", "danger");
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || "Error recording care completion";
+      toast.show(msg, "danger");
     } finally {
       setSubmitting(false);
     }
@@ -334,6 +344,33 @@ export default function CareSchedulePage() {
                 value={adminBy}
                 onChange={(e) => setAdminBy(e.target.value)}
                 placeholder="Veterinarian or clinic name"
+              />
+            </Field>
+
+            <Field label="Performed By Mode" required>
+              <Select
+                value={performedByMode}
+                onChange={(e) => setPerformedByMode(e.target.value as "SELF" | "EXTERNAL")}
+                options={[
+                  { value: "SELF", label: "Self (Internal Vet / Staff)" },
+                  { value: "EXTERNAL", label: "External (External Clinic / Partner)" },
+                ]}
+              />
+            </Field>
+
+            <Field label="Product / Vaccine Administered">
+              <Input
+                value={productAdministered}
+                onChange={(e) => setProductAdministered(e.target.value)}
+                placeholder="e.g., Equi-Flu Standard Formulation"
+              />
+            </Field>
+
+            <Field label="Batch / Lot Number">
+              <Input
+                value={batchNumber}
+                onChange={(e) => setBatchNumber(e.target.value)}
+                placeholder="e.g., LOT-2026-VACC-091"
               />
             </Field>
 

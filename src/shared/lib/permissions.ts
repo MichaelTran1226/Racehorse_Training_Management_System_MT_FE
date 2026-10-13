@@ -123,9 +123,10 @@ export function permissionLock(role: Role, meta: PermissionMeta): PermissionLock
 const DEFAULT_ON: Record<Role, PermissionKey[]> = {
   HEAD_TRAINER: ["viewHorses", "editHorses", "createPlan", "assignSchedule", "recordMetrics", "viewMedical"],
   VETERINARIAN: ["viewHorses", "viewMedical", "placeLock", "liftLock", "ackAlerts"],
-  GROOM: ["viewHorses"],
-  HORSE_OWNER: ["viewHorses"],
-  CLUB_MANAGER: ["viewHorses", "editHorses", "deleteHorses", "viewMedical", "manageAccounts", "viewAudit"],
+  // Cấp quyền xem hồ sơ y tế (viewMedical) cho GROOM và HORSE_OWNER (phạm vi theo ngựa được giao chăm sóc hoặc sở hữu)
+  GROOM: ["viewHorses", "viewMedical"],
+  HORSE_OWNER: ["viewHorses", "viewMedical"],
+  CLUB_MANAGER: ["viewHorses", "editHorses", "deleteHorses", "viewMedical", "manageAccounts", "viewAudit", "ackAlerts"],
 };
 
 export function defaultPermissions(role: Role): PermissionMap {
@@ -218,6 +219,16 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
       items: [item("monitor", "Session Telemetry", "activity"), item("alerts", "Threshold Alerts", "alert", { alert: true })],
     },
     { label: "RACING", items: [item("races", "Race Entries", "trophy")] },
+    // Menu Y tế (MEDICAL) cho HEAD_TRAINER (theo dõi sức khỏe toàn đàn, bệnh án, danh sách khóa huấn luyện, lịch tiêm)
+    {
+      label: "MEDICAL",
+      items: [
+        item("herd", "Herd Health", "stethoscope", { requires: "viewMedical" }),
+        item("records", "Medical Records", "file", { requires: "viewMedical" }),
+        item("locks", "Training Locks", "lock", { requires: "viewMedical" }),
+        item("vaccine", "Preventive Care", "syringe", { requires: "viewMedical" }),
+      ],
+    },
     { label: "REPORTS", items: [item("progress", "Training Progress", "chart")] },
     { label: "OTHER", items: [item("profile", "My Profile", "user")] },
   ],
@@ -232,8 +243,8 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
         item("herd", "Herd Health", "stethoscope", { requires: "viewMedical" }),
         item("records", "Medical Records", "file", { requires: "viewMedical" }),
         item("rx", "Prescriptions", "pill", { requires: "viewMedical" }),
-        item("locks", "Training Locks", "lock", { requires: "placeLock" }),
-        item("training", "Training Overview", "chart"),
+        // Danh sách khóa huấn luyện (Training Locks) yêu cầu quyền viewMedical (đồng bộ với HEAD_TRAINER và CLUB_MANAGER)
+        item("locks", "Training Locks", "lock", { requires: "viewMedical" }),
         item("alerts", "Biomechanical Alerts", "alert", { alert: true }),
         item("vaccine", "Vaccination Schedule", "syringe", { requires: "viewMedical" }),
       ],
@@ -273,17 +284,17 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
         item("catalog", "Supplies Catalog", "package", { requires: "manageAccounts" }),
       ],
     },
+    { label: "MASTER DATA", items: [item("horses", "Horses", "horse", { requires: "viewHorses" }), item("stalls", "Stall Map", "grid")] },
+    // Menu Y tế (MEDICAL) cho CLUB_MANAGER (quản lý, giám sát sức khỏe, bệnh án và lịch chăm sóc)
     {
-      label: "MASTER DATA",
+      label: "MEDICAL",
       items: [
-        item("horses", "Horses", "horse", { requires: "viewHorses" }),
-        item("stalls", "Stall Map", "grid"),
-        item("catalogs/stalls", "Zones & Stalls", "layers"),
-        item("catalogs/breeds", "Breeds & Colours", "list"),
         item("herd", "Herd Health", "stethoscope", { requires: "viewMedical" }),
+        item("records", "Medical Records", "file", { requires: "viewMedical" }),
+        item("locks", "Training Locks", "lock", { requires: "viewMedical" }),
+        item("vaccine", "Preventive Care", "syringe", { requires: "viewMedical" }),
       ],
     },
-    { label: "TRAINING", items: [item("training", "Training Overview", "chart")] },
     {
       label: "REPORTS",
       items: [
