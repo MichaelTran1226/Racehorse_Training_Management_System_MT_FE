@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Icon } from "@/shared/components/ui/Icon";
 import { BRAND } from "@/shared/lib/brand";
@@ -5,6 +6,7 @@ import { cx } from "@/shared/lib/cx";
 import { capitalize, initials } from "@/shared/lib/format";
 import { isNavItemActive, navFor, ROLE_LABEL } from "@/shared/lib/permissions";
 import { getStoredLocks } from "@/shared/mock/horsesData";
+import { healthApi } from "@/features/health/api";
 import type { AuthUser } from "@/shared/types/auth";
 import type { SidebarNote } from "./useSidebarInfo";
 import styles from "./Sidebar.module.css";
@@ -21,7 +23,31 @@ interface SidebarProps {
 // thu hồi quyền => mục tương ứng biến mất ở lần tải trang kế tiếp.
 export function Sidebar({ user, pathname, note, open, onNavigate }: SidebarProps) {
   const groups = navFor(user.role, user.permissions);
-  const hasActiveLocks = getStoredLocks().some((l) => l.status === "ACTIVE");
+  const [hasActiveLocks, setHasActiveLocks] = useState(() => getStoredLocks().some((l) => l.status === "ACTIVE"));
+
+  useEffect(() => {
+    let cancelled = false;
+    const updateLocks = () => {
+      healthApi.getLocks()
+        .then((locks) => {
+          if (!cancelled && Array.isArray(locks)) {
+            setHasActiveLocks(locks.some((l) => l.status === "ACTIVE"));
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setHasActiveLocks(getStoredLocks().some((l) => l.status === "ACTIVE"));
+        });
+    };
+
+    updateLocks();
+    window.addEventListener("horsesUpdated", updateLocks);
+    window.addEventListener("storage", updateLocks);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("horsesUpdated", updateLocks);
+      window.removeEventListener("storage", updateLocks);
+    };
+  }, []);
 
   return (
     <nav aria-label="Main navigation" className={cx(styles.nav, open && styles.open)}>

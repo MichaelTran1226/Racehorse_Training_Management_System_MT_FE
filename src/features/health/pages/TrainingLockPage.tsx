@@ -41,7 +41,7 @@ export default function TrainingLockPage() {
     try {
       setLoading(true);
       const data = await healthApi.getLocks();
-      setLocks(data);
+      setLocks(Array.isArray(data) ? data : []);
     } catch {
       toast.show("Failed to load training locks", "danger");
     } finally {
@@ -65,7 +65,9 @@ export default function TrainingLockPage() {
     };
   }, [loadLocks]);
 
-  const filteredLocks = locks.filter((item) => {
+  const safeLocks = Array.isArray(locks) ? locks : [];
+
+  const filteredLocks = safeLocks.filter((item) => {
     const matchesTab = activeTab === "ALL" ? true : item.status === activeTab;
     const q = search.trim().toLowerCase();
     const matchesSearch =
@@ -78,9 +80,9 @@ export default function TrainingLockPage() {
   });
 
   const counts = {
-    ACTIVE: locks.filter((l) => l.status === "ACTIVE").length,
-    RELEASED: locks.filter((l) => l.status === "RELEASED").length,
-    ALL: locks.length,
+    ACTIVE: safeLocks.filter((l) => l.status === "ACTIVE").length,
+    RELEASED: safeLocks.filter((l) => l.status === "RELEASED").length,
+    ALL: safeLocks.length,
   };
 
   const columns: Column<TrainingLockHistoryItem>[] = [
@@ -254,7 +256,7 @@ export default function TrainingLockPage() {
       {/* Lock Modals */}
       {modalMode && (() => {
         const activeLockHorseIds = new Set(
-          locks.filter((l) => l.status === "ACTIVE").map((l) => l.horseId),
+          safeLocks.filter((l) => l.status === "ACTIVE").map((l) => l.horseId),
         );
         const eligibleHorsesForLock = horses.filter(
           (h) => !h.isLocked && !activeLockHorseIds.has(h.id) && h.status !== "RETIRED",

@@ -340,10 +340,27 @@ export const reopenRecord = async (recordId: string, input: ReopenRecordInput): 
 // P2-04: Khóa huấn luyện (SC-3.06, FR-3.10, FR-3.11, FR-3.12, FR-3.19)
 // 1. Lấy danh sách khóa huấn luyện (getLocks): GET /api/medical/locks
 export const getLocks = async (): Promise<import("./types").TrainingLockHistoryItem[]> => {
-  const res = await api<import("./types").TrainingLockHistoryItem[] | { locks: import("./types").TrainingLockHistoryItem[] }>("GET", "/medical/locks");
-  if (Array.isArray(res)) return res;
-  if (res && Array.isArray((res as any).locks)) return (res as any).locks;
-  return (res as any) || [];
+  const res = await api<any>("GET", "/medical/locks");
+  const rawList = Array.isArray(res) ? res : (res?.data || res?.items || res?.locks || []);
+  if (!Array.isArray(rawList)) return [];
+
+  return rawList.map((item: any) => ({
+    id: item.id,
+    lockCode: item.lockCode || `LOCK-${item.id.slice(0, 6)}`,
+    horseId: item.horseId,
+    horseName: item.horse?.name || item.horseName || "Horse",
+    horseCode: item.horse?.microchipRfid || item.horse?.code || item.horseCode || "",
+    appliedMedicalStatus: item.appliedMedicalStatus || item.medicalStatus || "INJURED",
+    lockedAt: item.lockedAt || item.createdAt,
+    lockedBy: item.veterinarian?.fullName || item.lockedBy || "Veterinarian",
+    lockReason: item.lockReason || "",
+    reviewDate: item.recheckDate || item.reviewDate || "",
+    releasedAt: item.unlockedAt || item.releasedAt,
+    releasedBy: item.unlockVet?.fullName || item.releasedBy,
+    releaseReason: item.unlockReason || item.releaseReason,
+    durationDays: item.lockDurationDays ?? item.expectedRestDays ?? item.durationDays,
+    status: item.isLocked === false ? "RELEASED" : (item.status || (item.isLocked ? "ACTIVE" : "RELEASED")),
+  }));
 };
 
 // 2. Apply training lock (POST /api/medical/locks)
@@ -353,33 +370,15 @@ export const applyTrainingLock = async (
 ) => {
   const restDays = Math.max(1, Math.ceil((new Date(input.reviewDate).getTime() - Date.now()) / 86400000));
 
-  try {
-    return await api("POST", "/medical/locks", {
-      horseId,
-      expectedRestDays: restDays,
-      recheckDate: input.reviewDate,
-      reviewDate: input.reviewDate,
-      lockReason: input.lockReason,
-      unlockConditions: input.unlockConditions || "Full clinical recovery confirmed",
-      medicalStatus: input.appliedMedicalStatus,
-    });
-  } catch {
-    // Fallback: direct localStorage update if network / backend is unavailable
-    placeHorseTrainingLock(horseId, {
-      appliedStatus: input.appliedMedicalStatus,
-      reviewDate: input.reviewDate,
-      reason: input.lockReason,
-      unlockConditions: input.unlockConditions,
-    });
-    return { ok: true as const };
-  }
   return await api("POST", "/medical/locks", {
     horseId,
     expectedRestDays: restDays,
+    recheckDate: input.reviewDate,
     reviewDate: input.reviewDate,
     lockReason: input.lockReason,
     unlockConditions: input.unlockConditions || "Full clinical recovery confirmed",
     medicalStatus: input.appliedMedicalStatus,
+    appliedMedicalStatus: input.appliedMedicalStatus,
   });
 };
 
