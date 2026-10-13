@@ -928,45 +928,56 @@ export default function TrainingLockPage() {
       </div>
 
       {/* Lock Modals */}
-      {modalMode && (
-        <TrainingLockModal
-          horseName={
-            selectedLock
-              ? selectedLock.horseName
-                ? `${selectedLock.horseName} (${selectedLock.horseCode || selectedLock.horseId})`
-                : selectedLock.horseId
-              : horses[0]
-              ? `${horses[0].name} (${horses[0].code})`
-              : "Horse"
-          }
-          horseId={selectedLock?.horseId || (horses[0]?.id ?? "")}
-          horseOptions={horses.map((h) => ({
-            value: h.id,
-            label: `${h.name} (${h.code}) - ${h.healthGroup}${h.isLocked ? " [LOCKED]" : ""}`,
-          }))}
-          currentReviewDate={selectedLock?.reviewDate}
-          mode={modalMode}
-          onClose={() => {
-            setModalMode(null);
-            setSelectedLock(null);
-          }}
-          onPlaceLock={async (dto) => {
-            const targetHorseId = dto.horseId || selectedLock?.horseId || (horses[0]?.id ?? "");
-            if (!targetHorseId) {
-              toast.show("Please create at least one horse in Herd Health first.", "danger");
-              return;
+      {modalMode && (() => {
+        const activeLockHorseIds = new Set(
+          locks.filter((l) => l.status === "ACTIVE").map((l) => l.horseId),
+        );
+        const eligibleHorsesForLock = horses.filter(
+          (h) => !h.isLocked && !activeLockHorseIds.has(h.id) && h.status !== "RETIRED",
+        );
+
+        return (
+          <TrainingLockModal
+            horseName={
+              selectedLock
+                ? selectedLock.horseName
+                  ? `${selectedLock.horseName} (${selectedLock.horseCode || selectedLock.horseId})`
+                  : selectedLock.horseId
+                : eligibleHorsesForLock[0]
+                ? `${eligibleHorsesForLock[0].name} (${eligibleHorsesForLock[0].code})`
+                : "Horse"
             }
-            await healthApi.applyTrainingLock(targetHorseId, {
-              appliedMedicalStatus: dto.appliedStatus,
-              lockReason: dto.reason,
-              reviewDate: dto.reviewDate,
-              unlockConditions: dto.unlockConditions,
-            });
-            toast.show("Training lock placed successfully", "ok");
-            setModalMode(null);
-            setSelectedLock(null);
-            void loadLocks();
-          }}
+            horseId={selectedLock?.horseId || (eligibleHorsesForLock[0]?.id ?? "")}
+            horseOptions={eligibleHorsesForLock.map((h) => ({
+              value: h.id,
+              label: `${h.name} (${h.code}) - ${h.healthGroup}`,
+            }))}
+            currentReviewDate={selectedLock?.reviewDate}
+            mode={modalMode}
+            onClose={() => {
+              setModalMode(null);
+              setSelectedLock(null);
+            }}
+            onPlaceLock={async (dto) => {
+              const targetHorseId = dto.horseId || selectedLock?.horseId || (eligibleHorsesForLock[0]?.id ?? "");
+              if (!targetHorseId) {
+                toast.show("No eligible horses available to place a training lock.", "danger");
+                return;
+              }
+              const targetHorse = horses.find((h) => h.id === targetHorseId);
+              const horseLabel = targetHorse?.name || "Horse";
+
+              await healthApi.applyTrainingLock(targetHorseId, {
+                appliedMedicalStatus: dto.appliedStatus,
+                lockReason: dto.reason,
+                reviewDate: dto.reviewDate,
+                unlockConditions: dto.unlockConditions,
+              });
+              toast.show(`Training lock placed for ${horseLabel}`, "danger");
+              setModalMode(null);
+              setSelectedLock(null);
+              void loadLocks();
+            }}
           onLiftLock={async (dto) => {
             if (!selectedLock) return;
             await healthApi.releaseTrainingLock(selectedLock.id, {
@@ -995,7 +1006,8 @@ export default function TrainingLockPage() {
             void loadLocks();
           }}
         />
-      )}
+      );
+    })()}
     </div>
   );
 }

@@ -234,17 +234,10 @@ export const deleteDraftRecord = (recordId: string) =>
 
 // P2-02: Chốt bệnh án (FR-3.05)
 export const finalizeRecord = async (recordId: string, input: FinalizeRecordInput): Promise<{ record: MedicalRecord }> => {
-  try {
-    const res = await api<any>("POST", `/medical/records/${recordId}/finalize`, input);
-    if (res && res.record) return res as { record: MedicalRecord };
-    if (res && res.id) return { record: res as MedicalRecord };
-    return { record: res };
-  } catch {
-    const res = await api<any>("PUT", `/medical/records/${recordId}`, { status: "OFFICIAL", isDraft: false });
-    if (res && res.record) return res as { record: MedicalRecord };
-    if (res && res.id) return { record: res as MedicalRecord };
-    return { record: res };
-  }
+  const res = await api<any>("POST", `/medical/records/${recordId}/finalize`, input);
+  if (res && res.record) return res as { record: MedicalRecord };
+  if (res && res.id) return { record: res as MedicalRecord };
+  return { record: res };
 };
 
 // P2-02: Thêm giai đoạn điều trị (FR-3.06)
@@ -341,31 +334,10 @@ export const reopenRecord = async (recordId: string, input: ReopenRecordInput): 
 // P2-04: Khóa huấn luyện (SC-3.06, FR-3.10, FR-3.11, FR-3.12, FR-3.19)
 // 1. Lấy danh sách khóa huấn luyện (getLocks): GET /api/medical/locks
 export const getLocks = async (): Promise<import("./types").TrainingLockHistoryItem[]> => {
-  try {
-    const res = await api<import("./types").TrainingLockHistoryItem[] | { locks: import("./types").TrainingLockHistoryItem[] }>("GET", "/medical/locks");
-    if (Array.isArray(res)) return res;
-    if (res && Array.isArray((res as any).locks)) return (res as any).locks;
-    return (res as any) || [];
-  } catch {
-    const storedLocks = getStoredLocks();
-    return storedLocks.map((l) => ({
-      id: l.id,
-      lockCode: l.lockCode,
-      horseId: l.horseId,
-      horseName: l.horseName,
-      horseCode: l.horseCode,
-      appliedMedicalStatus: l.appliedMedicalStatus,
-      lockedAt: l.lockedAt,
-      lockedBy: l.lockedBy,
-      lockReason: l.lockReason,
-      reviewDate: l.reviewDate,
-      releasedAt: l.releasedAt,
-      releasedBy: l.releasedBy,
-      releaseReason: l.releaseReason,
-      durationDays: l.durationDays,
-      status: l.status,
-    }));
-  }
+  const res = await api<import("./types").TrainingLockHistoryItem[] | { locks: import("./types").TrainingLockHistoryItem[] }>("GET", "/medical/locks");
+  if (Array.isArray(res)) return res;
+  if (res && Array.isArray((res as any).locks)) return (res as any).locks;
+  return (res as any) || [];
 };
 
 // 2. Apply training lock (POST /api/medical/locks)
@@ -379,6 +351,7 @@ export const applyTrainingLock = async (
     return await api("POST", "/medical/locks", {
       horseId,
       expectedRestDays: restDays,
+      recheckDate: input.reviewDate,
       reviewDate: input.reviewDate,
       lockReason: input.lockReason,
       unlockConditions: input.unlockConditions || "Full clinical recovery confirmed",
@@ -401,23 +374,10 @@ export const releaseTrainingLock = async (
   lockId: string,
   input: { releaseReason: string; targetStatus?: string; horseId?: string },
 ) => {
-  const locks = getStoredLocks();
-  const matchedLock = locks.find((l) => l.id === lockId || l.horseId === lockId);
-  const targetHorseId = input.horseId || matchedLock?.horseId || lockId;
-  const realLockId = matchedLock?.id || lockId;
-
-  try {
-    return await api("POST", `/medical/locks/${realLockId}/release`, {
-      unlockReason: input.releaseReason,
-      newHorseStatus: input.targetStatus,
-    });
-  } catch {
-    liftHorseTrainingLock(targetHorseId, {
-      restoreStatus: input.targetStatus || "FIT",
-      reason: input.releaseReason,
-    });
-    return { ok: true as const };
-  }
+  return await api("POST", `/medical/locks/${lockId}/release`, {
+    unlockReason: input.releaseReason,
+    newHorseStatus: input.targetStatus,
+  });
 };
 
 // 4. Extend training lock (POST /api/medical/locks/:id/extend)
@@ -425,32 +385,13 @@ export const extendTrainingLock = async (
   lockId: string,
   input: { additionalDays?: number; newReviewDate?: string; reason: string; horseId?: string },
 ) => {
-  const locks = getStoredLocks();
-  const matchedLock = locks.find((l) => l.id === lockId || l.horseId === lockId);
-  const targetHorseId = input.horseId || matchedLock?.horseId || lockId;
-
-  let additionalDays = input.additionalDays;
-  if (!additionalDays && input.newReviewDate) {
-    const currentReview = matchedLock?.reviewDate || new Date().toISOString();
-    additionalDays = Math.max(1, Math.ceil((new Date(input.newReviewDate).getTime() - new Date(currentReview).getTime()) / 86400000));
-  }
-  additionalDays = additionalDays || 7;
-
-  const realLockId = matchedLock?.id || lockId;
-  try {
-    return await api("POST", `/medical/locks/${realLockId}/extend`, {
-      additionalDays,
-      recheckNotes: input.reason,
-    });
-  } catch {
-    if (input.newReviewDate) {
-      extendHorseTrainingLock(targetHorseId, {
-        newReviewDate: input.newReviewDate,
-        reason: input.reason,
-      });
-    }
-    return { ok: true as const };
-  }
+  return await api("POST", `/medical/locks/${lockId}/extend`, {
+    recheckDate: input.newReviewDate,
+    newReviewDate: input.newReviewDate,
+    additionalDays: input.additionalDays,
+    recheckNotes: input.reason,
+    extendReason: input.reason,
+  });
 };
 
 // P2-05: Preventive care & catalogue (SC-3.07, SC-3.08, FR-3.13 -> FR-3.16)
@@ -488,81 +429,67 @@ export const togglePreventiveCatalogStatus = async (id: string) => {
 };
 
 export const getCareSchedules = async (): Promise<import("./types").PreventiveCareItem[]> => {
-  try {
-    const res = await api<any>("GET", "/medical/preventive/schedules");
-    const rawList = Array.isArray(res) ? res : (res?.data || res?.items || []);
-    if (Array.isArray(rawList) && rawList.length > 0) {
-      return rawList.map((item: any) => {
-        let cat: "VACCINATION" | "DEWORMING" | "FARRIER" | "DENTAL" | "GENERAL" = "VACCINATION";
-        const rawCat = item.scheduleType || item.category || item.typeCatalog?.category;
-        if (rawCat === "DEWORMING") cat = "DEWORMING";
-        else if (rawCat === "FARRIER_HOOF_CARE" || rawCat === "FARRIER") cat = "FARRIER";
-        else if (rawCat === "DENTAL") cat = "DENTAL";
-        else if (rawCat === "GENERAL") cat = "GENERAL";
+  const res = await api<any>("GET", "/medical/preventive/schedules");
+  const rawList = Array.isArray(res) ? res : (res?.data || res?.items || []);
+  if (!Array.isArray(rawList)) return [];
 
-        let st: import("./types").PreventiveStatus = "UP_TO_DATE";
-        if (item.statusBadge === "OVERDUE" || item.isOverdue) st = "OVERDUE";
-        else if (item.statusBadge === "UPCOMING" || item.isUpcomingNotice) st = "DUE_SOON";
-        else if (item.statusBadge === "NODATA") st = "NO_DATA";
+  return rawList.map((item: any) => {
+    let cat: "VACCINATION" | "DEWORMING" | "FARRIER" | "DENTAL" | "GENERAL" = "VACCINATION";
+    const rawCat = item.scheduleType || item.category || item.typeCatalog?.category;
+    if (rawCat === "DEWORMING") cat = "DEWORMING";
+    else if (rawCat === "FARRIER_HOOF_CARE" || rawCat === "FARRIER") cat = "FARRIER";
+    else if (rawCat === "DENTAL") cat = "DENTAL";
+    else if (rawCat === "GENERAL") cat = "GENERAL";
 
-        const horseNameDisplay = item.horse?.name
-          ? `${item.horse.name} (${item.horse.microchipRfid || item.horse.id.slice(0, 6)})`
-          : item.horseId;
+    let st: import("./types").PreventiveStatus = "UP_TO_DATE";
+    if (item.statusBadge === "OVERDUE" || item.isOverdue) st = "OVERDUE";
+    else if (item.statusBadge === "UPCOMING" || item.isUpcomingNotice) st = "DUE_SOON";
+    else if (item.statusBadge === "NODATA") st = "NO_DATA";
 
-        return {
-          id: item.id,
-          horseId: horseNameDisplay,
-          type: item.typeCatalog?.name || item.type || "Routine Care",
-          category: cat,
-          lastAdministeredDate: item.lastCompletedDate ? String(item.lastCompletedDate).split("T")[0] : undefined,
-          administeredBy: item.performedByName || item.veterinarian?.fullName || "Veterinarian",
-          dueDate: item.dueDate ? String(item.dueDate).split("T")[0] : new Date().toISOString().split("T")[0],
-          status: st,
-          notes: item.notes || item.typeCatalog?.description,
-        };
-      });
-    }
-  } catch (err) {
-    console.warn("Could not load care schedules from backend, using mock store", err);
-  }
+    const horseNameDisplay = item.horse?.name
+      ? `${item.horse.name} (${item.horse.microchipRfid || item.horse.id.slice(0, 6)})`
+      : item.horseId;
 
-  const horses = getStoredHorses();
-  const schedules: import("./types").PreventiveCareItem[] = [];
-  horses.forEach((h) => {
-    schedules.push({
-      id: `care-${h.id}-vax`,
-      horseId: `${h.name} (${h.code})`,
-      type: "Equine Influenza Vaccination",
-      category: "VACCINATION",
-      lastAdministeredDate: "2026-04-05",
-      administeredBy: "EquiFlow Veterinary Station",
-      dueDate: new Date(Date.now() + 10 * 86400000).toISOString().split("T")[0],
-      status: "DUE_SOON",
-      notes: "Bi-annual booster vaccination requirement",
-    });
+    return {
+      id: item.id,
+      horseId: horseNameDisplay,
+      type: item.typeCatalog?.name || item.type || "Routine Care",
+      category: cat,
+      lastAdministeredDate: item.lastCompletedDate ? String(item.lastCompletedDate).split("T")[0] : undefined,
+      administeredBy: item.performedByName || item.veterinarian?.fullName || "Veterinarian",
+      dueDate: item.dueDate ? String(item.dueDate).split("T")[0] : new Date().toISOString().split("T")[0],
+      status: st,
+      notes: item.notes || item.typeCatalog?.description,
+    };
   });
-  return schedules;
 };
 
 export const recordCareCompletion = async (
   careId: string,
-  input: { administeredDate: string; administeredBy: string; nextDueDate: string; notes?: string; typeCatalogId?: string; horseId?: string },
+  input: {
+    administeredDate: string;
+    administeredBy: string;
+    nextDueDate: string;
+    notes?: string;
+    typeCatalogId?: string;
+    horseId?: string;
+    performedByMode?: string;
+    productAdministered?: string;
+    batchNumber?: string;
+  },
 ) => {
-  try {
-    return await api("POST", "/medical/preventive/record", {
-      scheduleId: careId,
-      horseId: input.horseId,
-      typeCatalogId: input.typeCatalogId,
-      performedDate: input.administeredDate,
-      performedByMode: "EXTERNAL",
-      performedByName: input.administeredBy,
-      productAdministered: "Equi-Standard Care Formulation",
-      customNextDueDate: input.nextDueDate,
-      notes: input.notes,
-    });
-  } catch {
-    return { ok: true, careId, input };
-  }
+  return await api("POST", "/medical/preventive/record", {
+    scheduleId: careId,
+    horseId: input.horseId,
+    typeCatalogId: input.typeCatalogId,
+    performedDate: input.administeredDate,
+    performedByMode: input.performedByMode || (input.administeredBy ? "EXTERNAL" : "SELF"),
+    performedByName: input.administeredBy,
+    productAdministered: input.productAdministered || undefined,
+    batchNumber: input.batchNumber || undefined,
+    customNextDueDate: input.nextDueDate,
+    notes: input.notes,
+  });
 };
 
 export const healthApi = {

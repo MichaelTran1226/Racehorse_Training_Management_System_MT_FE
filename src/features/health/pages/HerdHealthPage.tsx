@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/shared/components/ui/Button";
+import { Alert } from "@/shared/components/ui/Alert";
 import { Input } from "@/shared/components/form/Input";
 import { Tabs } from "@/shared/components/ui/Tabs";
 import { Modal } from "@/shared/components/ui/Modal";
@@ -54,10 +55,13 @@ export default function HerdHealthPage() {
   // Clear All Modal
   const [showClearAllModal, setShowClearAllModal] = useState(false);
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const loadHorses = useCallback(async () => {
     try {
+      setLoadError(null);
       const res = await healthApi.getHealthBoard();
-      if (res && Array.isArray(res.data) && res.data.length > 0) {
+      if (res && Array.isArray(res.data)) {
         const mapped: HerdHorse[] = res.data.map((item) => {
           let mappedGroup: "FIT" | "WATCH" | "INJURED" | "QUARANTINED" = "FIT";
           if (item.healthGroup === "OBSERVATION") mappedGroup = "WATCH";
@@ -68,23 +72,26 @@ export default function HerdHealthPage() {
             id: item.id,
             name: item.name,
             code: item.microchipRfid || item.id.toUpperCase(),
-            stall: item.stallCode || "Stall A-01",
+            stall: item.stallCode || "Unassigned",
             zone: item.zone || "Zone A",
             healthGroup: mappedGroup,
             statusText: item.status || "Ready for training",
             isLocked: item.isMedicalLocked,
-            restingHeartRate: 36,
-            temp: 37.8,
+            restingHeartRate: (item as any).restingHeartRate || 0,
+            temp: (item as any).temperature || 0,
           };
         });
         setHorses(mapped);
         return;
       }
-    } catch (err) {
-      console.warn("Could not load health board from API, falling back to local store", err);
+    } catch (err: any) {
+      console.error("Could not load health board from API", err);
+      const msg = err?.message || "Không thể tải sơ đồ sức khỏe đàn ngựa từ hệ thống.";
+      setLoadError(msg);
+      toast.show(msg, "danger");
+      setHorses([]);
     }
-    setHorses(getStoredHorses());
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     void loadHorses();
@@ -209,16 +216,6 @@ export default function HerdHealthPage() {
 
         <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
           {isVet && (
-            <Button tone="primary" icon="plus" onClick={() => setShowAddModal(true)}>
-              Add Horse
-            </Button>
-          )}
-          {isVet && horses.length > 0 && (
-            <Button tone="ghost" icon="trash" onClick={() => setShowClearAllModal(true)} title="Clear all horses from local database">
-              Clear All Horses
-            </Button>
-          )}
-          {isVet && (
             <Link to="/medical/locks">
               <Button tone="secondary">Training Locks</Button>
             </Link>
@@ -228,6 +225,20 @@ export default function HerdHealthPage() {
           </Link>
         </div>
       </div>
+
+      {loadError && (
+        <Alert
+          tone="danger"
+          title="Không thể tải dữ liệu sơ đồ sức khỏe"
+          action={
+            <Button tone="secondary" onClick={() => void loadHorses()}>
+              Thử lại
+            </Button>
+          }
+        >
+          {loadError}
+        </Alert>
+      )}
 
       {/* Summary KPI Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>

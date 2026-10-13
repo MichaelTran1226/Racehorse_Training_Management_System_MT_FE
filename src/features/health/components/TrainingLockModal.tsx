@@ -41,6 +41,9 @@ export function TrainingLockModal({
   onLiftLock,
   onExtendLock,
 }: TrainingLockModalProps) {
+  const minDate = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+  const maxDate = new Date(Date.now() + 180 * 86400000).toISOString().split("T")[0];
+
   const [selectedHorseId, setSelectedHorseId] = useState(
     horseId || (horseOptions && horseOptions.length > 0 ? horseOptions[0].value : "")
   );
@@ -49,11 +52,14 @@ export function TrainingLockModal({
   const [reviewDate, setReviewDate] = useState(() =>
     new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
   );
-  const [newReviewDate, setNewReviewDate] = useState(() =>
-    currentReviewDate
-      ? new Date(new Date(currentReviewDate).getTime() + 7 * 86400000).toISOString().split("T")[0]
-      : new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0],
-  );
+  const [newReviewDate, setNewReviewDate] = useState(() => {
+    if (currentReviewDate) {
+      const currTime = new Date(currentReviewDate).getTime();
+      const baseTime = currTime > Date.now() ? currTime : Date.now();
+      return new Date(baseTime + 7 * 86400000).toISOString().split("T")[0];
+    }
+    return new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0];
+  });
   const [restoreStatus, setRestoreStatus] = useState("FIT");
   const [unlockConditions, setUnlockConditions] = useState("");
   const [busy, setBusy] = useState(false);
@@ -74,10 +80,47 @@ export function TrainingLockModal({
     extend: "Extend recovery period if the horse has not yet met unlocking criteria.",
   };
 
+  const isReasonValid = reason.trim().length >= 10 && reason.trim().length <= 500;
+  const isDateValid =
+    mode === "place"
+      ? reviewDate >= minDate && reviewDate <= maxDate
+      : mode === "extend"
+      ? newReviewDate >= minDate && newReviewDate <= maxDate
+      : true;
+
+  const isFormValid = isReasonValid && isDateValid;
+
+  function handleCancel() {
+    if (reason.trim().length > 0) {
+      if (!window.confirm("You have unsaved changes. Are you sure you want to discard them?")) {
+        return;
+      }
+    }
+    onClose();
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!reason.trim()) {
-      setError("Please enter a clinical reason.");
+      setError("Please enter a clinical reason (10 to 500 characters).");
+      return;
+    }
+    if (reason.trim().length < 10) {
+      setError("Clinical reason must be at least 10 characters long.");
+      return;
+    }
+    if (reason.trim().length > 500) {
+      setError("Clinical reason cannot exceed 500 characters.");
+      return;
+    }
+
+    if (mode === "place" && (reviewDate < minDate || reviewDate > maxDate)) {
+      setError("Review date must be between tomorrow and 180 days from now.");
+      return;
+    }
+
+    if (mode === "extend" && (newReviewDate < minDate || newReviewDate > maxDate)) {
+      setError("New review date must be between tomorrow and 180 days from now.");
       return;
     }
 
@@ -116,17 +159,17 @@ export function TrainingLockModal({
       title={titles[mode]}
       subtitle={subtitles[mode]}
       tone={mode === "place" ? "danger" : "warn"}
-      width={500}
-      onClose={onClose}
+      width={520}
+      onClose={handleCancel}
       foot={
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, width: "100%" }}>
-          <Button tone="ghost" onClick={onClose} disabled={busy}>
+          <Button tone="ghost" onClick={handleCancel} disabled={busy}>
             Cancel
           </Button>
           <Button
             tone={mode === "lift" ? "primary" : mode === "place" ? "danger" : "primary"}
             onClick={handleSubmit}
-            disabled={busy}
+            disabled={busy || !isFormValid}
           >
             {mode === "place" ? "Confirm Training Lock" : mode === "lift" ? "Confirm Lift Lock" : "Save Extension"}
           </Button>
@@ -135,13 +178,36 @@ export function TrainingLockModal({
     >
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {error && (
-          <div style={{ color: "var(--danger)", fontSize: "13px", padding: "8px", background: "var(--danger-bg)", borderRadius: "4px" }}>
+          <div style={{ color: "var(--danger)", fontSize: "13px", padding: "8px 12px", background: "var(--danger-bg)", borderRadius: "6px" }}>
             {error}
           </div>
         )}
 
         {mode === "place" && (
           <>
+            <div
+              style={{
+                padding: "12px 14px",
+                background: "rgba(239, 68, 68, 0.05)",
+                border: "1px solid rgba(239, 68, 68, 0.2)",
+                borderRadius: "8px",
+                fontSize: "13px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "6px",
+              }}
+            >
+              <div style={{ fontWeight: 600, color: "var(--danger)", display: "flex", alignItems: "center", gap: 6 }}>
+                <span>⚠️ Clinical Order Impact Assessment</span>
+              </div>
+              <div style={{ color: "var(--text)", lineHeight: 1.5 }}>
+                • <strong>Health Status:</strong> Transitions horse to <strong>{appliedStatus}</strong> immediately.<br/>
+                • <strong>Training Impact:</strong> Automatically <strong>BLOCKS</strong> all upcoming high-intensity workouts.<br/>
+                • <strong>Racing:</strong> Suspends pending race nominations during the medical hold.<br/>
+                • <strong>Notifications:</strong> Urgent alerts dispatched to Head Trainer, Club Manager, Groom & Owner.
+              </div>
+            </div>
+
             {horseOptions && horseOptions.length > 0 && (
               <Field label="Target Horse *">
                 <Select
@@ -160,11 +226,21 @@ export function TrainingLockModal({
               />
             </Field>
 
-            <Field label="Review Date *" hint="System will send an alert notification to the VET when due">
-              <Input type="date" value={reviewDate} onChange={(e) => setReviewDate(e.target.value)} required />
+            <Field label="Review Date *" hint="Review date must be between tomorrow and 180 days">
+              <Input
+                type="date"
+                value={reviewDate}
+                min={minDate}
+                max={maxDate}
+                onChange={(e) => setReviewDate(e.target.value)}
+                required
+              />
             </Field>
 
-            <Field label="Lock Reason *" hint="Min 10 characters, state clear veterinary diagnosis">
+            <Field
+              label={`Lock Reason * (${reason.trim().length}/500)`}
+              hint={reason.trim().length > 0 && reason.trim().length < 10 ? "Min 10 characters required (currently " + reason.trim().length + ")" : "Min 10, max 500 characters"}
+            >
               <Textarea
                 rows={3}
                 value={reason}
@@ -194,7 +270,10 @@ export function TrainingLockModal({
               />
             </Field>
 
-            <Field label="Reason for Lifting Lock *" hint="Veterinary evaluation notes prior to releasing horse">
+            <Field
+              label={`Reason for Lifting Lock * (${reason.trim().length}/500)`}
+              hint={reason.trim().length > 0 && reason.trim().length < 10 ? "Min 10 characters required" : "Veterinary evaluation notes prior to releasing horse"}
+            >
               <Textarea
                 rows={3}
                 value={reason}
@@ -214,11 +293,21 @@ export function TrainingLockModal({
               </div>
             )}
 
-            <Field label="New Review Date *">
-              <Input type="date" value={newReviewDate} onChange={(e) => setNewReviewDate(e.target.value)} required />
+            <Field label="New Review Date *" hint="Must be between tomorrow and 180 days">
+              <Input
+                type="date"
+                value={newReviewDate}
+                min={minDate}
+                max={maxDate}
+                onChange={(e) => setNewReviewDate(e.target.value)}
+                required
+              />
             </Field>
 
-            <Field label="Reason for Extension *" hint="State clinical reasons for extending rehabilitation">
+            <Field
+              label={`Reason for Extension * (${reason.trim().length}/500)`}
+              hint={reason.trim().length > 0 && reason.trim().length < 10 ? "Min 10 characters required" : "State clinical reasons for extending rehabilitation"}
+            >
               <Textarea
                 rows={3}
                 value={reason}

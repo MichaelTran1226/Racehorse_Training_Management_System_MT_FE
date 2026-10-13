@@ -174,6 +174,13 @@ export default function InjuryMapPage() {
 
   const selectedInjury = injuries.find((i) => i.id === activeSelectedId);
 
+  function getErrorMessage(error: any, fallback: string): string {
+    const msg = error?.response?.data?.message || error?.message;
+    if (Array.isArray(msg)) return msg.join(", ");
+    if (typeof msg === "string" && msg.trim()) return msg;
+    return fallback;
+  }
+
   function handleCanvasClick(e: React.MouseEvent<HTMLDivElement>) {
     if (!isVet) return;
 
@@ -197,7 +204,7 @@ export default function InjuryMapPage() {
           );
         })
         .catch((error) => {
-          toast.show("Failed to relocate injury point.", "danger");
+          toast.show(getErrorMessage(error, "Failed to relocate injury point."), "danger");
           console.error(error);
         });
       return;
@@ -251,7 +258,7 @@ export default function InjuryMapPage() {
       setFormNotes("");
       toast.show("New anatomical injury point recorded successfully.", "ok");
     } catch (error) {
-      toast.show("Failed to create injury point.", "danger");
+      toast.show(getErrorMessage(error, "Failed to create injury point."), "danger");
       console.error(error);
     }
   }
@@ -270,7 +277,7 @@ export default function InjuryMapPage() {
       setDeleteTargetId(null);
       toast.show(`Injury point "${target?.region || ""}" deleted successfully.`, "ok");
     } catch (error) {
-      toast.show("Failed to delete injury point.", "danger");
+      toast.show(getErrorMessage(error, "Failed to delete injury point."), "danger");
       console.error(error);
     }
   }
@@ -301,7 +308,7 @@ export default function InjuryMapPage() {
       setStageNotes("");
       toast.show(`Recovery stage updated to: ${newStage}.`, "ok");
     } catch (error) {
-      toast.show("Failed to update injury stage.", "danger");
+      toast.show(getErrorMessage(error, "Failed to update injury stage."), "danger");
       console.error(error);
     }
   }
