@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { Button } from "@/shared/components/ui/Button";
+import { Badge } from "@/shared/components/ui/Badge";
 import { Alert } from "@/shared/components/ui/Alert";
+import { Segmented } from "@/shared/components/ui/Segmented";
 import { Input } from "@/shared/components/form/Input";
 import { Select } from "@/shared/components/form/Select";
 import { Checkbox } from "@/shared/components/form/Checkbox";
@@ -29,70 +31,34 @@ const REFRESH_MS = 60_000;
 
 /** SC-3.01 Sơ đồ sức khỏe đàn ngựa (P1-14): CM, HT, VET. Dữ liệu thật từ BE, lỗi thì hiện lỗi (không dùng dữ liệu giả). */
 export default function HerdHealthPage() {
-  const { user } = useAuth();
-  const toast = useToast();
-  const isVet = user?.role === "VETERINARIAN";
+  const user = useCurrentUser();
+  const isVet = user.role === "VETERINARIAN";
 
-  const [horses, setHorses] = useState<HerdHorse[]>([]);
-  const [filterGroup, setFilterGroup] = useState<string>("ALL");
-  const [search, setSearch] = useState<string>("");
-  const [searchSuggestionsOpen, setSearchSuggestionsOpen] = useState(false);
-  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const [board, setBoard] = useState<HealthBoardResponse | null>(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+  const [view, setView] = useState<"cards" | "stalls">("cards");
+  const [search, setSearch] = useState("");
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [lockFilter, setLockFilter] = useState("ALL");
+  const [overdueOnly, setOverdueOnly] = useState(false);
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [zoneId, setZoneId] = useState("");
+  const [stalls, setStalls] = useState<Stall[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  // Add Horse Modal
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [horseName, setHorseName] = useState("");
-  const [horseCode, setHorseCode] = useState("");
-  const [stall, setStall] = useState("");
-  const [healthGroup, setHealthGroup] = useState<"FIT" | "WATCH" | "INJURED" | "QUARANTINED">("FIT");
-  const [statusText, setStatusText] = useState("Ready for competition");
-  const [restingHeartRate, setRestingHeartRate] = useState(36);
-  const [temp, setTemp] = useState(37.8);
-  const [isLocked, setIsLocked] = useState(false);
-  const [lockReason, setLockReason] = useState("");
-
-  // Delete Horse Modal
-  const [deleteHorseTarget, setDeleteHorseTarget] = useState<HerdHorse | null>(null);
-  // Clear All Modal
-  const [showClearAllModal, setShowClearAllModal] = useState(false);
-
-  const [loadError, setLoadError] = useState<string | null>(null);
-
-  const loadHorses = useCallback(async () => {
+  const load = useCallback(async () => {
     try {
-      setLoadError(null);
-      const res = await healthApi.getHealthBoard();
-      if (res && Array.isArray(res.data)) {
-        const mapped: HerdHorse[] = res.data.map((item) => {
-          let mappedGroup: "FIT" | "WATCH" | "INJURED" | "QUARANTINED" = "FIT";
-          if (item.healthGroup === "OBSERVATION") mappedGroup = "WATCH";
-          else if (item.healthGroup === "INJURED") mappedGroup = "INJURED";
-          else if (item.healthGroup === "ISOLATED") mappedGroup = "QUARANTINED";
-
-          return {
-            id: item.id,
-            name: item.name,
-            code: item.microchipRfid || item.id.toUpperCase(),
-            stall: item.stallCode || "Unassigned",
-            zone: item.zone || "Zone A",
-            healthGroup: mappedGroup,
-            statusText: item.status || "Ready for training",
-            isLocked: item.isMedicalLocked,
-            restingHeartRate: (item as any).restingHeartRate || 0,
-            temp: (item as any).temperature || 0,
-          };
-        });
-        setHorses(mapped);
-        return;
-      }
-    } catch (err: any) {
-      console.error("Could not load health board from API", err);
-      const msg = err?.message || "Không thể tải sơ đồ sức khỏe đàn ngựa từ hệ thống.";
-      setLoadError(msg);
-      toast.show(msg, "danger");
-      setHorses([]);
+      setBoard(await getHealthBoard());
+      setUpdatedAt(new Date());
+      setError("");
+    } catch (err) {
+      setError(messageFor(err));
+    } finally {
+      setLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     void load();
@@ -200,17 +166,17 @@ export default function HerdHealthPage() {
           <strong>{h.name}</strong>
           <span>
             {h.isMedicalLocked && (
-                <span title="Training Lock" style={{ color: "var(--danger)", display: "inline-flex" }}>
-                  <Icon name="lock" size={16} />
-                  <span className="sr-only">Training Lock</span>
-                </span>
-              )}
+              <span title="Training Lock" style={{ color: "var(--danger)", display: "inline-flex" }}>
+                <Icon name="lock" size={16} />
+                <span className="sr-only">Training Lock</span>
+              </span>
+            )}
             {h.hasOverduePreventive && (
-                <span title="Preventive care overdue" style={{ color: "var(--warn)", display: "inline-flex" }}>
-                  <Icon name="bell" size={16} />
-                  <span className="sr-only">Preventive care overdue</span>
-                </span>
-              )}
+              <span title="Preventive care overdue" style={{ color: "var(--warn)", display: "inline-flex" }}>
+                <Icon name="bell" size={16} />
+                <span className="sr-only">Preventive care overdue</span>
+              </span>
+            )}
           </span>
         </div>
         <span style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>
@@ -251,39 +217,25 @@ export default function HerdHealthPage() {
           </div>
           <Button tone="ghost" size="sm" aria-label="Close panel" icon="x" onClick={() => setSelectedId(null)} />
         </div>
-
-        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
-          {isVet && (
-            <Link to="/medical/locks">
-              <Button tone="secondary">Training Locks</Button>
-            </Link>
+        <span style={{ background: g.bg, color: g.color, borderRadius: 999, padding: "2px 10px", justifySelf: "start" }}>
+          {g.label} · {h.status.replace("_", " ").toLowerCase()}
+        </span>
+        <section>
+          <strong>Training Lock</strong>
+          {h.lock ? (
+            <div style={{ fontSize: "var(--fs-body)" }}>
+              Placed {formatDateTime(h.lock.lockedAt)} by {h.lock.veterinarianName ?? "—"}
+              <br />
+              Review date: {h.lock.recheckDate ? formatDate(h.lock.recheckDate) : "—"}
+            </div>
+          ) : (
+            <div style={{ fontSize: "var(--fs-body)" }}>None</div>
           )}
-          <Link to="/medical/care-schedules">
-            <Button tone="ghost">Preventive Care</Button>
-          </Link>
-        </div>
-      </div>
-
-      {loadError && (
-        <Alert
-          tone="danger"
-          title="Không thể tải dữ liệu sơ đồ sức khỏe"
-          action={
-            <Button tone="secondary" onClick={() => void loadHorses()}>
-              Thử lại
-            </Button>
-          }
-        >
-          {loadError}
-        </Alert>
-      )}
-
-      {/* Summary KPI Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
-        <div style={{ padding: "1rem", background: "var(--surface)", borderRadius: "var(--radius-card)", border: "1px solid var(--border)", borderLeft: `4px solid ${GROUP_CONFIG.FIT.border}` }}>
-          <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>Fit for Work / Competition</div>
-          <div style={{ fontSize: "1.75rem", fontWeight: 700, color: GROUP_CONFIG.FIT.color }}>
-            {horses.filter((h) => h.healthGroup === "FIT").length} horses
+        </section>
+        <section>
+          <strong>Latest medical record</strong>
+          <div style={{ fontSize: "var(--fs-body)" }}>
+            {h.latestRecord ? `${formatDate(h.latestRecord.examinationDate)} – ${h.latestRecord.diagnosis}` : "None"}
           </div>
         </section>
         <section>
