@@ -35,7 +35,7 @@ test('only the manager edits the breed catalogue', async ({ page }) => {
 // P1-14 SC-3.01: CM, HT có menu Herd Health; trang không còn nút tạo / xóa ngựa giả.
 test('head trainer opens herd health from the menu and sees the colour cards', async ({ page }) => {
   await signIn(page, 'nam.tran@gmail.com');
-  await page.getByRole('link', { name: 'Herd Health' }).click();
+  await page.getByRole('link', { name: 'Herd Health' }).first().click();
   await expect(page).toHaveURL('/herd');
   await expect(page.getByRole('button', { name: /^Fit to work\s*\d+$/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Training Lock\s*\d+$/ })).toBeVisible();
