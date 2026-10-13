@@ -1,14 +1,16 @@
-.group { display: inline-flex; padding: 3px; gap: 2px; border-radius: var(--r-sm); background: var(--surface-3); font-family: var(--font); }
+.group { display: inline-flex; padding: 3px; gap: 2px; border-radius: var(--r); background: var(--surface-3); }
 .item {
-  padding: 5px 12px;
-  border-radius: 5px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: var(--r-sm);
   border: 0;
   cursor: pointer;
   background: transparent;
-  color: var(--muted);
-  font-family: inherit;
-  font-size: 11px;
+  color: var(--text-2);
+  font-size: var(--fs-body);
   font-weight: 500;
+  white-space: nowrap;
   transition: background var(--dur-fast) var(--ease);
 }
-.on { background: var(--surface); color: var(--text); font-weight: 700; box-shadow: var(--shadow-sm); }
+.item:hover { color: var(--text); }
+.on { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: 0 0 0 1px var(--border); }

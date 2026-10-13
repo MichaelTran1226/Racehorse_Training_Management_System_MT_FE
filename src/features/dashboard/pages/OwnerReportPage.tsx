@@ -6,7 +6,6 @@ export default function OwnerReportPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
-        eyebrow="SCHEDULED SPRINT MODULE"
         title="Horse Owner Reports"
         description="This operational module is scheduled for implementation in accordance with the project sprint plan."
       />

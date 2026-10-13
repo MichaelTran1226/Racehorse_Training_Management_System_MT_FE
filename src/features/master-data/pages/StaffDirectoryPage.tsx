@@ -12,6 +12,7 @@ import type { PublicAccount, Role } from "@/shared/types/auth";
 import { ROLE_LABEL } from "@/shared/lib/permissions";
 import { ACCOUNT_STATUS } from "@/shared/lib/status";
 import { initials } from "@/shared/lib/format";
+import { Icon } from "@/shared/components/ui/Icon";
 
 const STAFF_ROLES: Role[] = ["CLUB_MANAGER", "HEAD_TRAINER", "VETERINARIAN", "GROOM"];
 
@@ -58,7 +59,6 @@ export default function StaffDirectoryPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
-        eyebrow="EQUINE STAFF & OPERATIONS"
         title="Staff Directory"
         description="Active operating staff, trainers, veterinarians, and grooms managing EquiFlow facilities."
         action={
@@ -125,13 +125,13 @@ export default function StaffDirectoryPage() {
                     width: 48,
                     height: 48,
                     borderRadius: "50%",
-                    background: "var(--surface-sunken, #e2e8f0)",
+                    background: "var(--surface-sunken)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     fontWeight: 700,
-                    color: "var(--brand, #16a34a)",
-                    fontSize: "1.125rem",
+                    color: "var(--brand)",
+                    fontSize: "var(--fs-section)",
                     flexShrink: 0,
                   }}
                 >
@@ -140,7 +140,7 @@ export default function StaffDirectoryPage() {
 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
-                    <h3 style={{ margin: 0, fontSize: "1.0625rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <h3 style={{ margin: 0, fontSize: "var(--fs-body-lg)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {staff.fullName}
                     </h3>
                     <Badge tone={ACCOUNT_STATUS[staff.status]?.tone || "neutral"}>
@@ -148,29 +148,29 @@ export default function StaffDirectoryPage() {
                     </Badge>
                   </div>
 
-                  <p style={{ margin: "0.25rem 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
+                  <p style={{ margin: "0.25rem 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
                     {ROLE_LABEL[staff.role]}
                   </p>
 
-                  <div style={{ marginTop: "0.75rem", fontSize: "0.8125rem", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--ink-muted, #64748b)" }}>
-                      <span>✉</span>
+                  <div style={{ marginTop: "0.75rem", fontSize: "var(--fs-body)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--ink-muted)" }}>
+                      <Icon name="mail" size={14} />
                       <a href={`mailto:${staff.email}`} style={{ color: "inherit", textDecoration: "none" }}>
                         {staff.email}
                       </a>
                     </div>
                     {staff.phone && (
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--ink-muted, #64748b)" }}>
-                        <span>☎</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--ink-muted)" }}>
+                        <Icon name="phone" size={14} />
                         <span>{staff.phone}</span>
                       </div>
                     )}
                   </div>
 
                   {currentUser.permissions.manageAccounts && (
-                    <div style={{ marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border, #e2e8f0)", display: "flex", gap: "0.5rem" }}>
-                      <Link to={`/accounts/${staff.id}/permissions`} style={{ fontSize: "0.8125rem", color: "var(--accent, #2563eb)", textDecoration: "underline" }}>
-                        View Permissions Matrix
+                    <div style={{ marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border)", display: "flex", gap: "0.5rem" }}>
+                      <Link to={`/accounts/${staff.id}/permissions`} style={{ fontSize: "var(--fs-body)", fontWeight: 600 }}>
+                        Permissions
                       </Link>
                     </div>
                   )}

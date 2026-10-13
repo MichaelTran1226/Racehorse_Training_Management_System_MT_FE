@@ -3,6 +3,7 @@ import { Icon } from "@/shared/components/ui/Icon";
 import { cx } from "@/shared/lib/cx";
 import type { VitalSigns } from "../types";
 import styles from "./VitalsDisplay.module.css";
+import { formatDate, formatDateTime } from "@/shared/lib/format";
 
 interface VitalsDisplayProps {
   vitals?: VitalSigns;
@@ -37,9 +38,9 @@ export function VitalsDisplay({ vitals, history, recordedAt }: VitalsDisplayProp
   return (
     <div className={styles.container}>
       {recordedAt && (
-        <div style={{ fontSize: "12px", color: "var(--muted)", display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ fontSize: "var(--fs-caption)", color: "var(--muted)", display: "flex", alignItems: "center", gap: 6 }}>
           <Icon name="clock" size={14} />
-          Recorded at: {new Date(recordedAt).toLocaleString("en-US")}
+          Recorded at: {formatDateTime(recordedAt)}
         </div>
       )}
 
@@ -128,7 +129,7 @@ export function VitalsDisplay({ vitals, history, recordedAt }: VitalsDisplayProp
             <tbody>
               {history.map((h, i) => (
                 <tr key={i}>
-                  <td>{new Date(h.recordedAt).toLocaleDateString("en-US")}</td>
+                  <td>{formatDate(h.recordedAt)}</td>
                   <td className={isTempWarning(h.temperature) ? styles.abnormal : undefined}>
                     {h.temperature?.toFixed(1) ?? "—"}
                   </td>

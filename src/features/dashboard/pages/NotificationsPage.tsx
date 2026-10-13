@@ -45,15 +45,15 @@ export default function NotificationsPage() {
   const getCategoryTheme = (category: AppNotification["category"]) => {
     switch (category) {
       case "LOCK":
-        return { icon: "lock", bg: "#ef4444", text: "#ffffff", label: "Training Lock" };
+        return { icon: "lock", bg: "var(--danger)", text: "var(--surface)", label: "Training Lock" };
       case "MEDICAL":
-        return { icon: "stethoscope", bg: "#0284c7", text: "#ffffff", label: "Health & Medical" };
+        return { icon: "stethoscope", bg: "var(--info)", text: "var(--surface)", label: "Health & Medical" };
       case "TRAINING":
-        return { icon: "activity", bg: "#f59e0b", text: "#ffffff", label: "Training & Workouts" };
+        return { icon: "activity", bg: "var(--warn)", text: "var(--surface)", label: "Training & Workouts" };
       case "ACCOUNT":
-        return { icon: "users", bg: "#8b5cf6", text: "#ffffff", label: "Accounts & Roles" };
+        return { icon: "users", bg: "var(--violet)", text: "var(--surface)", label: "Accounts & Roles" };
       default:
-        return { icon: "bell", bg: "#64748b", text: "#ffffff", label: "System Notification" };
+        return { icon: "bell", bg: "var(--muted)", text: "var(--surface)", label: "System Notification" };
     }
   };
 
@@ -73,17 +73,17 @@ export default function NotificationsPage() {
           padding: "16px 20px",
           borderRadius: "var(--r)",
           cursor: "pointer",
-          background: n.read ? "var(--surface)" : "var(--nav-item-active-bg, rgba(59, 130, 246, 0.08))",
-          border: `1px solid ${n.read ? "var(--border)" : "rgba(59, 130, 246, 0.25)"}`,
+          background: n.read ? "var(--surface)" : "var(--brand-50)",
+          border: `1px solid ${n.read ? "var(--border)" : "var(--brand-100)"}`,
           transition: "all 0.15s ease",
           boxShadow: n.read ? "none" : "var(--shadow-sm)",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = "var(--accent)";
+          e.currentTarget.style.borderColor = "var(--brand)";
           e.currentTarget.style.transform = "translateY(-1px)";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = n.read ? "var(--border)" : "rgba(59, 130, 246, 0.25)";
+          e.currentTarget.style.borderColor = n.read ? "var(--border)" : "var(--brand-100)";
           e.currentTarget.style.transform = "translateY(0)";
         }}
       >
@@ -112,11 +112,11 @@ export default function NotificationsPage() {
               {theme.label}
             </Badge>
             {n.senderName && (
-              <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+              <span style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>
                 From: <strong>{n.senderName}</strong>
               </span>
             )}
-            <span style={{ marginLeft: "auto", fontSize: "12px", color: "var(--text-muted)", flexShrink: 0 }}>
+            <span style={{ marginLeft: "auto", fontSize: "var(--fs-caption)", color: "var(--text-muted)", flexShrink: 0 }}>
               {formatTimeAgo(n.createdAt)}
             </span>
           </div>
@@ -124,7 +124,7 @@ export default function NotificationsPage() {
           <h4
             style={{
               margin: "0 0 4px",
-              fontSize: "14.5px",
+              fontSize: "var(--fs-body)",
               fontWeight: n.read ? 600 : 750,
               color: n.read ? "var(--text)" : "var(--text-strong)",
             }}
@@ -135,7 +135,7 @@ export default function NotificationsPage() {
           <p
             style={{
               margin: 0,
-              fontSize: "13px",
+              fontSize: "var(--fs-body)",
               lineHeight: 1.5,
               color: n.read ? "var(--text-muted)" : "var(--text)",
             }}
@@ -151,9 +151,9 @@ export default function NotificationsPage() {
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 4,
-                  fontSize: "12.5px",
+                  fontSize: "var(--fs-caption)",
                   fontWeight: 600,
-                  color: "var(--accent)",
+                  color: "var(--brand)",
                 }}
               >
                 <span>View details</span>
@@ -171,7 +171,7 @@ export default function NotificationsPage() {
                 width: 12,
                 height: 12,
                 borderRadius: "50%",
-                background: "#2563eb",
+                background: "var(--info)",
                 display: "inline-block",
               }}
               title="Unread"
@@ -187,7 +187,7 @@ export default function NotificationsPage() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.875rem", fontWeight: 700, letterSpacing: "-0.01em" }}>
+          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700, }}>
             Notifications
           </h1>
         </div>
@@ -217,13 +217,13 @@ export default function NotificationsPage() {
               onClick={() => setActiveTab("all")}
               style={{
                 padding: "8px 18px",
-                borderRadius: 20,
+                borderRadius: "var(--r-lg)",
                 border: "none",
-                fontSize: "13.5px",
+                fontSize: "var(--fs-body)",
                 fontWeight: 700,
                 cursor: "pointer",
-                background: activeTab === "all" ? "var(--nav-item-active-bg, #e0f2fe)" : "var(--surface-sunken)",
-                color: activeTab === "all" ? "var(--nav-item-active-text, #0369a1)" : "var(--text-muted)",
+                background: activeTab === "all" ? "var(--nav-item-active-bg)" : "var(--surface-sunken)",
+                color: activeTab === "all" ? "var(--nav-item-active-text)" : "var(--text-muted)",
               }}
             >
               All ({notifications.length})
@@ -234,13 +234,13 @@ export default function NotificationsPage() {
               onClick={() => setActiveTab("unread")}
               style={{
                 padding: "8px 18px",
-                borderRadius: 20,
+                borderRadius: "var(--r-lg)",
                 border: "none",
-                fontSize: "13.5px",
+                fontSize: "var(--fs-body)",
                 fontWeight: 700,
                 cursor: "pointer",
-                background: activeTab === "unread" ? "var(--nav-item-active-bg, #e0f2fe)" : "var(--surface-sunken)",
-                color: activeTab === "unread" ? "var(--nav-item-active-text, #0369a1)" : "var(--text-muted)",
+                background: activeTab === "unread" ? "var(--nav-item-active-bg)" : "var(--surface-sunken)",
+                color: activeTab === "unread" ? "var(--nav-item-active-text)" : "var(--text-muted)",
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
@@ -250,9 +250,9 @@ export default function NotificationsPage() {
               {unreadCount > 0 && (
                 <span
                   style={{
-                    background: "#2563eb",
-                    color: "#ffffff",
-                    fontSize: "11px",
+                    background: "var(--info)",
+                    color: "var(--text-on-brand)",
+                    fontSize: "var(--fs-caption)",
                     fontWeight: 700,
                     borderRadius: 999,
                     padding: "2px 7px",
@@ -272,7 +272,7 @@ export default function NotificationsPage() {
                 border: "none",
                 background: "transparent",
                 color: "var(--text-muted)",
-                fontSize: "12px",
+                fontSize: "var(--fs-caption)",
                 cursor: "pointer",
                 padding: "4px 8px",
               }}
@@ -301,7 +301,7 @@ export default function NotificationsPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           {todayList.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--text-strong)", padding: "0 4px" }}>
+              <div style={{ fontSize: "var(--fs-body)", fontWeight: 700, color: "var(--text-strong)", padding: "0 4px" }}>
                 Today
               </div>
               {todayList.map(renderItem)}
@@ -310,7 +310,7 @@ export default function NotificationsPage() {
 
           {earlierList.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginTop: todayList.length > 0 ? "0.5rem" : 0 }}>
-              <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--text-strong)", padding: "0 4px" }}>
+              <div style={{ fontSize: "var(--fs-body)", fontWeight: 700, color: "var(--text-strong)", padding: "0 4px" }}>
                 Earlier
               </div>
               {earlierList.map(renderItem)}

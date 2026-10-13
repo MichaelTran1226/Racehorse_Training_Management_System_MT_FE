@@ -64,7 +64,6 @@ export default function MyProfilePage() {
   return (
     <>
       <PageHeader
-        eyebrow="MY ACCOUNT"
         title="Your details and how you are reached."
         description="Name and contact details are yours to change. Role and permissions belong to the Club Manager."
       />

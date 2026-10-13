@@ -6,15 +6,18 @@ import { Select } from "@/shared/components/form/Select";
 import { Textarea } from "@/shared/components/form/Textarea";
 import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
+import { messageFor } from "@/shared/lib/messages";
+import { formatDate } from "@/shared/lib/format";
 
 const APPLIED_STATUS_OPTIONS = [
   { value: "INJURED", label: "Injured" },
   { value: "UNDER_OBSERVATION", label: "Under Observation" },
-  { value: "QUARANTINED", label: "Quarantined" },
+  { value: "ISOLATED", label: "Isolated (quarantine)" },
 ];
 
 const RESTORE_STATUS_OPTIONS = [
-  { value: "FIT", label: "Fit - Allow full training resumption" },
+  { value: "RESTING", label: "Resting - Rest before training resumes" },
+  { value: "IN_TRAINING", label: "In Training - Allow training to resume" },
   { value: "UNDER_OBSERVATION", label: "Under Observation - Light exercise only" },
 ];
 
@@ -148,7 +151,7 @@ export function TrainingLockModal({
       }
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Operation failed.");
+      setError(messageFor(err));
     } finally {
       setBusy(false);
     }
@@ -288,8 +291,8 @@ export function TrainingLockModal({
         {mode === "extend" && (
           <>
             {currentReviewDate && (
-              <div style={{ fontSize: "13px", color: "var(--muted)" }}>
-                Current review date: <strong>{new Date(currentReviewDate).toLocaleDateString("en-US")}</strong>
+              <div style={{ fontSize: "var(--fs-body)", color: "var(--muted)" }}>
+                Current review date: <strong>{formatDate(currentReviewDate)}</strong>
               </div>
             )}
 

@@ -21,7 +21,8 @@ export class ApiError extends Error {
   }
 }
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
+// true = dữ liệu giả trong trình duyệt (không có backend).
+export const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 const API_URL = import.meta.env.VITE_API_URL ?? "";
 
 interface ApiHandlers {

@@ -13,7 +13,7 @@
 .vitalCard {
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--r);
   padding: 14px;
   display: flex;
   flex-direction: column;
@@ -38,7 +38,7 @@
 }
 
 .vitalLabel {
-  font-size: 13px;
+  font-size: var(--fs-body);
   color: var(--muted);
   font-weight: 500;
 }
@@ -50,7 +50,7 @@
 }
 
 .value {
-  font-size: 26px;
+  font-size: var(--fs-h1);
   font-weight: 700;
   color: var(--text);
   line-height: 1;
@@ -61,17 +61,17 @@
 }
 
 .unit {
-  font-size: 13px;
+  font-size: var(--fs-body);
   color: var(--muted);
 }
 
 .reference {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   color: var(--muted);
 }
 
 .notes {
-  font-size: 12px;
+  font-size: var(--fs-caption);
   color: var(--text-2);
   padding: 8px;
   background: var(--surface);
@@ -86,7 +86,7 @@
 }
 
 .historyTitle {
-  font-size: 13px;
+  font-size: var(--fs-body);
   font-weight: 600;
   color: var(--text);
   margin-bottom: 8px;
@@ -98,7 +98,7 @@
 .historyTable {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: var(--fs-caption);
 }
 
 .historyTable th {

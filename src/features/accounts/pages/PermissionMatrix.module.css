@@ -3,20 +3,20 @@
 .groupLabel { margin: 0 0 4px; font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: var(--ls-eyebrow); color: var(--muted); }
 .row { display: flex; align-items: center; gap: 17px; padding: 11px 0; border-top: 1px solid var(--border-soft); }
 .rowText { flex: 1; min-width: 0; }
-.rowText strong { display: block; font-size: 12px; font-weight: 700; color: var(--text); }
-.rowText span { font-size: 11px; color: var(--muted); line-height: 1.5; }
+.rowText strong { display: block; font-size: var(--fs-caption); font-weight: 700; color: var(--text); }
+.rowText span { font-size: var(--fs-caption); color: var(--muted); line-height: 1.5; }
 
 .aside { display: grid; gap: var(--gap-grid); }
-.facts { display: flex; flex-direction: column; gap: 11px; font-size: 12px; }
+.facts { display: flex; flex-direction: column; gap: 11px; font-size: var(--fs-caption); }
 .facts > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .facts span { color: var(--muted); }
 .facts b { color: var(--text); }
 .num { font-family: var(--font-numeric); }
 .identity { display: flex; align-items: center; gap: 11px; }
-.identity strong { display: block; font-size: 12.5px; color: var(--text); }
-.identity span { font-size: 11px; color: var(--muted); }
+.identity strong { display: block; font-size: var(--fs-caption); color: var(--text); }
+.identity span { font-size: var(--fs-caption); color: var(--muted); }
 .saveStack { display: flex; flex-direction: column; gap: 11px; }
-.note { margin: 0; font-size: 11px; color: var(--muted); line-height: 1.6; }
+.note { margin: 0; font-size: var(--fs-caption); color: var(--muted); line-height: 1.6; }
 
 /* Màn hình hẹp (design 1.10d): danh sách và thẻ tài khoản xếp dọc, nút lưu nằm trong một thanh gọn phía trên. */
 .compact { display: none; }
@@ -35,7 +35,7 @@
     border-radius: var(--r);
   }
   .compactWho { display: flex; align-items: center; gap: 11px; }
-  .compactWho strong { display: block; font-size: 12px; color: var(--text); }
-  .compactWho span { font-size: 11px; color: var(--muted); }
+  .compactWho strong { display: block; font-size: var(--fs-caption); color: var(--text); }
+  .compactWho span { font-size: var(--fs-caption); color: var(--muted); }
   .compactBtns { display: flex; gap: 9px; }
 }

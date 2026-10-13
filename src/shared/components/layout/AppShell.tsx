@@ -13,7 +13,7 @@ import { Topbar } from "./Topbar";
 import { useSidebarInfo } from "./useSidebarInfo";
 import styles from "./AppShell.module.css";
 
-// Khung chung của mọi trang sau đăng nhập: Sidebar 248px + Topbar 76px + vùng nội dung.
+// Khung chung của mọi trang sau đăng nhập: Sidebar 224px + Topbar 64px + vùng nội dung (DESIGN.md §5).
 // Chưa đăng nhập => chuyển về /login (kèm ?next= để quay lại sau khi đăng nhập).
 export function AppShell({ children }: { children: ReactNode }) {
   const { status, user, expired, signOut, refresh } = useAuth();

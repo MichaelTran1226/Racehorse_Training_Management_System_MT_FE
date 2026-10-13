@@ -66,7 +66,7 @@ export function StopPrescriptionModal({ medicationName, onClose, onSubmit }: Sto
     >
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {error && (
-          <div style={{ color: "var(--danger)", fontSize: "13px", padding: "8px", background: "var(--danger-bg)", borderRadius: "4px" }}>
+          <div style={{ color: "var(--danger)", fontSize: "var(--fs-body)", padding: "8px", background: "var(--danger-bg)", borderRadius: "4px" }}>
             {error}
           </div>
         )}

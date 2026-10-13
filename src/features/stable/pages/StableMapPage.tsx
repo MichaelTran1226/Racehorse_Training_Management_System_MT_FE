@@ -1,182 +1,387 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
-import { Icon } from "@/shared/components/ui/Icon";
 import { Button } from "@/shared/components/ui/Button";
-import { StallGrid, StallCell, StallLegend, type StallStatus } from "@/shared/components/ui/StallGrid";
-import { getStalls, getZones } from "../api";
-import type { Stall, StallAllocation } from "../types";
+import { Badge } from "@/shared/components/ui/Badge";
+import { Alert } from "@/shared/components/ui/Alert";
+import { HealthBadge } from "@/shared/components/ui/HealthBadge";
+import { Segmented } from "@/shared/components/ui/Segmented";
+import { Select } from "@/shared/components/form/Select";
+import { Checkbox } from "@/shared/components/form/Checkbox";
 import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
+import { messageFor } from "@/shared/lib/messages";
+import { formatDate, formatTime } from "@/shared/lib/format";
+import type { HealthStatus } from "@/shared/types/enums";
+import { getStalls, getZones } from "../api";
+import type { Stall, Zone } from "../types";
+import { GridCell, ZoneGrid, type CellLook } from "../components/ZoneGrid";
+import { AssignStallDialog, ReturnStallDialog, TransferStallDialog } from "../components/StallDialogs";
+import { HEALTH_STATUS } from "@/shared/lib/status";
+import { HORSE_STATUS_COLOR, allocationOf, useStallCounts } from "../stallUtils";
 
+const REFRESH_MS = 60_000;
+
+type Dialog = "assign" | "transfer" | "return" | null;
+
+/** SC-1.04 Sơ đồ chuồng trại: CM, HT, VET, GROOM (OWNER bị chặn ở route và BE). */
 export default function StableMapPage() {
-  const [selectedZone, setSelectedZone] = useState<string>("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedStallId, setSelectedStallId] = useState<string | null>(null);
+  const user = useCurrentUser();
+  const canManage = user.role === "CLUB_MANAGER" || user.role === "HEAD_TRAINER";
+  const isGroom = user.role === "GROOM";
 
-  const [zones, setZones] = useState<string[]>([]);
+  const [zones, setZones] = useState<Zone[] | null>(null);
+  const [zoneId, setZoneId] = useState("");
   const [stalls, setStalls] = useState<Stall[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+  const [view, setView] = useState<"grid" | "list">("grid");
+  const [onlyMine, setOnlyMine] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<Dialog>(null);
+  const [search, setSearch] = useState("");
+  const [matches, setMatches] = useState<Stall[] | null>(null);
+  const [flashId, setFlashId] = useState<string | null>(null);
 
-  const currentUser = useCurrentUser();
-  const isOwner = currentUser.role === "HORSE_OWNER";
-
-  useEffect(() => {
-    getZones().then((res) => {
-      setZones(res);
-      if (res.length > 0 && !selectedZone) setSelectedZone(res[0]);
-    }).catch(console.error);
+  const loadZones = useCallback(() => {
+    getZones()
+      .then((list) => {
+        setZones(list);
+        setZoneId((cur) => cur || list[0]?.id || "");
+        if (list.length === 0) setLoading(false);
+      })
+      .catch((err) => {
+        setError(messageFor(err));
+        setLoading(false);
+      });
   }, []);
 
   const loadStalls = useCallback(() => {
-    setIsLoading(true);
-    getStalls({ zone: selectedZone, search: searchQuery })
-      .then(setStalls)
-      .catch(console.error)
-      .finally(() => setIsLoading(false));
-  }, [selectedZone, searchQuery]);
+    if (!zoneId) return;
+    setError("");
+    getStalls({ zoneId })
+      .then((list) => {
+        setStalls(list);
+        setUpdatedAt(new Date());
+      })
+      .catch((err) => setError(messageFor(err)))
+      .finally(() => setLoading(false));
+  }, [zoneId]);
 
+  useEffect(loadZones, [loadZones]);
   useEffect(() => {
-    if (selectedZone || searchQuery) {
-      const timer = setTimeout(loadStalls, 300);
-      return () => clearTimeout(timer);
-    } else if (selectedZone === "") {
-      loadStalls();
-    }
-  }, [selectedZone, searchQuery, loadStalls]);
+    loadStalls();
+    // Tự làm mới mỗi 60 giây khi tab đang mở.
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") loadStalls();
+    }, REFRESH_MS);
+    return () => window.clearInterval(timer);
+  }, [loadStalls]);
 
-  if (isOwner) {
-    return <div className="p-8 text-center text-slate-500">You do not have permission to view the stable map.</div>;
+  // Tìm ngựa trên mọi khu: gợi ý, chọn một ngựa -> chuyển sang khu đó, ô nhấp nháy 3 giây.
+  useEffect(() => {
+    const q = search.trim();
+    if (q.length < 2) {
+      setMatches(null);
+      return;
+    }
+    const t = window.setTimeout(() => {
+      getStalls({ search: q })
+        .then((list) => setMatches(list.filter((s) => s.allocations.length > 0)))
+        .catch(() => setMatches([]));
+    }, 400);
+    return () => window.clearTimeout(t);
+  }, [search]);
+
+  function jumpTo(stall: Stall) {
+    setSearch("");
+    setMatches(null);
+    if (stall.zoneId && stall.zoneId !== zoneId) setZoneId(stall.zoneId);
+    setSelectedId(stall.id);
+    setFlashId(stall.id);
+    window.setTimeout(() => setFlashId(null), 3000);
   }
 
-  const selectedStall = stalls.find((s: Stall) => s.id === selectedStallId);
+  const zone = zones?.find((z) => z.id === zoneId);
+  const counts = useStallCounts(stalls);
+  const selected = stalls.find((s) => s.id === selectedId) ?? null;
 
-  const renderPanel = () => {
-    if (!selectedStall) return null;
-    const activeAlloc = selectedStall.allocations.find((a: StallAllocation) => a.isActive);
+  const isMine = useCallback(
+    (s: Stall) => isGroom && s.allocations.some((a) => a.assignedGroomUserId === user.id),
+    [isGroom, user.id],
+  );
 
+  const lookOf = useCallback(
+    (s: Stall): CellLook => {
+      const a = s.allocations[0];
+      if (a) {
+        const color = HORSE_STATUS_COLOR[a.horse.status] ?? HORSE_STATUS_COLOR.RESTING;
+        return {
+          title: a.horse.name,
+          subtitle: a.horse.horseCode ?? undefined,
+          bg: color.bg,
+          fg: color.fg,
+          locked: !!a.horse.isMedicalLocked,
+          mine: isMine(s),
+          dimmed: onlyMine && !isMine(s),
+          flash: flashId === s.id,
+        };
+      }
+      if (s.status === "MAINTENANCE") return { title: "Maintenance", striped: true, dimmed: onlyMine, flash: flashId === s.id };
+      return { title: "Empty", dashed: true, dimmed: onlyMine, flash: flashId === s.id };
+    },
+    [isMine, onlyMine, flashId],
+  );
+
+  const listRows = useMemo(() => [...stalls].sort((a, b) => a.code.localeCompare(b.code)), [stalls]);
+
+  function closeDialog(changed: boolean) {
+    setDialog(null);
+    if (changed) loadStalls();
+  }
+
+  function renderPanel(s: Stall) {
+    const a = s.allocations[0];
+    const canOpenProfile = !isGroom || isMine(s);
+    const alloc = allocationOf(s);
     return (
-      <div className="w-80 bg-white border-l border-slate-200 flex flex-col fixed right-0 top-16 bottom-0 shadow-xl overflow-y-auto z-10">
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-          <h3 className="font-semibold text-slate-900">Stall Details</h3>
-          <button onClick={() => setSelectedStallId(null)} className="text-slate-400 hover:text-slate-600">
-            <Icon name="x" size={20} />
-          </button>
+      <aside
+        style={{
+          width: 320,
+          flexShrink: 0,
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-card, 12px)",
+          padding: 16,
+          display: "grid",
+          gap: 12,
+          alignContent: "start",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h2 style={{ margin: 0, fontSize: "var(--fs-section)" }}>Stall {s.code}</h2>
+          <Button tone="ghost" size="sm" icon="x" onClick={() => setSelectedId(null)} aria-label="Close panel" />
         </div>
-        <div className="p-4 space-y-4">
-          <div>
-            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Stall Code</div>
-            <div className="font-semibold text-lg">{selectedStall.code}</div>
-          </div>
-          <div>
-            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Stall Status</div>
-            <div className="font-medium">
-              {selectedStall.status === "MAINTENANCE" ? "Maintenance" : selectedStall.status === "OCCUPIED" ? "Occupied" : "Available"}
-            </div>
-          </div>
-          {selectedStall.notes && (
+        <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>
+          Zone {s.zone}
+          {s.row && s.col ? ` · Row ${s.row}, Col ${s.col}` : ""}
+        </div>
+        {a ? (
+          <>
             <div>
-              <div className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Stall Notes</div>
-              <div className="text-sm">{selectedStall.notes}</div>
+              <strong>{a.horse.name}</strong> <span style={{ color: "var(--text-muted)" }}>{a.horse.horseCode}</span>
             </div>
-          )}
-
-          <hr className="border-slate-100" />
-
-          {activeAlloc ? (
-            <div className="space-y-4">
-              <div>
-                <div className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Occupant Horse</div>
-                <div className="font-medium text-slate-900">{activeAlloc.horse.name}</div>
-                <div className="text-sm text-slate-500">{activeAlloc.horse.code}</div>
-              </div>
-              <div className="flex flex-col gap-2 pt-2">
-                <Link to={`/horses/${activeAlloc.horse.id}`}>
-                  <Button tone="secondary" block>View Horse Profile</Button>
-                </Link>
-                <Button tone="ghost" block>Reassign Stall</Button>
-                <Button tone="danger" block>Deallocate Stall</Button>
-              </div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              <HealthBadge status={a.horse.status as HealthStatus} />
+              {a.horse.isMedicalLocked && <Badge tone="danger" icon="lock">Training Lock</Badge>}
             </div>
-          ) : (
-            <div className="pt-2">
-              <div className="text-sm text-slate-500 mb-4">This stall is currently vacant.</div>
-              {selectedStall.status !== "MAINTENANCE" && (
-                <Button tone="primary" block>Assign Horse to Stall</Button>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+            <div style={{ fontSize: "var(--fs-body)" }}>Groom: {a.assignedGroom?.fullName ?? "—"}</div>
+            <div style={{ fontSize: "var(--fs-body)" }}>In this stall since {formatDate(a.startDate)}</div>
+            {canOpenProfile && (
+              <Link to={`/horses/${a.horse.id}`}>
+                <Button tone="secondary" block>View horse profile</Button>
+              </Link>
+            )}
+            {canManage && alloc && (
+              <>
+                <Button tone="ghost" block onClick={() => setDialog("transfer")}>Move stall</Button>
+                <Button tone="danger" block onClick={() => setDialog("return")}>Release stall</Button>
+              </>
+            )}
+          </>
+        ) : (
+          <>
+            <Badge tone={s.status === "MAINTENANCE" ? "warn" : "neutral"}>
+              {s.status === "MAINTENANCE" ? "Maintenance" : "Empty"}
+            </Badge>
+            {s.notes && <p style={{ margin: 0, fontSize: "var(--fs-body)" }}>{s.notes}</p>}
+            {canManage && s.status === "AVAILABLE" && (
+              <Button block onClick={() => setDialog("assign")}>Assign a horse</Button>
+            )}
+          </>
+        )}
+      </aside>
     );
-  };
+  }
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 relative">
+    <div style={{ display: "grid", gap: 16 }}>
       <PageHeader
-        title="Barn & Stable Map"
+        title="Stable map"
+        description={updatedAt ? `Updated at ${formatTime(updatedAt)}` : undefined}
         action={
-          <div className="flex items-center gap-4">
-            <select
-              value={selectedZone}
-              onChange={(e) => setSelectedZone(e.target.value)}
-              className="px-3 py-2 border border-slate-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-            >
-              {zones.length === 0 && <option value="">(No barn zones available)</option>}
-              {zones.map((z: string) => (
-                <option key={z} value={z}>{z}</option>
-              ))}
-            </select>
-            <div className="relative">
-              <Icon name="search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            {zones && zones.length > 0 && (
+              <div style={{ width: 200 }}>
+                <Select
+                  aria-label="Barn zone"
+                  value={zoneId}
+                  onChange={(e) => {
+                    setZoneId(e.target.value);
+                    setSelectedId(null);
+                  }}
+                  options={zones.map((z) => ({ value: z.id, label: z.name }))}
+                />
+              </div>
+            )}
+            <div style={{ position: "relative" }}>
               <input
-                type="text"
-                placeholder="Search stall code, horse name..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-3 py-2 border border-slate-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500 w-64"
+                type="search"
+                aria-label="Find a horse on the map"
+                placeholder="Horse name or code"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{ height: 38, width: 220, padding: "0 12px", borderRadius: "var(--r)", border: "1px solid var(--border)" }}
               />
+              {matches && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 4px)",
+                    right: 0,
+                    width: 260,
+                    zIndex: 30,
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "var(--r)",
+                    boxShadow: "0 12px 30px rgba(0,0,0,0.12)",
+                  }}
+                >
+                  {matches.length === 0 ? (
+                    <div style={{ padding: 12, fontSize: "var(--fs-body)" }}>No horse found on the map.</div>
+                  ) : (
+                    matches.map((s) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => jumpTo(s)}
+                        style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 12px", border: 0, background: "none", cursor: "pointer" }}
+                      >
+                        <strong>{s.allocations[0]?.horse.name}</strong> · {s.code} ({s.zone})
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
+            <Segmented
+              label="View"
+              items={[
+                { id: "grid", label: "Map" },
+                { id: "list", label: "List" },
+              ]}
+              active={view}
+              onChange={setView}
+            />
           </div>
         }
       />
 
-      <div className="flex-1 overflow-auto p-6 flex">
-        <div className="flex-1 max-w-6xl mx-auto space-y-6 pb-20">
-          <StallLegend />
-          
-          {isLoading ? (
-            <div className="flex items-center justify-center h-64 text-slate-400">Loading stable map...</div>
-          ) : stalls.length === 0 ? (
-            <div className="flex items-center justify-center h-64 text-slate-400 border-2 border-dashed border-slate-200 rounded-xl">
-              No stalls match the selected criteria.
-            </div>
-          ) : (
-            <StallGrid columns={6}>
-              {stalls.map((stall: Stall) => {
-                const alloc = stall.allocations.find((a: StallAllocation) => a.isActive);
-                let status: StallStatus = "EMPTY";
-                if (alloc) {
-                  status = alloc.horse.status as StallStatus;
-                } else if (stall.status === "MAINTENANCE") {
-                  status = "EMPTY";
-                }
+      {error && (
+        <Alert tone="danger" title="Could not load the stable map." action={<Button size="sm" onClick={loadStalls}>Try again</Button>}>
+          {error}
+        </Alert>
+      )}
 
-                return (
-                  <StallCell
-                    key={stall.id}
-                    code={stall.code}
-                    horse={alloc?.horse.name}
-                    status={status}
-                    selected={selectedStallId === stall.id}
-                    onClick={() => setSelectedStallId(stall.id)}
-                  />
-                );
-              })}
-            </StallGrid>
+      {zones && zones.length === 0 ? (
+        <div style={{ padding: 40, textAlign: "center", border: "2px dashed var(--border)", borderRadius: "var(--r-lg)" }}>
+          <p>No barn zones have been set up yet.</p>
+          {user.role === "CLUB_MANAGER" && (
+            <Link to="/catalogs/stalls">
+              <Button>Go to the stall catalogue</Button>
+            </Link>
           )}
         </div>
-      </div>
-      {renderPanel()}
+      ) : (
+        <>
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: "var(--fs-body)" }}>
+            <span>Total stalls: <strong>{counts.total}</strong></span>
+            <span>Occupied: <strong>{counts.occupied}</strong></span>
+            <span>Empty: <strong>{counts.free}</strong></span>
+            <span>Maintenance: <strong>{counts.maintenance}</strong></span>
+            {isGroom && (
+              <Checkbox checked={onlyMine} onChange={setOnlyMine} label="Only my horses" />
+            )}
+          </div>
+          <ul aria-label="Legend" style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: "var(--fs-caption)", color: "var(--text-2)", margin: 0, padding: 0, listStyle: "none" }}>
+            {Object.entries(HORSE_STATUS_COLOR).map(([status, c]) => (
+              <li key={status} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <span aria-hidden="true" style={{ width: 12, height: 12, borderRadius: "var(--r-xs)", background: c.bg, boxShadow: `inset 0 0 0 1px ${c.fg}` }} />
+                {HEALTH_STATUS[status as HealthStatus]?.label ?? status}
+              </li>
+            ))}
+            <li style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <span aria-hidden="true" style={{ width: 12, height: 12, borderRadius: "var(--r-xs)", border: "1px dashed var(--border-field)" }} />
+              Empty
+            </li>
+            <li style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <span aria-hidden="true" style={{ width: 12, height: 12, borderRadius: "var(--r-xs)", border: "2px solid var(--danger)" }} />
+              Training Lock
+            </li>
+          </ul>
+
+          <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {loading ? (
+                <div style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>Loading stable map…</div>
+              ) : stalls.length === 0 ? (
+                <div style={{ padding: 40, textAlign: "center", border: "2px dashed var(--border)", borderRadius: "var(--r-lg)" }}>
+                  This zone has no stalls yet.
+                </div>
+              ) : view === "grid" && zone ? (
+                <ZoneGrid
+                  zone={zone}
+                  stalls={stalls}
+                  renderCell={(s) => (
+                    <GridCell code={s.code} look={lookOf(s)} selected={s.id === selectedId} onClick={() => setSelectedId(s.id)} />
+                  )}
+                />
+              ) : (
+                <div style={{ display: "grid", gap: 6 }}>
+                  {listRows.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => setSelectedId(s.id)}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        padding: "10px 12px",
+                        borderRadius: "var(--r)",
+                        border: "1px solid var(--border)",
+                        background: s.id === selectedId ? "var(--surface-2)" : "var(--surface)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <strong>{s.code}</strong>
+                      <span>{s.allocations[0]?.horse.name ?? (s.status === "MAINTENANCE" ? "Maintenance" : "Empty")}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {selected && renderPanel(selected)}
+          </div>
+        </>
+      )}
+
+      {dialog === "assign" && selected && (
+        <AssignStallDialog stall={selected} onClose={() => closeDialog(false)} onDone={() => closeDialog(true)} />
+      )}
+      {dialog === "transfer" && selected && allocationOf(selected) && (
+        <TransferStallDialog
+          allocation={allocationOf(selected)!}
+          onClose={() => closeDialog(false)}
+          onDone={() => closeDialog(true)}
+        />
+      )}
+      {dialog === "return" && selected && allocationOf(selected) && (
+        <ReturnStallDialog
+          allocation={allocationOf(selected)!}
+          onClose={() => closeDialog(false)}
+          onDone={() => closeDialog(true)}
+        />
+      )}
     </div>
   );
 }

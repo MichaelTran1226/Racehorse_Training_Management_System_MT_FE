@@ -1,4 +1,5 @@
-import type { ButtonHTMLAttributes, MouseEvent } from "react";
+import type { ButtonHTMLAttributes, MouseEvent, ReactNode } from "react";
+import { Link } from "react-router-dom";
 import { cx } from "@/shared/lib/cx";
 import { DisabledHint } from "./DisabledHint";
 import { Icon } from "./Icon";
@@ -17,7 +18,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   blockedReason?: string;
 }
 
-const ICON_SIZE: Record<Size, number> = { sm: 13, md: 15, lg: 16 };
+const ICON_SIZE: Record<Size, number> = { sm: 16, md: 18, lg: 18 };
 
 export function Button({
   tone = "primary",
@@ -65,5 +66,23 @@ export function Button({
     <DisabledHint reason={blockedReason} block={block}>
       {button}
     </DisabledHint>
+  );
+}
+
+interface LinkButtonProps {
+  to: string;
+  tone?: Tone;
+  size?: Size;
+  icon?: string;
+  children: ReactNode;
+}
+
+// Link điều hướng trông như nút (thay cho <Link><Button/></Link> — nút lồng trong link là HTML sai).
+export function LinkButton({ to, tone = "secondary", size = "md", icon, children }: LinkButtonProps) {
+  return (
+    <Link to={to} className={cx(styles.btn, styles[tone], styles[size], styles.link)}>
+      {icon && <Icon name={icon} size={ICON_SIZE[size]} />}
+      {children}
+    </Link>
   );
 }

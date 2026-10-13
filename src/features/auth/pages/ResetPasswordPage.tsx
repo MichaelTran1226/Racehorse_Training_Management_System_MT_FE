@@ -8,7 +8,7 @@ import { AuthLayout } from "@/shared/components/layout/AuthLayout";
 import { Alert } from "@/shared/components/ui/Alert";
 import { Button } from "@/shared/components/ui/Button";
 import { ApiError } from "@/shared/lib/api";
-import { formatDateTime } from "@/shared/lib/format";
+import { formatTime } from "@/shared/lib/format";
 import { messageFor } from "@/shared/lib/messages";
 import { passwordError } from "@/shared/lib/password";
 import { resetPassword } from "../api";
@@ -73,8 +73,8 @@ export default function ResetPasswordPage() {
       title={invite ? "Choose your password." : "Choose the new password."}
       description={
         invite
-          ? `Welcome${flow.fullName ? `, ${flow.fullName}` : ""}. The invitation for ${flow.email} was accepted; set a password before ${formatDateTime(flow.expiresAt).split(" · ")[1]} to activate the account.`
-          : `Resetting for ${flow.email}. The code was accepted; this step expires at ${formatDateTime(flow.expiresAt).split(" · ")[1]}.`
+          ? `Welcome${flow.fullName ? `, ${flow.fullName}` : ""}. The invitation for ${flow.email} was accepted; set a password before ${formatTime(flow.expiresAt)} to activate the account.`
+          : `Resetting for ${flow.email}. The code was accepted; this step expires at ${formatTime(flow.expiresAt)}.`
       }
     >
       <form onSubmit={onSubmit} noValidate style={{ display: "contents" }}>

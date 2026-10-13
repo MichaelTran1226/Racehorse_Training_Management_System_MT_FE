@@ -1,0 +1,355 @@
+import { useCallback, useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { Alert } from "@/shared/components/ui/Alert";
+import { Badge } from "@/shared/components/ui/Badge";
+import { Button } from "@/shared/components/ui/Button";
+import { Card } from "@/shared/components/ui/Card";
+import { Checkbox } from "@/shared/components/form/Checkbox";
+import { Field } from "@/shared/components/form/Field";
+import { Input } from "@/shared/components/form/Input";
+import { Select } from "@/shared/components/form/Select";
+import { Textarea } from "@/shared/components/form/Textarea";
+import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
+import { useToast } from "@/shared/components/ui/Toast";
+import { formatDateTime } from "@/shared/lib/format";
+import { messageFor } from "@/shared/lib/messages";
+import { trainingApi } from "../api";
+import {
+  ABNORMAL_SIGN_LABEL,
+  COMPLETION_LABEL,
+  EXERCISE_TYPE_LABEL,
+  INTENSITY_LABEL,
+  NO_TIME_TYPES,
+  SESSION_STATUS_LABEL,
+  SESSION_STATUS_TONE,
+  TRACK_CONDITION_LABEL,
+  TRACK_LABEL,
+} from "../types";
+import type { AbnormalSign, CompletionLevel, ExerciseSession, TrackCondition, TrackType } from "../types";
+
+/** "mm:ss.s" <-> giây. */
+function parseTime(text: string): number | null {
+  const m = /^(\d{1,2}):([0-5]\d(?:\.\d)?)$/.exec(text.trim());
+  if (!m) return null;
+  const seconds = Number(m[1]) * 60 + Number(m[2]);
+  return seconds >= 5 && seconds <= 3599.9 ? seconds : null;
+}
+function formatTime(seconds?: number | null): string {
+  if (seconds == null) return "";
+  const m = Math.floor(seconds / 60);
+  const s = (seconds - m * 60).toFixed(1).padStart(4, "0");
+  return `${String(m).padStart(2, "0")}:${s}`;
+}
+
+const EDIT_WINDOW_MS = 48 * 60 * 60 * 1000;
+
+/** SC-2.06 Kết quả buổi tập: HT ghi / sửa; CM, VET, OWNER, GROOM (buổi được giao, không thấy điểm) xem. */
+export default function SessionResultPage() {
+  const { id = "" } = useParams();
+  const navigate = useNavigate();
+  const toast = useToast();
+  const user = useCurrentUser();
+  const isTrainer = user.role === "HEAD_TRAINER";
+
+  const [session, setSession] = useState<ExerciseSession | null>(null);
+  const [loadedAt, setLoadedAt] = useState(0);
+  const [loadError, setLoadError] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const [distance, setDistance] = useState("");
+  const [time, setTime] = useState("");
+  const [surface, setSurface] = useState<TrackType>("TURF");
+  const [condition, setCondition] = useState<TrackCondition | "">("");
+  const [peakHr, setPeakHr] = useState("");
+  const [recoveryHr, setRecoveryHr] = useState("");
+  const [score, setScore] = useState("");
+  const [completion, setCompletion] = useState<CompletionLevel | "">("");
+  const [comment, setComment] = useState("");
+  const [signs, setSigns] = useState<AbnormalSign[]>([]);
+  const [signNotes, setSignNotes] = useState("");
+
+  const fill = useCallback((s: ExerciseSession) => {
+    const r = s.result;
+    setDistance(String(r?.actualDistanceMeters ?? s.targetDistanceMeters * s.repetitions));
+    setTime(formatTime(r?.actualDurationSeconds));
+    setSurface(r?.actualSurface ?? s.trackType);
+    setCondition(r?.trackCondition ?? "");
+    setPeakHr(r?.maxHeartRate?.toString() ?? "");
+    setRecoveryHr(r?.recoveryHeartRate?.toString() ?? "");
+    setScore(r?.performanceScore?.toString() ?? "");
+    setCompletion(r?.completionLevel ?? "");
+    setComment(r?.headTrainerFeedback ?? "");
+    setSigns(r?.abnormalSignTypes ?? []);
+    setSignNotes(r?.abnormalSignsDescription ?? "");
+    setDirty(false);
+  }, []);
+
+  useEffect(() => {
+    trainingApi
+      .getSession(id)
+      .then((s) => {
+        setSession(s);
+        setLoadedAt(Date.now());
+        fill(s);
+        // Chưa có kết quả và HT mở -> vào thẳng chế độ ghi.
+        setEditing(s.status !== "COMPLETED" && isTrainer);
+      })
+      .catch((err) => setLoadError(messageFor(err)));
+  }, [id, fill, isTrainer]);
+
+  if (loadError) return <Alert tone="danger" title="Could not load the workout">{loadError}</Alert>;
+  if (!session) return <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Loading workout...</div>;
+
+  const r = session.result;
+  const needsTime = !NO_TIME_TYPES.includes(session.sessionType);
+  const seconds = parseTime(time);
+  const avgSpeed = seconds && Number(distance) ? Math.round((Number(distance) / seconds) * 3.6 * 10) / 10 : null;
+  const firstSaved = r?.recordedAt ? new Date(r.recordedAt).getTime() : null;
+  const canEditResult = isTrainer && session.status === "COMPLETED" && firstSaved != null && loadedAt - firstSaved <= EDIT_WINDOW_MS;
+
+  const problems: string[] = [];
+  const d = Number(distance);
+  if (!Number.isInteger(d) || d < 50 || d > 10000) problems.push("Actual distance must be 50 to 10 000 m.");
+  if (needsTime && !seconds) problems.push("Running time is required (format mm:ss.s).");
+  if (!needsTime && time.trim() && !seconds) problems.push("Running time is not valid (format mm:ss.s).");
+  if (peakHr && recoveryHr && Number(recoveryHr) > Number(peakHr)) problems.push("Heart rate after 10 minutes cannot exceed the peak heart rate.");
+  if (!score) problems.push("Please give a performance score.");
+  if (!completion) problems.push("Please choose the completion level.");
+  if (comment.trim().length < 10 || comment.trim().length > 2000) problems.push("Comment must be 10 to 2000 characters.");
+  if (signs.length > 0 && (signNotes.trim().length < 10 || signNotes.trim().length > 500)) problems.push("Describe the abnormal signs (10-500 characters).");
+
+  const set =
+    <T,>(setter: (v: T) => void) =>
+    (v: T) => {
+      setter(v);
+      setDirty(true);
+    };
+
+  const save = async () => {
+    if (problems.length > 0) {
+      setError(problems[0]);
+      return;
+    }
+    setSubmitting(true);
+    setError("");
+    try {
+      await trainingApi.saveSessionResult(session.id, {
+        actualDistanceMeters: d,
+        actualTimeSeconds: seconds ?? undefined,
+        actualSurface: surface,
+        trackCondition: condition || undefined,
+        heartRatePeak: peakHr ? Number(peakHr) : undefined,
+        heartRateRecovery: recoveryHr ? Number(recoveryHr) : undefined,
+        performanceScore: Number(score),
+        completionLevel: completion as CompletionLevel,
+        trainerNotes: comment.trim(),
+        abnormalSignTypes: signs,
+        abnormalNotes: signs.length > 0 ? signNotes.trim() : undefined,
+      });
+      setDirty(false);
+      toast.show(signs.length > 0 ? "Result saved. The Veterinarian has been alerted." : "Workout result saved.", signs.length > 0 ? "warn" : "ok");
+      navigate(-1);
+    } catch (err) {
+      setError(messageFor(err));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const cancel = () => {
+    if (dirty && !window.confirm("You have unsaved changes. Leaving will lose them.")) return;
+    if (session.status === "COMPLETED") {
+      fill(session);
+      setEditing(false);
+    } else {
+      navigate(-1);
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+        <h1 style={{ margin: 0, fontSize: "var(--fs-kpi)" }}>Workout result</h1>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          {user.role !== "GROOM" && (
+            <Link to={`/horses/${session.horseId}/fitness`}><Button tone="secondary">Fitness chart</Button></Link>
+          )}
+          {user.role !== "GROOM" && user.role !== "HORSE_OWNER" && (
+            <Link to={`/training/plans/${session.planId}`}><Button tone="ghost">Open plan</Button></Link>
+          )}
+        </div>
+      </div>
+
+      <Card pad={20}>
+        <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>Workout</h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.5rem", fontSize: "var(--fs-body)" }}>
+          <div>Horse: <strong>{session.horseName}</strong></div>
+          <div>Date: <strong>{session.sessionDate} {session.startTime}</strong></div>
+          <div>Type: <strong>{EXERCISE_TYPE_LABEL[session.sessionType]}</strong> · {INTENSITY_LABEL[session.intensity]}</div>
+          <div>Planned: <strong>{session.targetDistanceMeters} m × {session.repetitions}</strong></div>
+          <div>Target speed: <strong>{session.targetSpeedKmh ? `${session.targetSpeedKmh} km/h` : "—"}</strong></div>
+          <div>Surface: <strong>{TRACK_LABEL[session.trackType]}</strong></div>
+          <div>Jockey: <strong>{session.jockeyName || "—"}</strong></div>
+          <div>Groom: <strong>{session.groomName || "—"}</strong></div>
+          <div>Status: <Badge tone={SESSION_STATUS_TONE[session.status]}>{SESSION_STATUS_LABEL[session.status]}</Badge></div>
+        </div>
+      </Card>
+
+      {!editing && !r && (
+        <Alert tone="info" title="No result yet">
+          {session.status === "BLOCKED" || session.status === "CANCELLED"
+            ? "This workout was blocked or cancelled, so it has no result."
+            : "The Head Trainer has not recorded a result yet."}
+        </Alert>
+      )}
+
+      {!editing && r && (
+        <Card pad={20}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+            <h2 style={{ margin: 0, fontSize: "var(--fs-body-lg)" }}>Result</h2>
+            {isTrainer && (
+              <Button
+                tone="secondary"
+                size="sm"
+                disabled={!canEditResult}
+                title={canEditResult ? "" : "Results can only be edited within 48 hours of recording."}
+                onClick={() => setEditing(true)}
+              >
+                Edit result
+              </Button>
+            )}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.5rem", fontSize: "var(--fs-body)" }}>
+            <div>Actual distance: <strong>{r.actualDistanceMeters ?? "—"} m</strong></div>
+            <div>Time: <strong>{formatTime(r.actualDurationSeconds) || "—"}</strong></div>
+            <div>Average speed: <strong>{r.avgSpeedKmh != null ? `${r.avgSpeedKmh} km/h` : "—"}</strong></div>
+            <div>Surface: <strong>{r.actualSurface ? TRACK_LABEL[r.actualSurface] : "—"}</strong>{r.trackCondition ? ` (${TRACK_CONDITION_LABEL[r.trackCondition]})` : ""}</div>
+            <div>Peak HR: <strong>{r.maxHeartRate ?? "—"} bpm</strong></div>
+            <div>HR after 10 min: <strong>{r.recoveryHeartRate ?? "—"} bpm</strong></div>
+            {user.role !== "GROOM" && <div>Performance: <strong>{r.performanceScore ?? "—"}/10</strong></div>}
+            <div>Completion: <strong>{r.completionLevel ? COMPLETION_LABEL[r.completionLevel] : "—"}</strong></div>
+          </div>
+          <div style={{ marginTop: "0.75rem" }}><strong>Comment:</strong> {r.headTrainerFeedback || "—"}</div>
+          {r.hasAbnormalSigns && (
+            <Alert tone="danger" title="Abnormal signs">
+              {r.abnormalSignTypes.map((x) => ABNORMAL_SIGN_LABEL[x]).join(", ")}: {r.abnormalSignsDescription}
+            </Alert>
+          )}
+          <div style={{ marginTop: "0.75rem", fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>
+            Recorded by {r.recordedBy ?? "—"}{r.recordedAt ? ` at ${formatDateTime(r.recordedAt)}` : ""}
+            {r.updatedBy ? ` · last edited by ${r.updatedBy}${r.updatedAt ? ` at ${formatDateTime(r.updatedAt)}` : ""}` : ""}
+          </div>
+        </Card>
+      )}
+
+      {editing && (
+        <>
+          {error && <Alert tone="danger" title="Cannot save">{error}</Alert>}
+          <Card pad={20}>
+            <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>Actual figures</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
+              <Field label="Actual distance (m)" required hint="50 – 10 000, all reps">
+                <Input type="number" inputMode="numeric" value={distance} onChange={(e) => set(setDistance)(e.target.value)} />
+              </Field>
+              <Field label="Running time (mm:ss.s)" required={needsTime}>
+                <Input value={time} placeholder="01:12.5" onChange={(e) => set(setTime)(e.target.value)} />
+              </Field>
+              <Field label="Average speed (km/h)" hint="Calculated">
+                <Input value={avgSpeed ?? ""} readOnly />
+              </Field>
+              <Field label="Actual surface" required>
+                <Select
+                  value={surface}
+                  onChange={(e) => set(setSurface)(e.target.value as TrackType)}
+                  options={(Object.keys(TRACK_LABEL) as TrackType[]).map((t) => ({ value: t, label: TRACK_LABEL[t] }))}
+                />
+              </Field>
+              <Field label="Track condition">
+                <Select
+                  value={condition}
+                  onChange={(e) => set(setCondition)(e.target.value as TrackCondition)}
+                  options={[
+                    { value: "", label: "—" },
+                    ...(Object.keys(TRACK_CONDITION_LABEL) as TrackCondition[]).map((c) => ({ value: c, label: TRACK_CONDITION_LABEL[c] })),
+                  ]}
+                />
+              </Field>
+              <Field label="Peak heart rate (bpm)" hint="20 – 260">
+                <Input type="number" inputMode="numeric" value={peakHr} onChange={(e) => set(setPeakHr)(e.target.value)} />
+              </Field>
+              <Field label="Heart rate after 10 min rest (bpm)" hint="20 – 200">
+                <Input type="number" inputMode="numeric" value={recoveryHr} onChange={(e) => set(setRecoveryHr)(e.target.value)} />
+              </Field>
+            </div>
+            {avgSpeed != null && avgSpeed > 75 && (
+              <div style={{ marginTop: "0.75rem" }}>
+                <Alert tone="warn" title="Unusual speed">The calculated speed looks wrong. Please check the distance and time.</Alert>
+              </div>
+            )}
+          </Card>
+
+          <Card pad={20}>
+            <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>Evaluation</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
+              <Field label="Performance score" required>
+                <Select
+                  value={score}
+                  onChange={(e) => set(setScore)(e.target.value)}
+                  options={[{ value: "", label: "—", disabled: true }, ...Array.from({ length: 10 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))]}
+                />
+              </Field>
+              <Field label="Completion" required>
+                <Select
+                  value={completion}
+                  onChange={(e) => set(setCompletion)(e.target.value as CompletionLevel)}
+                  options={[
+                    { value: "", label: "—", disabled: true },
+                    ...(Object.keys(COMPLETION_LABEL) as CompletionLevel[]).map((c) => ({ value: c, label: COMPLETION_LABEL[c] })),
+                  ]}
+                />
+              </Field>
+            </div>
+            <div style={{ marginTop: "1rem" }}>
+              <Field label={`Professional comment (${comment.trim().length}/2000)`} required hint="10 – 2000 characters">
+                <Textarea rows={3} maxLength={2000} value={comment} onChange={(e) => set(setComment)(e.target.value)} />
+              </Field>
+            </div>
+            <div style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <strong style={{ fontSize: "var(--fs-body)" }}>Abnormal signs</strong>
+              <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+                {(Object.keys(ABNORMAL_SIGN_LABEL) as AbnormalSign[]).map((sign) => (
+                  <Checkbox
+                    key={sign}
+                    label={ABNORMAL_SIGN_LABEL[sign]}
+                    checked={signs.includes(sign)}
+                    onChange={(on) => set(setSigns)(on ? [...signs, sign] : signs.filter((x) => x !== sign))}
+                  />
+                ))}
+              </div>
+              {signs.length > 0 && (
+                <>
+                  <Alert tone="warn" title="The Veterinarian and Head Trainer are alerted when you save">
+                    Placing a Training Lock is the Veterinarian's decision.
+                  </Alert>
+                  <Field label="Describe the signs" required hint="10 – 500 characters">
+                    <Textarea rows={2} maxLength={500} value={signNotes} onChange={(e) => set(setSignNotes)(e.target.value)} />
+                  </Field>
+                </>
+              )}
+            </div>
+          </Card>
+
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
+            <Button tone="ghost" onClick={cancel}>Cancel</Button>
+            <Button tone="primary" onClick={() => void save()} disabled={submitting}>
+              {submitting ? "Saving..." : "Save result"}
+            </Button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

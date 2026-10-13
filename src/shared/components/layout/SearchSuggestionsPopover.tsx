@@ -177,9 +177,9 @@ export function SearchSuggestionsPopover({
         right: 0,
         width: 420,
         maxWidth: "94vw",
-        background: "#ffffff",
-        border: "1px solid #ede8e3",
-        borderRadius: 14,
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--r-lg)",
         boxShadow: "0 16px 40px rgba(0, 0, 0, 0.14)",
         zIndex: 100,
         overflow: "hidden",
@@ -190,24 +190,24 @@ export function SearchSuggestionsPopover({
       <div
         style={{
           padding: "0.75rem 1rem",
-          background: "#faf7f4",
-          borderBottom: "1px solid #f0eae4",
+          background: "var(--surface-2)",
+          borderBottom: "1px solid var(--border-soft)",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          fontSize: "0.76rem",
-          color: "#786e68",
+          fontSize: "var(--fs-caption)",
+          color: "var(--muted)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontWeight: 700, color: "#1a1615", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+          <span style={{ fontWeight: 700, color: "var(--text)", }}>
             {query.trim() ? "Search Results" : "Global Search Suggestions"}
           </span>
-          <span style={{ color: "#731b24", fontWeight: 700, background: "#fbf2eb", padding: "1px 7px", borderRadius: 10 }}>
+          <span style={{ color: "var(--brand)", fontWeight: 700, background: "var(--surface-2)", padding: "1px 7px", borderRadius: "var(--r-lg)" }}>
             {totalResults}
           </span>
         </div>
-        <span style={{ fontSize: "0.72rem", color: "#6b7280", fontWeight: 500 }}>
+        <span style={{ fontSize: "var(--fs-caption)", color: "var(--muted)", fontWeight: 500 }}>
           {scopeLabel}
         </span>
       </div>
@@ -218,14 +218,14 @@ export function SearchSuggestionsPopover({
           display: "flex",
           gap: 6,
           padding: "6px 12px",
-          background: "#ffffff",
-          borderBottom: "1px solid #f2ede8",
+          background: "var(--surface)",
+          borderBottom: "1px solid var(--border-soft)",
         }}
       >
         {[
           { id: "ALL", label: `All (${totalResults})` },
-          { id: "HORSES", label: `🐴 Horses (${horses.length})` },
-          { id: "PROTOCOLS", label: `🩺 Protocols & Care (${filteredProtocols.length})` },
+          { id: "HORSES", label: `Horses (${horses.length})` },
+          { id: "PROTOCOLS", label: `Protocols & care (${filteredProtocols.length})` },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -233,12 +233,12 @@ export function SearchSuggestionsPopover({
             onClick={() => setActiveTab(tab.id as typeof activeTab)}
             style={{
               padding: "4px 10px",
-              borderRadius: 20,
-              fontSize: "0.73rem",
+              borderRadius: "var(--r-lg)",
+              fontSize: "var(--fs-caption)",
               fontWeight: activeTab === tab.id ? 700 : 500,
-              border: activeTab === tab.id ? "1px solid #731b24" : "1px solid #e8e2dc",
-              background: activeTab === tab.id ? "#fdf2f4" : "#ffffff",
-              color: activeTab === tab.id ? "#731b24" : "#5a504a",
+              border: activeTab === tab.id ? "1px solid var(--brand)" : "1px solid var(--border-soft)",
+              background: activeTab === tab.id ? "var(--danger-bg)" : "var(--surface)",
+              color: activeTab === tab.id ? "var(--brand)" : "var(--text-2)",
               cursor: "pointer",
               transition: "all 0.12s ease",
             }}
@@ -251,22 +251,22 @@ export function SearchSuggestionsPopover({
       {/* Content List */}
       <div style={{ maxHeight: 340, overflowY: "auto", padding: "0.25rem 0" }}>
         {totalResults === 0 ? (
-          <div style={{ padding: "2.25rem 1.5rem", textAlign: "center", color: "#8c827a", fontSize: "0.84rem" }}>
+          <div style={{ padding: "2.25rem 1.5rem", textAlign: "center", color: "var(--muted)", fontSize: "var(--fs-body)" }}>
             {!query.trim() && horses.length === 0 ? (
               <>
-                <div style={{ fontWeight: 700, color: "#1a1615", fontSize: "0.95rem" }}>
+                <div style={{ fontWeight: 700, color: "var(--text)", fontSize: "var(--fs-body-lg)" }}>
                   No horses or clinical treatments in database
                 </div>
-                <div style={{ fontSize: "0.78rem", marginTop: 6, color: "#a89f97", maxWidth: 320, margin: "6px auto 0", lineHeight: 1.45 }}>
+                <div style={{ fontSize: "var(--fs-caption)", marginTop: 6, color: "var(--border-field)", maxWidth: 320, margin: "6px auto 0", lineHeight: 1.45 }}>
                   All search suggestions are strictly derived from registered horses and their active treatments. Add horses in Herd Health to begin tracking medical care.
                 </div>
               </>
             ) : (
               <>
-                <div style={{ fontWeight: 700, color: "#1a1615", fontSize: "0.95rem" }}>
+                <div style={{ fontWeight: 700, color: "var(--text)", fontSize: "var(--fs-body-lg)" }}>
                   No matching horses or clinical records for &quot;<strong>{query}</strong>&quot;
                 </div>
-                <div style={{ fontSize: "0.78rem", marginTop: 6, color: "#a89f97" }}>
+                <div style={{ fontSize: "var(--fs-caption)", marginTop: 6, color: "var(--border-field)" }}>
                   Try searching by letter, horse name, code (EQ-), stall, or clinical status
                 </div>
               </>
@@ -280,15 +280,13 @@ export function SearchSuggestionsPopover({
                 <div
                   style={{
                     padding: "6px 12px 4px",
-                    fontSize: "0.68rem",
+                    fontSize: "var(--fs-caption)",
                     fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.04em",
-                    color: "#8c827a",
-                    background: "#faf7f4",
+                    color: "var(--muted)",
+                    background: "var(--surface-2)",
                   }}
                 >
-                  🐴 Registered Horses ({horses.length})
+                  Horses ({horses.length})
                 </div>
                 {horses.map((horse) => (
                   <div
@@ -303,10 +301,10 @@ export function SearchSuggestionsPopover({
                       justifyContent: "space-between",
                       padding: "0.6rem 1rem",
                       cursor: "pointer",
-                      borderBottom: "1px solid #f6f2ef",
+                      borderBottom: "1px solid var(--surface-2)",
                       transition: "background 0.12s ease",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#faf5f1")}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-2)")}
                     onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", minWidth: 0 }}>
@@ -315,13 +313,13 @@ export function SearchSuggestionsPopover({
                           width: 32,
                           height: 32,
                           borderRadius: "50%",
-                          background: "#fbf2eb",
-                          border: "1px solid #eed9cb",
+                          background: "var(--surface-2)",
+                          border: "1px solid var(--border)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           flexShrink: 0,
-                          color: "#731b24",
+                          color: "var(--brand)",
                         }}
                       >
                         <Icon name="tag" size={14} />
@@ -331,8 +329,8 @@ export function SearchSuggestionsPopover({
                           <span
                             style={{
                               fontWeight: 700,
-                              fontSize: "0.84rem",
-                              color: "#1a1615",
+                              fontSize: "var(--fs-body)",
+                              color: "var(--text)",
                               whiteSpace: "nowrap",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
@@ -340,11 +338,11 @@ export function SearchSuggestionsPopover({
                           >
                             {horse.name}
                           </span>
-                          <span style={{ fontSize: "0.74rem", color: "#8c827a", flexShrink: 0 }}>
+                          <span style={{ fontSize: "var(--fs-caption)", color: "var(--muted)", flexShrink: 0 }}>
                             ({horse.code})
                           </span>
                         </div>
-                        <div style={{ fontSize: "0.71rem", color: "#786e68", marginTop: 1 }}>
+                        <div style={{ fontSize: "var(--fs-caption)", color: "var(--muted)", marginTop: 1 }}>
                           {horse.stall ? `Stall: ${horse.stall}` : "Stall unassigned"}
                           {horse.restingHeartRate ? ` • HR: ${horse.restingHeartRate} bpm` : ""}
                         </div>
@@ -375,16 +373,14 @@ export function SearchSuggestionsPopover({
                 <div
                   style={{
                     padding: "6px 12px 4px",
-                    fontSize: "0.68rem",
+                    fontSize: "var(--fs-caption)",
                     fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.04em",
-                    color: "#8c827a",
-                    background: "#faf7f4",
+                    color: "var(--muted)",
+                    background: "var(--surface-2)",
                     marginTop: showHorses && horses.length > 0 ? 4 : 0,
                   }}
                 >
-                  🩺 Clinical Protocols & Care Schedules ({filteredProtocols.length})
+                  Protocols & care schedules ({filteredProtocols.length})
                 </div>
                 {filteredProtocols.map((proto) => (
                   <div
@@ -399,10 +395,10 @@ export function SearchSuggestionsPopover({
                       justifyContent: "space-between",
                       padding: "0.6rem 1rem",
                       cursor: "pointer",
-                      borderBottom: "1px solid #f6f2ef",
+                      borderBottom: "1px solid var(--surface-2)",
                       transition: "background 0.12s ease",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#faf5f1")}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-2)")}
                     onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", minWidth: 0 }}>
@@ -410,14 +406,14 @@ export function SearchSuggestionsPopover({
                         style={{
                           width: 32,
                           height: 32,
-                          borderRadius: 8,
-                          background: "#f0fdf4",
-                          border: "1px solid #bbf7d0",
+                          borderRadius: "var(--r)",
+                          background: "var(--ok-bg)",
+                          border: "1px solid var(--ok-bg)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           flexShrink: 0,
-                          color: "#166534",
+                          color: "var(--ok)",
                         }}
                       >
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -429,8 +425,8 @@ export function SearchSuggestionsPopover({
                           <span
                             style={{
                               fontWeight: 700,
-                              fontSize: "0.83rem",
-                              color: "#1a1615",
+                              fontSize: "var(--fs-body)",
+                              color: "var(--text)",
                               whiteSpace: "nowrap",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
@@ -441,8 +437,8 @@ export function SearchSuggestionsPopover({
                         </div>
                         <div
                           style={{
-                            fontSize: "0.71rem",
-                            color: "#786e68",
+                            fontSize: "var(--fs-caption)",
+                            color: "var(--muted)",
                             marginTop: 1,
                             whiteSpace: "nowrap",
                             overflow: "hidden",
@@ -469,15 +465,15 @@ export function SearchSuggestionsPopover({
       <div
         style={{
           padding: "0.55rem 1rem",
-          background: "#faf7f4",
-          borderTop: "1px solid #f0eae4",
+          background: "var(--surface-2)",
+          borderTop: "1px solid var(--border-soft)",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          fontSize: "0.73rem",
+          fontSize: "var(--fs-caption)",
         }}
       >
-        <span style={{ color: "#8c827a" }}>Click to open • Press ESC to dismiss</span>
+        <span style={{ color: "var(--muted)" }}>Click to open • Press ESC to dismiss</span>
         <button
           type="button"
           onClick={() => {
@@ -487,10 +483,10 @@ export function SearchSuggestionsPopover({
           style={{
             background: "none",
             border: "none",
-            color: "#731b24",
+            color: "var(--brand)",
             fontWeight: 700,
             cursor: "pointer",
-            fontSize: "0.74rem",
+            fontSize: "var(--fs-caption)",
             padding: 0,
             textDecoration: "underline",
           }}

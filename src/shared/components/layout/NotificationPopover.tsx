@@ -66,15 +66,15 @@ export function NotificationPopover({
   const getCategoryTheme = (category: AppNotification["category"]) => {
     switch (category) {
       case "LOCK":
-        return { icon: "lock", bg: "#ef4444", text: "#ffffff" };
+        return { icon: "lock", bg: "var(--danger)", text: "var(--surface)" };
       case "MEDICAL":
-        return { icon: "stethoscope", bg: "#0284c7", text: "#ffffff" };
+        return { icon: "stethoscope", bg: "var(--info)", text: "var(--surface)" };
       case "TRAINING":
-        return { icon: "activity", bg: "#f59e0b", text: "#ffffff" };
+        return { icon: "activity", bg: "var(--warn)", text: "var(--surface)" };
       case "ACCOUNT":
-        return { icon: "users", bg: "#8b5cf6", text: "#ffffff" };
+        return { icon: "users", bg: "var(--violet)", text: "var(--surface)" };
       default:
-        return { icon: "bell", bg: "#64748b", text: "#ffffff" };
+        return { icon: "bell", bg: "var(--muted)", text: "var(--surface)" };
     }
   };
 
@@ -93,9 +93,9 @@ export function NotificationPopover({
           alignItems: "center",
           gap: 12,
           padding: "10px 14px",
-          borderRadius: 8,
+          borderRadius: "var(--r)",
           cursor: "pointer",
-          background: n.read ? "transparent" : "var(--nav-item-active-bg, rgba(59, 130, 246, 0.08))",
+          background: n.read ? "transparent" : "var(--brand-50)",
           transition: "background 0.15s ease",
           position: "relative",
           margin: "2px 8px",
@@ -104,7 +104,7 @@ export function NotificationPopover({
         onMouseLeave={(e) =>
           (e.currentTarget.style.background = n.read
             ? "transparent"
-            : "var(--nav-item-active-bg, rgba(59, 130, 246, 0.08))")
+            : "var(--brand-50)")
         }
       >
         {/* Category Avatar Badge */}
@@ -129,7 +129,7 @@ export function NotificationPopover({
         <div style={{ flex: 1, minWidth: 0, paddingRight: 6 }}>
           <div
             style={{
-              fontSize: "13px",
+              fontSize: "var(--fs-body)",
               lineHeight: "1.35",
               color: n.read ? "var(--text-muted)" : "var(--text)",
             }}
@@ -141,8 +141,8 @@ export function NotificationPopover({
           </div>
           <div
             style={{
-              fontSize: "11px",
-              color: n.read ? "var(--text-muted)" : "#3b82f6",
+              fontSize: "var(--fs-caption)",
+              color: n.read ? "var(--text-muted)" : "var(--info)",
               fontWeight: n.read ? 400 : 600,
               marginTop: 3,
             }}
@@ -158,7 +158,7 @@ export function NotificationPopover({
               width: 10,
               height: 10,
               borderRadius: "50%",
-              background: "#2563eb",
+              background: "var(--info)",
               flexShrink: 0,
             }}
             title="Unread"
@@ -178,7 +178,7 @@ export function NotificationPopover({
         width: 380,
         maxWidth: "94vw",
         background: "var(--surface)",
-        borderRadius: 12,
+        borderRadius: "var(--r-lg)",
         border: "1px solid var(--border)",
         boxShadow: "0 10px 30px rgba(0,0,0,0.22)",
         zIndex: 1000,
@@ -197,7 +197,7 @@ export function NotificationPopover({
           position: "relative",
         }}
       >
-        <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 700, letterSpacing: "-0.01em" }}>Notifications</h3>
+        <h3 style={{ margin: 0, fontSize: "var(--fs-section)", fontWeight: 700, }}>Notifications</h3>
 
         {/* ... More Action Button */}
         <div style={{ position: "relative" }}>
@@ -216,7 +216,7 @@ export function NotificationPopover({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: "18px",
+              fontSize: "var(--fs-section)",
               fontWeight: 700,
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-sunken)")}
@@ -236,7 +236,7 @@ export function NotificationPopover({
                 right: 0,
                 width: 250,
                 background: "var(--surface)",
-                borderRadius: 8,
+                borderRadius: "var(--r)",
                 border: "1px solid var(--border)",
                 boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
                 zIndex: 1010,
@@ -257,11 +257,11 @@ export function NotificationPopover({
                   alignItems: "center",
                   gap: 10,
                   padding: "8px 12px",
-                  borderRadius: 6,
+                  borderRadius: "var(--r-sm)",
                   border: "none",
                   background: "transparent",
                   color: "var(--text)",
-                  fontSize: "13px",
+                  fontSize: "var(--fs-body)",
                   fontWeight: 500,
                   cursor: "pointer",
                   textAlign: "left",
@@ -286,11 +286,11 @@ export function NotificationPopover({
                   alignItems: "center",
                   gap: 10,
                   padding: "8px 12px",
-                  borderRadius: 6,
+                  borderRadius: "var(--r-sm)",
                   border: "none",
                   background: "transparent",
                   color: "var(--text)",
-                  fontSize: "13px",
+                  fontSize: "var(--fs-body)",
                   fontWeight: 500,
                   cursor: "pointer",
                   textAlign: "left",
@@ -315,11 +315,11 @@ export function NotificationPopover({
                   alignItems: "center",
                   gap: 10,
                   padding: "8px 12px",
-                  borderRadius: 6,
+                  borderRadius: "var(--r-sm)",
                   border: "none",
                   background: "transparent",
                   color: "var(--text)",
-                  fontSize: "13px",
+                  fontSize: "var(--fs-body)",
                   fontWeight: 500,
                   cursor: "pointer",
                   textAlign: "left",
@@ -343,13 +343,13 @@ export function NotificationPopover({
           onClick={() => setActiveTab("all")}
           style={{
             padding: "6px 14px",
-            borderRadius: 20,
+            borderRadius: "var(--r-lg)",
             border: "none",
-            fontSize: "13px",
+            fontSize: "var(--fs-body)",
             fontWeight: 700,
             cursor: "pointer",
-            background: activeTab === "all" ? "var(--nav-item-active-bg, #e0f2fe)" : "var(--surface-sunken)",
-            color: activeTab === "all" ? "var(--nav-item-active-text, #0369a1)" : "var(--text-muted)",
+            background: activeTab === "all" ? "var(--nav-item-active-bg)" : "var(--surface-sunken)",
+            color: activeTab === "all" ? "var(--nav-item-active-text)" : "var(--text-muted)",
           }}
         >
           All
@@ -360,13 +360,13 @@ export function NotificationPopover({
           onClick={() => setActiveTab("unread")}
           style={{
             padding: "6px 14px",
-            borderRadius: 20,
+            borderRadius: "var(--r-lg)",
             border: "none",
-            fontSize: "13px",
+            fontSize: "var(--fs-body)",
             fontWeight: 700,
             cursor: "pointer",
-            background: activeTab === "unread" ? "var(--nav-item-active-bg, #e0f2fe)" : "var(--surface-sunken)",
-            color: activeTab === "unread" ? "var(--nav-item-active-text, #0369a1)" : "var(--text-muted)",
+            background: activeTab === "unread" ? "var(--nav-item-active-bg)" : "var(--surface-sunken)",
+            color: activeTab === "unread" ? "var(--nav-item-active-text)" : "var(--text-muted)",
             display: "flex",
             alignItems: "center",
             gap: 6,
@@ -376,9 +376,9 @@ export function NotificationPopover({
           {unreadCount > 0 && (
             <span
               style={{
-                background: "#2563eb",
-                color: "#ffffff",
-                fontSize: "11px",
+                background: "var(--info)",
+                color: "var(--text-on-brand)",
+                fontSize: "var(--fs-caption)",
                 borderRadius: 999,
                 padding: "1px 6px",
               }}
@@ -394,8 +394,8 @@ export function NotificationPopover({
         {filteredNotifications.length === 0 ? (
           <div style={{ padding: "40px 16px", textAlign: "center", color: "var(--text-muted)" }}>
             <Icon name="bell" size={32} style={{ margin: "0 auto 10px", opacity: 0.35 }} />
-            <div style={{ fontSize: "14px", fontWeight: 600 }}>No notifications yet</div>
-            <div style={{ fontSize: "12px", marginTop: 4 }}>
+            <div style={{ fontSize: "var(--fs-body)", fontWeight: 600 }}>No notifications yet</div>
+            <div style={{ fontSize: "var(--fs-caption)", marginTop: 4 }}>
               {activeTab === "unread" ? "You're all caught up." : "No new notifications."}
             </div>
           </div>
@@ -403,7 +403,7 @@ export function NotificationPopover({
           <>
             {todayList.length > 0 && (
               <div>
-                <div style={{ padding: "8px 16px 4px", fontSize: "13px", fontWeight: 700, color: "var(--text)" }}>
+                <div style={{ padding: "8px 16px 4px", fontSize: "var(--fs-body)", fontWeight: 700, color: "var(--text)" }}>
                   Today
                 </div>
                 {todayList.map(renderItem)}
@@ -420,7 +420,7 @@ export function NotificationPopover({
                     padding: "8px 16px 4px",
                   }}
                 >
-                  <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--text)" }}>Earlier</span>
+                  <span style={{ fontSize: "var(--fs-body)", fontWeight: 700, color: "var(--text)" }}>Earlier</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -430,8 +430,8 @@ export function NotificationPopover({
                     style={{
                       border: "none",
                       background: "transparent",
-                      color: "#2563eb",
-                      fontSize: "12px",
+                      color: "var(--info)",
+                      fontSize: "var(--fs-caption)",
                       fontWeight: 600,
                       cursor: "pointer",
                       padding: 0,
@@ -465,11 +465,11 @@ export function NotificationPopover({
           style={{
             width: "100%",
             padding: "8px 0",
-            borderRadius: 6,
+            borderRadius: "var(--r-sm)",
             border: "none",
             background: "transparent",
             color: "var(--text)",
-            fontSize: "13px",
+            fontSize: "var(--fs-body)",
             fontWeight: 600,
             cursor: "pointer",
           }}

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthLayout } from "@/shared/components/layout/AuthLayout";
-import { formatDateTime } from "@/shared/lib/format";
+import { formatDateTime, formatTime } from "@/shared/lib/format";
 import { useQueryParams } from "@/shared/lib/hooks";
 import { verifyResetOtp } from "../api";
 import { resetFlow } from "../flow";
@@ -26,7 +26,7 @@ export default function ResetOtpPage() {
         purpose="reset"
         sentTitle="Code sent"
         // Câu trung tính: không khẳng định email có tài khoản hay không.
-        sentBody={(t) => `If the address is registered, the code was sent at ${formatDateTime(t.sentAt)}. It can be used once and expires at ${formatDateTime(t.expiresAt).split(" · ")[1]}.`}
+        sentBody={(t) => `If the address is registered, the code was sent at ${formatDateTime(t.sentAt)}. It can be used once and expires at ${formatTime(t.expiresAt)}.`}
         submitLabel="Verify code"
         onVerify={async (code) => {
           const result = await verifyResetOtp(email, code);

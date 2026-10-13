@@ -13,7 +13,7 @@ export interface MockMedicalStore {
   observations: ObservationNote[];
 }
 
-const MOCK_STORAGE_KEY = "equiflow.mock.medical.v4";
+const MOCK_STORAGE_KEY = "equiflow.mock.medical.v5";
 
 if (typeof window !== "undefined") {
   try {
@@ -105,11 +105,11 @@ const INITIAL_RECORDS: MedicalRecord[] = [
         respiratoryRate: 12,
         progressNotes: "Swelling reduced by ~40%, localized temperature cooler, horse bearing weight more comfortably.",
         adjustments: "Continue cold therapy for 3 more days, initiate 5-minute hand-walking from Oct 02.",
-        vetName: "Dr. Sarah Connor",
+        vetName: "Dr. Lê Minh Châu",
       },
     ],
     vetId: "vet",
-    vetName: "Dr. Sarah Connor",
+    vetName: "Dr. Lê Minh Châu",
     createdAt: "2026-09-28T08:30:00Z",
   },
   {
@@ -136,7 +136,7 @@ const INITIAL_RECORDS: MedicalRecord[] = [
     treatmentResult: "Full Recovery",
     closedAt: "2026-08-15T10:30:00Z",
     vetId: "vet",
-    vetName: "Dr. Sarah Connor",
+    vetName: "Dr. Lê Minh Châu",
     createdAt: "2026-08-15T09:00:00Z",
   },
 ];
@@ -148,7 +148,7 @@ const INITIAL_OBSERVATIONS: ObservationNote[] = [
     shift: "Morning Shift (06:00 - 14:00)",
     observedAt: "2026-09-30T07:15:00Z",
     groomId: "groom",
-    groomName: "John Smith",
+    groomName: "Lê Văn Phúc",
     urgency: "ATTENTION",
     content: "Horse consumed 90% of grain ration; favored left fore slightly while stall was cleaned, calm temperament.",
   },
@@ -158,7 +158,7 @@ const INITIAL_OBSERVATIONS: ObservationNote[] = [
     shift: "Afternoon Shift (14:00 - 22:00)",
     observedAt: "2026-09-29T16:30:00Z",
     groomId: "groom",
-    groomName: "John Smith",
+    groomName: "Lê Văn Phúc",
     urgency: "URGENT",
     content: "Left forelimb slightly warm after pacing stall; applied extra cold therapy per veterinarian instructions.",
   },
@@ -168,7 +168,7 @@ const INITIAL_OBSERVATIONS: ObservationNote[] = [
     shift: "Morning Shift (06:00 - 14:00)",
     observedAt: "2026-09-30T06:30:00Z",
     groomId: "groom",
-    groomName: "John Smith",
+    groomName: "Lê Văn Phúc",
     urgency: "NORMAL",
     content: "Appetite strong, normal manure consistency, alert and bright, ready for morning training session.",
   },

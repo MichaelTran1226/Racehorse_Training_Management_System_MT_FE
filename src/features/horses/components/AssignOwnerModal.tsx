@@ -6,6 +6,8 @@ import { Select } from "@/shared/components/form/Select";
 import { Textarea } from "@/shared/components/form/Textarea";
 import { useToast } from "@/shared/components/ui/Toast";
 import { api } from "@/shared/lib/api";
+import { messageFor } from "@/shared/lib/messages";
+import type { PublicAccount } from "@/shared/types/auth";
 import { transferHorseOwner } from "../api";
 import type { Horse } from "../types";
 
@@ -29,42 +31,25 @@ export function AssignOwnerModal({ horse, isOpen, onClose, onSuccess }: AssignOw
   const [reason, setReason] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [loadError, setLoadError] = useState<string>("");
 
   useEffect(() => {
     if (!isOpen) return;
     async function loadOwners() {
       setLoading(true);
+      setLoadError("");
       try {
-        const res = await api<{ items: any[] } | any[]>("GET", "/users?role=HORSE_OWNER&status=ACTIVE");
-        const list = Array.isArray(res) ? res : res.items || [];
-        const ownerList: OwnerOption[] = list
-          .filter((u: any) => u.id !== horse.ownerId && (u.role === "HORSE_OWNER" || !u.role))
-          .map((u: any) => ({
-            id: u.id,
-            fullName: u.fullName || u.name || u.email,
-            email: u.email || "",
-          }));
-
-        if (ownerList.length === 0) {
-          ownerList.push(
-            { id: "usr-owner-001", fullName: "Robert Sterling (Horse Owner)", email: "owner@gmail.com" },
-            { id: "usr-owner-002", fullName: "Alexander Hamilton (Equine Syndicate)", email: "hamilton@syndicate.com" },
-            { id: "usr-owner-003", fullName: "Victoria Cross (St. Leger Racing)", email: "victoria@crossracing.com" },
-          );
-        }
-        const filtered = ownerList.filter((o) => o.id !== horse.ownerId);
+        // Danh sách tài khoản (chỉ Club Manager gọi được — cũng là người duy nhất đổi chủ). Không bịa chủ khi lỗi/rỗng.
+        const { accounts } = await api<{ accounts: PublicAccount[] }>("GET", "/accounts");
+        const filtered: OwnerOption[] = accounts
+          .filter((a) => a.role === "HORSE_OWNER" && a.status === "ACTIVE" && a.id !== horse.ownerId)
+          .map((a) => ({ id: a.id, fullName: a.fullName, email: a.email }));
         setOwners(filtered);
-        if (filtered.length > 0) {
-          setSelectedOwnerId(filtered[0].id);
-        }
-      } catch {
-        const fallbacks: OwnerOption[] = [
-          { id: "usr-owner-001", fullName: "Robert Sterling (Horse Owner)", email: "owner@gmail.com" },
-          { id: "usr-owner-002", fullName: "Alexander Hamilton (Equine Syndicate)", email: "hamilton@syndicate.com" },
-          { id: "usr-owner-003", fullName: "Victoria Cross (St. Leger Racing)", email: "victoria@crossracing.com" },
-        ].filter((o) => o.id !== horse.ownerId);
-        setOwners(fallbacks);
-        if (fallbacks.length > 0) setSelectedOwnerId(fallbacks[0].id);
+        setSelectedOwnerId(filtered[0]?.id ?? "");
+      } catch (err) {
+        setOwners([]);
+        setSelectedOwnerId("");
+        setLoadError(messageFor(err));
       } finally {
         setLoading(false);
       }
@@ -99,23 +84,27 @@ export function AssignOwnerModal({ horse, isOpen, onClose, onSuccess }: AssignOw
   const currentOwnerDisplay = horse.owner?.fullName || horse.ownerName || "Unassigned";
 
   return (
-    <Modal onClose={onClose} title={`Transfer Ownership: ${horse.name}`}>
+    <Modal onClose={onClose} title={`Transfer owner: ${horse.name}`}>
       <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-        <div style={{ background: "var(--surface-sunken, #f8fafc)", padding: "0.875rem", borderRadius: 8, fontSize: "0.875rem" }}>
+        <div style={{ background: "var(--surface-sunken)", padding: "0.875rem", borderRadius: "var(--r)", fontSize: "var(--fs-body)" }}>
           <div>
             <strong>Current Owner:</strong> {currentOwnerDisplay}
           </div>
-          <div style={{ color: "var(--ink-muted, #64748b)", marginTop: 4 }}>
+          <div style={{ color: "var(--ink-muted)", marginTop: 4 }}>
             Horse Code: <strong>{horse.horseCode || horse.id}</strong> · Breed: {horse.breed}
           </div>
         </div>
 
         <Field label="Assign New Horse Owner" required>
           {loading ? (
-            <div style={{ fontSize: "0.875rem", color: "var(--ink-muted, #64748b)" }}>Loading active horse owners...</div>
+            <div style={{ fontSize: "var(--fs-body)", color: "var(--muted)" }}>Loading active horse owners…</div>
+          ) : loadError ? (
+            <div role="alert" style={{ fontSize: "var(--fs-body)", color: "var(--danger)" }}>
+              Couldn’t load horse owners. {loadError}
+            </div>
           ) : owners.length === 0 ? (
-            <div style={{ fontSize: "0.875rem", color: "var(--danger, #dc2626)" }}>
-              No other active horse owner accounts available.
+            <div style={{ fontSize: "var(--fs-body)", color: "var(--text-2)" }}>
+              No other active horse owner accounts. Approve an owner sign-up in Accounts first.
             </div>
           ) : (
             <Select
@@ -134,7 +123,7 @@ export function AssignOwnerModal({ horse, isOpen, onClose, onSuccess }: AssignOw
             rows={3}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="e.g. Sold via registered auction syndicate, contract #AQ-2026-884..."
+            placeholder="e.g. Sold at auction, contract number"
           />
         </Field>
 

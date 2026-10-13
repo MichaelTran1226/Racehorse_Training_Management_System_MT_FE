@@ -1,11 +1,10 @@
 .bar {
-  padding: 13px 22px;
-  background: var(--surface-2);
-  border-top: 1px solid var(--border-soft);
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 16px;
 }
-.summary { font-size: 10.5px; color: var(--muted); white-space: nowrap; }
+.summary { font-size: var(--fs-body); color: var(--text-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .buttons { display: flex; gap: 6px; }

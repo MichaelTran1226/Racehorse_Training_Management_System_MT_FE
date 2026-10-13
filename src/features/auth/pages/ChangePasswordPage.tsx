@@ -81,7 +81,6 @@ export default function ChangePasswordPage() {
   return (
     <>
       <PageHeader
-        eyebrow="MY ACCOUNT"
         title="Change your password."
         description="Changing the password signs out every other device. The club requires a change every 180 days."
       />

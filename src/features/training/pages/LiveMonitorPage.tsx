@@ -69,13 +69,13 @@ export default function LiveMonitorPage() {
                 width: 10,
                 height: 10,
                 borderRadius: "50%",
-                background: "var(--accent)",
+                background: "var(--brand)",
                 display: "inline-block",
               }}
             />
-            <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Session Telemetry & Biometrics</h1>
+            <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>Session Telemetry & Biometrics</h1>
           </div>
-          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
+          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
             Post-workout cardiac telemetry, GPS pacing benchmarks, and safety envelope verification
           </p>
         </div>
@@ -102,8 +102,8 @@ export default function LiveMonitorPage() {
           gap: "1rem",
         }}
       >
-        <span style={{ fontSize: "1.25rem" }}>ℹ️</span>
-        <div style={{ fontSize: "0.875rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
+        <span style={{ fontSize: "var(--fs-section)" }}>ℹ️</span>
+        <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)", lineHeight: 1.5 }}>
           <strong style={{ color: "var(--text-main)" }}>Telemetry Protocol Notice: </strong>
           In accordance with the defense architecture guidelines, raw IoT hardware socket streams have been synthesized into validated post-workout biometric logs. Realtime clinical intervention operates through the <strong>Biomechanical & Medical Alerts</strong> bridge.
         </div>
@@ -130,16 +130,16 @@ export default function LiveMonitorPage() {
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 700 }}>
+                  <h3 style={{ margin: 0, fontSize: "var(--fs-section)", fontWeight: 700 }}>
                     <Link to={`/horses/${session.horseId}`} style={{ color: "inherit", textDecoration: "none" }}>
                       {session.name}
                     </Link>{" "}
-                    <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 400 }}>({session.horseCode})</span>
+                    <span style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)", fontWeight: 400 }}>({session.horseCode})</span>
                   </h3>
-                  <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
+                  <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)", marginTop: "0.25rem" }}>
                     Jockey: <strong>{session.jockey}</strong> · {session.track}
                   </div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.15rem" }}>
+                  <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)", marginTop: "0.15rem" }}>
                     Completed: {session.sessionDate}
                   </div>
                 </div>
@@ -151,12 +151,12 @@ export default function LiveMonitorPage() {
 
               {/* Gauges */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                <div style={{ padding: "1rem", background: "var(--surface-sunken)", borderRadius: 8, textAlign: "center" }}>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase" }}>Peak / Avg Speed</div>
-                  <div style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--accent)", marginTop: "0.25rem" }}>
-                    {session.maxSpeedKmh} <span style={{ fontSize: "0.8rem", fontWeight: 400 }}>km/h</span>
+                <div style={{ padding: "1rem", background: "var(--surface-sunken)", borderRadius: "var(--r)", textAlign: "center" }}>
+                  <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)", }}>Peak / Avg Speed</div>
+                  <div style={{ fontSize: "var(--fs-h1)", fontWeight: 700, color: "var(--brand)", marginTop: "0.25rem" }}>
+                    {session.maxSpeedKmh} <span style={{ fontSize: "var(--fs-body)", fontWeight: 400 }}>km/h</span>
                   </div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.15rem" }}>
+                  <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)", marginTop: "0.15rem" }}>
                     Avg: {session.avgSpeedKmh} km/h
                   </div>
                 </div>
@@ -164,23 +164,23 @@ export default function LiveMonitorPage() {
                 <div
                   style={{
                     padding: "1rem",
-                    background: isWarning ? "rgba(234, 179, 8, 0.1)" : "var(--surface-sunken)",
-                    borderRadius: 8,
+                    background: isWarning ? "var(--warn-bg)" : "var(--surface-sunken)",
+                    borderRadius: "var(--r)",
                     textAlign: "center",
                   }}
                 >
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase" }}>Peak Heart Rate</div>
+                  <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)", }}>Peak Heart Rate</div>
                   <div
                     style={{
-                      fontSize: "1.75rem",
-                      fontWeight: 800,
+                      fontSize: "var(--fs-h1)",
+                      fontWeight: 700,
                       color: isWarning ? "var(--warn)" : "var(--text-main)",
                       marginTop: "0.25rem",
                     }}
                   >
-                    {session.peakHeartRate} <span style={{ fontSize: "0.8rem", fontWeight: 400 }}>bpm</span>
+                    {session.peakHeartRate} <span style={{ fontSize: "var(--fs-body)", fontWeight: 400 }}>bpm</span>
                   </div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.15rem" }}>
+                  <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)", marginTop: "0.15rem" }}>
                     5m Recovery: {session.recoveryHeartRate5Min} bpm
                   </div>
                 </div>
@@ -188,7 +188,7 @@ export default function LiveMonitorPage() {
 
               {/* Distance progress */}
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8125rem", marginBottom: "0.25rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--fs-body)", marginBottom: "0.25rem" }}>
                   <span>Completed Distance: {session.distanceCoveredMeters}m / {session.targetMeters}m</span>
                   <strong>{progressPercent}%</strong>
                 </div>
@@ -207,12 +207,11 @@ export default function LiveMonitorPage() {
               {/* Clinical note */}
               <div
                 style={{
-                  fontSize: "0.8125rem",
+                  fontSize: "var(--fs-body)",
                   color: isWarning ? "var(--text-main)" : "var(--text-muted)",
-                  background: isWarning ? "rgba(234, 179, 8, 0.08)" : "var(--surface-sunken)",
+                  background: isWarning ? "var(--warn-bg)" : "var(--surface-2)",
                   padding: "0.75rem",
-                  borderRadius: 6,
-                  borderLeft: isWarning ? "3px solid var(--warn)" : "3px solid var(--ok)",
+                  borderRadius: "var(--r-sm)",
                 }}
               >
                 <strong>Biometric Assessment:</strong> {session.clinicalNote}

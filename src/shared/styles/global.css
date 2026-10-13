@@ -40,6 +40,42 @@ a:hover {
   outline-offset: var(--focus-offset);
 }
 
+/* Nút, ô nhập dùng chung font của app (trình duyệt mặc định dùng font hệ thống). */
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+/* Mã số (HR-, microchip, RFID, giờ, số đếm): chữ số đều để cột thẳng hàng. */
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tiêu đề cột ngắn, không gãy dòng (DESIGN.md: bảng dễ quét). */
+th {
+  white-space: nowrap;
+}
+
+/* Tên người, mã: không xuống dòng giữa chừng. */
+.nowrap {
+  white-space: nowrap;
+}
+
+/* Người dùng chọn giảm chuyển động: tắt animation/transition trang trí. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Chữ chỉ dành cho trình đọc màn hình (ví dụ lý do một nút bị khóa). */
 .sr-only {
   position: absolute;

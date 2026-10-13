@@ -1,300 +1,179 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Alert } from "@/shared/components/ui/Alert";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
 import { Card } from "@/shared/components/ui/Card";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
-import { Field } from "@/shared/components/form/Field";
 import { Input } from "@/shared/components/form/Input";
-import { Modal } from "@/shared/components/ui/Modal";
-import { Select } from "@/shared/components/form/Select";
+import { Pagination } from "@/shared/components/ui/Pagination";
 import { Tabs } from "@/shared/components/ui/Tabs";
-import { Textarea } from "@/shared/components/form/Textarea";
-import { useAuth } from "@/shared/components/layout/AuthProvider";
-import { useToast } from "@/shared/components/ui/Toast";
-import { getStoredHorses } from "@/shared/mock/horsesData";
+import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
+import { messageFor } from "@/shared/lib/messages";
 import { trainingApi } from "../api";
+import { ClonePlanDialog } from "../components/PlanDialogs";
+import { ProgressBar } from "../components/ProgressBar";
+import { PLAN_STATUS_LABEL, PLAN_STATUS_TONE } from "../types";
 import type { PlanStatus, TrainingPlan } from "../types";
 
-const STATUS_CONFIG: Record<PlanStatus, { label: string; tone: "ok" | "warn" | "danger" | "neutral" | "info" }> = {
-  DRAFT: { label: "Draft", tone: "neutral" },
-  ACTIVE: { label: "Active", tone: "ok" },
-  COMPLETED: { label: "Completed", tone: "info" },
-  CANCELLED: { label: "Cancelled", tone: "danger" },
-};
+const PAGE_SIZE = 20;
 
+/** SC-2.02 Danh sách giáo án. Bấm dòng để mở SC-2.04; HT có Lập giáo án và Nhân bản. */
 export default function PlanListPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const toast = useToast();
-  const isTrainer = user?.role === "HEAD_TRAINER" || user?.role === "CLUB_MANAGER";
+  const [params] = useSearchParams();
+  const user = useCurrentUser();
+  const isTrainer = user.role === "HEAD_TRAINER";
 
   const [plans, setPlans] = useState<TrainingPlan[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<string>("ALL");
-  const [search, setSearch] = useState<string>("");
-
-  // Cancel Modal (DL-2.03)
-  const [cancellingPlan, setCancellingPlan] = useState<TrainingPlan | null>(null);
-  const [cancelReason, setCancelReason] = useState<string>("");
-
-  // Available horses from store
-  const availableHorses = useMemo(() => getStoredHorses(), []);
-
-  // Clone Modal (DL-2.05)
-  const [cloningPlan, setCloningPlan] = useState<TrainingPlan | null>(null);
-  const [cloneTargetHorse, setCloneTargetHorse] = useState<string>(() => availableHorses[0]?.id || "horse-1");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState(params.get("status") ?? "OPEN");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [cloning, setCloning] = useState<TrainingPlan | null>(null);
 
   const loadPlans = useCallback(async () => {
+    setLoading(true);
+    setError("");
     try {
-      setLoading(true);
-      const data = await trainingApi.getPlans();
-      setPlans(data);
-    } catch {
-      toast.show("Unable to load training plan list", "danger");
+      setPlans(await trainingApi.getPlans());
+    } catch (err) {
+      setError(messageFor(err));
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     void loadPlans();
   }, [loadPlans]);
 
-  const handleActivate = async (plan: TrainingPlan) => {
-    try {
-      await trainingApi.activatePlan(plan.id);
-      toast.show(`Plan ${plan.planCode} activated successfully`, "ok");
-      void loadPlans();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Error activating training plan";
-      toast.show(msg, "danger");
-    }
-  };
-
-  const handleComplete = async (plan: TrainingPlan) => {
-    try {
-      await trainingApi.completePlan(plan.id);
-      toast.show(`Plan ${plan.planCode} marked as completed`, "ok");
-      void loadPlans();
-    } catch {
-      toast.show("Error completing training plan", "danger");
-    }
-  };
-
-  const handleConfirmCancel = async () => {
-    if (!cancellingPlan || !cancelReason.trim()) return;
-    try {
-      await trainingApi.cancelPlan(cancellingPlan.id, cancelReason);
-      toast.show(`Plan ${cancellingPlan.planCode} cancelled`, "ok");
-      setCancellingPlan(null);
-      setCancelReason("");
-      void loadPlans();
-    } catch {
-      toast.show("Error cancelling training plan", "danger");
-    }
-  };
-
-  const handleConfirmClone = async () => {
-    if (!cloningPlan) return;
-    try {
-      const targetHorse = availableHorses.find((h) => h.id === cloneTargetHorse);
-      const targetName = targetHorse?.name || "Racehorse";
-      const cloned = await trainingApi.clonePlan(
-        cloningPlan.id,
-        cloneTargetHorse,
-        targetName,
-      );
-      toast.show(`Training plan successfully cloned: ${cloned.planCode}`, "ok");
-      setCloningPlan(null);
-      void loadPlans();
-    } catch {
-      toast.show("Error cloning training plan", "danger");
-    }
-  };
-
-  const filteredPlans = plans.filter((p) => {
-    const matchesTab = activeTab === "ALL" ? true : p.status === activeTab;
-    const matchesSearch =
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.planCode.toLowerCase().includes(search.toLowerCase()) ||
-      p.horseName.toLowerCase().includes(search.toLowerCase());
-    return matchesTab && matchesSearch;
-  });
+  const q = search.toLowerCase();
+  const filtered = plans.filter(
+    (p) =>
+      (activeTab === "ALL" ||
+        (activeTab === "OPEN" ? p.status === "DRAFT" || p.status === "ACTIVE" : p.status === activeTab)) &&
+      (p.name.toLowerCase().includes(q) || p.planCode.toLowerCase().includes(q) || p.horseName.toLowerCase().includes(q)),
+  );
+  const shown = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const count = (s: PlanStatus) => plans.filter((p) => p.status === s).length;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-      {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700 }}>Training Plans</h1>
-          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "0.875rem" }}>
-            Manage periodized training cycles, sprint progressions, and clinical safety gates
+          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>Training Plans</h1>
+          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
+            Draft → Active → Completed / Cancelled. Open a plan to manage its phases and workouts.
           </p>
         </div>
-
-        {isTrainer && (
-          <Button tone="primary" onClick={() => navigate("/training/plans/new")}>
-            + Create New Plan
-          </Button>
-        )}
+        <div style={{ display: "flex", gap: "0.75rem" }}>
+          <Link to="/training/plans/history">
+            <Button tone="secondary">History</Button>
+          </Link>
+          {isTrainer && (
+            <Button tone="primary" onClick={() => navigate("/training/plans/new")}>
+              + Create New Plan
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Tabs & Search */}
       <Card pad={16}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
           <Tabs
             items={[
+              { id: "OPEN", label: `Draft + Active (${count("DRAFT") + count("ACTIVE")})` },
+              { id: "ACTIVE", label: `Active (${count("ACTIVE")})` },
+              { id: "DRAFT", label: `Draft (${count("DRAFT")})` },
+              { id: "COMPLETED", label: `Completed (${count("COMPLETED")})` },
+              { id: "CANCELLED", label: `Cancelled (${count("CANCELLED")})` },
               { id: "ALL", label: `All (${plans.length})` },
-              { id: "ACTIVE", label: `Active (${plans.filter((p) => p.status === "ACTIVE").length})` },
-              { id: "DRAFT", label: `Draft (${plans.filter((p) => p.status === "DRAFT").length})` },
-              { id: "COMPLETED", label: `Completed (${plans.filter((p) => p.status === "COMPLETED").length})` },
-              { id: "CANCELLED", label: `Cancelled (${plans.filter((p) => p.status === "CANCELLED").length})` },
             ]}
             active={activeTab}
-            onChange={setActiveTab}
+            onChange={(t) => {
+              setActiveTab(t);
+              setPage(1);
+            }}
           />
-
           <Input
-            placeholder="Search by plan name, code, or horse..."
+            placeholder="Plan name, plan code, horse..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ width: 300 }}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            style={{ width: 300, maxWidth: "100%" }}
           />
         </div>
       </Card>
 
-      {/* Medical Lock Safety Banner (RULE-MED-01) */}
-      {plans.some((p) => p.isLockedByMedical) && (
-        <div
-          style={{
-            padding: "1rem 1.25rem",
-            background: "rgba(239, 68, 68, 0.08)",
-            border: "1px solid var(--danger)",
-            borderRadius: "var(--radius-card)",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "1rem",
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <span style={{ fontSize: "1.25rem" }}>🔒</span>
-            <div>
-              <strong style={{ color: "var(--danger)" }}>Clinical Safety Enforcement (RULE-MED-01) Active</strong>
-              <p style={{ margin: "0.15rem 0 0", fontSize: "0.8125rem", color: "var(--text-muted)" }}>
-                {plans.filter((p) => p.isLockedByMedical).length} training plan(s) belong to horses currently suspended by Veterinary Medical Lock. Plan activations and high-intensity trial runs are strictly blocked.
-              </p>
-            </div>
-          </div>
-          <Link to="/medical/locks">
-            <Button tone="secondary">View Active Medical Locks →</Button>
-          </Link>
-        </div>
+      {error && (
+        <Alert tone="danger" title="Could not load data">
+          {error} <Button size="sm" tone="secondary" onClick={() => void loadPlans()}>Try again</Button>
+        </Alert>
       )}
 
-      {/* Plan list */}
       <Card>
         {loading ? (
           <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Loading training plans...</div>
-        ) : filteredPlans.length === 0 ? (
+        ) : shown.length === 0 ? (
           <EmptyState
-            title="No Training Plans Found"
-            description="There are currently no training plans matching the filter criteria."
+            title={plans.length === 0 ? "No training plans yet." : "No plans match the filter."}
+            action={isTrainer && plans.length === 0 ? <Button onClick={() => navigate("/training/plans/new")}>Create plan</Button> : undefined}
           />
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.875rem" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "var(--fs-body)" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-sunken)" }}>
-                  <th style={{ padding: "0.75rem 1rem" }}>Plan Code</th>
-                  <th style={{ padding: "0.75rem 1rem" }}>Plan Title</th>
-                  <th style={{ padding: "0.75rem 1rem" }}>Racehorse</th>
-                  <th style={{ padding: "0.75rem 1rem" }}>Schedule</th>
+                  <th style={{ padding: "0.75rem 1rem" }}>Code</th>
+                  <th style={{ padding: "0.75rem 1rem" }}>Plan</th>
+                  <th style={{ padding: "0.75rem 1rem" }}>Horse</th>
+                  <th style={{ padding: "0.75rem 1rem" }}>Dates</th>
                   <th style={{ padding: "0.75rem 1rem" }}>Phases</th>
+                  <th style={{ padding: "0.75rem 1rem" }}>Progress</th>
                   <th style={{ padding: "0.75rem 1rem" }}>Status</th>
+                  <th style={{ padding: "0.75rem 1rem" }}>Trainer</th>
                   <th style={{ padding: "0.75rem 1rem", textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredPlans.map((plan) => (
-                  <tr key={plan.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                    <td style={{ padding: "0.75rem 1rem", fontWeight: 600 }}>
-                      <Link to={`/training/plans/${plan.id}`} style={{ color: "var(--accent)", textDecoration: "none" }}>
-                        {plan.planCode}
-                      </Link>
-                    </td>
+                {shown.map((plan) => (
+                  <tr
+                    key={plan.id}
+                    style={{ borderBottom: "1px solid var(--border)", cursor: "pointer" }}
+                    onClick={() => navigate(`/training/plans/${plan.id}`)}
+                  >
+                    <td style={{ padding: "0.75rem 1rem", fontWeight: 600 }}>{plan.planCode}</td>
+                    <td style={{ padding: "0.75rem 1rem", fontWeight: 600 }}>{plan.name}</td>
                     <td style={{ padding: "0.75rem 1rem" }}>
-                      <div style={{ fontWeight: 600 }}>
-                        <Link to={`/training/plans/${plan.id}`} style={{ color: "inherit", textDecoration: "none" }}>
-                          {plan.name}
-                        </Link>
-                      </div>
-                      <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                        Target: {plan.targetDistanceMeters}m · {plan.target}
-                      </div>
+                      {plan.horseName}
                       {plan.isLockedByMedical && (
-                        <div style={{ fontSize: "0.75rem", color: "var(--danger)", marginTop: "0.25rem", fontWeight: 600 }}>
-                          🔒 Medical Lock Active - Heavy workouts blocked
-                        </div>
-                      )}
+                    <Badge tone="danger" icon="lock">
+                      Training Lock
+                    </Badge>
+                  )}
+                    </td>
+                    <td style={{ padding: "0.75rem 1rem", whiteSpace: "nowrap" }}>
+                      {plan.startDate} – {plan.endDate}
+                    </td>
+                    <td style={{ padding: "0.75rem 1rem" }}>{plan.phases.length}</td>
+                    <td style={{ padding: "0.75rem 1rem", minWidth: 140 }}>
+                      <ProgressBar done={plan.progress.completed} total={plan.progress.due} />
                     </td>
                     <td style={{ padding: "0.75rem 1rem" }}>
-                      <Link to={`/horses/${plan.horseId}`} style={{ color: "var(--accent)", textDecoration: "underline" }}>
-                        {plan.horseName}
-                      </Link>
+                      <Badge tone={PLAN_STATUS_TONE[plan.status]}>{PLAN_STATUS_LABEL[plan.status]}</Badge>
                     </td>
-                    <td style={{ padding: "0.75rem 1rem" }}>
-                      <div>{plan.startDate}</div>
-                      <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>to {plan.endDate}</div>
-                    </td>
-                    <td style={{ padding: "0.75rem 1rem" }}>
-                      <Badge tone="neutral">{plan.phases.length} phases</Badge>
-                    </td>
-                    <td style={{ padding: "0.75rem 1rem" }}>
-                      <Badge tone={STATUS_CONFIG[plan.status].tone}>{STATUS_CONFIG[plan.status].label}</Badge>
-                    </td>
-                    <td style={{ padding: "0.75rem 1rem", textAlign: "right" }}>
-                      <div style={{ display: "inline-flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                    <td style={{ padding: "0.75rem 1rem" }}>{plan.headTrainerName}</td>
+                    <td style={{ padding: "0.75rem 1rem", textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+                      <div style={{ display: "inline-flex", gap: "0.5rem" }}>
                         <Link to={`/training/plans/${plan.id}`}>
-                          <Button tone="ghost" size="sm">Details</Button>
+                          <Button tone="secondary" size="sm">View</Button>
                         </Link>
-                        {isTrainer && plan.status === "DRAFT" && (
-                          plan.isLockedByMedical ? (
-                            <Button
-                              tone="secondary"
-                              size="sm"
-                              onClick={() =>
-                                toast.show(
-                                  `Activation blocked: ${plan.horseName} is under Veterinary Medical Lock (${plan.medicalLockReason || "Clinical hold"}).`,
-                                  "danger"
-                                )
-                              }
-                              title="Activation blocked by Veterinary Medical Lock"
-                            >
-                              🔒 Locked
-                            </Button>
-                          ) : (
-                            <Button tone="primary" size="sm" onClick={() => void handleActivate(plan)}>
-                              Activate
-                            </Button>
-                          )
-                        )}
-                        {isTrainer && plan.status === "ACTIVE" && (
-                          <Button tone="accent" size="sm" onClick={() => void handleComplete(plan)}>
-                            Complete
-                          </Button>
-                        )}
-                        {isTrainer && (plan.status === "DRAFT" || plan.status === "ACTIVE") && (
-                          <Button tone="danger" size="sm" onClick={() => setCancellingPlan(plan)}>
-                            Cancel
-                          </Button>
-                        )}
                         {isTrainer && (
-                          <Button tone="secondary" size="sm" onClick={() => setCloningPlan(plan)}>
-                            Clone
-                          </Button>
+                          <Button tone="ghost" size="sm" onClick={() => setCloning(plan)}>Clone</Button>
                         )}
                       </div>
                     </td>
@@ -302,73 +181,19 @@ export default function PlanListPage() {
                 ))}
               </tbody>
             </table>
+            {filtered.length > PAGE_SIZE && (
+              <Pagination page={page} pageSize={PAGE_SIZE} total={filtered.length} noun="plans" onPage={setPage} />
+            )}
           </div>
         )}
       </Card>
 
-      {/* Cancel Modal (DL-2.03) */}
-      {cancellingPlan && (
-        <Modal onClose={() => setCancellingPlan(null)} title={`Cancel Plan: ${cancellingPlan.planCode}`}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <p style={{ margin: 0, fontSize: "0.875rem" }}>
-              Are you sure you want to cancel plan <strong>{cancellingPlan.name}</strong>? All pending workout sessions will
-              be marked as Cancelled.
-            </p>
-
-            <Field label="Cancellation Reason" required hint="Minimum 10 characters">
-              <Textarea
-                rows={3}
-                value={cancelReason}
-                onChange={(e) => setCancelReason(e.target.value)}
-                placeholder="Enter detailed cancellation rationale..."
-              />
-            </Field>
-
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
-              <Button tone="ghost" onClick={() => setCancellingPlan(null)}>
-                Dismiss
-              </Button>
-              <Button
-                tone="danger"
-                onClick={() => void handleConfirmCancel()}
-                disabled={cancelReason.trim().length < 10}
-              >
-                Confirm Cancellation
-              </Button>
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      {/* Clone Modal (DL-2.05) */}
-      {cloningPlan && (
-        <Modal onClose={() => setCloningPlan(null)} title={`Clone Training Plan: ${cloningPlan.planCode}`}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <p style={{ margin: 0, fontSize: "0.875rem" }}>
-              The system will replicate phase structures, conditioning targets, and parameters into a new draft plan.
-            </p>
-
-            <Field label="Target Racehorse for Cloned Plan" required>
-              <Select
-                value={cloneTargetHorse}
-                onChange={(e) => setCloneTargetHorse(e.target.value)}
-                options={availableHorses.map((h) => ({
-                  value: h.id,
-                  label: `${h.name} (${h.code || h.horseCode})${h.isLocked ? " - Medical Lock 🔒" : ""}`,
-                }))}
-              />
-            </Field>
-
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
-              <Button tone="ghost" onClick={() => setCloningPlan(null)}>
-                Cancel
-              </Button>
-              <Button tone="primary" onClick={() => void handleConfirmClone()}>
-                Clone Plan
-              </Button>
-            </div>
-          </div>
-        </Modal>
+      {cloning && (
+        <ClonePlanDialog
+          plan={cloning}
+          onClose={() => setCloning(null)}
+          onDone={(created) => (created ? navigate(`/training/plans/${created.id}`) : void loadPlans())}
+        />
       )}
     </div>
   );
