@@ -33,6 +33,12 @@ export default function PlanListPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<string>("ALL");
   const [search, setSearch] = useState<string>("");
+  const [page, setPage] = useState<number>(1);
+  const pageSize = 8;
+
+  // Delete Modal (Bug #51)
+  const [deletingPlan, setDeletingPlan] = useState<TrainingPlan | null>(null);
+  const [deleting, setDeleting] = useState<boolean>(false);
 
   // Cancel Modal (DL-2.03)
   const [cancellingPlan, setCancellingPlan] = useState<TrainingPlan | null>(null);
@@ -113,14 +119,37 @@ export default function PlanListPage() {
     }
   };
 
-  const filteredPlans = plans.filter((p) => {
-    const matchesTab = activeTab === "ALL" ? true : p.status === activeTab;
-    const matchesSearch =
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.planCode.toLowerCase().includes(search.toLowerCase()) ||
-      p.horseName.toLowerCase().includes(search.toLowerCase());
-    return matchesTab && matchesSearch;
-  });
+  const handleConfirmDelete = async () => {
+    if (!deletingPlan) return;
+    try {
+      setDeleting(true);
+      await trainingApi.deletePlan(deletingPlan.id);
+      toast.show(`Plan ${deletingPlan.planCode} deleted successfully`, "ok");
+      setDeletingPlan(null);
+      void loadPlans();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error deleting training plan";
+      toast.show(msg, "danger");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const filteredPlans = useMemo(() => {
+    return plans.filter((p) => {
+      const matchesTab = activeTab === "ALL" ? true : p.status === activeTab;
+      const matchesSearch =
+        p.name.toLowerCase().includes(search.toLowerCase()) ||
+        p.planCode.toLowerCase().includes(search.toLowerCase()) ||
+        p.horseName.toLowerCase().includes(search.toLowerCase());
+      return matchesTab && matchesSearch;
+    });
+  }, [plans, activeTab, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPlans.length / pageSize));
+  const paginatedPlans = useMemo(() => {
+    return filteredPlans.slice((page - 1) * pageSize, page * pageSize);
+  }, [filteredPlans, page, pageSize]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
@@ -152,13 +181,19 @@ export default function PlanListPage() {
               { id: "CANCELLED", label: `Cancelled (${plans.filter((p) => p.status === "CANCELLED").length})` },
             ]}
             active={activeTab}
-            onChange={setActiveTab}
+            onChange={(tab) => {
+              setActiveTab(tab);
+              setPage(1);
+            }}
           />
 
           <Input
             placeholder="Search by plan name, code, or horse..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             style={{ width: 300 }}
           />
         </div>
@@ -204,107 +239,197 @@ export default function PlanListPage() {
             description="There are currently no training plans matching the filter criteria."
           />
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.875rem" }}>
-              <thead>
-                <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-sunken)" }}>
-                  <th style={{ padding: "0.75rem 1rem" }}>Plan Code</th>
-                  <th style={{ padding: "0.75rem 1rem" }}>Plan Title</th>
-                  <th style={{ padding: "0.75rem 1rem" }}>Racehorse</th>
-                  <th style={{ padding: "0.75rem 1rem" }}>Schedule</th>
-                  <th style={{ padding: "0.75rem 1rem" }}>Phases</th>
-                  <th style={{ padding: "0.75rem 1rem" }}>Status</th>
-                  <th style={{ padding: "0.75rem 1rem", textAlign: "right" }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredPlans.map((plan) => (
-                  <tr key={plan.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                    <td style={{ padding: "0.75rem 1rem", fontWeight: 600 }}>
-                      <Link to={`/training/plans/${plan.id}`} style={{ color: "var(--accent)", textDecoration: "none" }}>
-                        {plan.planCode}
-                      </Link>
-                    </td>
-                    <td style={{ padding: "0.75rem 1rem" }}>
-                      <div style={{ fontWeight: 600 }}>
-                        <Link to={`/training/plans/${plan.id}`} style={{ color: "inherit", textDecoration: "none" }}>
-                          {plan.name}
-                        </Link>
-                      </div>
-                      <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                        Target: {plan.targetDistanceMeters}m · {plan.target}
-                      </div>
-                      {plan.isLockedByMedical && (
-                        <div style={{ fontSize: "0.75rem", color: "var(--danger)", marginTop: "0.25rem", fontWeight: 600 }}>
-                          🔒 Medical Lock Active - Heavy workouts blocked
-                        </div>
-                      )}
-                    </td>
-                    <td style={{ padding: "0.75rem 1rem" }}>
-                      <Link to={`/horses/${plan.horseId}`} style={{ color: "var(--accent)", textDecoration: "underline" }}>
-                        {plan.horseName}
-                      </Link>
-                    </td>
-                    <td style={{ padding: "0.75rem 1rem" }}>
-                      <div>{plan.startDate}</div>
-                      <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>to {plan.endDate}</div>
-                    </td>
-                    <td style={{ padding: "0.75rem 1rem" }}>
-                      <Badge tone="neutral">{plan.phases.length} phases</Badge>
-                    </td>
-                    <td style={{ padding: "0.75rem 1rem" }}>
-                      <Badge tone={STATUS_CONFIG[plan.status].tone}>{STATUS_CONFIG[plan.status].label}</Badge>
-                    </td>
-                    <td style={{ padding: "0.75rem 1rem", textAlign: "right" }}>
-                      <div style={{ display: "inline-flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
-                        <Link to={`/training/plans/${plan.id}`}>
-                          <Button tone="ghost" size="sm">Details</Button>
-                        </Link>
-                        {isTrainer && plan.status === "DRAFT" && (
-                          plan.isLockedByMedical ? (
-                            <Button
-                              tone="secondary"
-                              size="sm"
-                              onClick={() =>
-                                toast.show(
-                                  `Activation blocked: ${plan.horseName} is under Veterinary Medical Lock (${plan.medicalLockReason || "Clinical hold"}).`,
-                                  "danger"
-                                )
-                              }
-                              title="Activation blocked by Veterinary Medical Lock"
-                            >
-                              🔒 Locked
-                            </Button>
-                          ) : (
-                            <Button tone="primary" size="sm" onClick={() => void handleActivate(plan)}>
-                              Activate
-                            </Button>
-                          )
-                        )}
-                        {isTrainer && plan.status === "ACTIVE" && (
-                          <Button tone="accent" size="sm" onClick={() => void handleComplete(plan)}>
-                            Complete
-                          </Button>
-                        )}
-                        {isTrainer && (plan.status === "DRAFT" || plan.status === "ACTIVE") && (
-                          <Button tone="danger" size="sm" onClick={() => setCancellingPlan(plan)}>
-                            Cancel
-                          </Button>
-                        )}
-                        {isTrainer && (
-                          <Button tone="secondary" size="sm" onClick={() => setCloningPlan(plan)}>
-                            Clone
-                          </Button>
-                        )}
-                      </div>
-                    </td>
+          <>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.875rem" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-sunken)" }}>
+                    <th style={{ padding: "0.75rem 1rem" }}>Plan Code</th>
+                    <th style={{ padding: "0.75rem 1rem" }}>Plan Title</th>
+                    <th style={{ padding: "0.75rem 1rem" }}>Racehorse</th>
+                    <th style={{ padding: "0.75rem 1rem" }}>Schedule</th>
+                    <th style={{ padding: "0.75rem 1rem" }}>Phases</th>
+                    <th style={{ padding: "0.75rem 1rem" }}>Status</th>
+                    <th style={{ padding: "0.75rem 1rem", textAlign: "right" }}>Actions</th>
                   </tr>
+                </thead>
+                <tbody>
+                  {paginatedPlans.map((plan) => (
+                    <tr key={plan.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                      <td style={{ padding: "0.75rem 1rem", fontWeight: 600 }}>
+                        <Link to={`/training/plans/${plan.id}`} style={{ color: "var(--accent)", textDecoration: "none" }}>
+                          {plan.planCode}
+                        </Link>
+                      </td>
+                      <td style={{ padding: "0.75rem 1rem" }}>
+                        <div style={{ fontWeight: 600 }}>
+                          <Link to={`/training/plans/${plan.id}`} style={{ color: "inherit", textDecoration: "none" }}>
+                            {plan.name}
+                          </Link>
+                        </div>
+                        <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                          Target: {plan.targetDistanceMeters}m · {plan.target}
+                        </div>
+                        {plan.isLockedByMedical && (
+                          <div style={{ fontSize: "0.75rem", color: "var(--danger)", marginTop: "0.25rem", fontWeight: 600 }}>
+                            🔒 Medical Lock Active - Heavy workouts blocked
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ padding: "0.75rem 1rem" }}>
+                        <Link to={`/horses/${plan.horseId}`} style={{ color: "var(--accent)", textDecoration: "underline" }}>
+                          {plan.horseName}
+                        </Link>
+                      </td>
+                      <td style={{ padding: "0.75rem 1rem" }}>
+                        <div>{plan.startDate}</div>
+                        <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>to {plan.endDate}</div>
+                      </td>
+                      <td style={{ padding: "0.75rem 1rem" }}>
+                        <Badge tone="neutral">{plan.phases.length} phases</Badge>
+                      </td>
+                      <td style={{ padding: "0.75rem 1rem" }}>
+                        <Badge tone={STATUS_CONFIG[plan.status].tone}>{STATUS_CONFIG[plan.status].label}</Badge>
+                      </td>
+                      <td style={{ padding: "0.75rem 1rem", textAlign: "right" }}>
+                        <div style={{ display: "inline-flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                          <Link to={`/training/plans/${plan.id}`}>
+                            <Button tone="ghost" size="sm">Details</Button>
+                          </Link>
+                          {isTrainer && plan.status === "DRAFT" && (
+                            plan.isLockedByMedical ? (
+                              <Button
+                                tone="secondary"
+                                size="sm"
+                                onClick={() =>
+                                  toast.show(
+                                    `Activation blocked: ${plan.horseName} is under Veterinary Medical Lock (${plan.medicalLockReason || "Clinical hold"}).`,
+                                    "danger"
+                                  )
+                                }
+                                title="Activation blocked by Veterinary Medical Lock"
+                              >
+                                🔒 Locked
+                              </Button>
+                            ) : (
+                              <Button tone="primary" size="sm" onClick={() => void handleActivate(plan)}>
+                                Activate
+                              </Button>
+                            )
+                          )}
+                          {isTrainer && plan.status === "ACTIVE" && (
+                            <Button tone="accent" size="sm" onClick={() => void handleComplete(plan)}>
+                              Complete
+                            </Button>
+                          )}
+                          {isTrainer && (plan.status === "DRAFT" || plan.status === "ACTIVE") && (
+                            <Button tone="danger" size="sm" onClick={() => setCancellingPlan(plan)}>
+                              Cancel
+                            </Button>
+                          )}
+                          {isTrainer && plan.status === "DRAFT" && (
+                            <Button tone="danger" size="sm" onClick={() => setDeletingPlan(plan)}>
+                              Delete
+                            </Button>
+                          )}
+                          {isTrainer && (
+                            <Button tone="secondary" size="sm" onClick={() => setCloningPlan(plan)}>
+                              Clone
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Controls (Bug #52) */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "1rem",
+                padding: "1rem 1.25rem",
+                borderTop: "1px solid var(--border)",
+                fontSize: "0.875rem",
+                color: "var(--text-muted)",
+              }}
+            >
+              <div>
+                Showing {filteredPlans.length === 0 ? 0 : (page - 1) * pageSize + 1} to{" "}
+                {Math.min(page * pageSize, filteredPlans.length)} of {filteredPlans.length} plans
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                <Button
+                  tone="ghost"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                >
+                  Previous
+                </Button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pNum) => (
+                  <Button
+                    key={pNum}
+                    tone={page === pNum ? "primary" : "ghost"}
+                    size="sm"
+                    onClick={() => setPage(pNum)}
+                  >
+                    {pNum}
+                  </Button>
                 ))}
-              </tbody>
-            </table>
-          </div>
+
+                <Button
+                  tone="ghost"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          </>
         )}
       </Card>
+
+      {/* Delete Draft Plan Modal (Bug #51) */}
+      {deletingPlan && (
+        <Modal onClose={() => !deleting && setDeletingPlan(null)} title={`Delete Draft Plan: ${deletingPlan.planCode}`}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <p style={{ margin: 0, fontSize: "0.875rem" }}>
+              Are you sure you want to permanently delete draft plan <strong>"{deletingPlan.name}"</strong>?
+            </p>
+            <div
+              style={{
+                padding: "0.75rem",
+                borderRadius: 6,
+                background: "rgba(239, 68, 68, 0.1)",
+                border: "1px solid var(--danger)",
+                color: "var(--danger)",
+                fontSize: "0.8125rem",
+              }}
+            >
+              ⚠️ <strong>Warning:</strong> This action cannot be undone. Only draft plans without completed sessions can be removed.
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "0.5rem" }}>
+              <Button tone="ghost" onClick={() => setDeletingPlan(null)} disabled={deleting}>
+                Cancel
+              </Button>
+              <Button tone="danger" onClick={() => void handleConfirmDelete()} disabled={deleting}>
+                {deleting ? "Deleting..." : "Confirm Delete"}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {/* Cancel Modal (DL-2.03) */}
       {cancellingPlan && (

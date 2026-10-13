@@ -257,6 +257,13 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
     },
     { label: "MASTER DATA", items: [item("horses", "Horses", "horse", { requires: "viewHorses" }), item("stalls", "Stall Map", "grid")] },
     {
+      label: "TRAINING",
+      items: [
+        item("plans", "Training Plans", "clipboard", { requires: "createPlan" }),
+        item("calendar", "Weekly Calendar", "calendar", { requires: "assignSchedule" }),
+      ],
+    },
+    {
       label: "REPORTS",
       items: [
         item("performance", "Performance", "chart"),
@@ -335,6 +342,26 @@ export function screenAccess(role: Role, permissions: PermissionMap, pathname: s
     if (seg2 === "stalls") href = "/stalls";
   } else if (href === "/records" && pathname.startsWith("/records/horse")) {
     href = "/records"; // keep it as records
+  } else if (href === "/training") {
+    const seg2 = pathname.split("/")[2];
+    if (seg2 === "plans") href = "/plans";
+    else if (seg2 === "calendar" || seg2 === "schedule") href = "/calendar";
+    else if (seg2 === "trials") href = "/trials";
+    else if (seg2 === "metrics") href = "/metrics";
+    else if (seg2 === "monitor") href = "/monitor";
+    else if (seg2 === "alerts") href = "/alerts";
+    else href = "/plans";
+  }
+
+  // Veterinarian has read-only observation access to training plans
+  if (href === "/plans" && role === "VETERINARIAN") {
+    return {
+      allowed: true,
+      group: "TRAINING",
+      label: "Training Plans",
+      ownerRoles: ["VETERINARIAN", "HEAD_TRAINER", "CLUB_MANAGER"],
+      inOwnRole: false,
+    };
   }
 
   const own = findByHref(ROLE_NAV[role], href);

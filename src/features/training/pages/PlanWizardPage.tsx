@@ -173,6 +173,29 @@ export default function PlanWizardPage() {
     }
   };
 
+  // Unsaved changes check (Bug #68 & FR-2.21)
+  const isDirty = Boolean(name.trim() || target.trim() || notes.trim());
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty && !submitting) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty, submitting]);
+
+  const handleCancel = () => {
+    if (isDirty && !submitting) {
+      if (!window.confirm("You have unsaved changes in this training plan. Are you sure you want to discard them?")) {
+        return;
+      }
+    }
+    navigate(isEditing ? `/training/plans/${id}` : "/training/plans");
+  };
+
   return (
     <div style={{ maxWidth: 840, margin: "0 auto", padding: "1.5rem" }}>
       {/* Header */}
@@ -185,7 +208,7 @@ export default function PlanWizardPage() {
             {isEditing ? "Update periodized targets and phase specifications" : "Design periodized conditioning cycles and verify clinical readiness"}
           </p>
         </div>
-        <Button tone="ghost" onClick={() => navigate(isEditing ? `/training/plans/${id}` : "/training/plans")}>
+        <Button tone="ghost" onClick={handleCancel}>
           Cancel
         </Button>
       </div>

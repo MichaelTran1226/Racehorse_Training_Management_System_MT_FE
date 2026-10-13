@@ -67,6 +67,10 @@ export default function PlanDetailPage() {
   const [cloneTargetHorseId, setCloneTargetHorseId] = useState<string>(() => availableHorses[0]?.id || "horse-1");
   const [cloning, setCloning] = useState<boolean>(false);
 
+  // Delete Draft Modal (Bug #51)
+  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
+  const [deleting, setDeleting] = useState<boolean>(false);
+
   // Add Session Modal (DL-2.01)
   const [showAddSessionModal, setShowAddSessionModal] = useState<boolean>(false);
   const [sessionDate, setSessionDate] = useState<string>(() => new Date().toISOString().split("T")[0]);
@@ -179,6 +183,23 @@ export default function PlanDetailPage() {
       toast.show("Failed to clone training plan.", "danger");
     } finally {
       setCloning(false);
+    }
+  }
+
+  // Action: Delete Draft Plan (Bug #51)
+  async function handleConfirmDelete() {
+    if (!plan) return;
+    try {
+      setDeleting(true);
+      await trainingApi.deletePlan(plan.id);
+      toast.show(`Draft plan "${plan.name}" has been permanently deleted.`, "ok");
+      setShowDeleteModal(false);
+      navigate("/training/plans");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to delete plan.";
+      toast.show(msg, "danger");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -349,6 +370,12 @@ export default function PlanDetailPage() {
             {isTrainer && (plan.status === "DRAFT" || plan.status === "ACTIVE") && (
               <Button tone="danger" onClick={() => setShowCancelModal(true)}>
                 Cancel Plan
+              </Button>
+            )}
+
+            {isTrainer && plan.status === "DRAFT" && (
+              <Button tone="danger" onClick={() => setShowDeleteModal(true)}>
+                Delete Plan
               </Button>
             )}
 
@@ -640,6 +667,38 @@ export default function PlanDetailPage() {
               </Button>
               <Button tone="primary" onClick={() => void handleConfirmClone()} disabled={cloning}>
                 {cloning ? "Cloning..." : "Create Duplicate"}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Delete Draft Plan Modal (Bug #51) */}
+      {showDeleteModal && (
+        <Modal onClose={() => !deleting && setShowDeleteModal(false)} title={`Delete Draft Plan: ${plan.planCode}`}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--text)" }}>
+              Are you sure you want to permanently delete draft plan <strong>"{plan.name}"</strong>?
+            </p>
+            <div
+              style={{
+                padding: "0.75rem",
+                borderRadius: 6,
+                background: "rgba(239, 68, 68, 0.1)",
+                border: "1px solid var(--danger)",
+                color: "var(--danger)",
+                fontSize: "0.8125rem",
+              }}
+            >
+              ⚠️ <strong>Warning:</strong> This action cannot be undone. Only draft plans without completed sessions can be removed.
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "0.5rem" }}>
+              <Button tone="ghost" onClick={() => setShowDeleteModal(false)} disabled={deleting}>
+                Cancel
+              </Button>
+              <Button tone="danger" onClick={() => void handleConfirmDelete()} disabled={deleting}>
+                {deleting ? "Deleting..." : "Confirm Delete"}
               </Button>
             </div>
           </div>
