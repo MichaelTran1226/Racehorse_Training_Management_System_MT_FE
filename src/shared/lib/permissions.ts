@@ -285,6 +285,13 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
       ],
     },
     { label: "MASTER DATA", items: [item("horses", "Horses", "horse", { requires: "viewHorses" }), item("stalls", "Stall Map", "grid")] },
+    {
+      label: "TRAINING",
+      items: [
+        item("plans", "Training Plans", "clipboard", { requires: "createPlan" }),
+        item("calendar", "Weekly Calendar", "calendar", { requires: "assignSchedule" }),
+      ],
+    },
     // Menu Y tế (MEDICAL) cho CLUB_MANAGER (quản lý, giám sát sức khỏe, bệnh án và lịch chăm sóc)
     {
       label: "MEDICAL",
@@ -373,7 +380,17 @@ export function screenAccess(role: Role, permissions: PermissionMap, pathname: s
   if (pathname === "/my-training" || pathname === "/my/training") {
     return { allowed: role === "GROOM", group: "WORKSPACE", label: "My Training", ownerRoles: ["GROOM"], inOwnRole: role === "GROOM" };
   }
-  if (pathname.startsWith("/training/")) return open;
+  if (pathname.startsWith("/training/")) {
+    const seg2 = pathname.split("/")[2];
+    if (seg2 === "plans" && pathname.includes("/new")) {
+      const allowed = role === "HEAD_TRAINER" || (role === "CLUB_MANAGER" && !!permissions.createPlan);
+      return { allowed, group: "TRAINING", label: "New Plan", ownerRoles: ["HEAD_TRAINER", "CLUB_MANAGER"], inOwnRole: allowed };
+    }
+    if (seg2 === "monitor") {
+      return { allowed: role === "HEAD_TRAINER", group: "TRAINING", label: "Live Monitor", ownerRoles: ["HEAD_TRAINER"], inOwnRole: role === "HEAD_TRAINER" };
+    }
+    return open;
+  }
 
   // SC-1.05 Hồ sơ ngựa đã xóa: chỉ CM (BE cũng chặn bằng @Roles).
   if (pathname === "/horses/deleted") {

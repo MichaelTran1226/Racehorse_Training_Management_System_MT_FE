@@ -63,7 +63,7 @@ export function TrainingLockModal({
     }
     return new Date(Date.now() + 14 * 86400000).toISOString().split("T")[0];
   });
-  const [restoreStatus, setRestoreStatus] = useState("FIT");
+  const [restoreStatus, setRestoreStatus] = useState("RESTING");
   const [unlockConditions, setUnlockConditions] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
