@@ -662,13 +662,13 @@ const routes: Route[] = [
       const newVals: Record<string, any> = {};
       if (fullName !== target.fullName) {
         changes.push(`họ tên: ${target.fullName} → ${fullName}`);
-        oldVals["Họ và tên"] = target.fullName;
-        newVals["Họ và tên"] = fullName;
+        oldVals.fullName = target.fullName;
+        newVals.fullName = fullName;
       }
       if (phone !== target.phone) {
         changes.push(`số điện thoại: ${target.phone || "—"} → ${phone || "—"}`);
-        oldVals["Số điện thoại"] = target.phone || "—";
-        newVals["Số điện thoại"] = phone || "—";
+        oldVals.phone = target.phone || "—";
+        newVals.phone = phone || "—";
       }
       if (changes.length > 0) {
         audit(db, actor.fullName, "ACCOUNT_EDITED", `${target.fullName}: ${changes.join(", ")}`, oldVals, newVals);
@@ -739,13 +739,13 @@ const routes: Route[] = [
       const changes: string[] = [];
       if (fullName !== user.fullName) {
         changes.push(`họ tên: ${user.fullName} → ${fullName}`);
-        oldVals["Họ và tên"] = user.fullName;
-        newVals["Họ và tên"] = fullName;
+        oldVals.fullName = user.fullName;
+        newVals.fullName = fullName;
       }
       if (phone !== user.phone) {
         changes.push(`số điện thoại: ${user.phone || "—"} → ${phone || "—"}`);
-        oldVals["Số điện thoại"] = user.phone || "—";
-        newVals["Số điện thoại"] = phone || "—";
+        oldVals.phone = user.phone || "—";
+        newVals.phone = phone || "—";
       }
       if (changes.length > 0) {
         audit(db, user.fullName, "PROFILE_UPDATED", `${user.fullName}: ${changes.join(", ")}`, oldVals, newVals);

@@ -2,7 +2,7 @@
   border: 1px solid var(--border);
   border-radius: var(--r-card, 12px);
   background: var(--surface);
-  overflow: hidden;
+  overflow-x: auto;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 

@@ -8,6 +8,7 @@ import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Input } from "@/shared/components/form/Input";
 import { Select } from "@/shared/components/form/Select";
 import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
+import { ROLES } from "@/shared/types/auth";
 import { useAppLanguage } from "@/shared/lib/language";
 import { messageFor } from "@/shared/lib/messages";
 import { todayClub, trainingApi } from "../api";
@@ -322,7 +323,7 @@ export default function WeeklyCalendarPage() {
                 </Button>
               )}
               {b.cancel && <Button size="sm" tone="danger" onClick={() => setDialog({ kind: "cancel", session: selected })}>{isVietnamese ? "Hủy bài tập" : "Cancel workout"}</Button>}
-              {user.role !== "GROOM" && <Link to={`/training/plans/${selected.planId}`}><Button size="sm" tone="ghost">{isVietnamese ? "Mở giáo án" : "Open plan"}</Button></Link>}
+              {user.role !== ROLES.GROOM && <Link to={`/training/plans/${selected.planId}`}><Button size="sm" tone="ghost">{isVietnamese ? "Mở giáo án" : "Open plan"}</Button></Link>}
             </div>
           </Card>
         )}

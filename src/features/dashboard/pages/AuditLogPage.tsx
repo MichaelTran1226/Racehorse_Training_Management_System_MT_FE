@@ -57,15 +57,22 @@ function parseAuditChanges(log: AuditLog, isVi: boolean): { summary: string; cha
 
   const fieldMap = isVi ? fieldNameMapVi : fieldNameMapEn;
 
+  const fieldAliases: Record<string, string> = {
+    "họ và tên": "fullName",
+    "họ tên": "fullName",
+    "số điện thoại": "phone",
+  };
+
   if (oldObj && newObj) {
     const keys = Array.from(new Set([...Object.keys(oldObj), ...Object.keys(newObj)]));
     for (const k of keys) {
       if (k === "actor" || k === "detail") continue;
       const before = String(oldObj[k] ?? "—");
       const after = String(newObj[k] ?? "—");
+      const canonical = fieldAliases[k.toLowerCase()] ?? k;
       if (before !== after) {
         changes.push({
-          field: fieldMap[k] ?? k,
+          field: fieldMap[canonical] ?? fieldMap[k] ?? k,
           before,
           after,
         });
@@ -122,9 +129,9 @@ function parseAuditChanges(log: AuditLog, isVi: boolean): { summary: string; cha
   };
 
   const actionDescriptions = isVi ? actionDescriptionsVi : actionDescriptionsEn;
-  const fallback = isVi ? `Thao tác hệ thống (${log.action})` : `System action (${log.action})`;
+  const fallback = summary || (isVi ? `Thao tác hệ thống (${log.action})` : `System action (${log.action})`);
   const actionText = actionDescriptions[log.action] ?? fallback;
-  return { summary: summary || actionText, changes };
+  return { summary: changes.length > 0 ? "" : actionText, changes };
 }
 
 const emptyFilters = { actor: "", action: "", from: "", to: "" };
