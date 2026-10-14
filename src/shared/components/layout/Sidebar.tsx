@@ -6,7 +6,6 @@ import { cx } from "@/shared/lib/cx";
 import { capitalize, initials } from "@/shared/lib/format";
 import { isNavItemActive, navFor, ROLE_LABEL } from "@/shared/lib/permissions";
 import { useAppLanguage } from "@/shared/lib/language";
-import { getStoredLocks } from "@/shared/mock/horsesData";
 import { healthApi } from "@/features/health/api";
 import type { AuthUser } from "@/shared/types/auth";
 import type { SidebarNote } from "./useSidebarInfo";
@@ -25,7 +24,7 @@ interface SidebarProps {
 export function Sidebar({ user, pathname, note, open, onNavigate }: SidebarProps) {
   const { t, isVietnamese } = useAppLanguage();
   const groups = navFor(user.role, user.permissions);
-  const [hasActiveLocks, setHasActiveLocks] = useState(() => getStoredLocks().some((l) => l.status === "ACTIVE"));
+  const [hasActiveLocks, setHasActiveLocks] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -37,7 +36,7 @@ export function Sidebar({ user, pathname, note, open, onNavigate }: SidebarProps
           }
         })
         .catch(() => {
-          if (!cancelled) setHasActiveLocks(getStoredLocks().some((l) => l.status === "ACTIVE"));
+          if (!cancelled) setHasActiveLocks(false);
         });
     };
 
