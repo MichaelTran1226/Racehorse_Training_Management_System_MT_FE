@@ -2,6 +2,7 @@ import { useId, useState } from "react";
 import type { ReactNode } from "react";
 import { cx } from "@/shared/lib/cx";
 import styles from "./Tooltip.module.css";
+import { trNode } from "@/shared/i18n/tr";
 
 interface TooltipProps {
   label: string;
@@ -25,7 +26,7 @@ export function Tooltip({ label, children, placement = "top", block }: TooltipPr
       {children}
       {open && (
         <span role="tooltip" id={id} className={cx(styles.tip, styles[placement])}>
-          {label}
+          {trNode(label)}
         </span>
       )}
     </span>

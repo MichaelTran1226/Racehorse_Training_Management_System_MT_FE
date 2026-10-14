@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
-
+
+import { tr } from "@/shared/i18n/tr";
 interface SessionTelemetrySnapshot {
   id: string;
   horseId: string;
@@ -73,19 +74,19 @@ export default function LiveMonitorPage() {
                 display: "inline-block",
               }}
             />
-            <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>Session Telemetry & Biometrics</h1>
+            <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>{tr("Session Telemetry & Biometrics")}</h1>
           </div>
           <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
-            Post-workout cardiac telemetry, GPS pacing benchmarks, and safety envelope verification
+            {tr("Post-workout cardiac telemetry, GPS pacing benchmarks, and safety envelope verification")}
           </p>
         </div>
 
         <div style={{ display: "flex", gap: "0.75rem" }}>
           <Link to="/training/calendar">
-            <Button tone="secondary">← Master Calendar</Button>
+            <Button tone="secondary">{tr("← Master Calendar")}</Button>
           </Link>
           <Link to="/alerts">
-            <Button tone="primary">Threshold Alerts →</Button>
+            <Button tone="primary">{tr("Threshold Alerts →")}</Button>
           </Link>
         </div>
       </div>
@@ -104,8 +105,8 @@ export default function LiveMonitorPage() {
       >
         <span style={{ fontSize: "var(--fs-section)" }}>ℹ️</span>
         <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)", lineHeight: 1.5 }}>
-          <strong style={{ color: "var(--text-main)" }}>Telemetry Protocol Notice: </strong>
-          In accordance with the defense architecture guidelines, raw IoT hardware socket streams have been synthesized into validated post-workout biometric logs. Realtime clinical intervention operates through the <strong>Biomechanical & Medical Alerts</strong> bridge.
+          <strong style={{ color: "var(--text-main)" }}>{tr("Telemetry Protocol Notice:")}{" "}</strong>
+          {tr("In accordance with the defense architecture guidelines, raw IoT hardware socket streams have been synthesized into validated post-workout biometric logs. Realtime clinical intervention operates through the")}{" "}<strong>{tr("Biomechanical & Medical Alerts")}</strong> bridge.
         </div>
       </div>
 
@@ -137,7 +138,7 @@ export default function LiveMonitorPage() {
                     <span style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)", fontWeight: 400 }}>({session.horseCode})</span>
                   </h3>
                   <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-                    Jockey: <strong>{session.jockey}</strong> · {session.track}
+                    {tr("Jockey:")}{" "}<strong>{session.jockey}</strong> · {session.track}
                   </div>
                   <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)", marginTop: "0.15rem" }}>
                     Completed: {session.sessionDate}
@@ -145,14 +146,14 @@ export default function LiveMonitorPage() {
                 </div>
 
                 <Badge tone={isWarning ? "warn" : "ok"}>
-                  {isWarning ? "Elevated Heart Rate" : "Optimal Recovery"}
+                  {isWarning ? tr("Elevated Heart Rate") : tr("Optimal Recovery")}
                 </Badge>
               </div>
 
               {/* Gauges */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                 <div style={{ padding: "1rem", background: "var(--surface-sunken)", borderRadius: "var(--r)", textAlign: "center" }}>
-                  <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)", }}>Peak / Avg Speed</div>
+                  <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)", }}>{tr("Peak / Avg Speed")}</div>
                   <div style={{ fontSize: "var(--fs-h1)", fontWeight: 700, color: "var(--brand)", marginTop: "0.25rem" }}>
                     {session.maxSpeedKmh} <span style={{ fontSize: "var(--fs-body)", fontWeight: 400 }}>km/h</span>
                   </div>
@@ -169,7 +170,7 @@ export default function LiveMonitorPage() {
                     textAlign: "center",
                   }}
                 >
-                  <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)", }}>Peak Heart Rate</div>
+                  <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)", }}>{tr("Peak Heart Rate")}</div>
                   <div
                     style={{
                       fontSize: "var(--fs-h1)",
@@ -214,16 +215,16 @@ export default function LiveMonitorPage() {
                   borderRadius: "var(--r-sm)",
                 }}
               >
-                <strong>Biometric Assessment:</strong> {session.clinicalNote}
+                <strong>{tr("Biometric Assessment:")}</strong> {session.clinicalNote}
               </div>
 
               {/* Deep link actions */}
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
                 <Link to={`/medical/horses/${session.horseId}`}>
-                  <Button tone="ghost">Medical Record</Button>
+                  <Button tone="ghost">{tr("Medical Record")}</Button>
                 </Link>
                 <Link to="/training/metrics">
-                  <Button tone="secondary">Session Metrics →</Button>
+                  <Button tone="secondary">{tr("Session Metrics →")}</Button>
                 </Link>
               </div>
             </div>

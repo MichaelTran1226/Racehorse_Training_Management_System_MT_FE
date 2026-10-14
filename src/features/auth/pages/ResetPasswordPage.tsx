@@ -15,7 +15,8 @@ import { resetPassword } from "../api";
 import { resetFlow } from "../flow";
 import type { ResetFlow } from "../flow";
 import styles from "./AuthPages.module.css";
-
+
+import { tr } from "@/shared/i18n/tr";
 // Bước 3 quên mật khẩu (design 1.6): đặt mật khẩu mới sau khi OTP đã đúng.
 // Cũng là bước cuối của Accept Invite (flow.kind = "invite"): nhân viên đặt mật khẩu lần đầu.
 export default function ResetPasswordPage() {
@@ -70,17 +71,17 @@ export default function ResetPasswordPage() {
 
   return (
     <AuthLayout
-      title={invite ? "Choose your password." : "Choose the new password."}
+      title={invite ? tr("Choose your password.") : tr("Choose the new password.")}
       description={
         invite
-          ? `Welcome${flow.fullName ? `, ${flow.fullName}` : ""}. The invitation for ${flow.email} was accepted; set a password before ${formatTime(flow.expiresAt)} to activate the account.`
-          : `Resetting for ${flow.email}. The code was accepted; this step expires at ${formatTime(flow.expiresAt)}.`
+          ? tr(`Welcome${flow.fullName ? `, ${flow.fullName}` : ""}. The invitation for ${flow.email} was accepted; set a password before ${formatTime(flow.expiresAt)} to activate the account.`)
+          : tr(`Resetting for ${flow.email}. The code was accepted; this step expires at ${formatTime(flow.expiresAt)}.`)
       }
     >
       <form onSubmit={onSubmit} noValidate style={{ display: "contents" }}>
         {expired && (
-          <Alert tone="warn" icon="clock" title={invite ? "This step has expired" : "This reset has expired"}>
-            Request a new code to set the password.
+          <Alert tone="warn" icon="clock" title={invite ? tr("This step has expired") : tr("This reset has expired")}>
+            {tr("Request a new code to set the password.")}
           </Alert>
         )}
         {alert && (
@@ -89,11 +90,11 @@ export default function ResetPasswordPage() {
           </Alert>
         )}
 
-        <Field label="New password" required error={errors.password}>
+        <Field label={tr("New password")} required error={errors.password}>
           <Input
             type="password"
             icon="key"
-            placeholder="At least 8 characters"
+            placeholder={tr("At least 8 characters")}
             autoComplete="new-password"
             value={password}
             disabled={busy}
@@ -106,11 +107,11 @@ export default function ResetPasswordPage() {
 
         <PasswordStrength password={password} />
 
-        <Field label="Confirm new password" required error={errors.confirm}>
+        <Field label={tr("Confirm new password")} required error={errors.confirm}>
           <Input
             type="password"
             icon="key"
-            placeholder="Repeat the new password"
+            placeholder={tr("Repeat the new password")}
             autoComplete="new-password"
             value={confirm}
             disabled={busy}
@@ -122,10 +123,10 @@ export default function ResetPasswordPage() {
         </Field>
 
         <Button type="submit" size="lg" block iconAfter="arrowRight" disabled={busy || expired}>
-          {busy ? "Saving…" : invite ? "Activate account" : "Save password and sign in"}
+          {busy ? tr("Saving…") : invite ? tr("Activate account") : tr("Save password and sign in")}
         </Button>
         <p className={styles.foot}>
-          Code expired? <Link to={restart}>Request a new one</Link>
+          {tr("Code expired?")}{" "}<Link to={restart}>{tr("Request a new one")}</Link>
         </p>
       </form>
     </AuthLayout>

@@ -4,7 +4,8 @@ import { Badge } from "@/shared/components/ui/Badge";
 import { Icon } from "@/shared/components/ui/Icon";
 import type { HerdHorse } from "@/shared/mock/horsesData";
 import type { AuthUser } from "@/shared/types/auth";
-
+
+import { tr } from "@/shared/i18n/tr";
 export interface ClinicalProtocolSuggestion {
   id: string;
   title: string;
@@ -201,7 +202,7 @@ export function SearchSuggestionsPopover({
       >
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ fontWeight: 700, color: "var(--text)", }}>
-            {query.trim() ? "Search Results" : "Global Search Suggestions"}
+            {query.trim() ? tr("Search Results") : tr("Global Search Suggestions")}
           </span>
           <span style={{ color: "var(--brand)", fontWeight: 700, background: "var(--surface-2)", padding: "1px 7px", borderRadius: "var(--r-lg)" }}>
             {totalResults}
@@ -255,19 +256,19 @@ export function SearchSuggestionsPopover({
             {!query.trim() && horses.length === 0 ? (
               <>
                 <div style={{ fontWeight: 700, color: "var(--text)", fontSize: "var(--fs-body-lg)" }}>
-                  No horses or clinical treatments in database
+                  {tr("No horses or clinical treatments in database")}
                 </div>
                 <div style={{ fontSize: "var(--fs-caption)", marginTop: 6, color: "var(--border-field)", maxWidth: 320, margin: "6px auto 0", lineHeight: 1.45 }}>
-                  All search suggestions are strictly derived from registered horses and their active treatments. Add horses in Herd Health to begin tracking medical care.
+                  {tr("All search suggestions are strictly derived from registered horses and their active treatments. Add horses in Herd Health to begin tracking medical care.")}
                 </div>
               </>
             ) : (
               <>
                 <div style={{ fontWeight: 700, color: "var(--text)", fontSize: "var(--fs-body-lg)" }}>
-                  No matching horses or clinical records for &quot;<strong>{query}</strong>&quot;
+                  {tr("No matching horses or clinical records for &quot;")}<strong>{query}</strong>&quot;
                 </div>
                 <div style={{ fontSize: "var(--fs-caption)", marginTop: 6, color: "var(--border-field)" }}>
-                  Try searching by letter, horse name, code (EQ-), stall, or clinical status
+                  {tr("Try searching by letter, horse name, code (EQ-), stall, or clinical status")}
                 </div>
               </>
             )}
@@ -343,23 +344,23 @@ export function SearchSuggestionsPopover({
                           </span>
                         </div>
                         <div style={{ fontSize: "var(--fs-caption)", color: "var(--muted)", marginTop: 1 }}>
-                          {horse.stall ? `Stall: ${horse.stall}` : "Stall unassigned"}
-                          {horse.restingHeartRate ? ` • HR: ${horse.restingHeartRate} bpm` : ""}
+                          {horse.stall ? tr(`Stall: ${horse.stall}`) : tr("Stall unassigned")}
+                          {horse.restingHeartRate ? tr(` • HR: ${horse.restingHeartRate} bpm`) : ""}
                         </div>
                       </div>
                     </div>
 
                     <div style={{ flexShrink: 0, marginLeft: "0.5rem" }}>
                       {horse.isLocked ? (
-                        <Badge tone="danger">LOCKED</Badge>
+                        <Badge tone="danger">{tr("LOCKED")}</Badge>
                       ) : horse.healthGroup === "INJURED" ? (
-                        <Badge tone="danger">Injured</Badge>
+                        <Badge tone="danger">{tr("Injured")}</Badge>
                       ) : horse.healthGroup === "WATCH" ? (
-                        <Badge tone="warn">Watch</Badge>
+                        <Badge tone="warn">{tr("Watch")}</Badge>
                       ) : horse.healthGroup === "QUARANTINED" ? (
-                        <Badge tone="warn">Quarantine</Badge>
+                        <Badge tone="warn">{tr("Quarantine")}</Badge>
                       ) : (
-                        <Badge tone="ok">Fit</Badge>
+                        <Badge tone="ok">{tr("Fit")}</Badge>
                       )}
                     </div>
                   </div>
@@ -473,7 +474,7 @@ export function SearchSuggestionsPopover({
           fontSize: "var(--fs-caption)",
         }}
       >
-        <span style={{ color: "var(--muted)" }}>Click to open • Press ESC to dismiss</span>
+        <span style={{ color: "var(--muted)" }}>{tr("Click to open • Press ESC to dismiss")}</span>
         <button
           type="button"
           onClick={() => {
@@ -491,7 +492,7 @@ export function SearchSuggestionsPopover({
             textDecoration: "underline",
           }}
         >
-          View all in Herd Health →
+          {tr("View all in Herd Health →")}
         </button>
       </div>
     </div>

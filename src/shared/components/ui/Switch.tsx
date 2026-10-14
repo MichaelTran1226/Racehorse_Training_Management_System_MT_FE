@@ -1,6 +1,7 @@
 import { cx } from "@/shared/lib/cx";
 import { Tooltip } from "./Tooltip";
 import styles from "./Switch.module.css";
+import { trNode } from "@/shared/i18n/tr";
 
 interface SwitchProps {
   checked: boolean;
@@ -18,7 +19,7 @@ export function Switch({ checked, onChange, label, disabled, blockedReason }: Sw
       type="button"
       role="switch"
       aria-checked={checked}
-      aria-label={label}
+      aria-label={trNode(label)}
       aria-disabled={off || undefined}
       onClick={() => {
         if (!off) onChange?.(!checked);
@@ -30,7 +31,7 @@ export function Switch({ checked, onChange, label, disabled, blockedReason }: Sw
   );
   // Công tắc luôn nằm sát mép phải của thẻ (thẻ có overflow: hidden) => tooltip canh mép phải để không bị cắt chữ.
   return blockedReason ? (
-    <Tooltip label={blockedReason} placement="topEnd">
+    <Tooltip label={trNode(blockedReason)} placement="topEnd">
       {control}
     </Tooltip>
   ) : (

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Button } from "./Button";
 import { Modal } from "./Modal";
+import { trNode } from "@/shared/i18n/tr";
 
 interface ConfirmModalProps {
   title: string;
@@ -18,23 +19,23 @@ interface ConfirmModalProps {
 export function ConfirmModal({ title, subtitle, tone = "danger", confirmLabel, cancelLabel, busy, onConfirm, onCancel, children }: ConfirmModalProps) {
   return (
     <Modal
-      title={title}
-      subtitle={subtitle}
+      title={trNode(title)}
+      subtitle={trNode(subtitle)}
       tone={tone}
       width={420}
       onClose={onCancel}
       foot={
         <>
           <Button tone="secondary" size="sm" onClick={onCancel} data-autofocus>
-            {cancelLabel}
+            {trNode(cancelLabel)}
           </Button>
           <Button tone={tone === "danger" ? "danger" : "primary"} size="sm" disabled={busy} onClick={onConfirm}>
-            {confirmLabel}
+            {trNode(confirmLabel)}
           </Button>
         </>
       }
     >
-      {children}
+      {trNode(children)}
     </Modal>
   );
 }

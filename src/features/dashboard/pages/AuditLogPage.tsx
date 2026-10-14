@@ -11,7 +11,8 @@ import { api } from "@/shared/lib/api";
 import { formatDateTime } from "@/shared/lib/format";
 import { useAppLanguage } from "@/shared/lib/language";
 import styles from "./AuditLogPage.module.css";
-
+
+import { tr } from "@/shared/i18n/tr";
 interface AuditLog {
   id: string; userId: string | null; action: string; entityName: string; entityId: string | null;
   oldValuesJson: string | null; newValuesJson: string | null; ipAddress: string | null;
@@ -178,9 +179,9 @@ export default function AuditLogPage() {
           tone="ghost"
           size="sm"
           onClick={() => setDetail(row)}
-          aria-label={isVietnamese ? `Xem chi tiết cho ${row.action}` : `View details for ${row.action}`}
+          aria-label={isVietnamese ? tr(`Xem chi tiết cho ${row.action}`) : tr(`View details for ${row.action}`)}
         >
-          {isVietnamese ? "Xem chi tiết" : "View details"}
+          {isVietnamese ? "Xem chi tiết" : tr("View details")}
         </Button>
       ),
     },
@@ -188,39 +189,39 @@ export default function AuditLogPage() {
 
   return <>
     <PageHeader
-      title={isVietnamese ? "Nhật ký hệ thống" : "Audit Log"}
-      description={isVietnamese ? "Theo dõi lịch sử hoạt động và các thay đổi trong hệ thống. Bộ lọc sử dụng múi giờ thiết bị của bạn." : "Review recorded activity and changes. Times and date filters use your local timezone."}
+      title={isVietnamese ? "Nhật ký hệ thống" : tr("Audit Log")}
+      description={isVietnamese ? "Theo dõi lịch sử hoạt động và các thay đổi trong hệ thống. Bộ lọc sử dụng múi giờ thiết bị của bạn." : tr("Review recorded activity and changes. Times and date filters use your local timezone.")}
       showDate
     />
     {import.meta.env.VITE_USE_MOCK === "true" && (
       <Alert
         tone="info"
-        title={isVietnamese ? "Dữ liệu nhật ký thử nghiệm" : "Demo audit history"}
+        title={isVietnamese ? "Dữ liệu nhật ký thử nghiệm" : tr("Demo audit history")}
       >
         {isVietnamese
           ? "Chỉ hiển thị các hoạt động được ghi lại trên trình duyệt này (tối đa 200 sự kiện). Các giá trị lịch sử và siêu dữ liệu yêu cầu không được lưu trữ trong chế độ demo."
-          : "Only activity recorded in this browser is shown (up to 200 events). Historical before/after values and request metadata are not recorded in demo mode."}
+          : tr("Only activity recorded in this browser is shown (up to 200 events). Historical before/after values and request metadata are not recorded in demo mode.")}
       </Alert>
     )}
     <Card pad={0}>
       <form className={styles.filters} onSubmit={event => { event.preventDefault(); if (!invalidDates) { setFilters({ ...draft }); setPage(1); } }}>
-        <label>{isVietnamese ? "Người thực hiện" : "Actor"}<Input value={draft.actor} maxLength={200} onChange={e => setDraft({ ...draft, actor: e.target.value })} placeholder={isVietnamese ? "Tìm kiếm tên người thực hiện" : "Search actor name"} /></label>
-        <label>{isVietnamese ? "Hành động" : "Action"}<Input value={draft.action} maxLength={100} onChange={e => setDraft({ ...draft, action: e.target.value })} placeholder={isVietnamese ? "Mã hành động, ví dụ AUTH_LOGIN" : "Exact action, e.g. AUTH_LOGIN"} /></label>
-        <label>{isVietnamese ? "Từ ngày" : "From"}<Input type="datetime-local" value={draft.from} onChange={e => setDraft({ ...draft, from: e.target.value })} /></label>
-        <label>{isVietnamese ? "Đến ngày" : "To"}<Input type="datetime-local" value={draft.to} onChange={e => setDraft({ ...draft, to: e.target.value })} /></label>
+        <label>{isVietnamese ? "Người thực hiện" : tr("Actor")}<Input value={draft.actor} maxLength={200} onChange={e => setDraft({ ...draft, actor: e.target.value })} placeholder={isVietnamese ? "Tìm kiếm tên người thực hiện" : tr("Search actor name")} /></label>
+        <label>{isVietnamese ? "Hành động" : tr("Action")}<Input value={draft.action} maxLength={100} onChange={e => setDraft({ ...draft, action: e.target.value })} placeholder={isVietnamese ? "Mã hành động, ví dụ AUTH_LOGIN" : tr("Exact action, e.g. AUTH_LOGIN")} /></label>
+        <label>{isVietnamese ? "Từ ngày" : tr("From")}<Input type="datetime-local" value={draft.from} onChange={e => setDraft({ ...draft, from: e.target.value })} /></label>
+        <label>{isVietnamese ? "Đến ngày" : tr("To")}<Input type="datetime-local" value={draft.to} onChange={e => setDraft({ ...draft, to: e.target.value })} /></label>
         <div className={styles.actions}>
-          <Button type="submit" disabled={invalidDates}>{isVietnamese ? "Áp dụng" : "Apply filters"}</Button>
-          <Button tone="secondary" type="button" onClick={() => { setDraft(emptyFilters); setFilters(emptyFilters); setPage(1); }}>{isVietnamese ? "Đặt lại" : "Reset"}</Button>
+          <Button type="submit" disabled={invalidDates}>{isVietnamese ? "Áp dụng" : tr("Apply filters")}</Button>
+          <Button tone="secondary" type="button" onClick={() => { setDraft(emptyFilters); setFilters(emptyFilters); setPage(1); }}>{isVietnamese ? "Đặt lại" : tr("Reset")}</Button>
         </div>
-        {invalidDates && <p role="alert">{isVietnamese ? "Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu." : "The end date must be on or after the start date."}</p>}
+        {invalidDates && <p role="alert">{isVietnamese ? "Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu." : tr("The end date must be on or after the start date.")}</p>}
       </form>
       {error ? (
         <Alert
           tone="danger"
-          title={isVietnamese ? "Không thể tải nhật ký hệ thống" : "Audit history could not be loaded"}
+          title={isVietnamese ? "Không thể tải nhật ký hệ thống" : tr("Audit history could not be loaded")}
           action={<Button tone="secondary" onClick={() => setRetry(n => n + 1)}>{isVietnamese ? "Thử lại" : "Try again"}</Button>}
         >
-          {isVietnamese ? "Vui lòng kiểm tra kết nối mạng và thử lại." : "Check your connection and try again."}
+          {isVietnamese ? "Vui lòng kiểm tra kết nối mạng và thử lại." : tr("Check your connection and try again.")}
         </Alert>
       ) : (
         <div className={styles.table}>
@@ -229,7 +230,7 @@ export default function AuditLogPage() {
             rows={result?.logs ?? []}
             rowKey={row => row.id}
             loading={!result}
-            caption={isVietnamese ? "Lịch sử hoạt động, mới nhất ở trên" : "Audit history, newest first"}
+            caption={isVietnamese ? "Lịch sử hoạt động, mới nhất ở trên" : tr("Audit history, newest first")}
             empty={
               <EmptyState
                 title={isVietnamese ? "Không có sự kiện nào khớp với bộ lọc." : "No audit events match these filters."}
@@ -242,14 +243,14 @@ export default function AuditLogPage() {
       {result && (
         <div className={styles.pagination}>
           <span role="status">
-            {result.total} {isVietnamese ? "sự kiện" : "events"} · {isVietnamese ? "Trang" : "Page"} {result.page} / {Math.max(1, Math.ceil(result.total / result.pageSize))}
+            {result.total} {isVietnamese ? "sự kiện" : "events"} · {isVietnamese ? "Trang" : tr("Page")} {result.page} / {Math.max(1, Math.ceil(result.total / result.pageSize))}
           </span>
           <div className={styles.actions}>
             <Button tone="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-              {isVietnamese ? "Trang trước" : "Previous page"}
+              {isVietnamese ? "Trang trước" : tr("Previous page")}
             </Button>
             <Button tone="secondary" disabled={page * result.pageSize >= result.total} onClick={() => setPage(page + 1)}>
-              {isVietnamese ? "Trang sau" : "Next page"}
+              {isVietnamese ? "Trang sau" : tr("Next page")}
             </Button>
           </div>
         </div>
@@ -259,26 +260,26 @@ export default function AuditLogPage() {
       const { summary, recorded, changes } = parseAuditChanges(detail, isVietnamese);
       return (
         <Modal
-          title={isVietnamese ? "Chi tiết sự kiện nhật ký" : "Audit Event Details"}
+          title={isVietnamese ? "Chi tiết sự kiện nhật ký" : tr("Audit Event Details")}
           subtitle={`${detail.action} · ${formatDateTime(detail.timestamp)}`}
           width={720}
           onClose={() => setDetail(null)}
         >
           <dl className={styles.metadata}>
             <div>
-              <dt>{isVietnamese ? "Người thực hiện" : "Actor"}</dt>
-              <dd>{detail.user?.fullName ?? detail.userId ?? (isVietnamese ? "Hệ thống" : "System")}</dd>
+              <dt>{isVietnamese ? "Người thực hiện" : tr("Actor")}</dt>
+              <dd>{detail.user?.fullName ?? detail.userId ?? (isVietnamese ? "Hệ thống" : tr("System"))}</dd>
             </div>
             <div>
-              <dt>{isVietnamese ? "Hành động" : "Action"}</dt>
+              <dt>{isVietnamese ? "Hành động" : tr("Action")}</dt>
               <dd><strong>{detail.action}</strong></dd>
             </div>
             <div>
-              <dt>{isVietnamese ? "Đối tượng thao tác" : "Target Entity"}</dt>
-              <dd>{detail.entityName || (isVietnamese ? "Tài khoản / Hệ thống" : "Account / System")}</dd>
+              <dt>{isVietnamese ? "Đối tượng thao tác" : tr("Target Entity")}</dt>
+              <dd>{detail.entityName || (isVietnamese ? "Tài khoản / Hệ thống" : tr("Account / System"))}</dd>
             </div>
             <div>
-              <dt>{isVietnamese ? "Thời gian" : "Time"}</dt>
+              <dt>{isVietnamese ? "Thời gian" : tr("Time")}</dt>
               <dd>{formatDateTime(detail.timestamp)}</dd>
             </div>
             {/* Định danh và nguồn thao tác (FR-021: lưu vết user, IP, thời gian). */}
@@ -290,21 +291,21 @@ export default function AuditLogPage() {
             ] as const).map(([label, value]) => (
               <div key={label}>
                 <dt>{label}</dt>
-                <dd>{value ?? (isVietnamese ? "Không ghi nhận" : "Not recorded")}</dd>
+                <dd>{value ?? (isVietnamese ? "Không ghi nhận" : tr("Not recorded"))}</dd>
               </div>
             ))}
           </dl>
 
           <div className={styles.changeSection}>
-            <div className={styles.changeTitle}>{isVietnamese ? "Nội dung thay đổi chi tiết" : "Detailed Changes"}</div>
+            <div className={styles.changeTitle}>{isVietnamese ? "Nội dung thay đổi chi tiết" : tr("Detailed Changes")}</div>
             {changes.length > 0 ? (
               <div className={styles.changeTableWrapper}>
                 <table className={styles.changeTable}>
                   <thead>
                     <tr>
-                      <th style={{ width: "30%" }}>{isVietnamese ? "Thông tin thay đổi" : "Field Name"}</th>
-                      <th style={{ width: "35%" }}>{isVietnamese ? "Trước khi sửa (Before)" : "Before (Old Value)"}</th>
-                      <th style={{ width: "35%" }}>{isVietnamese ? "Sau khi sửa (After)" : "After (New Value)"}</th>
+                      <th style={{ width: "30%" }}>{isVietnamese ? "Thông tin thay đổi" : tr("Field Name")}</th>
+                      <th style={{ width: "35%" }}>{isVietnamese ? "Trước khi sửa (Before)" : tr("Before (Old Value)")}</th>
+                      <th style={{ width: "35%" }}>{isVietnamese ? "Sau khi sửa (After)" : tr("After (New Value)")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -323,7 +324,7 @@ export default function AuditLogPage() {
                 <div className={styles.actionIcon}>📝</div>
                 <div className={styles.actionText}>
                   <strong>{summary}</strong>
-                  <p>{recorded ?? (isVietnamese ? "Hành động đã được ghi nhận và áp dụng thành công trong hệ thống." : "Action was successfully executed and recorded in the audit log.")}</p>
+                  <p>{recorded ?? (isVietnamese ? "Hành động đã được ghi nhận và áp dụng thành công trong hệ thống." : tr("Action was successfully executed and recorded in the audit log."))}</p>
                 </div>
               </div>
             )}

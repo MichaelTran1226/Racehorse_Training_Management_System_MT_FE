@@ -26,7 +26,8 @@ import {
   TRACK_LABEL,
 } from "../types";
 import type { AbnormalSign, CompletionLevel, ExerciseSession, TrackCondition, TrackType } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 /** "mm:ss.s" <-> giây. */
 function parseTime(text: string): number | null {
   const m = /^(\d{1,2}):([0-5]\d(?:\.\d)?)$/.exec(text.trim());
@@ -124,8 +125,8 @@ export default function SessionResultPage() {
       .catch((err) => setLoadError(messageFor(err)));
   }, [id, fill, isTrainer]);
 
-  if (loadError) return <Alert tone="danger" title="Could not load the workout">{loadError}</Alert>;
-  if (!session) return <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Loading workout...</div>;
+  if (loadError) return <Alert tone="danger" title={tr("Could not load the workout")}>{loadError}</Alert>;
+  if (!session) return <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>{tr("Loading workout...")}</div>;
 
   const r = session.result;
   const needsTime = !NO_TIME_TYPES.includes(session.sessionType);
@@ -196,102 +197,102 @@ export default function SessionResultPage() {
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
-        <h1 style={{ margin: 0, fontSize: "var(--fs-kpi)" }}>Workout result</h1>
+        <h1 style={{ margin: 0, fontSize: "var(--fs-kpi)" }}>{tr("Workout result")}</h1>
         <div style={{ display: "flex", gap: "0.5rem" }}>
           {user.role !== "GROOM" && (
-            <Link to={`/horses/${session.horseId}/fitness`}><Button tone="secondary">Fitness chart</Button></Link>
+            <Link to={`/horses/${session.horseId}/fitness`}><Button tone="secondary">{tr("Fitness chart")}</Button></Link>
           )}
           {user.role !== "GROOM" && user.role !== "HORSE_OWNER" && (
-            <Link to={`/training/plans/${session.planId}`}><Button tone="ghost">Open plan</Button></Link>
+            <Link to={`/training/plans/${session.planId}`}><Button tone="ghost">{tr("Open plan")}</Button></Link>
           )}
         </div>
       </div>
 
       <Card pad={20}>
-        <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>Workout</h2>
+        <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>{tr("Workout")}</h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.5rem", fontSize: "var(--fs-body)" }}>
-          <div>Horse: <strong>{session.horseName}</strong></div>
-          <div>Date: <strong>{session.sessionDate} {session.startTime}</strong></div>
-          <div>Type: <strong>{EXERCISE_TYPE_LABEL[session.sessionType]}</strong> · {INTENSITY_LABEL[session.intensity]}</div>
-          <div>Planned: <strong>{session.targetDistanceMeters} m × {session.repetitions}</strong></div>
-          <div>Target speed: <strong>{session.targetSpeedKmh ? `${session.targetSpeedKmh} km/h` : "—"}</strong></div>
-          <div>Surface: <strong>{TRACK_LABEL[session.trackType]}</strong></div>
-          <div>Jockey: <strong>{session.jockeyName || "—"}</strong></div>
-          <div>Groom: <strong>{session.groomName || "—"}</strong></div>
-          <div>Status: <Badge tone={SESSION_STATUS_TONE[session.status]}>{SESSION_STATUS_LABEL[session.status]}</Badge></div>
+          <div>{tr("Horse:")}{" "}<strong>{session.horseName}</strong></div>
+          <div>{tr("Date:")}{" "}<strong>{session.sessionDate} {session.startTime}</strong></div>
+          <div>{tr("Type:")}{" "}<strong>{EXERCISE_TYPE_LABEL[session.sessionType]}</strong> · {INTENSITY_LABEL[session.intensity]}</div>
+          <div>{tr("Planned:")}{" "}<strong>{session.targetDistanceMeters} m × {session.repetitions}</strong></div>
+          <div>{tr("Target speed:")}{" "}<strong>{session.targetSpeedKmh ? tr(`${session.targetSpeedKmh} km/h`) : "—"}</strong></div>
+          <div>{tr("Surface:")}{" "}<strong>{TRACK_LABEL[session.trackType]}</strong></div>
+          <div>{tr("Jockey:")}{" "}<strong>{session.jockeyName || "—"}</strong></div>
+          <div>{tr("Groom:")}{" "}<strong>{session.groomName || "—"}</strong></div>
+          <div>{tr("Status:")}{" "}<Badge tone={SESSION_STATUS_TONE[session.status]}>{SESSION_STATUS_LABEL[session.status]}</Badge></div>
         </div>
       </Card>
 
       {!editing && !r && (
-        <Alert tone="info" title="No result yet">
+        <Alert tone="info" title={tr("No result yet")}>
           {session.status === "BLOCKED" || session.status === "CANCELLED"
-            ? "This workout was blocked or cancelled, so it has no result."
-            : "The Head Trainer has not recorded a result yet."}
+            ? tr("This workout was blocked or cancelled, so it has no result.")
+            : tr("The Head Trainer has not recorded a result yet.")}
         </Alert>
       )}
 
       {!editing && r && (
         <Card pad={20}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-            <h2 style={{ margin: 0, fontSize: "var(--fs-body-lg)" }}>Result</h2>
+            <h2 style={{ margin: 0, fontSize: "var(--fs-body-lg)" }}>{tr("Result")}</h2>
             {isTrainer && (
               <Button
                 tone="secondary"
                 size="sm"
                 disabled={!canEditResult}
-                title={canEditResult ? "" : "Results can only be edited within 48 hours of recording."}
+                title={canEditResult ? "" : tr("Results can only be edited within 48 hours of recording.")}
                 onClick={() => setEditing(true)}
               >
-                Edit result
+                {tr("Edit result")}
               </Button>
             )}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.5rem", fontSize: "var(--fs-body)" }}>
-            <div>Actual distance: <strong>{r.actualDistanceMeters ?? "—"} m</strong></div>
-            <div>Time: <strong>{formatTime(r.actualDurationSeconds) || "—"}</strong></div>
-            <div>Average speed: <strong>{r.avgSpeedKmh != null ? `${r.avgSpeedKmh} km/h` : "—"}</strong></div>
-            <div>Surface: <strong>{r.actualSurface ? TRACK_LABEL[r.actualSurface] : "—"}</strong>{r.trackCondition ? ` (${TRACK_CONDITION_LABEL[r.trackCondition]})` : ""}</div>
-            <div>Peak HR: <strong>{r.maxHeartRate ?? "—"} bpm</strong></div>
-            <div>HR after 10 min: <strong>{r.recoveryHeartRate ?? "—"} bpm</strong></div>
-            {user.role !== "GROOM" && <div>Performance: <strong>{r.performanceScore ?? "—"}/10</strong></div>}
-            <div>Completion: <strong>{r.completionLevel ? COMPLETION_LABEL[r.completionLevel] : "—"}</strong></div>
+            <div>{tr("Actual distance:")}{" "}<strong>{r.actualDistanceMeters ?? "—"} m</strong></div>
+            <div>{tr("Time:")}{" "}<strong>{formatTime(r.actualDurationSeconds) || "—"}</strong></div>
+            <div>{tr("Average speed:")}{" "}<strong>{r.avgSpeedKmh != null ? tr(`${r.avgSpeedKmh} km/h`) : "—"}</strong></div>
+            <div>{tr("Surface:")}{" "}<strong>{r.actualSurface ? TRACK_LABEL[r.actualSurface] : "—"}</strong>{r.trackCondition ? ` (${TRACK_CONDITION_LABEL[r.trackCondition]})` : ""}</div>
+            <div>{tr("Peak HR:")}{" "}<strong>{r.maxHeartRate ?? "—"} bpm</strong></div>
+            <div>{tr("HR after 10 min:")}{" "}<strong>{r.recoveryHeartRate ?? "—"} bpm</strong></div>
+            {user.role !== "GROOM" && <div>{tr("Performance:")}{" "}<strong>{r.performanceScore ?? "—"}/10</strong></div>}
+            <div>{tr("Completion:")}{" "}<strong>{r.completionLevel ? COMPLETION_LABEL[r.completionLevel] : "—"}</strong></div>
           </div>
-          <div style={{ marginTop: "0.75rem" }}><strong>Comment:</strong> {r.headTrainerFeedback || "—"}</div>
+          <div style={{ marginTop: "0.75rem" }}><strong>{tr("Comment:")}</strong> {r.headTrainerFeedback || "—"}</div>
           {r.hasAbnormalSigns && (
-            <Alert tone="danger" title="Abnormal signs">
+            <Alert tone="danger" title={tr("Abnormal signs")}>
               {r.abnormalSignTypes.map((x) => ABNORMAL_SIGN_LABEL[x]).join(", ")}: {r.abnormalSignsDescription}
             </Alert>
           )}
           <div style={{ marginTop: "0.75rem", fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>
-            Recorded by {r.recordedBy ?? "—"}{r.recordedAt ? ` at ${formatDateTime(r.recordedAt)}` : ""}
-            {r.updatedBy ? ` · last edited by ${r.updatedBy}${r.updatedAt ? ` at ${formatDateTime(r.updatedAt)}` : ""}` : ""}
+            Recorded by {r.recordedBy ?? "—"}{r.recordedAt ? tr(` at ${formatDateTime(r.recordedAt)}`) : ""}
+            {r.updatedBy ? tr(` · last edited by ${r.updatedBy}${r.updatedAt ? ` at ${formatDateTime(r.updatedAt)}` : ""}`) : ""}
           </div>
         </Card>
       )}
 
       {editing && (
         <>
-          {error && <Alert tone="danger" title="Cannot save">{error}</Alert>}
+          {error && <Alert tone="danger" title={tr("Cannot save")}>{error}</Alert>}
           <Card pad={20}>
-            <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>Actual figures</h2>
+            <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>{tr("Actual figures")}</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
-              <Field label="Actual distance (m)" required hint="50 – 10 000, all reps">
+              <Field label={tr("Actual distance (m)")} required hint={tr("50 – 10 000, all reps")}>
                 <Input type="number" inputMode="numeric" value={distance} onChange={(e) => set(setDistance)(e.target.value)} />
               </Field>
-              <Field label="Running time (mm:ss.s)" required={needsTime}>
+              <Field label={tr("Running time (mm:ss.s)")} required={needsTime}>
                 <Input value={time} placeholder="01:12.5" onChange={(e) => set(setTime)(e.target.value)} />
               </Field>
-              <Field label="Average speed (km/h)" hint="Calculated">
+              <Field label={tr("Average speed (km/h)")} hint={tr("Calculated")}>
                 <Input value={avgSpeed ?? ""} readOnly />
               </Field>
-              <Field label="Actual surface" required>
+              <Field label={tr("Actual surface")} required>
                 <Select
                   value={surface}
                   onChange={(e) => set(setSurface)(e.target.value as TrackType)}
                   options={(Object.keys(TRACK_LABEL) as TrackType[]).map((t) => ({ value: t, label: TRACK_LABEL[t] }))}
                 />
               </Field>
-              <Field label="Track condition">
+              <Field label={tr("Track condition")}>
                 <Select
                   value={condition}
                   onChange={(e) => set(setCondition)(e.target.value as TrackCondition)}
@@ -301,31 +302,31 @@ export default function SessionResultPage() {
                   ]}
                 />
               </Field>
-              <Field label="Peak heart rate (bpm)" hint="20 – 260">
+              <Field label={tr("Peak heart rate (bpm)")} hint="20 – 260">
                 <Input type="number" inputMode="numeric" value={peakHr} onChange={(e) => set(setPeakHr)(e.target.value)} />
               </Field>
-              <Field label="Heart rate after 10 min rest (bpm)" hint="20 – 200">
+              <Field label={tr("Heart rate after 10 min rest (bpm)")} hint="20 – 200">
                 <Input type="number" inputMode="numeric" value={recoveryHr} onChange={(e) => set(setRecoveryHr)(e.target.value)} />
               </Field>
             </div>
             {avgSpeed != null && avgSpeed > 75 && (
               <div style={{ marginTop: "0.75rem" }}>
-                <Alert tone="warn" title="Unusual speed">The calculated speed looks wrong. Please check the distance and time.</Alert>
+                <Alert tone="warn" title={tr("Unusual speed")}>{tr("The calculated speed looks wrong. Please check the distance and time.")}</Alert>
               </div>
             )}
           </Card>
 
           <Card pad={20}>
-            <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>Evaluation</h2>
+            <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>{tr("Evaluation")}</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
-              <Field label="Performance score" required>
+              <Field label={tr("Performance score")} required>
                 <Select
                   value={score}
                   onChange={(e) => set(setScore)(e.target.value)}
                   options={[{ value: "", label: "—", disabled: true }, ...Array.from({ length: 10 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))]}
                 />
               </Field>
-              <Field label="Completion" required>
+              <Field label={tr("Completion")} required>
                 <Select
                   value={completion}
                   onChange={(e) => set(setCompletion)(e.target.value as CompletionLevel)}
@@ -337,12 +338,12 @@ export default function SessionResultPage() {
               </Field>
             </div>
             <div style={{ marginTop: "1rem" }}>
-              <Field label={`Professional comment (${comment.trim().length}/2000)`} required hint="10 – 2000 characters">
+              <Field label={tr(`Professional comment (${comment.trim().length}/2000)`)} required hint={tr("10 – 2000 characters")}>
                 <Textarea rows={3} maxLength={2000} value={comment} onChange={(e) => set(setComment)(e.target.value)} />
               </Field>
             </div>
             <div style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              <strong style={{ fontSize: "var(--fs-body)" }}>Abnormal signs</strong>
+              <strong style={{ fontSize: "var(--fs-body)" }}>{tr("Abnormal signs")}</strong>
               <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
                 {(Object.keys(ABNORMAL_SIGN_LABEL) as AbnormalSign[]).map((sign) => (
                   <Checkbox
@@ -355,10 +356,10 @@ export default function SessionResultPage() {
               </div>
               {signs.length > 0 && (
                 <>
-                  <Alert tone="warn" title="The Veterinarian and Head Trainer are alerted when you save">
-                    Placing a Training Lock is the Veterinarian's decision.
+                  <Alert tone="warn" title={tr("The Veterinarian and Head Trainer are alerted when you save")}>
+                    {tr("Placing a Training Lock is the Veterinarian's decision.")}
                   </Alert>
-                  <Field label="Describe the signs" required hint="10 – 500 characters">
+                  <Field label={tr("Describe the signs")} required hint={tr("10 – 500 characters")}>
                     <Textarea rows={2} maxLength={500} value={signNotes} onChange={(e) => set(setSignNotes)(e.target.value)} />
                   </Field>
                 </>
@@ -367,9 +368,9 @@ export default function SessionResultPage() {
           </Card>
 
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
-            <Button tone="ghost" onClick={cancel}>Cancel</Button>
+            <Button tone="ghost" onClick={cancel}>{tr("Cancel")}</Button>
             <Button tone="primary" onClick={() => void save()} disabled={submitting}>
-              {submitting ? "Saving..." : "Save result"}
+              {submitting ? tr("Saving...") : tr("Save result")}
             </Button>
           </div>
         </>

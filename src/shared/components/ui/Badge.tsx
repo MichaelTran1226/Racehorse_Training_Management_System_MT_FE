@@ -3,6 +3,7 @@ import { cx } from "@/shared/lib/cx";
 import type { BadgeTone } from "@/shared/lib/status";
 import { Icon } from "./Icon";
 import styles from "./Badge.module.css";
+import { trNode } from "@/shared/i18n/tr";
 
 interface BadgeProps {
   tone?: BadgeTone;
@@ -15,7 +16,7 @@ export function Badge({ tone = "neutral", dot = false, icon, children }: BadgePr
   return (
     <span className={cx(styles.badge, styles[tone])}>
       {icon ? <Icon name={icon} size={12} /> : dot && <span className={styles.dot} />}
-      {children}
+      {trNode(children)}
     </span>
   );
 }

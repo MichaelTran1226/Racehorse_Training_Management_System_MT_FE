@@ -13,7 +13,8 @@ import { messageFor } from "@/shared/lib/messages";
 import { trainingApi } from "../api";
 import { EXERCISE_TYPE_LABEL } from "../types";
 import type { TrainingAlert } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 /** FR-2.14: buổi tập có dấu hiệu bất thường. HT và VET xem; chỉ VET ghi nhận. */
 export default function AlertListPage() {
   const user = useCurrentUser();
@@ -62,21 +63,21 @@ export default function AlertListPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>Abnormal-sign Alerts</h1>
+          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>{tr("Abnormal-sign Alerts")}</h1>
           <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
-            Raised when the Head Trainer records abnormal signs after a workout. The Veterinarian reviews and responds.
+            {tr("Raised when the Head Trainer records abnormal signs after a workout. The Veterinarian reviews and responds.")}
           </p>
         </div>
         <Link to="/training/calendar">
-          <Button tone="secondary">← Training schedule</Button>
+          <Button tone="secondary">{tr("← Training schedule")}</Button>
         </Link>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
         {loading ? (
-          <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Loading alerts...</div>
+          <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>{tr("Loading alerts...")}</div>
         ) : alerts.length === 0 ? (
-          <EmptyState title="No alerts" description="No abnormal signs have been recorded after workouts." />
+          <EmptyState title={tr("No alerts")} description={tr("No abnormal signs have been recorded after workouts.")} />
         ) : (
           alerts.map((alert) => (
             <div
@@ -99,22 +100,22 @@ export default function AlertListPage() {
                     </Link>
                   </span>
                   <span style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>
-                    {EXERCISE_TYPE_LABEL[alert.sessionType]} on {alert.sessionDate} · reported {formatDateTime(alert.createdAt)}
+                    {EXERCISE_TYPE_LABEL[alert.sessionType]} on {alert.sessionDate} {tr("· reported")}{" "}{formatDateTime(alert.createdAt)}
                   </span>
                 </div>
                 <Badge tone={alert.acknowledgedByVet ? "ok" : "danger"}>
-                  {alert.acknowledgedByVet ? "Vet acknowledged" : "Pending vet review"}
+                  {alert.acknowledgedByVet ? tr("Vet acknowledged") : tr("Pending vet review")}
                 </Badge>
               </div>
               <div style={{ fontSize: "var(--fs-body)" }}>{alert.message}</div>
               {alert.vetNotes && (
                 <div style={{ background: "var(--surface-sunken)", padding: "0.75rem", borderRadius: "var(--r-sm)", fontSize: "var(--fs-body)" }}>
-                  <strong>Veterinarian:</strong> {alert.vetNotes}
+                  <strong>{tr("Veterinarian:")}</strong> {alert.vetNotes}
                 </div>
               )}
               {isVet && !alert.acknowledgedByVet && (
                 <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                  <Button tone="primary" onClick={() => setSelected(alert)}>Review & respond</Button>
+                  <Button tone="primary" onClick={() => setSelected(alert)}>{tr("Review & respond")}</Button>
                 </div>
               )}
             </div>
@@ -125,7 +126,7 @@ export default function AlertListPage() {
       {selected && (
         <Modal
           onClose={() => setSelected(null)}
-          title={`Response for ${selected.horseName}`}
+          title={tr(`Response for ${selected.horseName}`)}
           foot={
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
               <Button tone="ghost" onClick={() => setSelected(null)}>Cancel</Button>
@@ -137,9 +138,9 @@ export default function AlertListPage() {
         >
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div style={{ background: "var(--surface-sunken)", padding: "0.75rem", borderRadius: "var(--r-sm)", fontSize: "var(--fs-body)" }}>
-              <strong>Reported:</strong> {selected.message}
+              <strong>{tr("Reported:")}</strong> {selected.message}
             </div>
-            <Field label="Clinical notes" required hint="If treatment is needed, create a medical record or Training Lock in the medical module.">
+            <Field label={tr("Clinical notes")} required hint={tr("If treatment is needed, create a medical record or Training Lock in the medical module.")}>
               <Textarea rows={3} maxLength={1000} value={vetNotes} onChange={(e) => setVetNotes(e.target.value)} />
             </Field>
           </div>

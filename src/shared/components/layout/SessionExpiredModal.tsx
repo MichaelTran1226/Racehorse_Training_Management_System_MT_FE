@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
 import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
-
+
+import { tr } from "@/shared/i18n/tr";
 // WorkFlow 1 §5: hộp thoại KHÔNG đóng được (không Esc, không nhấp nền, không nút X) — một nút duy nhất
 // "Sign in again": xóa phiên phía trình duyệt, về trang đăng nhập và nhớ trang đang đứng (?next=) để quay lại.
 // AuthProvider chỉ bật hộp này một lần dù nhiều request cùng trả 401.
@@ -22,8 +23,8 @@ export function SessionExpiredModal() {
 
   return (
     <Modal
-      title="The session has expired"
-      subtitle="Signed out after 30 minutes without activity, or the account was changed by the Club Manager."
+      title={tr("The session has expired")}
+      subtitle={tr("Signed out after 30 minutes without activity, or the account was changed by the Club Manager.")}
       tone="warn"
       width={430}
       foot={
@@ -32,7 +33,7 @@ export function SessionExpiredModal() {
         </Button>
       }
     >
-      Nothing on this page was sent to the server after the session closed. Sign in again to come back to this page.
+      {tr("Nothing on this page was sent to the server after the session closed. Sign in again to come back to this page.")}
     </Modal>
   );
 }

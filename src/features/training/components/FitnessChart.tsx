@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { clubParts } from "../api";
 import type { FitnessData } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 export type FitnessSeries = "speed" | "score" | "peakHr" | "recoveryHr" | "load";
 
 export const SERIES_LABEL: Record<FitnessSeries, string> = {
@@ -45,7 +46,7 @@ export function FitnessChart({ data, series, from, to }: { data: FitnessData; se
   const ticks = Array.from({ length: 5 }, (_, i) => from + (span * i) / 4);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", maxHeight: 320 }} role="img" aria-label="Fitness chart">
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", maxHeight: 320 }} role="img" aria-label={tr("Fitness chart")}>
       {/* Dải Khóa huấn luyện */}
       {data.lockPeriods.map((l) => {
         const a = Math.max(from, new Date(l.from).getTime());
@@ -67,7 +68,7 @@ export function FitnessChart({ data, series, from, to }: { data: FitnessData; se
           const h = (w.load / maxLoad) * plotH;
           return (
             <rect key={w.weekStart} x={x(t)} y={H - PAD.bottom - h} width={Math.max(4, weekWidth - 4)} height={h} fill={COLORS.load} opacity={0.45}>
-              <title>{`Week of ${w.weekStart}: load ${w.load}`}</title>
+              <title>{tr(`Week of ${w.weekStart}: load ${w.load}`)}</title>
             </rect>
           );
         })}

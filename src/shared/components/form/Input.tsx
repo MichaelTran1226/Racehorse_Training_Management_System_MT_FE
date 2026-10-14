@@ -4,6 +4,7 @@ import { Icon } from "@/shared/components/ui/Icon";
 import { cx } from "@/shared/lib/cx";
 import { useFieldControl } from "./Field";
 import styles from "./Control.module.css";
+import { tr } from "@/shared/i18n/tr";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   icon?: string;
@@ -11,7 +12,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   numeric?: boolean;
 }
 
-export function Input({ icon, invalid, numeric, className, id, type, ...rest }: InputProps) {
+export function Input({ icon, invalid, numeric, className, id, type, placeholder, ...rest }: InputProps) {
   const field = useFieldControl();
   const isInvalid = invalid ?? field?.invalid ?? false;
   const isPassword = type === "password";
@@ -31,6 +32,7 @@ export function Input({ icon, invalid, numeric, className, id, type, ...rest }: 
         isInvalid && styles.invalid,
         className,
       )}
+      placeholder={placeholder === undefined ? undefined : tr(placeholder)}
       {...rest}
     />
   );

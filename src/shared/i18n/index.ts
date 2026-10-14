@@ -2,6 +2,7 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import { en } from "./locales/en";
 import { vi } from "./locales/vi";
+import { VI_TEXT } from "./vi-text";
 
 export type SupportedLanguage = "en" | "vi";
 export const STORAGE_LANG_KEY = "equiflow-lang";
@@ -29,9 +30,18 @@ export function applyLanguage(lang: SupportedLanguage) {
 const initialLang = getStoredLanguage();
 applyLanguage(initialLang);
 
+// Khóa chưa có bản tiếng Việt thì i18next trả câu tiếng Anh mặc định: tra thêm bảng VI_TEXT (dùng chung với tr()).
+i18n.use({
+  type: "postProcessor",
+  name: "viText",
+  process: (value: string, _key: string | string[], _options: unknown, translator: { language?: string }) =>
+    translator?.language === "vi" ? (VI_TEXT[value] ?? value) : value,
+});
+
 i18n
   .use(initReactI18next)
   .init({
+    postProcess: ["viText"],
     resources: {
       en: { translation: en },
       vi: { translation: vi },

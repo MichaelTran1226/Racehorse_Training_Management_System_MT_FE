@@ -14,13 +14,14 @@ import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { useSidebarInfo } from "./useSidebarInfo";
 import styles from "./AppShell.module.css";
-
+
+import { tr } from "@/shared/i18n/tr";
 // Khung chung của mọi trang sau đăng nhập: Sidebar 224px + Topbar 64px + vùng nội dung (DESIGN.md §5).
 // Chưa đăng nhập => chuyển về /login (kèm ?next= để quay lại sau khi đăng nhập).
 export function AppShell({ children }: { children: ReactNode }) {
   const { status, user, expired, signOut, refresh } = useAuth();
   const { pathname } = useLocation();
-  const { t } = useAppLanguage();
+  const { t, lang } = useAppLanguage();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
@@ -48,7 +49,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   if (status !== "authenticated" || !user) {
     return (
       <div className={styles.boot} role="status">
-        Loading workspace…
+        {tr("Loading workspace…")}
       </div>
     );
   }
@@ -57,7 +58,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <BreadcrumbContext.Provider value={setCrumbTail}>
       <div className={styles.shell}>
         <Sidebar user={user} pathname={pathname} note={info.note} accountsAlert={info.accountsAlert} open={menuOpen} onNavigate={() => setMenuOpen(false)} />
-        {menuOpen && <button type="button" className={styles.scrim} aria-label="Close menu" onClick={() => setMenuOpen(false)} />}
+        {menuOpen && <button type="button" className={styles.scrim} aria-label={tr("Close menu")} onClick={() => setMenuOpen(false)} />}
         <div className={styles.main}>
           <Topbar
             breadcrumb={breadcrumbFor(user, pathname, crumbTail)}
@@ -65,7 +66,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             onMenu={() => setMenuOpen(true)}
             onLogout={() => setLogoutOpen(true)}
           />
-          <main id="content" className={styles.content}>
+          {/* key theo ngôn ngữ: đổi ngôn ngữ thì trang vẽ lại để mọi chữ tr() đổi theo. */}
+          <main id="content" className={styles.content} key={lang}>
             {children}
           </main>
         </div>

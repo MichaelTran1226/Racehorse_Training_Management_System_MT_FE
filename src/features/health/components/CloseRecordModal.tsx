@@ -5,7 +5,8 @@ import { Select } from "@/shared/components/form/Select";
 import { Textarea } from "@/shared/components/form/Textarea";
 import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
-
+
+import { tr } from "@/shared/i18n/tr";
 const TREATMENT_RESULT_OPTIONS = [
   { value: "Fully recovered", label: "Fully recovered" },
   { value: "Significantly improved", label: "Significantly improved" },
@@ -63,11 +64,11 @@ export function CloseRecordModal({
 
   return (
     <Modal
-      title={isClosed ? `Reopen Medical Record ${recordNumber}` : `Close Treatment Record ${recordNumber}`}
+      title={isClosed ? tr(`Reopen Medical Record ${recordNumber}`) : tr(`Close Treatment Record ${recordNumber}`)}
       subtitle={
         isClosed
-          ? "May only be reopened within 7 days of closure for supplemental treatment."
-          : "Concludes medical record. All active medications will automatically be marked as stopped."
+          ? tr("May only be reopened within 7 days of closure for supplemental treatment.")
+          : tr("Concludes medical record. All active medications will automatically be marked as stopped.")
       }
       width={500}
       onClose={onClose}
@@ -90,18 +91,18 @@ export function CloseRecordModal({
         )}
 
         {isClosed ? (
-          <Field label="Reopen Reason *" hint="State symptoms recurrence or clinical justification">
+          <Field label={tr("Reopen Reason *")} hint={tr("State symptoms recurrence or clinical justification")}>
             <Textarea
               rows={3}
               value={reopenReason}
               onChange={(e) => setReopenReason(e.target.value)}
-              placeholder="e.g., Horse showed mild recurrence of swelling 2 days after stopping medication..."
+              placeholder={tr("e.g., Horse showed mild recurrence of swelling 2 days after stopping medication...")}
               required
             />
           </Field>
         ) : (
           <>
-            <Field label="Treatment Outcome Evaluation *">
+            <Field label={tr("Treatment Outcome Evaluation *")}>
               <Select
                 options={TREATMENT_RESULT_OPTIONS}
                 value={treatmentResult}
@@ -109,12 +110,12 @@ export function CloseRecordModal({
               />
             </Field>
 
-            <Field label="Treatment Conclusion *" hint="Min 10 characters, max 2000 characters">
+            <Field label={tr("Treatment Conclusion *")} hint={tr("Min 10 characters, max 2000 characters")}>
               <Textarea
                 rows={4}
                 value={conclusion}
                 onChange={(e) => setConclusion(e.target.value)}
-                placeholder="Overall evaluation of protocol efficacy, current physical status, and post-recovery care instructions..."
+                placeholder={tr("Overall evaluation of protocol efficacy, current physical status, and post-recovery care instructions...")}
                 required
               />
             </Field>

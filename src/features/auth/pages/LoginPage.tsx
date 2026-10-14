@@ -17,7 +17,8 @@ import type { LoginFailure } from "@/shared/lib/messages";
 import { safeNext } from "../flow";
 import { EMAIL_PLACEHOLDER } from "@/shared/lib/brand";
 import styles from "./AuthPages.module.css";
-
+
+import { tr } from "@/shared/i18n/tr";
 const EMAIL_RE = /^[^\s@]+@gmail\.com$/i;
 
 interface AlertState {
@@ -176,7 +177,7 @@ export default function LoginPage() {
           <Input
             type="password"
             icon="key"
-            placeholder="Enter password"
+            placeholder={tr("Enter password")}
             autoComplete="current-password"
             value={password}
             disabled={checking}
@@ -199,7 +200,7 @@ export default function LoginPage() {
           block
           iconAfter="arrowRight"
           disabled={checking}
-          blockedReason={locked ? `Sign-in is paused. Try again in ${formatCountdown(lockLeft)}.` : blockedReason}
+          blockedReason={locked ? tr(`Sign-in is paused. Try again in ${formatCountdown(lockLeft)}.`) : blockedReason}
         >
           {checking ? t("auth.submitting", "Signing in…") : t("auth.enterWorkspace", "Enter workspace")}
         </Button>

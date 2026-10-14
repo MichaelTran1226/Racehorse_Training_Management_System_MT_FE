@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Tooltip } from "./Tooltip";
+import { trNode } from "@/shared/i18n/tr";
 
 interface DisabledHintProps {
   reason?: string;
@@ -12,7 +13,7 @@ interface DisabledHintProps {
 export function DisabledHint({ reason, block, children }: DisabledHintProps) {
   if (!reason) return <>{children}</>;
   return (
-    <Tooltip label={reason} block={block}>
+    <Tooltip label={trNode(reason)} block={block}>
       {children}
     </Tooltip>
   );

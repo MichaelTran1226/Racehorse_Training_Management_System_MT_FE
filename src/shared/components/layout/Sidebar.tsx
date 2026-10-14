@@ -11,7 +11,8 @@ import { subscribeNotifications } from "@/shared/lib/notifications";
 import type { AuthUser } from "@/shared/types/auth";
 import type { SidebarNote } from "./useSidebarInfo";
 import styles from "./Sidebar.module.css";
-
+
+import { tr } from "@/shared/i18n/tr";
 interface SidebarProps {
   user: AuthUser;
   pathname: string;
@@ -57,7 +58,7 @@ export function Sidebar({ user, pathname, note, accountsAlert, open, onNavigate 
   }, [canViewLocks]);
 
   return (
-    <nav aria-label="Main navigation" className={cx(styles.nav, open && styles.open)}>
+    <nav aria-label={tr("Main navigation")} className={cx(styles.nav, open && styles.open)}>
       <div className={styles.brand}>
         <span className={styles.logo}>
           <img src={BRAND.logo} alt="" width={26} height={26} />
@@ -90,7 +91,7 @@ export function Sidebar({ user, pathname, note, accountsAlert, open, onNavigate 
                 >
                   <Icon name={it.icon} size={18} />
                   <span className={styles.itemLabel}>{itemLabel}</span>
-                  {showAlertDot && <span className={cx(styles.dot, styles.alertDot)} aria-label="Action required" />}
+                  {showAlertDot && <span className={cx(styles.dot, styles.alertDot)} aria-label={tr("Action required")} />}
                 </Link>
               );
             })}

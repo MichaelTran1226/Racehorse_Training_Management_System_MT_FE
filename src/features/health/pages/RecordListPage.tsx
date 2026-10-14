@@ -10,7 +10,8 @@ import { listRecords } from "../api";
 import type { MedicalRecord } from "../types";
 import styles from "./MedicalRecordPage.module.css";
 import { capitalize, formatDate } from "@/shared/lib/format";
-
+
+import { tr } from "@/shared/i18n/tr";
 const STATUS_OPTIONS = [
   { value: "", label: "All Statuses" },
   { value: "DRAFT", label: "Draft" },
@@ -58,9 +59,9 @@ export default function RecordListPage() {
       <div className={styles.headerCard}>
         <div className={styles.headerTop}>
           <div className={styles.titleArea}>
-            <h1 className={styles.horseTitle}>Electronic Medical Records</h1>
+            <h1 className={styles.horseTitle}>{tr("Electronic Medical Records")}</h1>
             <span style={{ fontSize: "var(--fs-body)", color: "var(--muted)" }}>
-              Manage clinical diagnoses, treatment protocols, prescriptions, and follow-up history for the entire herd.
+              {tr("Manage clinical diagnoses, treatment protocols, prescriptions, and follow-up history for the entire herd.")}
             </span>
 
           </div>
@@ -68,7 +69,7 @@ export default function RecordListPage() {
           {isVet && (
             <div className={styles.actions}>
               <Button tone="primary" icon="plus" onClick={() => navigate("/medical/records/new")}>
-                Create Medical Record
+                {tr("Create Medical Record")}
               </Button>
             </div>
           )}
@@ -81,14 +82,14 @@ export default function RecordListPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               icon="search"
-              aria-label="Search medical records"
-              placeholder="Record number, horse or diagnosis"
+              aria-label={tr("Search medical records")}
+              placeholder={tr("Record number, horse or diagnosis")}
             />
           </div>
 
           <div style={{ width: "200px" }}>
             <Select
-              aria-label="Status"
+              aria-label={tr("Status")}
               options={STATUS_OPTIONS}
               value={status}
               onChange={(e) => {
@@ -99,7 +100,7 @@ export default function RecordListPage() {
           </div>
 
           <Button tone="ghost" onClick={() => { setSearch(""); setStatus(""); setPage(1); }}>
-            Clear filters
+            {tr("Clear filters")}
           </Button>
         </div>
       </div>
@@ -114,26 +115,26 @@ export default function RecordListPage() {
 
         {loading ? (
           <div style={{ textAlign: "center", padding: "40px", color: "var(--muted)" }}>
-            Loading medical records…
+            {tr("Loading medical records…")}
           </div>
         ) : records.length === 0 ? (
           <EmptyState
-            title="No medical records found"
-            description="Try adjusting your search keywords or status filter."
+            title={tr("No medical records found")}
+            description={tr("Try adjusting your search keywords or status filter.")}
           />
         ) : (
           <div className={styles.tableContainer}>
             <table className={styles.dataTable}>
               <thead>
                 <tr>
-                  <th>Record No.</th>
-                  <th>Horse</th>
-                  <th>Exam Date</th>
-                  <th>Exam Type</th>
-                  <th>Diagnosis</th>
-                  <th>Severity</th>
-                  <th>Status</th>
-                  <th>Attending Vet</th>
+                  <th>{tr("Record No.")}</th>
+                  <th>{tr("Horse")}</th>
+                  <th>{tr("Exam Date")}</th>
+                  <th>{tr("Exam Type")}</th>
+                  <th>{tr("Diagnosis")}</th>
+                  <th>{tr("Severity")}</th>
+                  <th>{tr("Status")}</th>
+                  <th>{tr("Attending Vet")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -143,7 +144,7 @@ export default function RecordListPage() {
                     <td className="nowrap">{r.horseName || r.horseId}</td>
                     <td className="num nowrap">{formatDate(r.examinationDate)}</td>
                     <td>{r.examinationType}</td>
-                    <td>{r.diagnosis || "None recorded"}</td>
+                    <td>{r.diagnosis || tr("None recorded")}</td>
                     <td>
                       <Badge
                         tone={
@@ -161,7 +162,7 @@ export default function RecordListPage() {
                       <Badge
                         tone={r.status === "OPEN" ? "info" : r.status === "CLOSED" ? "ok" : "neutral"}
                       >
-                        {r.status === "OPEN" ? "In Treatment" : r.status === "CLOSED" ? "Closed" : "Draft"}
+                        {r.status === "OPEN" ? tr("In Treatment") : r.status === "CLOSED" ? tr("Closed") : tr("Draft")}
                       </Badge>
                     </td>
                     <td className="nowrap">{r.vetName || "—"}</td>

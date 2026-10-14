@@ -7,7 +7,8 @@ import { Textarea } from "@/shared/components/form/Textarea";
 import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
 import type { StopPrescriptionInput } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 const STOP_REASON_OPTIONS = [
   { value: "Resolved", label: "Condition resolved / Symptoms cleared" },
   { value: "Adverse reaction", label: "Adverse reaction / Allergy detected" },
@@ -48,8 +49,8 @@ export function StopPrescriptionModal({ medicationName, onClose, onSubmit }: Sto
 
   return (
     <Modal
-      title={`Discontinue Medication: ${medicationName}`}
-      subtitle="Marks medication status as Discontinued. Discontinued prescriptions cannot be reactivated."
+      title={tr(`Discontinue Medication: ${medicationName}`)}
+      subtitle={tr("Marks medication status as Discontinued. Discontinued prescriptions cannot be reactivated.")}
       width={480}
       tone="warn"
       onClose={onClose}
@@ -71,7 +72,7 @@ export function StopPrescriptionModal({ medicationName, onClose, onSubmit }: Sto
           </div>
         )}
 
-        <Field label="Discontinuation Reason *">
+        <Field label={tr("Discontinuation Reason *")}>
           <Select
             options={STOP_REASON_OPTIONS}
             value={stoppedReason}
@@ -79,16 +80,16 @@ export function StopPrescriptionModal({ medicationName, onClose, onSubmit }: Sto
           />
         </Field>
 
-        <Field label="Discontinuation Date *">
+        <Field label={tr("Discontinuation Date *")}>
           <Input type="date" value={stoppedDate} onChange={(e) => setStoppedDate(e.target.value)} required />
         </Field>
 
-        <Field label="Detailed Notes">
+        <Field label={tr("Detailed Notes")}>
           <Textarea
             rows={2}
             value={stopNotes}
             onChange={(e) => setStopNotes(e.target.value)}
-            placeholder="Describe clinical rationale or findings upon discontinuing medication..."
+            placeholder={tr("Describe clinical rationale or findings upon discontinuing medication...")}
           />
         </Field>
       </form>

@@ -15,7 +15,8 @@ import type { Horse } from "@/features/horses/types";
 import { todayClub, trainingApi } from "../api";
 import { PHASE_TYPE_LABEL } from "../types";
 import type { PhaseSurface, PhaseType, TrainingPhase, TrainingPlan } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 const SURFACE_LABEL: Record<PhaseSurface, string> = { TURF: "Turf", DIRT: "Dirt", SYNTHETIC: "Mixed / synthetic" };
 const MEDICAL = ["UNDER_OBSERVATION", "INJURED", "ISOLATED"];
 
@@ -178,7 +179,7 @@ export default function PlanWizardPage() {
   };
 
   if (user.role !== "HEAD_TRAINER") {
-    return <Alert tone="danger" title="Not allowed">Only the Head Trainer can create or edit training plans.</Alert>;
+    return <Alert tone="danger" title={tr("Not allowed")}>{tr("Only the Head Trainer can create or edit training plans.")}</Alert>;
   }
   const canActivateAfterSave = !editing || existing?.status === "DRAFT";
 
@@ -186,19 +187,19 @@ export default function PlanWizardPage() {
     <div style={{ maxWidth: 920, margin: "0 auto", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
       <div>
         <h1 style={{ fontSize: "var(--fs-kpi)", fontWeight: 700, margin: 0 }}>
-          {editing ? `Edit ${existing?.planCode ?? "plan"}` : "Create Training Plan"}
+          {editing ? tr(`Edit ${existing?.planCode ?? "plan"}`) : tr("Create Training Plan")}
         </h1>
         <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
-          A new plan is saved as a draft. Add workouts, then activate it.
+          {tr("A new plan is saved as a draft. Add workouts, then activate it.")}
         </p>
       </div>
 
-      {error && <Alert tone="danger" title="Cannot save">{error}</Alert>}
+      {error && <Alert tone="danger" title={tr("Cannot save")}>{error}</Alert>}
 
       <Card pad={24}>
-        <h2 style={{ margin: "0 0 1rem", fontSize: "var(--fs-section)" }}>General information</h2>
+        <h2 style={{ margin: "0 0 1rem", fontSize: "var(--fs-section)" }}>{tr("General information")}</h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
-          <Field label="Horse" required>
+          <Field label={tr("Horse")} required>
             <Select
               value={horseId}
               disabled={editing}
@@ -206,33 +207,33 @@ export default function PlanWizardPage() {
               options={horses.map((h) => ({ value: h.id, label: `${h.name} (${h.horseCode ?? ""})${h.isMedicalLocked ? " · Training Lock" : ""}` }))}
             />
           </Field>
-          <Field label="Plan name" required hint="3-150 characters">
+          <Field label={tr("Plan name")} required hint={tr("3-150 characters")}>
             <Input value={name} maxLength={150} onChange={(e) => change(setName)(e.target.value)} />
           </Field>
-          <Field label="Start date" required hint={editing ? undefined : "No earlier than 7 days ago"}>
+          <Field label={tr("Start date")} required hint={editing ? undefined : tr("No earlier than 7 days ago")}>
             <Input type="date" value={startDate} onChange={(e) => change(setStartDate)(e.target.value)} />
           </Field>
-          <Field label="End date" required hint="At most 52 weeks">
+          <Field label={tr("End date")} required hint={tr("At most 52 weeks")}>
             <Input type="date" min={startDate} value={endDate} onChange={(e) => change(setEndDate)(e.target.value)} />
           </Field>
         </div>
         {horse?.isMedicalLocked && (
           <div style={{ marginTop: "1rem" }}>
-            <Alert tone="danger" title="Training Lock">
-              The horse is under a Training Lock. You can prepare a draft, but it cannot be activated yet.
+            <Alert tone="danger" title={tr("Training Lock")}>
+              {tr("The horse is under a Training Lock. You can prepare a draft, but it cannot be activated yet.")}
             </Alert>
           </div>
         )}
         {horse && !horse.isMedicalLocked && MEDICAL.includes(horse.status) && (
           <div style={{ marginTop: "1rem" }}>
-            <Alert tone="warn" title="Medical status">The horse is in status {horse.status}.</Alert>
+            <Alert tone="warn" title={tr("Medical status")}>The horse is in status {horse.status}.</Alert>
           </div>
         )}
         <div style={{ display: "grid", gap: "1rem", marginTop: "1rem" }}>
-          <Field label="Objective" required hint="10-1000 characters">
+          <Field label={tr("Objective")} required hint={tr("10-1000 characters")}>
             <Textarea rows={2} maxLength={1000} value={objective} onChange={(e) => change(setObjective)(e.target.value)} />
           </Field>
-          <Field label="Notes" hint="Up to 1000 characters">
+          <Field label={tr("Notes")} hint={tr("Up to 1000 characters")}>
             <Textarea rows={2} maxLength={1000} value={notes} onChange={(e) => change(setNotes)(e.target.value)} />
           </Field>
         </div>
@@ -240,7 +241,7 @@ export default function PlanWizardPage() {
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h2 style={{ margin: 0, fontSize: "var(--fs-section)" }}>Phases ({phases.length}/12)</h2>
-        <Button tone="secondary" onClick={addPhase} disabled={phases.length >= 12}>+ Add phase</Button>
+        <Button tone="secondary" onClick={addPhase} disabled={phases.length >= 12}>{tr("+ Add phase")}</Button>
       </div>
 
       {phases.map((ph, i) => (
@@ -248,30 +249,30 @@ export default function PlanWizardPage() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
             <strong>Phase #{i + 1}</strong>
             {phases.length > 1 && (
-              <Button tone="ghost" size="sm" onClick={() => removePhase(i)}>Remove phase</Button>
+              <Button tone="ghost" size="sm" onClick={() => removePhase(i)}>{tr("Remove phase")}</Button>
             )}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
-            <Field label="Phase name" required>
+            <Field label={tr("Phase name")} required>
               <Input value={ph.name} maxLength={100} onChange={(e) => updatePhase(i, { name: e.target.value })} />
             </Field>
-            <Field label="Phase type" required>
+            <Field label={tr("Phase type")} required>
               <Select
                 value={ph.type}
                 onChange={(e) => updatePhase(i, { type: e.target.value as PhaseType })}
                 options={(Object.keys(PHASE_TYPE_LABEL) as PhaseType[]).map((t) => ({ value: t, label: PHASE_TYPE_LABEL[t] }))}
               />
             </Field>
-            <Field label="From" required>
+            <Field label={tr("From")} required>
               <Input type="date" min={startDate} max={endDate} value={ph.startDate} onChange={(e) => updatePhase(i, { startDate: e.target.value })} />
             </Field>
-            <Field label="To" required>
+            <Field label={tr("To")} required>
               <Input type="date" min={ph.startDate} max={endDate} value={ph.endDate} onChange={(e) => updatePhase(i, { endDate: e.target.value })} />
             </Field>
-            <Field label="Sessions per week" required hint="1 – 14">
+            <Field label={tr("Sessions per week")} required hint="1 – 14">
               <Input type="number" min={1} max={14} value={ph.sessionsPerWeek} onChange={(e) => updatePhase(i, { sessionsPerWeek: Number(e.target.value) })} />
             </Field>
-            <Field label="Max distance per week (m)" required hint="500 – 60 000">
+            <Field label={tr("Max distance per week (m)")} required hint="500 – 60 000">
               <Input
                 type="number"
                 min={500}
@@ -281,14 +282,14 @@ export default function PlanWizardPage() {
                 onChange={(e) => updatePhase(i, { maxWeeklyDistance: Number(e.target.value) })}
               />
             </Field>
-            <Field label="Main surface" required>
+            <Field label={tr("Main surface")} required>
               <Select
                 value={ph.surface}
                 onChange={(e) => updatePhase(i, { surface: e.target.value as PhaseSurface })}
                 options={(Object.keys(SURFACE_LABEL) as PhaseSurface[]).map((s) => ({ value: s, label: SURFACE_LABEL[s] }))}
               />
             </Field>
-            <Field label="Target speed (km/h)" hint="10 – 70, optional">
+            <Field label={tr("Target speed (km/h)")} hint={tr("10 – 70, optional")}>
               <Input
                 type="number"
                 min={10}
@@ -300,7 +301,7 @@ export default function PlanWizardPage() {
             </Field>
           </div>
           <div style={{ marginTop: "1rem" }}>
-            <Field label="Phase goal" hint="Up to 500 characters">
+            <Field label={tr("Phase goal")} hint={tr("Up to 500 characters")}>
               <Textarea rows={2} maxLength={500} value={ph.goal ?? ""} onChange={(e) => updatePhase(i, { goal: e.target.value })} />
             </Field>
           </div>
@@ -308,13 +309,13 @@ export default function PlanWizardPage() {
       ))}
 
       <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", padding: "0.75rem 0" }}>
-        <Button tone="ghost" onClick={cancel}>Cancel</Button>
+        <Button tone="ghost" onClick={cancel}>{tr("Cancel")}</Button>
         <Button tone="secondary" onClick={() => void save(false)} disabled={submitting || !horseId}>
-          {editing && existing?.status === "ACTIVE" ? "Save" : "Save draft"}
+          {editing && existing?.status === "ACTIVE" ? tr("Save") : tr("Save draft")}
         </Button>
         {canActivateAfterSave && (
           <Button tone="primary" onClick={() => void save(true)} disabled={submitting || !horseId}>
-            Save and activate
+            {tr("Save and activate")}
           </Button>
         )}
       </div>

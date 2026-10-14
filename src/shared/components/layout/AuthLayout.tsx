@@ -35,7 +35,7 @@ interface AuthLayoutProps {
 // Khung 2 cột chuẩn của mọi màn public (design Phase 0 · 1a): cột form 660px + ảnh editorial.
 // Dưới 980px xếp dọc: dải ảnh 186px ở trên, form ở dưới.
 export function AuthLayout({ title, description, hero = HERO_DEFAULT, compact, children }: AuthLayoutProps) {
-  const { t } = useAppLanguage();
+  const { t, lang } = useAppLanguage();
 
   return (
     <div className={styles.page}>
@@ -56,7 +56,9 @@ export function AuthLayout({ title, description, hero = HERO_DEFAULT, compact, c
           <p className={styles.eyebrow}>{t("auth.loginEyebrow", "CLUB WORKSPACE")}</p>
           <h1 className={styles.title}>{title}</h1>
           {description && <p className={styles.description}>{description}</p>}
-          <div className={styles.body}>{children}</div>
+          <div className={styles.body} key={lang}>
+            {children}
+          </div>
         </main>
 
         <p className={styles.support}>

@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Card } from "@/shared/components/ui/Card";
 import { Button } from "@/shared/components/ui/Button";
 import { messageFor } from "@/shared/lib/messages";
-
+
+import { tr } from "@/shared/i18n/tr";
 export interface Loaded<T> {
   data: T | null;
   error: string;
@@ -59,7 +60,7 @@ export function Block<T>({
   if (state.loading)
     body = (
       <div aria-busy="true" style={{ display: "grid", gap: 10 }}>
-        <span className="sr-only">Loading…</span>
+        <span className="sr-only">{tr("Loading…")}</span>
         {[70, 55, 62].map((w) => (
           <span key={w} style={{ display: "block", height: 12, width: `${w}%`, borderRadius: "var(--r-xs)", background: "var(--surface-3)" }} />
         ))}
@@ -68,8 +69,8 @@ export function Block<T>({
   else if (state.error || !state.data)
     body = (
       <div role="alert" style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", padding: "10px 12px", borderRadius: "var(--r)", background: "var(--danger-bg)" }}>
-        <span style={{ color: "var(--danger)", flex: 1, minWidth: 200 }}>{state.error || "Couldn’t load this block."}</span>
-        <Button size="sm" tone="secondary" onClick={state.reload}>Try again</Button>
+        <span style={{ color: "var(--danger)", flex: 1, minWidth: 200 }}>{state.error || tr("Couldn’t load this block.")}</span>
+        <Button size="sm" tone="secondary" onClick={state.reload}>{tr("Try again")}</Button>
       </div>
     );
   else {

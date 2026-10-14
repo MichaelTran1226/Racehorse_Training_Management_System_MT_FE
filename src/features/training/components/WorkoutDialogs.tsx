@@ -29,7 +29,8 @@ import type {
   TrainingPlan,
 } from "../types";
 import { hasCode } from "./PlanDialogs";
-
+
+import { tr } from "@/shared/i18n/tr";
 const WEEKDAYS = [
   { n: 1, label: "Mon" },
   { n: 2, label: "Tue" },
@@ -168,7 +169,7 @@ export function WorkoutDialog({ plans, plan: fixedPlan, session, defaultDate, on
 
   return (
     <Modal
-      title={editing ? "Edit Workout" : "Schedule Workout"}
+      title={editing ? tr("Edit Workout") : tr("Schedule Workout")}
       onClose={onClose}
       width={640}
       foot={
@@ -185,9 +186,9 @@ export function WorkoutDialog({ plans, plan: fixedPlan, session, defaultDate, on
       }
     >
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-        {error && <Alert tone="danger" title="Cannot save">{error}</Alert>}
+        {error && <Alert tone="danger" title={tr("Cannot save")}>{error}</Alert>}
         {warnings.length > 0 && (
-          <Alert tone="warn" title="Please check before saving">
+          <Alert tone="warn" title={tr("Please check before saving")}>
             <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
               {warnings.map((w) => (
                 <li key={w}>{w}</li>
@@ -196,7 +197,7 @@ export function WorkoutDialog({ plans, plan: fixedPlan, session, defaultDate, on
           </Alert>
         )}
         {!fixedPlan && !editing && (
-          <Field label="Horse / plan" required>
+          <Field label={tr("Horse / plan")} required>
             <Select
               value={planId}
               onChange={(e) => setPlanId(e.target.value)}
@@ -208,25 +209,25 @@ export function WorkoutDialog({ plans, plan: fixedPlan, session, defaultDate, on
           </Field>
         )}
         {locked && (
-          <Alert tone="danger" title="Training Lock">
-            Only light or medium workouts can be scheduled. Breeze, trial run and heavy intensity are disabled.
+          <Alert tone="danger" title={tr("Training Lock")}>
+            {tr("Only light or medium workouts can be scheduled. Breeze, trial run and heavy intensity are disabled.")}
           </Alert>
         )}
         {phases.length > 0 && (
-          <Field label="Phase" required hint={phase ? `${phase.startDate} → ${phase.endDate}` : undefined}>
+          <Field label={tr("Phase")} required hint={phase ? `${phase.startDate} → ${phase.endDate}` : undefined}>
             <Select value={phaseId} onChange={(e) => setPhaseId(e.target.value)} options={phases.map((p) => ({ value: p.id, label: p.name }))} />
           </Field>
         )}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-          <Field label="Date" required>
+          <Field label={tr("Date")} required>
             <Input type="date" min={todayClub()} value={date} onChange={(e) => setDate(e.target.value)} />
           </Field>
-          <Field label="Start time" required hint="04:00 – 20:00">
+          <Field label={tr("Start time")} required hint="04:00 – 20:00">
             <Input type="time" min="04:00" max="20:00" step={900} value={time} onChange={(e) => setTime(e.target.value)} />
           </Field>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-          <Field label="Workout type" required>
+          <Field label={tr("Workout type")} required>
             <Select
               value={type}
               onChange={(e) => setType(e.target.value as ExerciseType)}
@@ -237,7 +238,7 @@ export function WorkoutDialog({ plans, plan: fixedPlan, session, defaultDate, on
               }))}
             />
           </Field>
-          <Field label="Intensity" required hint={forcedHeavy ? "Breeze and trial runs are always heavy" : undefined}>
+          <Field label={tr("Intensity")} required hint={forcedHeavy ? tr("Breeze and trial runs are always heavy") : undefined}>
             <Select
               value={effIntensity}
               disabled={forcedHeavy}
@@ -251,18 +252,18 @@ export function WorkoutDialog({ plans, plan: fixedPlan, session, defaultDate, on
           </Field>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
-          <Field label="Distance per rep (m)" required hint="100 – 5000">
+          <Field label={tr("Distance per rep (m)")} required hint="100 – 5000">
             <Input type="number" min={100} max={5000} value={distance} onChange={(e) => setDistance(Number(e.target.value))} />
           </Field>
-          <Field label="Reps" required hint="1 – 10">
+          <Field label={tr("Reps")} required hint="1 – 10">
             <Input type="number" min={1} max={10} value={reps} onChange={(e) => setReps(Number(e.target.value))} />
           </Field>
-          <Field label="Target speed (km/h)" required={forcedHeavy} hint="10 – 70">
+          <Field label={tr("Target speed (km/h)")} required={forcedHeavy} hint="10 – 70">
             <Input type="number" min={10} max={70} step={0.1} value={speed} onChange={(e) => setSpeed(e.target.value)} />
           </Field>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-          <Field label="Track surface" required>
+          <Field label={tr("Track surface")} required>
             <Select
               value={effSurface}
               disabled={noSurface}
@@ -272,19 +273,19 @@ export function WorkoutDialog({ plans, plan: fixedPlan, session, defaultDate, on
                 .map((t) => ({ value: t, label: TRACK_LABEL[t] }))}
             />
           </Field>
-          <Field label="Jockey" required={forcedHeavy}>
+          <Field label={tr("Jockey")} required={forcedHeavy}>
             <Input value={jockey} maxLength={100} onChange={(e) => setJockey(e.target.value)} />
           </Field>
         </div>
-        <Field label="Groom" required>
+        <Field label={tr("Groom")} required>
           <Select value={groomId} onChange={(e) => setGroomId(e.target.value)} options={grooms.map((g) => ({ value: g.id, label: g.fullName }))} />
         </Field>
-        <Field label="Instructions" hint="Up to 500 characters">
+        <Field label={tr("Instructions")} hint={tr("Up to 500 characters")}>
           <Textarea rows={2} maxLength={500} value={notes} onChange={(e) => setNotes(e.target.value)} />
         </Field>
         {!editing && (
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-            <Checkbox label="Repeat weekly" checked={repeat} onChange={setRepeat} />
+            <Checkbox label={tr("Repeat weekly")} checked={repeat} onChange={setRepeat} />
             {repeat && (
               <>
                 <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
@@ -297,7 +298,7 @@ export function WorkoutDialog({ plans, plan: fixedPlan, session, defaultDate, on
                     />
                   ))}
                 </div>
-                <Field label="Repeat until" required hint="Up to the end of the phase; at most 60 workouts at once">
+                <Field label={tr("Repeat until")} required hint="Up to the end of the phase; at most 60 workouts at once">
                   <Input type="date" min={date} max={phase?.endDate} value={until} onChange={(e) => setUntil(e.target.value)} />
                 </Field>
               </>
@@ -306,7 +307,7 @@ export function WorkoutDialog({ plans, plan: fixedPlan, session, defaultDate, on
         )}
         {needVet && (
           <Checkbox
-            label="I have discussed this with the Veterinarian and take responsibility for this workout"
+            label={tr("I have discussed this with the Veterinarian and take responsibility for this workout")}
             checked={vetConsulted}
             onChange={setVetConsulted}
           />
@@ -341,7 +342,7 @@ export function CancelWorkoutDialog({ session, onClose, onDone }: { session: Exe
 
   return (
     <Modal
-      title={`Cancel ${EXERCISE_TYPE_LABEL[session.sessionType]} at ${session.sessionDate} ${session.startTime} – ${session.horseName}?`}
+      title={tr(`Cancel ${EXERCISE_TYPE_LABEL[session.sessionType]} at ${session.sessionDate} ${session.startTime} – ${session.horseName}?`)}
       tone="warn"
       onClose={onClose}
       foot={
@@ -352,7 +353,7 @@ export function CancelWorkoutDialog({ session, onClose, onDone }: { session: Exe
       }
     >
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-        <Field label="Reason" required>
+        <Field label={tr("Reason")} required>
           <Select
             value={reason}
             onChange={(e) => setReason(e.target.value as CancelWorkoutReason)}
@@ -362,7 +363,7 @@ export function CancelWorkoutDialog({ session, onClose, onDone }: { session: Exe
             ]}
           />
         </Field>
-        <Field label="Note" required={reason === "OTHER"} hint="10-500 characters">
+        <Field label={tr("Note")} required={reason === "OTHER"} hint={tr("10-500 characters")}>
           <Textarea rows={2} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
         </Field>
       </div>
@@ -396,7 +397,7 @@ export function RestoreWorkoutDialog({ session, onClose, onDone }: { session: Ex
 
   return (
     <Modal
-      title={`Restore workout – ${session.horseName}`}
+      title={tr(`Restore workout – ${session.horseName}`)}
       onClose={onClose}
       foot={
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
@@ -406,12 +407,12 @@ export function RestoreWorkoutDialog({ session, onClose, onDone }: { session: Ex
       }
     >
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-        {error && <Alert tone="danger" title="Cannot restore">{error}</Alert>}
+        {error && <Alert tone="danger" title={tr("Cannot restore")}>{error}</Alert>}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-          <Field label="Date" required>
+          <Field label={tr("Date")} required>
             <Input type="date" min={today} value={date} onChange={(e) => setDate(e.target.value)} />
           </Field>
-          <Field label="Start time" required hint="04:00 – 20:00">
+          <Field label={tr("Start time")} required hint="04:00 – 20:00">
             <Input type="time" min="04:00" max="20:00" step={900} value={time} onChange={(e) => setTime(e.target.value)} />
           </Field>
         </div>

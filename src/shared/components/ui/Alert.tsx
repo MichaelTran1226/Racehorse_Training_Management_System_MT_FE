@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { cx } from "@/shared/lib/cx";
 import { Icon } from "./Icon";
 import styles from "./Alert.module.css";
+import { trNode } from "@/shared/i18n/tr";
 
 export type AlertTone = "ok" | "warn" | "danger" | "info";
 
@@ -31,8 +32,8 @@ export function Alert({ tone = "info", icon, title, action, onDismiss, className
         <Icon name={icon ?? DEFAULT_ICON[tone]} size={17} />
       </span>
       <div className={styles.body}>
-        {title && <strong className={styles.title}>{title}</strong>}
-        {children}
+        {title && <strong className={styles.title}>{trNode(title)}</strong>}
+        {trNode(children)}
       </div>
       {action}
       {onDismiss && (

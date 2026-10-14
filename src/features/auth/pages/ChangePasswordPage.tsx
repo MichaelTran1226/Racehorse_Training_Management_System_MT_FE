@@ -15,7 +15,8 @@ import { messageFor } from "@/shared/lib/messages";
 import { passwordError } from "@/shared/lib/password";
 import { changePassword } from "../api";
 import styles from "./ProfilePages.module.css";
-
+
+import { tr } from "@/shared/i18n/tr";
 type Errors = Partial<Record<"current" | "next" | "confirm", string>>;
 
 // Design 1.16: đổi mật khẩu — mọi thiết bị khác bị đăng xuất sau khi lưu.
@@ -81,23 +82,23 @@ export default function ChangePasswordPage() {
   return (
     <>
       <PageHeader
-        title="Change your password."
-        description="Changing the password signs out every other device. The club requires a change every 180 days."
+        title={tr("Change your password.")}
+        description={tr("Changing the password signs out every other device. The club requires a change every 180 days.")}
       />
 
       <div className={styles.pwGrid}>
-        <Card title="New password">
+        <Card title={tr("New password")}>
           <form onSubmit={onSubmit} noValidate className={styles.stack}>
             {alert && (
               <Alert tone={alert.tone} icon={alert.tone === "ok" ? "checkCircle" : "alert"} title={alert.title}>
                 {alert.body}
               </Alert>
             )}
-            <Field label="Current password" required error={errors.current}>
+            <Field label={tr("Current password")} required error={errors.current}>
               <Input
                 type="password"
                 icon="key"
-                placeholder="Enter the current password"
+                placeholder={tr("Enter the current password")}
                 autoComplete="current-password"
                 value={current}
                 disabled={busy}
@@ -107,11 +108,11 @@ export default function ChangePasswordPage() {
                 }}
               />
             </Field>
-            <Field label="New password" required error={errors.next}>
+            <Field label={tr("New password")} required error={errors.next}>
               <Input
                 type="password"
                 icon="key"
-                placeholder="At least 8 characters"
+                placeholder={tr("At least 8 characters")}
                 autoComplete="new-password"
                 value={next}
                 disabled={busy}
@@ -122,11 +123,11 @@ export default function ChangePasswordPage() {
               />
             </Field>
             <PasswordStrength password={next} />
-            <Field label="Confirm new password" required error={errors.confirm}>
+            <Field label={tr("Confirm new password")} required error={errors.confirm}>
               <Input
                 type="password"
                 icon="key"
-                placeholder="Repeat the new password"
+                placeholder={tr("Repeat the new password")}
                 autoComplete="new-password"
                 value={confirm}
                 disabled={busy}
@@ -138,36 +139,36 @@ export default function ChangePasswordPage() {
             </Field>
             <div className={styles.buttons}>
               <Button type="submit" icon="check" disabled={busy}>
-                {busy ? "Saving…" : "Save password"}
+                {busy ? tr("Saving…") : tr("Save password")}
               </Button>
               <Button tone="secondary" onClick={() => navigate("/profile")}>
-                Back to profile
+                {tr("Back to profile")}
               </Button>
             </div>
           </form>
         </Card>
 
         <div className={styles.side}>
-          <Card title="Club password rules">
+          <Card title={tr("Club password rules")}>
             <ul className={styles.rules}>
-              <li>At least 8 characters, and not one of the last three used.</li>
-              <li>A mix of upper and lower case, digits or a symbol.</li>
-              <li>Changed every 180 days; a reminder arrives 14 days ahead.</li>
-              <li>Five wrong attempts lock the account for 15 minutes.</li>
+              <li>{tr("At least 8 characters, and not one of the last three used.")}</li>
+              <li>{tr("A mix of upper and lower case, digits or a symbol.")}</li>
+              <li>{tr("Changed every 180 days; a reminder arrives 14 days ahead.")}</li>
+              <li>{tr("Five wrong attempts lock the account for 15 minutes.")}</li>
             </ul>
           </Card>
-          <Card title="Signed-in devices" subtitle="All other devices are signed out on save">
+          <Card title={tr("Signed-in devices")} subtitle={tr("All other devices are signed out on save")}>
             <div className={styles.devices}>
               <div className={styles.device}>
-                <span>Stable office · Windows</span>
-                <b>this device</b>
+                <span>{tr("Stable office · Windows")}</span>
+                <b>{tr("this device")}</b>
               </div>
               <div className={styles.device}>
-                <span>Trackside tablet</span>
+                <span>{tr("Trackside tablet")}</span>
                 <b>18/09 · 16:40</b>
               </div>
               <div className={styles.device}>
-                <span>Phone · Android</span>
+                <span>{tr("Phone · Android")}</span>
                 <b>17/09 · 20:05</b>
               </div>
             </div>

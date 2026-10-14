@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { cx } from "@/shared/lib/cx";
 import { Icon } from "./Icon";
 import styles from "./Modal.module.css";
+import { trNode } from "@/shared/i18n/tr";
 
 interface ModalProps {
   title: string;
@@ -73,7 +74,7 @@ export function Modal({ title, subtitle, tone, width = 480, foot, onClose, child
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label={title}
+        aria-label={trNode(title)}
         tabIndex={-1}
         className={styles.dialog}
         style={{ maxWidth: width }}
@@ -86,8 +87,8 @@ export function Modal({ title, subtitle, tone, width = 480, foot, onClose, child
             </span>
           )}
           <div className={styles.headText}>
-            <h2 className={styles.title}>{title}</h2>
-            {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+            <h2 className={styles.title}>{trNode(title)}</h2>
+            {subtitle && <p className={styles.subtitle}>{trNode(subtitle)}</p>}
           </div>
           {onClose && (
             <button type="button" className={styles.close} onClick={onClose} aria-label="Close">

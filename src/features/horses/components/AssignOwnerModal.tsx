@@ -10,7 +10,8 @@ import { messageFor } from "@/shared/lib/messages";
 import type { PublicAccount } from "@/shared/types/auth";
 import { transferHorseOwner } from "../api";
 import type { Horse } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 interface AssignOwnerModalProps {
   horse: Horse;
   isOpen: boolean;
@@ -84,27 +85,27 @@ export function AssignOwnerModal({ horse, isOpen, onClose, onSuccess }: AssignOw
   const currentOwnerDisplay = horse.owner?.fullName || horse.ownerName || "Unassigned";
 
   return (
-    <Modal onClose={onClose} title={`Transfer owner: ${horse.name}`}>
+    <Modal onClose={onClose} title={tr(`Transfer owner: ${horse.name}`)}>
       <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
         <div style={{ background: "var(--surface-sunken)", padding: "0.875rem", borderRadius: "var(--r)", fontSize: "var(--fs-body)" }}>
           <div>
-            <strong>Current Owner:</strong> {currentOwnerDisplay}
+            <strong>{tr("Current Owner:")}</strong> {currentOwnerDisplay}
           </div>
           <div style={{ color: "var(--ink-muted)", marginTop: 4 }}>
-            Horse Code: <strong>{horse.horseCode || horse.id}</strong> · Breed: {horse.breed}
+            {tr("Horse Code:")}{" "}<strong>{horse.horseCode || horse.id}</strong> · Breed: {horse.breed}
           </div>
         </div>
 
-        <Field label="Assign New Horse Owner" required>
+        <Field label={tr("Assign New Horse Owner")} required>
           {loading ? (
-            <div style={{ fontSize: "var(--fs-body)", color: "var(--muted)" }}>Loading active horse owners…</div>
+            <div style={{ fontSize: "var(--fs-body)", color: "var(--muted)" }}>{tr("Loading active horse owners…")}</div>
           ) : loadError ? (
             <div role="alert" style={{ fontSize: "var(--fs-body)", color: "var(--danger)" }}>
               Couldn’t load horse owners. {loadError}
             </div>
           ) : owners.length === 0 ? (
             <div style={{ fontSize: "var(--fs-body)", color: "var(--text-2)" }}>
-              No other active horse owner accounts. Approve an owner sign-up in Accounts first.
+              {tr("No other active horse owner accounts. Approve an owner sign-up in Accounts first.")}
             </div>
           ) : (
             <Select
@@ -118,25 +119,25 @@ export function AssignOwnerModal({ horse, isOpen, onClose, onSuccess }: AssignOw
           )}
         </Field>
 
-        <Field label="Transfer Rationale / Contract Reference">
+        <Field label={tr("Transfer Rationale / Contract Reference")}>
           <Textarea
             rows={3}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="e.g. Sold at auction, contract number"
+            placeholder={tr("e.g. Sold at auction, contract number")}
           />
         </Field>
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "0.5rem" }}>
           <Button tone="ghost" onClick={onClose} disabled={submitting}>
-            Cancel
+            {tr("Cancel")}
           </Button>
           <Button
             tone="primary"
             onClick={() => void handleTransfer()}
             disabled={submitting || !selectedOwnerId || owners.length === 0}
           >
-            {submitting ? "Processing..." : "Confirm Transfer"}
+            {submitting ? tr("Processing...") : tr("Confirm Transfer")}
           </Button>
         </div>
       </div>

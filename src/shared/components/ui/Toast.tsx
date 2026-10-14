@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { cx } from "@/shared/lib/cx";
 import { Icon } from "./Icon";
 import styles from "./Toast.module.css";
+import { trNode } from "@/shared/i18n/tr";
 
 export type ToastTone = "ok" | "warn" | "danger" | "info";
 
@@ -66,7 +67,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <span className={styles.icon}>
               <Icon name={ICONS[t.tone]} size={16} />
             </span>
-            <span className={styles.text}>{t.message}</span>
+            <span className={styles.text}>{trNode(t.message)}</span>
             {t.action && (
               <button
                 type="button"

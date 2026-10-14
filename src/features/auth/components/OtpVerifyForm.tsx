@@ -12,7 +12,8 @@ import { otpMessage } from "@/shared/lib/messages";
 import { otpStatus, resendOtp } from "../api";
 import type { OtpPurpose, OtpTimes } from "../types";
 import styles from "./OtpVerifyForm.module.css";
-
+
+import { tr } from "@/shared/i18n/tr";
 const CODE_LENGTH = 6;
 
 interface OtpVerifyFormProps {
@@ -107,22 +108,22 @@ export function OtpVerifyForm({ email, purpose, sentTitle, sentBody, submitLabel
         </Alert>
       )}
       {loaded && !times && (
-        <Alert tone="warn" icon="clock" title="No code is waiting">
-          Request a new code to continue.
+        <Alert tone="warn" icon="clock" title={tr("No code is waiting")}>
+          {tr("Request a new code to continue.")}
         </Alert>
       )}
       {expired && (
-        <Alert tone="warn" icon="clock" title="The code has expired">
+        <Alert tone="warn" icon="clock" title={tr("The code has expired")}>
           It was valid until {formatDateTime(times.expiresAt)}. Request a new one below.
         </Alert>
       )}
 
-      <Field label="Verification code" required error={error} hint={times && !expired ? `The code expires in ${formatCountdown(expiresLeft)}.` : undefined}>
+      <Field label={tr("Verification code")} required error={error} hint={times && !expired ? tr(`The code expires in ${formatCountdown(expiresLeft)}.`) : undefined}>
         <OtpInput value={code} onChange={setCode} disabled={busy} autoFocus onComplete={(v) => void submit(v)} />
       </Field>
 
       <Button type="submit" size="lg" block iconAfter="arrowRight" disabled={busy || expired || !times}>
-        {busy ? "Checking…" : submitLabel}
+        {busy ? tr("Checking…") : submitLabel}
       </Button>
 
       <Button
@@ -131,10 +132,10 @@ export function OtpVerifyForm({ email, purpose, sentTitle, sentBody, submitLabel
         block
         icon="mail"
         disabled={resending}
-        blockedReason={resendLeft > 0 ? `A new code can be requested in ${formatCountdown(resendLeft)}.` : undefined}
+        blockedReason={resendLeft > 0 ? tr(`A new code can be requested in ${formatCountdown(resendLeft)}.`) : undefined}
         onClick={onResend}
       >
-        Send the code again
+        {tr("Send the code again")}
       </Button>
 
       <p className={styles.footer}>{footer}</p>

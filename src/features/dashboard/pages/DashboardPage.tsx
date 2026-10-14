@@ -7,7 +7,8 @@ import {
   TrainerDashboard,
   VetDashboard,
 } from "../components/RoleDashboards";
-
+
+import { tr } from "@/shared/i18n/tr";
 const DESCRIPTION: Record<string, string> = {
   CLUB_MANAGER: "Club overview: horses, training, medical safety and stall capacity.",
   HEAD_TRAINER: "Today's workouts, horses to watch and abnormal-sign alerts.",
@@ -22,7 +23,7 @@ export default function DashboardPage() {
   return (
     <div style={{ display: "grid", gap: 20 }}>
       <PageHeader
-        title="Dashboard"
+        title={tr("Dashboard")}
         description={DESCRIPTION[user.role]}
         showDate
       />

@@ -5,7 +5,8 @@ import { Button } from "@/shared/components/ui/Button";
 import { Card } from "@/shared/components/ui/Card";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { ROLE_NAV } from "@/shared/lib/permissions";
-
+
+import { tr } from "@/shared/i18n/tr";
 // Chỗ giữ cho các màn hình của Priority 2–7 (ngựa, huấn luyện, y tế...). Menu đã trỏ tới đây;
 // khi làm xong màn nào thì thêm route riêng vào src/app/router.tsx để thay thế.
 export default function ComingSoonPage({ slug }: { slug: string }) {
@@ -21,8 +22,8 @@ export default function ComingSoonPage({ slug }: { slug: string }) {
       <Card>
         <EmptyState
           icon="map"
-          title="This page does not exist."
-          description="Check the address, or go back to your workspace."
+          title={tr("This page does not exist.")}
+          description={tr("Check the address, or go back to your workspace.")}
           action={
             <Button size="sm" icon="home" onClick={() => navigate("/dashboard")}>
               Back to my workspace
@@ -39,8 +40,8 @@ export default function ComingSoonPage({ slug }: { slug: string }) {
       <Card>
         <EmptyState
           icon={found.item.icon}
-          title={`${found.item.label} Management`}
-          description="This section is currently under development."
+          title={tr(`${found.item.label} Management`)}
+          description={tr("This section is currently under development.")}
         />
       </Card>
     </>

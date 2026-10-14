@@ -12,7 +12,8 @@ import { ROLE_LABEL } from "@/shared/lib/permissions";
 import type { PublicAccount, Role } from "@/shared/types/auth";
 import { createAccount } from "../api";
 import { fullNameError } from "@/shared/lib/name";
-
+
+import { tr } from "@/shared/i18n/tr";
 const EMAIL_RE = /^[^\s@]+@gmail\.com$/i;
 
 // Horse Owner tự đăng ký ở trang Sign Up, nên không có trong danh sách tạo tài khoản.
@@ -56,20 +57,20 @@ export function CreateAccountModal({ onClose, onCreated }: CreateAccountModalPro
 
   return (
     <Modal
-      title="Create a staff account"
-      subtitle="The new member gets an invitation email to set a password."
+      title={tr("Create a staff account")}
+      subtitle={tr("The new member gets an invitation email to set a password.")}
       width={460}
       onClose={onClose}
     >
       <form onSubmit={onSubmit} noValidate style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {errors.form && <span style={{ color: "var(--danger)", fontSize: "var(--fs-caption)" }}>{errors.form}</span>}
-        <Field label="Full name" required error={errors.name}>
+        <Field label={tr("Full name")} required error={errors.name}>
           <Input icon="user" placeholder="John Doe" value={fullName} data-autofocus onChange={(e) => setFullName(e.target.value)} />
         </Field>
-        <Field label="Club email" required error={errors.email}>
+        <Field label={tr("Club email")} required error={errors.email}>
           <Input type="email" icon="mail" placeholder={EMAIL_PLACEHOLDER} value={email} onChange={(e) => setEmail(e.target.value)} />
         </Field>
-        <Field label="Role" required hint="Horse Owners request their own account on the sign-up page.">
+        <Field label={tr("Role")} required hint={tr("Horse Owners request their own account on the sign-up page.")}>
           <Select
             value={role}
             onChange={(e) => setRole(e.target.value as Role)}
@@ -78,10 +79,10 @@ export function CreateAccountModal({ onClose, onCreated }: CreateAccountModalPro
         </Field>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 9 }}>
           <Button tone="secondary" size="sm" onClick={onClose} disabled={busy}>
-            Cancel
+            {tr("Cancel")}
           </Button>
           <Button type="submit" size="sm" icon="mail" disabled={busy}>
-            {busy ? "Sending…" : "Send invitation"}
+            {busy ? tr("Sending…") : tr("Send invitation")}
           </Button>
         </div>
       </form>

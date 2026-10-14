@@ -19,7 +19,8 @@ import { ACCOUNT_STATUS } from "@/shared/lib/status";
 import { updateNotification, updateProfile } from "../api";
 import styles from "./ProfilePages.module.css";
 import { fullNameError } from "@/shared/lib/name";
-
+
+import { tr } from "@/shared/i18n/tr";
 // Design 1.15: hồ sơ cá nhân — dùng chung cho cả 5 vai trò, mỗi người chỉ thấy hồ sơ của mình.
 export default function MyProfilePage() {
   const user = useCurrentUser();
@@ -75,15 +76,15 @@ export default function MyProfilePage() {
   return (
     <>
       <PageHeader
-        title="Your details and how you are reached."
-        description="Name and contact details are yours to change. Role and permissions belong to the Club Manager."
+        title={tr("Your details and how you are reached.")}
+        description={tr("Name and contact details are yours to change. Role and permissions belong to the Club Manager.")}
       />
 
       <div className={styles.profileGrid}>
         <div className={styles.stack}>
-          <Card title="Personal details">
+          <Card title={tr("Personal details")}>
             <div className={styles.twoCols}>
-              <Field label="Full name" required error={nameError}>
+              <Field label={tr("Full name")} required error={nameError}>
                 <Input
                   icon="user"
                   autoComplete="name"
@@ -94,7 +95,7 @@ export default function MyProfilePage() {
                   }}
                 />
               </Field>
-              <Field label={isVietnamese ? "Số điện thoại" : "Phone"} error={phoneError} hint={t("phoneValidation.hint")}>
+              <Field label={isVietnamese ? "Số điện thoại" : tr("Phone")} error={phoneError} hint={t("phoneValidation.hint")}>
                 <Input
                   autoComplete="tel"
                   maxLength={15}
@@ -106,18 +107,18 @@ export default function MyProfilePage() {
                   }}
                 />
               </Field>
-              <Field label="Club email" hint="The sign-in address is changed by the Club Manager">
+              <Field label={tr("Club email")} hint={tr("The sign-in address is changed by the Club Manager")}>
                 <Input icon="mail" value={user.email} disabled readOnly />
               </Field>
-              <Field label="Role">
-                <Tooltip label="Only the Club Manager can change a role." placement="bottom" block>
+              <Field label={tr("Role")}>
+                <Tooltip label={tr("Only the Club Manager can change a role.")} placement="bottom" block>
                   <Input value={ROLE_LABEL[user.role]} disabled readOnly />
                 </Tooltip>
               </Field>
             </div>
           </Card>
 
-          <Card title="Notifications" subtitle="Saved as soon as they are switched">
+          <Card title={tr("Notifications")} subtitle={tr("Saved as soon as they are switched")}>
             <div className={styles.stack}>
               {NOTIFY_META.map((n) => {
                 const lock = notifyLock(user.role, n.key);
@@ -144,7 +145,7 @@ export default function MyProfilePage() {
                   icon="settings"
                   onClick={() => navigate("/notifications/settings")}
                 >
-                  Manage advanced notification preferences (Push, Email, SMS) →
+                  {tr("Manage advanced notification preferences (Push, Email, SMS) →")}
                 </Button>
               </div>
             </div>
@@ -152,44 +153,44 @@ export default function MyProfilePage() {
         </div>
 
         <div className={styles.stack}>
-          <Card title="Account">
+          <Card title={tr("Account")}>
             <div className={styles.stack}>
               <div className={styles.identity}>
                 <Avatar name={user.fullName} size={42} />
                 <div>
                   <strong>{user.fullName}</strong>
                   <span>
-                    {ROLE_LABEL[user.role]} · since {formatDate(user.createdAt)}
+                    {ROLE_LABEL[user.role]} {tr("· since")}{" "}{formatDate(user.createdAt)}
                   </span>
                 </div>
               </div>
               <div className={styles.rows}>
                 <div>
-                  <span>Status</span>
+                  <span>{tr("Status")}</span>
                   <Badge tone={status.tone}>{status.label}</Badge>
                 </div>
                 <div>
-                  <span>Permissions</span>
+                  <span>{tr("Permissions")}</span>
                   <b className={styles.num}>{padCount(granted)} granted</b>
                 </div>
                 <div>
-                  <span>Last sign-in</span>
+                  <span>{tr("Last sign-in")}</span>
                   <b>{user.lastActive ? formatDateTime(user.lastActive) : "—"}</b>
                 </div>
               </div>
               <Button tone="secondary" size="sm" block icon="key" onClick={() => navigate("/profile/password")}>
-                Change password
+                {tr("Change password")}
               </Button>
             </div>
           </Card>
 
-          <Card title="Save">
+          <Card title={tr("Save")}>
             <div className={styles.stack}>
               <Button block icon="check" disabled={saving} onClick={onSave}>
-                {saving ? "Saving…" : "Save details"}
+                {saving ? tr("Saving…") : tr("Save details")}
               </Button>
               <p className={styles.note}>
-                Changing a name is written to the Audit Log because it appears on Training Plans and medical records.
+                {tr("Changing a name is written to the Audit Log because it appears on Training Plans and medical records.")}
               </p>
             </div>
           </Card>

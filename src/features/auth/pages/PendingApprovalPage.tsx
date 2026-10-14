@@ -9,7 +9,8 @@ import type { Role } from "@/shared/types/auth";
 import { signupFlow } from "../flow";
 import type { RegistrationResult } from "../types";
 import styles from "./AuthPages.module.css";
-
+
+import { tr } from "@/shared/i18n/tr";
 // Design 1.3: yêu cầu đã tới Club Manager, chưa đăng nhập được cho tới khi được duyệt.
 export default function PendingApprovalPage() {
   const navigate = useNavigate();
@@ -23,29 +24,29 @@ export default function PendingApprovalPage() {
 
   return (
     <AuthLayout
-      title="The request is with the Club Manager."
-      description="Sign-in opens as soon as the account is approved and the role is granted."
+      title={tr("The request is with the Club Manager.")}
+      description={tr("Sign-in opens as soon as the account is approved and the role is granted.")}
     >
       {data ? (
         <>
-          <Alert tone="warn" icon="clock" title="Pending Approval">
-            Sent to {data.reviewer} · Club Manager at {formatDateTime(data.requestedAt)}. Requests are usually reviewed within one working day.
+          <Alert tone="warn" icon="clock" title={tr("Pending Approval")}>
+            Sent to {data.reviewer} {tr("· Club Manager at")}{" "}{formatDateTime(data.requestedAt)}. Requests are usually reviewed within one working day.
           </Alert>
           <dl className={styles.summary}>
             <div>
-              <dt>Full name</dt>
+              <dt>{tr("Full name")}</dt>
               <dd>{data.fullName}</dd>
             </div>
             <div>
-              <dt>Club email</dt>
+              <dt>{tr("Club email")}</dt>
               <dd>{data.email}</dd>
             </div>
             <div>
-              <dt>Role requested</dt>
+              <dt>{tr("Role requested")}</dt>
               <dd>{ROLE_LABEL[data.role as Role] ?? data.role}</dd>
             </div>
             <div>
-              <dt>Request code</dt>
+              <dt>{tr("Request code")}</dt>
               <dd className={styles.mono}>{data.requestCode}</dd>
             </div>
           </dl>
@@ -54,12 +55,12 @@ export default function PendingApprovalPage() {
           </p>
         </>
       ) : (
-        <Alert tone="info" icon="info" title="No request to show">
-          Send a request first, or sign in if the account already exists.
+        <Alert tone="info" icon="info" title={tr("No request to show")}>
+          {tr("Send a request first, or sign in if the account already exists.")}
         </Alert>
       )}
       <Button tone="secondary" size="lg" block icon="arrowRight" onClick={() => navigate("/login")}>
-        Back to sign in
+        {tr("Back to sign in")}
       </Button>
       <p className={styles.foot}>
         Wrong details?{" "}
@@ -69,7 +70,7 @@ export default function PendingApprovalPage() {
             signupFlow.clear();
           }}
         >
-          Send a new request
+          {tr("Send a new request")}
         </Link>
       </p>
     </AuthLayout>

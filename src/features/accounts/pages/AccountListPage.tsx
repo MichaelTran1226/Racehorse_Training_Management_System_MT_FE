@@ -34,7 +34,8 @@ import { ReasonConfirmModal } from "../components/ReasonConfirmModal";
 import { RoleFilter } from "../components/RoleFilter";
 import styles from "./AccountListPage.module.css";
 import { Icon } from "@/shared/components/ui/Icon";
-
+
+import { tr } from "@/shared/i18n/tr";
 const PAGE_SIZE = 10;
 
 // Hộp thoại đang mở (một lúc chỉ một): sửa tài khoản, hoặc xác nhận một hành động.
@@ -189,7 +190,7 @@ export default function AccountListPage() {
       width: 290,
       render: (r) => (
         <CellPrimary
-          title={r.id === me.id ? `${r.fullName} (you)` : r.fullName}
+          title={r.id === me.id ? tr(`${r.fullName} (you)`) : r.fullName}
           meta={r.email}
           avatar={<Avatar name={r.fullName} size={32} tone={r.id === me.id ? "brand" : "neutral"} />}
         />
@@ -218,10 +219,10 @@ export default function AccountListPage() {
                   marginTop: 2,
                   textDecoration: "none",
                 }}
-                title={owned.length > 0 ? owned.map((h) => `${h.name} (${h.horseCode ?? "—"})`).join(", ") : "No horses assigned yet"}
+                title={owned.length > 0 ? owned.map((h) => `${h.name} (${h.horseCode ?? "—"})`).join(", ") : tr("No horses assigned yet")}
               >
                 <Icon name="horse" size={14} />
-                <span>{owned.length > 0 ? `${owned.length} horse${owned.length > 1 ? "s" : ""} at club` : "0 horses assigned"}</span>
+                <span>{owned.length > 0 ? tr(`${owned.length} horse${owned.length > 1 ? "s" : ""} at club`) : tr("0 horses assigned")}</span>
               </Link>
             </div>
           );
@@ -278,26 +279,26 @@ export default function AccountListPage() {
         <div className={styles.actions}>
           {r.status === "PENDING_APPROVAL" && (
             <Button size="sm" icon="check" disabled={busy} onClick={() => run(r, "approve")}>
-              Approve
+              {tr("Approve")}
             </Button>
           )}
           {r.status === "INVITED" && (
             <Button tone="secondary" size="sm" icon="mail" disabled={busy} onClick={() => onResendInvite(r)}>
-              Resend invite
+              {tr("Resend invite")}
             </Button>
           )}
           {r.status === "LOCKED" && (
             <Button tone="secondary" size="sm" icon="unlock" disabled={busy} onClick={() => run(r, "unlock")}>
-              Unlock
+              {tr("Unlock")}
             </Button>
           )}
           {r.status === "INACTIVE" && (
             <Button tone="secondary" size="sm" icon="refresh" disabled={busy} onClick={() => run(r, "reactivate")}>
-              Reactivate
+              {tr("Reactivate")}
             </Button>
           )}
           <Menu
-            label={`Actions for ${r.fullName}`}
+            label={tr(`Actions for ${r.fullName}`)}
             items={[
               { label: "Edit account", icon: "edit", onSelect: () => setDialog({ kind: "edit", target: r }) },
               { label: "Permissions", icon: "shield", to: `/accounts/${r.id}/permissions` },
@@ -344,8 +345,8 @@ export default function AccountListPage() {
   return (
     <>
       <PageHeader
-        title="Account Management"
-        description="Manage club staff, horse owners, account approvals, and security access levels."
+        title={tr("Account Management")}
+        description={tr("Manage club staff, horse owners, account approvals, and security access levels.")}
         showDate
       />
 
@@ -354,7 +355,7 @@ export default function AccountListPage() {
         <Alert
           tone="danger"
           icon="xCircle"
-          title="The account list could not be loaded"
+          title={tr("The account list could not be loaded")}
           action={
             <Button tone="secondary" size="sm" icon="refresh" onClick={load}>
               Try again
@@ -371,7 +372,7 @@ export default function AccountListPage() {
       <Card pad={0}>
         <div className={styles.toolbar}>
           <Tabs
-            label="Account status"
+            label={tr("Account status")}
             active={tab}
             onChange={(id) => {
               setTab(id);
@@ -390,8 +391,8 @@ export default function AccountListPage() {
               <Input
                 icon="search"
                 type="search"
-                placeholder="Search by name"
-                aria-label="Search accounts by name"
+                placeholder={tr("Search by name")}
+                aria-label={tr("Search accounts by name")}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -407,17 +408,17 @@ export default function AccountListPage() {
               }}
             />
             <Button size="sm" icon="plus" onClick={() => setCreateOpen(true)}>
-              Create account
+              {tr("Create account")}
             </Button>
           </div>
         </div>
 
         <div className={styles.table}>
           {loadError ? (
-            <EmptyState icon="refresh" title="Nothing to show yet." description="The list appears as soon as the account service answers." />
+            <EmptyState icon="refresh" title={tr("Nothing to show yet.")} description={tr("The list appears as soon as the account service answers.")} />
           ) : (
             <DataTable
-              caption="Accounts"
+              caption={tr("Accounts")}
               columns={columns}
               rows={visible}
               rowKey={(r) => r.id}
@@ -450,66 +451,64 @@ export default function AccountListPage() {
 
       {dialog?.kind === "decline" && (
         <ReasonConfirmModal
-          title={`Decline the request of ${dialog.target.fullName}?`}
+          title={tr(`Decline the request of ${dialog.target.fullName}?`)}
           subtitle={`${ROLE_LABEL[dialog.target.role]} · ${dialog.target.email}`}
           tone="warn"
-          confirmLabel="Decline request"
-          cancelLabel="Keep waiting"
-          reasonHint="Sent in the email to the applicant and shown when they try to sign in."
+          confirmLabel={tr("Decline request")}
+          cancelLabel={tr("Keep waiting")}
+          reasonHint={tr("Sent in the email to the applicant and shown when they try to sign in.")}
           busy={busy}
           onCancel={() => setDialog(null)}
           onConfirm={(reason) => run(dialog.target, "decline", reason)}
         >
-          The account cannot be used. The applicant gets an email and may send a new request.
+          {tr("The account cannot be used. The applicant gets an email and may send a new request.")}
         </ReasonConfirmModal>
       )}
 
       {dialog?.kind === "lock" && (
         <ReasonConfirmModal
-          title={`Lock the account of ${dialog.target.fullName}?`}
+          title={tr(`Lock the account of ${dialog.target.fullName}?`)}
           subtitle={`${ROLE_LABEL[dialog.target.role]} · ${dialog.target.email}`}
           tone="danger"
-          confirmLabel="Lock account"
-          cancelLabel="Keep active"
-          reasonHint="Shown in the Locked tab and on the sign-in page of this account."
+          confirmLabel={tr("Lock account")}
+          cancelLabel={tr("Keep active")}
+          reasonHint={tr("Shown in the Locked tab and on the sign-in page of this account.")}
           busy={busy}
           onCancel={() => setDialog(null)}
           onConfirm={(reason) => run(dialog.target, "lock", reason)}
         >
-          Sign-in is refused from the next attempt and every open session ends at once. Records already entered by this account stay in place.
-          Unlocking is possible at any time from this list.
+          {tr("Sign-in is refused from the next attempt and every open session ends at once. Records already entered by this account stay in place. Unlocking is possible at any time from this list.")}
         </ReasonConfirmModal>
       )}
 
       {dialog?.kind === "deactivate" && (
         <ReasonConfirmModal
-          title={`Deactivate the account of ${dialog.target.fullName}?`}
+          title={tr(`Deactivate the account of ${dialog.target.fullName}?`)}
           subtitle={`${ROLE_LABEL[dialog.target.role]} · ${dialog.target.email}`}
           tone="danger"
-          confirmLabel="Deactivate account"
-          cancelLabel="Keep the account"
-          reasonHint="For example: contract ended. Shown on the sign-in page of this account."
+          confirmLabel={tr("Deactivate account")}
+          cancelLabel={tr("Keep the account")}
+          reasonHint={tr("For example: contract ended. Shown on the sign-in page of this account.")}
           busy={busy}
           onCancel={() => setDialog(null)}
           onConfirm={(reason) => run(dialog.target, "deactivate", reason)}
         >
-          Use this when the person leaves the club. Sign-in stops and every session ends; everything this account recorded stays in place.
-          It can be reactivated from the Deactivated tab.
+          {tr("Use this when the person leaves the club. Sign-in stops and every session ends; everything this account recorded stays in place. It can be reactivated from the Deactivated tab.")}
         </ReasonConfirmModal>
       )}
 
       {dialog?.kind === "delete" && (
         <ConfirmModal
-          title={`Delete the account of ${dialog.target.fullName}?`}
+          title={tr(`Delete the account of ${dialog.target.fullName}?`)}
           subtitle={`${ACCOUNT_STATUS[dialog.target.status].label} · ${dialog.target.email}`}
           tone="danger"
-          confirmLabel="Delete account"
-          cancelLabel="Keep the account"
+          confirmLabel={tr("Delete account")}
+          cancelLabel={tr("Keep the account")}
           busy={busy}
           onCancel={() => setDialog(null)}
           onConfirm={() => onDelete(dialog.target)}
         >
-          The account is removed for good. It was never used, so no records are lost. The email can be invited or registered again later.
+          {tr("The account is removed for good. It was never used, so no records are lost. The email can be invited or registered again later.")}
         </ConfirmModal>
       )}
 

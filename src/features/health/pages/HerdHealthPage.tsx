@@ -16,7 +16,8 @@ import type { Stall, Zone } from "@/features/stable/types";
 import { GridCell, ZoneGrid } from "@/features/stable/components/ZoneGrid";
 import { getHealthBoard, type HealthBoardHorse, type HealthBoardResponse } from "../api";
 import { Icon } from "@/shared/components/ui/Icon";
-
+
+import { tr } from "@/shared/i18n/tr";
 type Group = HealthBoardHorse["healthGroup"];
 
 /** 4 nhóm màu (Flow 3 §4.1). Ngựa Ngừng quản lý không có trên sơ đồ (BE đã loại). */
@@ -166,27 +167,27 @@ export default function HerdHealthPage() {
           <strong>{h.name}</strong>
           <span>
             {h.isMedicalLocked && (
-              <span title="Training Lock" style={{ color: "var(--danger)", display: "inline-flex" }}>
+              <span title={tr("Training Lock")} style={{ color: "var(--danger)", display: "inline-flex" }}>
                 <Icon name="lock" size={16} />
-                <span className="sr-only">Training Lock</span>
+                <span className="sr-only">{tr("Training Lock")}</span>
               </span>
             )}
             {h.hasOverduePreventive && (
-              <span title="Preventive care overdue" style={{ color: "var(--warn)", display: "inline-flex" }}>
+              <span title={tr("Preventive care overdue")} style={{ color: "var(--warn)", display: "inline-flex" }}>
                 <Icon name="bell" size={16} />
-                <span className="sr-only">Preventive care overdue</span>
+                <span className="sr-only">{tr("Preventive care overdue")}</span>
               </span>
             )}
           </span>
         </div>
         <span style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>
-          {h.horseCode ?? "—"} · Stall {h.stallCode ?? "—"}
+          {h.horseCode ?? "—"} {tr("· Stall")}{" "}{h.stallCode ?? "—"}
         </span>
         <span style={{ fontSize: "var(--fs-caption)", background: g.bg, color: g.color, borderRadius: 999, padding: "1px 8px", justifySelf: "start" }}>
           {g.label}
         </span>
         <span style={{ fontSize: "var(--fs-caption)" }}>
-          Open injuries: {h.openInjuries.length} · Last exam: {h.latestRecord ? formatDate(h.latestRecord.examinationDate) : "—"}
+          Open injuries: {h.openInjuries.length} {tr("· Last exam:")}{" "}{h.latestRecord ? formatDate(h.latestRecord.examinationDate) : "—"}
         </span>
       </button>
     );
@@ -212,16 +213,16 @@ export default function HerdHealthPage() {
           <div>
             <h2 style={{ margin: 0, fontSize: "var(--fs-section)" }}>{h.name}</h2>
             <span style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>
-              {h.horseCode} · Stall {h.stallCode ?? "—"}
+              {h.horseCode} {tr("· Stall")}{" "}{h.stallCode ?? "—"}
             </span>
           </div>
-          <Button tone="ghost" size="sm" aria-label="Close panel" icon="x" onClick={() => setSelectedId(null)} />
+          <Button tone="ghost" size="sm" aria-label={tr("Close panel")} icon="x" onClick={() => setSelectedId(null)} />
         </div>
         <span style={{ background: g.bg, color: g.color, borderRadius: 999, padding: "2px 10px", justifySelf: "start" }}>
           {g.label} · {h.status.replace("_", " ").toLowerCase()}
         </span>
         <section>
-          <strong>Training Lock</strong>
+          <strong>{tr("Training Lock")}</strong>
           {h.lock ? (
             <div style={{ fontSize: "var(--fs-body)" }}>
               Placed {formatDateTime(h.lock.lockedAt)} by {h.lock.veterinarianName ?? "—"}
@@ -229,26 +230,26 @@ export default function HerdHealthPage() {
               Review date: {h.lock.recheckDate ? formatDate(h.lock.recheckDate) : "—"}
             </div>
           ) : (
-            <div style={{ fontSize: "var(--fs-body)" }}>None</div>
+            <div style={{ fontSize: "var(--fs-body)" }}>{tr("None")}</div>
           )}
         </section>
         <section>
-          <strong>Latest medical record</strong>
+          <strong>{tr("Latest medical record")}</strong>
           <div style={{ fontSize: "var(--fs-body)" }}>
-            {h.latestRecord ? `${formatDate(h.latestRecord.examinationDate)} – ${h.latestRecord.diagnosis}` : "None"}
+            {h.latestRecord ? `${formatDate(h.latestRecord.examinationDate)} – ${h.latestRecord.diagnosis}` : tr("None")}
           </div>
         </section>
         <section>
-          <strong>Open injuries</strong>
+          <strong>{tr("Open injuries")}</strong>
           <div style={{ fontSize: "var(--fs-body)" }}>
-            {h.openInjuries.length === 0 ? "None" : h.openInjuries.map((i) => `${i.zone} (${i.stage.toLowerCase()})`).join(", ")}
+            {h.openInjuries.length === 0 ? tr("None") : h.openInjuries.map((i) => `${i.zone} (${i.stage.toLowerCase()})`).join(", ")}
           </div>
         </section>
         <section>
-          <strong>Preventive care due (30 days)</strong>
+          <strong>{tr("Preventive care due (30 days)")}</strong>
           <div style={{ fontSize: "var(--fs-body)", display: "grid", gap: 2 }}>
             {h.preventiveDue.length === 0
-              ? "None"
+              ? tr("None")
               : h.preventiveDue.map((p) => (
                   <span key={`${p.name}-${p.dueDate}`} style={{ color: p.overdue ? "var(--danger)" : undefined }}>
                     {p.name}: {formatDate(p.dueDate)}
@@ -258,22 +259,22 @@ export default function HerdHealthPage() {
           </div>
         </section>
         <section>
-          <strong>Groom observation (last 24 h)</strong>
+          <strong>{tr("Groom observation (last 24 h)")}</strong>
           <div style={{ fontSize: "var(--fs-body)" }}>
             {h.latestObservation
               ? `${h.latestObservation.text} — ${h.latestObservation.groomName ?? "Groom"}, ${formatTime(h.latestObservation.at)}`
-              : "None"}
+              : tr("None")}
           </div>
         </section>
         <Link to={`/medical/horses/${h.id}`}>
-          <Button tone="secondary" block>Open medical profile</Button>
+          <Button tone="secondary" block>{tr("Open medical profile")}</Button>
         </Link>
         {isVet &&
           (h.isMedicalLocked ? (
-            <Badge tone="danger" icon="lock">Locked</Badge>
+            <Badge tone="danger" icon="lock">{tr("Locked")}</Badge>
           ) : (
             <Link to="/medical/locks">
-              <Button block>Place Training Lock</Button>
+              <Button block>{tr("Place Training Lock")}</Button>
             </Link>
           ))}
       </aside>
@@ -283,8 +284,8 @@ export default function HerdHealthPage() {
   return (
     <div style={{ display: "grid", gap: 16 }}>
       <PageHeader
-        title="Herd health"
-        description={updatedAt ? `Updated at ${formatTime(updatedAt)}` : undefined}
+        title={tr("Herd health")}
+        description={updatedAt ? tr(`Updated at ${formatTime(updatedAt)}`) : undefined}
         action={
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <Segmented
@@ -306,7 +307,7 @@ export default function HerdHealthPage() {
       />
 
       {error && (
-        <Alert tone="danger" title="Could not load data." action={<Button size="sm" onClick={() => void load()}>Try again</Button>}>
+        <Alert tone="danger" title={tr("Could not load data.")} action={<Button size="sm" onClick={() => void load()}>Try again</Button>}>
           {error}
         </Alert>
       )}
@@ -338,11 +339,11 @@ export default function HerdHealthPage() {
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ width: 240 }}>
-          <Input placeholder="Horse name or code" aria-label="Find a horse" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input placeholder={tr("Horse name or code")} aria-label={tr("Find a horse")} value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <div style={{ width: 170 }}>
           <Select
-            aria-label="Training Lock"
+            aria-label={tr("Training Lock")}
             value={lockFilter}
             onChange={(e) => setLockFilter(e.target.value)}
             options={[
@@ -355,28 +356,28 @@ export default function HerdHealthPage() {
         {view === "stalls" && zones.length > 0 && (
           <div style={{ width: 200 }}>
             <Select
-              aria-label="Barn zone"
+              aria-label={tr("Barn zone")}
               value={zoneId}
               onChange={(e) => setZoneId(e.target.value)}
               options={zones.map((z) => ({ value: z.id, label: z.name }))}
             />
           </div>
         )}
-        <Checkbox checked={overdueOnly} onChange={setOverdueOnly} label="Preventive care overdue" />
+        <Checkbox checked={overdueOnly} onChange={setOverdueOnly} label={tr("Preventive care overdue")} />
         {filtersOn && (
-          <Button tone="ghost" size="sm" onClick={clearFilters}>Clear filters</Button>
+          <Button tone="ghost" size="sm" onClick={clearFilters}>{tr("Clear filters")}</Button>
         )}
       </div>
 
       <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           {loading ? (
-            <div style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>Loading herd health…</div>
+            <div style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>{tr("Loading herd health…")}</div>
           ) : horses.length === 0 ? (
-            <div style={{ padding: 40, textAlign: "center", border: "2px dashed var(--border)", borderRadius: "var(--r-lg)" }}>No horses yet.</div>
+            <div style={{ padding: 40, textAlign: "center", border: "2px dashed var(--border)", borderRadius: "var(--r-lg)" }}>{tr("No horses yet.")}</div>
           ) : filtered.length === 0 && view === "cards" ? (
             <div style={{ padding: 40, textAlign: "center", border: "2px dashed var(--border)", borderRadius: "var(--r-lg)" }}>
-              No horse matches the filters.
+              {tr("No horse matches the filters.")}
             </div>
           ) : view === "cards" ? (
             <div style={{ display: "grid", gap: 16 }}>
@@ -398,7 +399,7 @@ export default function HerdHealthPage() {
           ) : (
             (() => {
               const zone = zones.find((z) => z.id === zoneId);
-              if (!zone) return <div style={{ padding: 40, textAlign: "center" }}>No barn zones yet.</div>;
+              if (!zone) return <div style={{ padding: 40, textAlign: "center" }}>{tr("No barn zones yet.")}</div>;
               return (
                 <ZoneGrid
                   zone={zone}

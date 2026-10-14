@@ -21,7 +21,8 @@ import {
   updateHorseCatalogItem,
 } from "../api";
 import type { HorseCatalogItem, HorseCatalogType } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 const TYPE_LABEL: Record<HorseCatalogType, string> = { BREED: "Breeds", COLOR: "Coat colours" };
 
 /** DL-1.13 Thêm / Sửa mục danh mục. */
@@ -91,16 +92,16 @@ function ItemDialog({
     >
       <div style={{ display: "grid", gap: "0.9rem" }}>
         {error && <Alert tone="danger" title={error} />}
-        <Field label="Code" required error={dirty ? errors.code : undefined} hint={item ? "The code cannot change." : undefined}>
+        <Field label={tr("Code")} required error={dirty ? errors.code : undefined} hint={item ? tr("The code cannot change.") : undefined}>
           <Input value={code} disabled={!!item} onChange={(e) => touch(setCode)(e.target.value.toUpperCase())} />
         </Field>
-        <Field label="Name" required error={dirty ? errors.name : undefined}>
+        <Field label={tr("Name")} required error={dirty ? errors.name : undefined}>
           <Input value={name} onChange={(e) => touch(setName)(e.target.value)} />
         </Field>
-        <Field label="Description" error={errors.description || undefined}>
+        <Field label={tr("Description")} error={errors.description || undefined}>
           <Textarea rows={3} value={description} onChange={(e) => touch(setDescription)(e.target.value)} />
         </Field>
-        <Field label="Display order" required error={errors.sortOrder || undefined}>
+        <Field label={tr("Display order")} required error={errors.sortOrder || undefined}>
           <Input type="number" min={0} max={9999} value={sortOrder} onChange={(e) => touch(setSortOrder)(e.target.value)} />
         </Field>
       </div>
@@ -157,11 +158,11 @@ export default function HorseCatalogPage() {
   return (
     <div style={{ display: "grid", gap: 16 }}>
       <PageHeader
-        title="Breeds & coat colours"
+        title={tr("Breeds & coat colours")}
         action={isManager && <Button icon="plus" onClick={() => setEditing({})}>Add new</Button>}
       />
       <Tabs
-        label="Catalogue"
+        label={tr("Catalogue")}
         items={[
           { id: "BREED", label: TYPE_LABEL.BREED },
           { id: "COLOR", label: TYPE_LABEL.COLOR },
@@ -171,11 +172,11 @@ export default function HorseCatalogPage() {
       />
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <div style={{ width: 260 }}>
-          <Input placeholder="Code or name" aria-label="Search" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input placeholder={tr("Code or name")} aria-label={tr("Search")} value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <div style={{ width: 170 }}>
           <Select
-            aria-label="Status"
+            aria-label={tr("Status")}
             value={status}
             onChange={(e) => setStatus(e.target.value as typeof status)}
             options={[
@@ -187,7 +188,7 @@ export default function HorseCatalogPage() {
         </div>
       </div>
       {error && (
-        <Alert tone="danger" title="Could not load the catalogue." action={<Button size="sm" onClick={() => void load()}>Try again</Button>}>
+        <Alert tone="danger" title={tr("Could not load the catalogue.")} action={<Button size="sm" onClick={() => void load()}>Try again</Button>}>
           {error}
         </Alert>
       )}
@@ -249,15 +250,15 @@ export default function HorseCatalogPage() {
       )}
       {toggling && (
         <ConfirmModal
-          title={`Stop using '${toggling.name}'?`}
+          title={tr(`Stop using '${toggling.name}'?`)}
           tone="warn"
-          confirmLabel={busy ? "Saving…" : "Stop using"}
-          cancelLabel="Cancel"
+          confirmLabel={busy ? tr("Saving…") : tr("Stop using")}
+          cancelLabel={tr("Cancel")}
           busy={busy}
           onConfirm={() => void toggle(toggling)}
           onCancel={() => setToggling(null)}
         >
-          Horses already using this value keep it, but it can no longer be chosen when creating or editing a horse.
+          {tr("Horses already using this value keep it, but it can no longer be chosen when creating or editing a horse.")}
         </ConfirmModal>
       )}
     </div>

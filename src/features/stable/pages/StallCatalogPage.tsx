@@ -25,7 +25,8 @@ import {
   updateZone,
 } from "../api";
 import type { SettableStallStatus, Stall, Zone } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 const STATUS_BADGE: Record<string, { label: string; tone: "ok" | "warn" | "neutral" }> = {
   AVAILABLE: { label: "Active", tone: "ok" },
   OCCUPIED: { label: "Active", tone: "ok" },
@@ -95,7 +96,7 @@ function ZoneDialog({ zone, onClose, onSaved }: { zone?: Zone; onClose: () => vo
   const close = () => confirmDiscard(dirty) && onClose();
   return (
     <Modal
-      title={zone ? `Edit zone ${zone.code}` : "Add barn zone"}
+      title={zone ? tr(`Edit zone ${zone.code}`) : tr("Add barn zone")}
       width={560}
       onClose={close}
       foot={
@@ -107,17 +108,17 @@ function ZoneDialog({ zone, onClose, onSaved }: { zone?: Zone; onClose: () => vo
     >
       <div style={{ display: "grid", gap: "0.9rem" }}>
         {error && <Alert tone="danger" title={error} />}
-        <Field label="Zone code" required error={dirty ? errors.code : undefined} hint={zone ? "The code cannot change." : undefined}>
+        <Field label={tr("Zone code")} required error={dirty ? errors.code : undefined} hint={zone ? tr("The code cannot change.") : undefined}>
           <Input value={code} disabled={!!zone} onChange={(e) => touch(setCode)(e.target.value.toUpperCase())} />
         </Field>
-        <Field label="Zone name" required error={dirty ? errors.name : undefined}>
+        <Field label={tr("Zone name")} required error={dirty ? errors.name : undefined}>
           <Input value={name} onChange={(e) => touch(setName)(e.target.value)} />
         </Field>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Field label="Rows" required error={errors.rows || undefined}>
+          <Field label={tr("Rows")} required error={errors.rows || undefined}>
             <Input type="number" min={1} max={30} value={rows} onChange={(e) => touch(setRows)(e.target.value)} />
           </Field>
-          <Field label="Columns" required error={errors.cols || undefined}>
+          <Field label={tr("Columns")} required error={errors.cols || undefined}>
             <Input type="number" min={1} max={30} value={cols} onChange={(e) => touch(setCols)(e.target.value)} />
           </Field>
         </div>
@@ -125,13 +126,13 @@ function ZoneDialog({ zone, onClose, onSaved }: { zone?: Zone; onClose: () => vo
           <Checkbox
             checked={autoCreate}
             onChange={touch(setAutoCreate)}
-            label={`Create a stall for every grid position (${code || "CODE"}-01 …)`}
+            label={tr(`Create a stall for every grid position (${code || "CODE"}-01 …)`)}
           />
         )}
-        <Field label="Description" error={errors.description || undefined}>
+        <Field label={tr("Description")} error={errors.description || undefined}>
           <Textarea rows={2} value={description} onChange={(e) => touch(setDescription)(e.target.value)} />
         </Field>
-        <Field label="Display order" required error={errors.sortOrder || undefined}>
+        <Field label={tr("Display order")} required error={errors.sortOrder || undefined}>
           <Input type="number" min={0} max={9999} value={sortOrder} onChange={(e) => touch(setSortOrder)(e.target.value)} />
         </Field>
       </div>
@@ -195,8 +196,8 @@ function StallDialog({
   const close = () => confirmDiscard(dirty) && onClose();
   return (
     <Modal
-      title={stall ? `Edit stall ${stall.code}` : "Add stall"}
-      subtitle={`Zone: ${zone.name}`}
+      title={stall ? tr(`Edit stall ${stall.code}`) : tr("Add stall")}
+      subtitle={tr(`Zone: ${zone.name}`)}
       width={560}
       onClose={close}
       foot={
@@ -208,18 +209,18 @@ function StallDialog({
     >
       <div style={{ display: "grid", gap: "0.9rem" }}>
         {error && <Alert tone="danger" title={error} />}
-        <Field label="Stall code" required error={dirty ? errors.code : undefined}>
+        <Field label={tr("Stall code")} required error={dirty ? errors.code : undefined}>
           <Input value={code} onChange={(e) => touch(setCode)(e.target.value.toUpperCase())} />
         </Field>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Field label="Row" required error={errors.row || undefined}>
+          <Field label={tr("Row")} required error={errors.row || undefined}>
             <Input type="number" min={1} max={zone.rows} value={row} onChange={(e) => touch(setRow)(e.target.value)} />
           </Field>
-          <Field label="Column" required error={errors.col || undefined}>
+          <Field label={tr("Column")} required error={errors.col || undefined}>
             <Input type="number" min={1} max={zone.cols} value={col} onChange={(e) => touch(setCol)(e.target.value)} />
           </Field>
         </div>
-        <Field label="Status" required hint={occupied ? "A stall with a horse can only be Active." : undefined}>
+        <Field label={tr("Status")} required hint={occupied ? tr("A stall with a horse can only be Active.") : undefined}>
           <Select
             value={status}
             disabled={occupied}
@@ -227,7 +228,7 @@ function StallDialog({
             options={STATUS_OPTIONS}
           />
         </Field>
-        <Field label="Notes" error={errors.notes || undefined}>
+        <Field label={tr("Notes")} error={errors.notes || undefined}>
           <Textarea rows={3} value={notes} onChange={(e) => touch(setNotes)(e.target.value)} />
         </Field>
       </div>
@@ -335,18 +336,18 @@ export default function StallCatalogPage() {
   return (
     <div style={{ display: "grid", gap: 16 }}>
       <PageHeader
-        title="Barn zones & stalls"
+        title={tr("Barn zones & stalls")}
         action={isManager && <Button icon="plus" onClick={() => setZoneDialog("add")}>Add zone</Button>}
       />
       {error && (
-        <Alert tone="danger" title="Could not load data." action={<Button size="sm" onClick={() => void loadZones()}>Try again</Button>}>
+        <Alert tone="danger" title={tr("Could not load data.")} action={<Button size="sm" onClick={() => void loadZones()}>Try again</Button>}>
           {error}
         </Alert>
       )}
 
       {zones.length === 0 && !loading ? (
         <div style={{ padding: 40, textAlign: "center", border: "2px dashed var(--border)", borderRadius: "var(--r-lg)" }}>
-          No barn zones yet.{isManager ? " Click Add zone to start." : ""}
+          {tr("No barn zones yet.")}{isManager ? tr(" Click Add zone to start.") : ""}
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "minmax(220px, 30%) 1fr", gap: 16, alignItems: "start" }}>
@@ -368,7 +369,7 @@ export default function StallCatalogPage() {
               >
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
                   <strong>{z.code}</strong>
-                  <Badge tone={z.isActive ? "ok" : "neutral"}>{z.isActive ? "In use" : "Inactive"}</Badge>
+                  <Badge tone={z.isActive ? "ok" : "neutral"}>{z.isActive ? tr("In use") : tr("Inactive")}</Badge>
                 </div>
                 <div style={{ fontSize: "var(--fs-body)" }}>{z.name}</div>
                 <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>
@@ -384,7 +385,7 @@ export default function StallCatalogPage() {
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <div style={{ width: 170 }}>
                     <Select
-                      aria-label="Stall status"
+                      aria-label={tr("Stall status")}
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value)}
                       options={[{ value: "ALL", label: "All statuses" }, ...STATUS_OPTIONS]}
@@ -392,7 +393,7 @@ export default function StallCatalogPage() {
                   </div>
                   <div style={{ width: 170 }}>
                     <Select
-                      aria-label="Occupancy"
+                      aria-label={tr("Occupancy")}
                       value={occupancy}
                       onChange={(e) => setOccupancy(e.target.value)}
                       options={[
@@ -405,31 +406,31 @@ export default function StallCatalogPage() {
                 </div>
                 {isManager && (
                   <div style={{ display: "flex", gap: 8 }}>
-                    <Button tone="secondary" onClick={() => setZoneDialog("edit")}>Edit zone</Button>
+                    <Button tone="secondary" onClick={() => setZoneDialog("edit")}>{tr("Edit zone")}</Button>
                     <Button
                       tone="ghost"
                       blockedReason={
                         zone.isActive && occupiedInZone > 0
-                          ? `The zone still houses ${occupiedInZone} horse(s). Move them out first.`
+                          ? tr(`The zone still houses ${occupiedInZone} horse(s). Move them out first.`)
                           : undefined
                       }
                       onClick={() => setZoneToggle(true)}
                     >
-                      {zone.isActive ? "Deactivate zone" : "Reactivate zone"}
+                      {zone.isActive ? tr("Deactivate zone") : tr("Reactivate zone")}
                     </Button>
                     <Button
                       icon="plus"
-                      blockedReason={zone.isActive ? undefined : "This zone is inactive."}
+                      blockedReason={zone.isActive ? undefined : tr("This zone is inactive.")}
                       onClick={() => setStallDialog({})}
                     >
-                      Add stall
+                      {tr("Add stall")}
                     </Button>
                   </div>
                 )}
               </div>
 
               <DataTable
-                caption={`Stalls of ${zone.name}`}
+                caption={tr(`Stalls of ${zone.name}`)}
                 rowKey={(s: Stall) => s.id}
                 loading={loading}
                 rows={rows}
@@ -518,34 +519,34 @@ export default function StallCatalogPage() {
       )}
       {statusChange && (
         <ConfirmModal
-          title={`Change stall ${statusChange.stall.code} to ${STATUS_OPTIONS.find((o) => o.value === statusChange.status)?.label}?`}
+          title={tr(`Change stall ${statusChange.stall.code} to ${STATUS_OPTIONS.find((o) => o.value === statusChange.status)?.label}?`)}
           tone="warn"
-          confirmLabel={busy ? "Saving…" : "Confirm"}
-          cancelLabel="Cancel"
+          confirmLabel={busy ? tr("Saving…") : tr("Confirm")}
+          cancelLabel={tr("Cancel")}
           busy={busy}
           onConfirm={applyStatus}
           onCancel={() => setStatusChange(null)}
         >
           {statusChange.status === "INACTIVE"
-            ? "An inactive stall is hidden from the stable map and cannot receive a horse. Its history is kept."
+            ? tr("An inactive stall is hidden from the stable map and cannot receive a horse. Its history is kept.")
             : statusChange.status === "MAINTENANCE"
-              ? "A stall under maintenance cannot receive a horse."
-              : "The stall can receive a horse again."}
+              ? tr("A stall under maintenance cannot receive a horse.")
+              : tr("The stall can receive a horse again.")}
         </ConfirmModal>
       )}
       {zoneToggle && zone && (
         <ConfirmModal
-          title={zone.isActive ? `Deactivate zone ${zone.name}?` : `Reactivate zone ${zone.name}?`}
+          title={zone.isActive ? tr(`Deactivate zone ${zone.name}?`) : tr(`Reactivate zone ${zone.name}?`)}
           tone="warn"
-          confirmLabel={busy ? "Saving…" : "Confirm"}
-          cancelLabel="Cancel"
+          confirmLabel={busy ? tr("Saving…") : tr("Confirm")}
+          cancelLabel={tr("Cancel")}
           busy={busy}
           onConfirm={toggleZone}
           onCancel={() => setZoneToggle(false)}
         >
           {zone.isActive
-            ? "Stalls of an inactive zone cannot receive horses and the zone is hidden from the stable map."
-            : "The zone and its active stalls appear on the stable map again."}
+            ? tr("Stalls of an inactive zone cannot receive horses and the zone is hidden from the stable map.")
+            : tr("The zone and its active stalls appear on the stable map again.")}
         </ConfirmModal>
       )}
     </div>

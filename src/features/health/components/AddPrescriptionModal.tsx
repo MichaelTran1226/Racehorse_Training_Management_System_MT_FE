@@ -8,7 +8,8 @@ import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
 import type { PrescriptionInput } from "../types";
 import { formatDate } from "@/shared/lib/format";
-
+
+import { tr } from "@/shared/i18n/tr";
 const UNIT_OPTIONS = [
   { value: "g", label: "g" },
   { value: "mg", label: "mg" },
@@ -86,9 +87,9 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
 
   return (
     <Modal
-      title="Prescribe Medication"
+      title={tr("Prescribe Medication")}
 
-      subtitle="Manage dosage, administration route, and automated pre-race withdrawal clearance calculation."
+      subtitle={tr("Manage dosage, administration route, and automated pre-race withdrawal clearance calculation.")}
       width={540}
       onClose={onClose}
       foot={
@@ -109,17 +110,17 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
           </div>
         )}
 
-        <Field label="Medication Name *" hint="Select or enter active ingredient / commercial drug name">
+        <Field label={tr("Medication Name *")} hint={tr("Select or enter active ingredient / commercial drug name")}>
           <Input
             value={medicationName}
             onChange={(e) => setMedicationName(e.target.value)}
-            placeholder="e.g., Phenylbutazone Paste, Dexamethasone, Flunixin Meglumine..."
+            placeholder={tr("e.g., Phenylbutazone Paste, Dexamethasone, Flunixin Meglumine...")}
             required
           />
         </Field>
 
         <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1.5fr", gap: 10 }}>
-          <Field label="Dose per Intake *">
+          <Field label={tr("Dose per Intake *")}>
             <Input
               type="number"
               step="any"
@@ -129,16 +130,16 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
               required
             />
           </Field>
-          <Field label="Unit *">
+          <Field label={tr("Unit *")}>
             <Select options={UNIT_OPTIONS} value={unit} onChange={(e) => setUnit(e.target.value)} />
           </Field>
-          <Field label="Route *">
+          <Field label={tr("Route *")}>
             <Select options={ROUTE_OPTIONS} value={route} onChange={(e) => setRoute(e.target.value)} />
           </Field>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-          <Field label="Frequency (times/day) *">
+          <Field label={tr("Frequency (times/day) *")}>
             <Input
               type="number"
               min={1}
@@ -148,10 +149,10 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
               required
             />
           </Field>
-          <Field label="Start Date *">
+          <Field label={tr("Start Date *")}>
             <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
           </Field>
-          <Field label="Duration (days) *">
+          <Field label={tr("Duration (days) *")}>
             <Input
               type="number"
               min={1}
@@ -175,15 +176,15 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
           }}
         >
           <span>
-            Total medication required: <strong>{totalAmount} {unit}</strong>
+            {tr("Total medication required:")}{" "}<strong>{totalAmount} {unit}</strong>
           </span>
           <span>
-            Through: <strong>{formatDate(endD)}</strong>
+            {tr("Through:")}{" "}<strong>{formatDate(endD)}</strong>
           </span>
         </div>
 
         <Field
-          label="Pre-Race Withdrawal Period (days)"
+          label={tr("Pre-Race Withdrawal Period (days)")}
           hint="Anti-doping clearance protocol; triggers alerts upon race registration if violated."
         >
           <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 10, alignItems: "center" }}>
@@ -195,17 +196,17 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
               onChange={(e) => setWithdrawalDays(Number(e.target.value))}
             />
             <span style={{ fontSize: "var(--fs-caption)", color: "var(--muted)" }}>
-              Clearance date: <strong>{formatDate(withdrawalEndD)}</strong>
+              {tr("Clearance date:")}{" "}<strong>{formatDate(withdrawalEndD)}</strong>
             </span>
           </div>
         </Field>
 
-        <Field label="Administration Instructions" hint="Notes for Groom or stable care technicians">
+        <Field label={tr("Administration Instructions")} hint={tr("Notes for Groom or stable care technicians")}>
           <Textarea
             rows={2}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="e.g., Mix into morning and evening grain rations after feeding..."
+            placeholder={tr("e.g., Mix into morning and evening grain rations after feeding...")}
           />
         </Field>
       </form>

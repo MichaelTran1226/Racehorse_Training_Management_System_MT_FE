@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { cx } from "@/shared/lib/cx";
 import { Icon } from "./Icon";
 import styles from "./Menu.module.css";
+import { trNode } from "@/shared/i18n/tr";
 
 export interface MenuItem {
   label: string;
@@ -81,9 +82,9 @@ export function Menu({ label, items, trigger = "dots", buttonText = "More", alig
         )}
       </button>
       {open && (
-        <div id={menuId} role="menu" aria-label={label} className={cx(styles.menu, align === "left" && styles.left)}>
+        <div id={menuId} role="menu" aria-label={trNode(label)} className={cx(styles.menu, align === "left" && styles.left)}>
           {visible.map((it) => (
-            <div key={it.label}>
+            <div key={trNode(it.label)}>
               {it.divider && <div className={styles.divider} role="separator" />}
               {it.to ? (
                 <Link
@@ -93,14 +94,14 @@ export function Menu({ label, items, trigger = "dots", buttonText = "More", alig
                   onClick={() => setOpen(false)}
                 >
                   {it.icon && <Icon name={it.icon} size={16} />}
-                  {it.label}
+                  {trNode(it.label)}
                 </Link>
               ) : (
                 <button
                   role="menuitem"
                   type="button"
                   aria-disabled={it.disabledReason ? true : undefined}
-                  title={it.disabledReason}
+                  title={trNode(it.disabledReason)}
                   className={cx(styles.item, it.danger && styles.danger, it.disabledReason && styles.off)}
                   onClick={() => {
                     if (it.disabledReason) return;
@@ -110,8 +111,8 @@ export function Menu({ label, items, trigger = "dots", buttonText = "More", alig
                 >
                   {it.icon && <Icon name={it.icon} size={16} />}
                   <span className={styles.itemText}>
-                    {it.label}
-                    {it.disabledReason && <span className={styles.reason}>{it.disabledReason}</span>}
+                    {trNode(it.label)}
+                    {it.disabledReason && <span className={styles.reason}>{trNode(it.disabledReason)}</span>}
                   </span>
                 </button>
               )}

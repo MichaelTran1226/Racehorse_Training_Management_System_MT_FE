@@ -13,7 +13,8 @@ import { todayClub, trainingApi } from "../api";
 import { sessionButtons } from "../components/sessionRules";
 import { EXERCISE_TYPE_LABEL, SESSION_STATUS_LABEL, SESSION_STATUS_TONE } from "../types";
 import type { ExerciseSession } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 function minusDays(date: string, days: number): string {
   const d = new Date(`${date}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() - days);
@@ -64,33 +65,33 @@ export default function SessionMetricsPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>Workout Results</h1>
+          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>{tr("Workout Results")}</h1>
           <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
-            Record results after workouts; abnormal signs alert the Veterinarian. Values are entered by hand.
+            {tr("Record results after workouts; abnormal signs alert the Veterinarian. Values are entered by hand.")}
           </p>
         </div>
         {(user.role === "HEAD_TRAINER" || user.role === "VETERINARIAN") && (
-          <Link to="/training/alerts"><Button tone="secondary">Abnormal-sign alerts</Button></Link>
+          <Link to="/training/alerts"><Button tone="secondary">{tr("Abnormal-sign alerts")}</Button></Link>
         )}
       </div>
 
       <Card pad={16}>
         <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
-          <span style={{ fontWeight: 600 }}>Fitness chart for:</span>
+          <span style={{ fontWeight: 600 }}>{tr("Fitness chart for:")}</span>
           <div style={{ minWidth: 260 }}>
             <Select value={horseId} onChange={(e) => setHorseId(e.target.value)} options={horses} />
           </div>
-          <Link to={`/horses/${horseId}/fitness`}><Button tone="primary" disabled={!horseId}>Open chart</Button></Link>
+          <Link to={`/horses/${horseId}/fitness`}><Button tone="primary" disabled={!horseId}>{tr("Open chart")}</Button></Link>
         </div>
       </Card>
 
-      {error && <Alert tone="danger" title="Could not load data">{error}</Alert>}
+      {error && <Alert tone="danger" title={tr("Could not load data")}>{error}</Alert>}
 
       {user.role === "HEAD_TRAINER" && (
         <Card pad={16}>
           <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>Waiting for a result ({pending.length})</h2>
           {loading ? null : pending.length === 0 ? (
-            <EmptyState title="Nothing to record right now." />
+            <EmptyState title={tr("Nothing to record right now.")} />
           ) : (
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "var(--fs-body)", textAlign: "left" }}>
               <tbody>{pending.map((s) => <Row key={s.id} s={s} action="Record result" />)}</tbody>
@@ -102,9 +103,9 @@ export default function SessionMetricsPage() {
       <Card pad={16}>
         <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>Results – last 14 days ({recent.length})</h2>
         {loading ? (
-          <div style={{ color: "var(--text-muted)" }}>Loading...</div>
+          <div style={{ color: "var(--text-muted)" }}>{tr("Loading...")}</div>
         ) : recent.length === 0 ? (
-          <EmptyState title="No results in the last 14 days." />
+          <EmptyState title={tr("No results in the last 14 days.")} />
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "var(--fs-body)", textAlign: "left" }}>
             <tbody>{recent.map((s) => <Row key={s.id} s={s} action="View result" />)}</tbody>

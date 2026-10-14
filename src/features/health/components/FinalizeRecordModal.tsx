@@ -7,7 +7,8 @@ import { Textarea } from "@/shared/components/form/Textarea";
 import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
 import type { FinalizeRecordInput } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 interface FinalizeRecordModalProps {
   recordNumber: string;
   proposedStatus?: string;
@@ -58,8 +59,8 @@ export function FinalizeRecordModal({
 
   return (
     <Modal
-      title={`Finalize Medical Record ${recordNumber}`}
-      subtitle="Transitions medical record to In-Treatment status. Examination and diagnostic sections will be locked against editing."
+      title={tr(`Finalize Medical Record ${recordNumber}`)}
+      subtitle={tr("Transitions medical record to In-Treatment status. Examination and diagnostic sections will be locked against editing.")}
       width={520}
       onClose={onClose}
       foot={
@@ -81,9 +82,9 @@ export function FinalizeRecordModal({
         )}
 
         {proposedStatus && (
-          <Field label="Apply Proposed Status" hint={`Update horse health status to: ${proposedStatus}`}>
+          <Field label={tr("Apply Proposed Status")} hint={tr(`Update horse health status to: ${proposedStatus}`)}>
             <Checkbox
-              label="Apply this status to horse profile immediately upon finalization"
+              label={tr("Apply this status to horse profile immediately upon finalization")}
               checked={applyProposedStatus}
               onChange={setApplyProposedStatus}
             />
@@ -92,28 +93,28 @@ export function FinalizeRecordModal({
 
         <div style={{ borderTop: "1px solid var(--border)", paddingTop: 12 }}>
           <Checkbox
-            label="Activate Training Lock"
+            label={tr("Activate Training Lock")}
             checked={proposeMedicalLock}
             onChange={setProposeMedicalLock}
           />
           <span style={{ fontSize: "var(--fs-caption)", color: "var(--muted)", display: "block", marginTop: 4 }}>
-            Highest system priority order; automatically blocks heavy exercise and holds race entries.
+            {tr("Highest system priority order; automatically blocks heavy exercise and holds race entries.")}
           </span>
         </div>
 
         {proposeMedicalLock && (
           <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingLeft: 12, borderLeft: "2px solid var(--danger)" }}>
-            <Field label="Lock Reason *" hint="Describe musculoskeletal lesion or clinical rationale for mandatory rest">
+            <Field label={tr("Lock Reason *")} hint={tr("Describe musculoskeletal lesion or clinical rationale for mandatory rest")}>
               <Textarea
                 rows={2}
                 value={lockReason}
                 onChange={(e) => setLockReason(e.target.value)}
-                placeholder="e.g., Grade 2 SDFT desmitis requiring strict stall rest..."
+                placeholder={tr("e.g., Grade 2 SDFT desmitis requiring strict stall rest...")}
                 required
               />
             </Field>
 
-            <Field label="Expected Rest Duration (days)" hint="System calculates review date = today + specified days">
+            <Field label={tr("Expected Rest Duration (days)")} hint="System calculates review date = today + specified days">
               <Input
                 type="number"
                 min={1}
@@ -123,11 +124,11 @@ export function FinalizeRecordModal({
               />
             </Field>
 
-            <Field label="Unlock Conditions" hint="Clinical benchmarks required before VET lifts lock">
+            <Field label={tr("Unlock Conditions")} hint={tr("Clinical benchmarks required before VET lifts lock")}>
               <Input
                 value={lockUnlockConditions}
                 onChange={(e) => setLockUnlockConditions(e.target.value)}
-                placeholder="e.g., Follow-up ultrasound confirms tendon healing, zero pain on palpation..."
+                placeholder={tr("e.g., Follow-up ultrasound confirms tendon healing, zero pain on palpation...")}
               />
             </Field>
           </div>

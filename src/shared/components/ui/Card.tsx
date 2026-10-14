@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { cx } from "@/shared/lib/cx";
 import styles from "./Card.module.css";
+import { trNode } from "@/shared/i18n/tr";
 
 interface CardProps {
   title?: string;
@@ -19,8 +20,8 @@ export function Card({ title, subtitle, action, foot, pad = 20, className, child
       {(title || action) && (
         <header className={styles.head}>
           <div className={styles.headText}>
-            {title && <h2 className={styles.title}>{title}</h2>}
-            {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+            {title && <h2 className={styles.title}>{trNode(title)}</h2>}
+            {subtitle && <p className={styles.subtitle}>{trNode(subtitle)}</p>}
           </div>
           {action && <div className={styles.action}>{action}</div>}
         </header>

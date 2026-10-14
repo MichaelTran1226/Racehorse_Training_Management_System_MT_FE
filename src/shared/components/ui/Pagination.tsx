@@ -1,5 +1,6 @@
 import { Button } from "./Button";
 import styles from "./Pagination.module.css";
+import { tr } from "@/shared/i18n/tr";
 
 interface PaginationProps {
   page: number; // bắt đầu từ 1
@@ -18,10 +19,10 @@ export function Pagination({ page, pageSize, total, noun, onPage }: PaginationPr
 
   const summary =
     total === 0
-      ? `No ${noun} match this filter`
+      ? tr(`No ${noun} match this filter`)
       : total === 1
-        ? `Showing 1 ${singular}`
-        : `Showing ${from}–${to} of ${total} ${noun}`;
+        ? tr(`Showing 1 ${singular}`)
+        : tr(`Showing ${from}–${to} of ${total} ${noun}`);
 
   return (
     <div className={styles.bar}>
