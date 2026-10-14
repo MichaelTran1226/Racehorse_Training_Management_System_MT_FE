@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 
 async function signIn(page: Page, email: string, password = 'equiflow123') {
   await page.goto('/login');
-  await page.getByLabel('Club email', { exact: false }).fill(email);
+  await page.locator('input[type=email]').fill(email);
   await page.locator('input[type=password]').fill(password);
   await page.locator('button[type=submit]').click();
   await expect(page).toHaveURL('/dashboard');
@@ -54,7 +54,7 @@ test('a heavy workout of a locked horse is blocked and cannot be restored yet', 
   await signIn(page, 'nam.tran@gmail.com');
   await page.goto('/training/calendar');
   await page.locator('input[type=date]').first().fill(tomorrowClub());
-  await page.getByRole('button', { name: /Northern Dancer Legacy.*Blocked/ }).click();
+  await page.getByRole('button', { name: /Blocked.*Northern Dancer Legacy/ }).click();
   const restore = page.getByRole('button', { name: 'Restore' });
   await expect(restore).toBeDisabled();
   await expect(restore).toHaveAttribute('title', 'The horse is still under a Training Lock.');

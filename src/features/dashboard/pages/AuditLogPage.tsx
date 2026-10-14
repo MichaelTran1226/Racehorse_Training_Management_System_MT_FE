@@ -24,7 +24,7 @@ interface ChangeItem {
   after: string;
 }
 
-function parseAuditChanges(log: AuditLog, isVi: boolean): { summary: string; changes: ChangeItem[] } {
+function parseAuditChanges(log: AuditLog, isVi: boolean): { summary: string; recorded: string | null; changes: ChangeItem[] } {
   const changes: ChangeItem[] = [];
   let summary = "";
 
@@ -131,7 +131,9 @@ function parseAuditChanges(log: AuditLog, isVi: boolean): { summary: string; cha
   const actionDescriptions = isVi ? actionDescriptionsVi : actionDescriptionsEn;
   const fallback = summary || (isVi ? `Thao tác hệ thống (${log.action})` : `System action (${log.action})`);
   const actionText = actionDescriptions[log.action] ?? fallback;
-  return { summary: changes.length > 0 ? "" : actionText, changes };
+  // Nội dung gốc đã ghi trong nhật ký: luôn giữ lại, câu mô tả ở trên chỉ để dễ đọc.
+  const recorded = newObj && typeof newObj.detail === "string" && newObj.detail !== actionText ? newObj.detail : null;
+  return { summary: changes.length > 0 ? "" : actionText, recorded, changes };
 }
 
 const emptyFilters = { actor: "", action: "", from: "", to: "" };
@@ -254,7 +256,7 @@ export default function AuditLogPage() {
       )}
     </Card>
     {detail && (() => {
-      const { summary, changes } = parseAuditChanges(detail, isVietnamese);
+      const { summary, recorded, changes } = parseAuditChanges(detail, isVietnamese);
       return (
         <Modal
           title={isVietnamese ? "Chi tiết sự kiện nhật ký" : "Audit Event Details"}
@@ -279,6 +281,18 @@ export default function AuditLogPage() {
               <dt>{isVietnamese ? "Thời gian" : "Time"}</dt>
               <dd>{formatDateTime(detail.timestamp)}</dd>
             </div>
+            {/* Định danh và nguồn thao tác (FR-021: lưu vết user, IP, thời gian). */}
+            {([
+              [isVietnamese ? "Mã đối tượng" : "Entity ID", detail.entityId],
+              [isVietnamese ? "Mã sự kiện" : "Event ID", detail.id],
+              [isVietnamese ? "Địa chỉ IP" : "IP address", detail.ipAddress],
+              [isVietnamese ? "Trình duyệt" : "User agent", detail.userAgent],
+            ] as const).map(([label, value]) => (
+              <div key={label}>
+                <dt>{label}</dt>
+                <dd>{value ?? (isVietnamese ? "Không ghi nhận" : "Not recorded")}</dd>
+              </div>
+            ))}
           </dl>
 
           <div className={styles.changeSection}>
@@ -309,7 +323,7 @@ export default function AuditLogPage() {
                 <div className={styles.actionIcon}>📝</div>
                 <div className={styles.actionText}>
                   <strong>{summary}</strong>
-                  <p>{isVietnamese ? "Hành động đã được ghi nhận và áp dụng thành công trong hệ thống." : "Action was successfully executed and recorded in the audit log."}</p>
+                  <p>{recorded ?? (isVietnamese ? "Hành động đã được ghi nhận và áp dụng thành công trong hệ thống." : "Action was successfully executed and recorded in the audit log.")}</p>
                 </div>
               </div>
             )}

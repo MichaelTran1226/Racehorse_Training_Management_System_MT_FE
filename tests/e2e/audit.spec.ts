@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 
 async function signIn(page: Page, email = 'viet.do@gmail.com') {
   await page.goto('/login');
-  await page.getByLabel('Club email', { exact: false }).fill(email);
+  await page.locator('input[type=email]').fill(email);
   await page.locator('input[type=password]').fill('equiflow123');
   await page.locator('button[type=submit]').click();
   await expect(page).toHaveURL('/dashboard');
@@ -24,7 +24,7 @@ test('audit filters, pagination, detail and date validation', async ({ page }, t
   await expect(page.locator('span[role=status]')).toContainText('25 events');
   await expect(page.getByRole('row')).toHaveCount(21);
   await page.getByRole('button', { name: 'Next page' }).click();
-  await expect(page.locator('span[role=status]')).toContainText('Page 2 of 2');
+  await expect(page.locator('span[role=status]')).toContainText('Page 2 / 2');
   await expect(page.getByRole('row')).toHaveCount(6);
   await page.getByLabel('Action', { exact: true }).fill('AUTH_LOGIN');
   await page.getByRole('button', { name: 'Apply filters' }).click();
