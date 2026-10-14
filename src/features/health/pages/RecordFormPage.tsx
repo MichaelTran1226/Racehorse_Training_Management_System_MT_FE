@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams, useBlocker } from "react-router-dom";
 import { Checkbox } from "@/shared/components/form/Checkbox";
 import { Field } from "@/shared/components/form/Field";
 import { Input } from "@/shared/components/form/Input";
@@ -119,6 +119,39 @@ export default function RecordFormPage() {
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
+
+  // FR-3.20: đóng tab / tải lại khi có thay đổi chưa lưu -> trình duyệt hỏi lại.
+  useEffect(() => {
+    if (!dirty) return;
+    const handler = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [dirty]);
+
+  // FR-3.20: Chuyển trang qua router / Sidebar khi chưa lưu -> hỏi xác nhận
+  const blocker = useBlocker(Boolean(dirty && !busy));
+
+  useEffect(() => {
+    if (blocker.state === "blocked") {
+      if (window.confirm(tr("You have unsaved changes in this medical record. Leaving will lose them. Continue?"))) {
+        blocker.proceed();
+      } else {
+        blocker.reset();
+      }
+    }
+  }, [blocker]);
+
+  function handleCancel() {
+    if (dirty) {
+      if (window.confirm(tr("You have unsaved changes in this medical record. Leaving will lose them. Continue?"))) {
+        setDirty(false);
+        navigate(-1);
+      }
+    } else {
+      navigate(-1);
+    }
+  }
 
   // Load existing data if edit mode
   useEffect(() => {
@@ -213,6 +246,7 @@ export default function RecordFormPage() {
       if (isEdit && id) {
         const updated = await updateRecord(id, payload);
         toast.show("Medical record updated successfully.", "ok");
+        setDirty(false);
         navigate(`/medical/records/${updated.record.id}`);
       } else {
         const created = await createRecord(payload);
@@ -220,6 +254,7 @@ export default function RecordFormPage() {
           saveAsDraft ? "Draft medical record saved successfully." : "Medical record created and finalized.",
           "ok",
         );
+        setDirty(false);
         navigate(`/medical/records/${created.record.id}`);
       }
     } catch (err: unknown) {
@@ -234,7 +269,11 @@ export default function RecordFormPage() {
   const rrWarn = isRespiratoryWarning(respiratoryRate);
 
   return (
-    <div className={styles.container}>
+    <div
+      className={styles.container}
+      onInput={() => setDirty(true)}
+      onChangeCapture={() => setDirty(true)}
+    >
       <div className={styles.headerCard}>
         <div className={styles.headerTop}>
           <div className={styles.titleArea}>
@@ -569,7 +608,7 @@ export default function RecordFormPage() {
           marginTop: 8,
         }}
       >
-        <Button tone="ghost" onClick={() => navigate(-1)} disabled={busy}>
+        <Button tone="ghost" onClick={handleCancel} disabled={busy}>
           {tr("Cancel")}
         </Button>
 
