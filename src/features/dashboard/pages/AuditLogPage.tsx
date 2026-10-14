@@ -24,7 +24,7 @@ interface ChangeItem {
   after: string;
 }
 
-function parseAuditChanges(log: AuditLog, isVi: boolean): { summary: string; changes: ChangeItem[] } {
+function parseAuditChanges(log: AuditLog, isVi: boolean): { actionText: string; summary: string; changes: ChangeItem[] } {
   const changes: ChangeItem[] = [];
   let summary = "";
 
@@ -129,9 +129,10 @@ function parseAuditChanges(log: AuditLog, isVi: boolean): { summary: string; cha
   };
 
   const actionDescriptions = isVi ? actionDescriptionsVi : actionDescriptionsEn;
-  const fallback = summary || (isVi ? `Thao tác hệ thống (${log.action})` : `System action (${log.action})`);
+  const fallback = summary || (log as any).detail || (isVi ? `Thao tác hệ thống (${log.action})` : `System action (${log.action})`);
   const actionText = actionDescriptions[log.action] ?? fallback;
-  return { summary: changes.length > 0 ? "" : actionText, changes };
+  const finalSummary = summary || (log as any).detail || "";
+  return { actionText, summary: finalSummary, changes };
 }
 
 const emptyFilters = { actor: "", action: "", from: "", to: "" };
@@ -254,7 +255,7 @@ export default function AuditLogPage() {
       )}
     </Card>
     {detail && (() => {
-      const { summary, changes } = parseAuditChanges(detail, isVietnamese);
+      const { actionText, summary, changes } = parseAuditChanges(detail, isVietnamese);
       return (
         <Modal
           title={isVietnamese ? "Chi tiết sự kiện nhật ký" : "Audit Event Details"}
@@ -265,7 +266,7 @@ export default function AuditLogPage() {
           <dl className={styles.metadata}>
             <div>
               <dt>{isVietnamese ? "Người thực hiện" : "Actor"}</dt>
-              <dd>{detail.user?.fullName ?? detail.userId ?? (isVietnamese ? "Hệ thống" : "System")}</dd>
+              <dd>{detail.user?.fullName ?? detail.userId ?? (isVietnamese ? "Hệ thống" : "System / unavailable")}</dd>
             </div>
             <div>
               <dt>{isVietnamese ? "Hành động" : "Action"}</dt>
@@ -274,6 +275,22 @@ export default function AuditLogPage() {
             <div>
               <dt>{isVietnamese ? "Đối tượng thao tác" : "Target Entity"}</dt>
               <dd>{detail.entityName || (isVietnamese ? "Tài khoản / Hệ thống" : "Account / System")}</dd>
+            </div>
+            <div>
+              <dt>{isVietnamese ? "Mã đối tượng" : "Entity ID"}</dt>
+              <dd>{detail.entityId ?? (isVietnamese ? "Chưa ghi nhận" : "Not recorded")}</dd>
+            </div>
+            <div>
+              <dt>{isVietnamese ? "Mã sự kiện" : "Event ID"}</dt>
+              <dd>{detail.id ?? (isVietnamese ? "Chưa ghi nhận" : "Not recorded")}</dd>
+            </div>
+            <div>
+              <dt>{isVietnamese ? "Địa chỉ IP" : "IP address"}</dt>
+              <dd>{detail.ipAddress ?? (isVietnamese ? "Chưa ghi nhận" : "Not recorded")}</dd>
+            </div>
+            <div>
+              <dt>{isVietnamese ? "Tác nhân người dùng" : "User agent"}</dt>
+              <dd>{detail.userAgent ?? (isVietnamese ? "Chưa ghi nhận" : "Not recorded")}</dd>
             </div>
             <div>
               <dt>{isVietnamese ? "Thời gian" : "Time"}</dt>
@@ -308,7 +325,8 @@ export default function AuditLogPage() {
               <div className={styles.actionCard}>
                 <div className={styles.actionIcon}>📝</div>
                 <div className={styles.actionText}>
-                  <strong>{summary}</strong>
+                  <strong>{actionText}</strong>
+                  {summary && summary !== actionText && <p>{summary}</p>}
                   <p>{isVietnamese ? "Hành động đã được ghi nhận và áp dụng thành công trong hệ thống." : "Action was successfully executed and recorded in the audit log."}</p>
                 </div>
               </div>
