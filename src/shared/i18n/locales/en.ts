@@ -110,6 +110,15 @@ export const en = {
     settings: "Settings",
     notifications: "Notifications",
 
+    // Specific nav keys to avoid collisions / role differences
+    trainingOverview: "Training Overview",
+    trainingPlans: "Training Plans",
+    biomechanicalAlerts: "Biomechanical Alerts",
+    vaccinationSchedule: "Vaccination Schedule",
+    supplyTracking: "Supply Tracking",
+    costReport: "Cost Report",
+    operatingCosts: "Operating Costs",
+
     // Roles
     role_HEAD_TRAINER: "Head Trainer",
     role_VETERINARIAN: "Veterinarian",

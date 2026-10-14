@@ -23,7 +23,7 @@ interface SidebarProps {
 // Sidebar xây từ DANH SÁCH QUYỀN của tài khoản (navFor), không chỉ từ tên vai trò:
 // thu hồi quyền => mục tương ứng biến mất ở lần tải trang kế tiếp.
 export function Sidebar({ user, pathname, note, open, onNavigate }: SidebarProps) {
-  const { t } = useAppLanguage();
+  const { t, isVietnamese } = useAppLanguage();
   const groups = navFor(user.role, user.permissions);
   const [hasActiveLocks, setHasActiveLocks] = useState(() => getStoredLocks().some((l) => l.status === "ACTIVE"));
 
@@ -72,6 +72,8 @@ export function Sidebar({ user, pathname, note, open, onNavigate }: SidebarProps
             {g.items.map((it) => {
               const active = isNavItemActive(it, pathname);
               const showAlertDot = (it.id === "locks" && hasActiveLocks) || (it.id !== "locks" && Boolean(it.alert));
+              const itemKey = it.i18nKey || it.id;
+              const itemLabel = isVietnamese ? t(`nav.${itemKey}`, it.label) : it.label;
               return (
                 <Link
                   key={it.id}
@@ -81,7 +83,7 @@ export function Sidebar({ user, pathname, note, open, onNavigate }: SidebarProps
                   className={cx(styles.item, active && styles.active)}
                 >
                   <Icon name={it.icon} size={18} />
-                  <span className={styles.itemLabel}>{t(`nav.${it.id}`, it.label)}</span>
+                  <span className={styles.itemLabel}>{itemLabel}</span>
                   {showAlertDot && <span className={cx(styles.dot, styles.alertDot)} aria-label="Action required" />}
                 </Link>
               );

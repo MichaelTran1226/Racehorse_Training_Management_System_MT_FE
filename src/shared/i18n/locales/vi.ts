@@ -112,6 +112,15 @@ export const vi: TranslationResources = {
     settings: "Cài đặt hệ thống",
     notifications: "Thông báo",
 
+    // Specific nav keys to avoid collisions / role differences
+    trainingOverview: "Tổng quan huấn luyện",
+    trainingPlans: "Kế hoạch huấn luyện",
+    biomechanicalAlerts: "Cảnh báo cơ sinh học",
+    vaccinationSchedule: "Lịch tiêm chủng",
+    supplyTracking: "Theo dõi vật tư",
+    costReport: "Báo cáo chi phí",
+    operatingCosts: "Chi phí vận hành",
+
     // Roles
     role_HEAD_TRAINER: "Huấn luyện viên trưởng",
     role_VETERINARIAN: "Bác sĩ thú y",
