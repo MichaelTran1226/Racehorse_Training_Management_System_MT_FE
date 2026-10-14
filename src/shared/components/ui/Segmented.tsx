@@ -1,5 +1,6 @@
 import { cx } from "@/shared/lib/cx";
 import styles from "./Segmented.module.css";
+import { trNode } from "@/shared/i18n/tr";
 
 interface SegmentedItem<T extends string> {
   id: T;
@@ -16,7 +17,7 @@ interface SegmentedProps<T extends string> {
 // Nút chọn một trong vài lựa chọn nhỏ, ví dụ kỳ báo cáo 7 ngày / 30 ngày. Khác Tabs: không đổi cả trang, chỉ đổi cách xem.
 export function Segmented<T extends string>({ items, active, onChange, label = "Options" }: SegmentedProps<T>) {
   return (
-    <div role="group" aria-label={label} className={styles.group}>
+    <div role="group" aria-label={trNode(label)} className={styles.group}>
       {items.map((it) => {
         const on = it.id === active;
         return (

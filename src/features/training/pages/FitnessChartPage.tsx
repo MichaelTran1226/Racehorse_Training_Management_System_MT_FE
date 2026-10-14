@@ -14,7 +14,8 @@ import { FitnessChart, SERIES_COLOR, SERIES_LABEL } from "../components/FitnessC
 import type { FitnessSeries } from "../components/FitnessChart";
 import { EXERCISE_TYPE_LABEL } from "../types";
 import type { FitnessData } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 const RANGES = [4, 12, 26];
 const PAGE_SIZE = 20;
 
@@ -55,12 +56,12 @@ export default function FitnessChartPage() {
 
   if (error) {
     return (
-      <Alert tone="danger" title="Could not load data">
-        {error} <Button size="sm" tone="secondary" onClick={() => void load()}>Try again</Button>
+      <Alert tone="danger" title={tr("Could not load data")}>
+        {error} <Button size="sm" tone="secondary" onClick={() => void load()}>{tr("Try again")}</Button>
       </Alert>
     );
   }
-  if (!data) return <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Loading fitness data...</div>;
+  if (!data) return <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>{tr("Loading fitness data...")}</div>;
 
   const to = loadedAt;
   const from = to - weeks * 7 * 24 * 3600_000;
@@ -75,9 +76,9 @@ export default function FitnessChartPage() {
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
           <h1 style={{ margin: 0, fontSize: "var(--fs-kpi)" }}>Fitness – {data.horse.name}</h1>
           <Badge tone={statusCfg.tone as never}>{statusCfg.label}</Badge>
-          {data.horse.isMedicalLocked && <Badge tone="danger" icon="lock">Training Lock</Badge>}
+          {data.horse.isMedicalLocked && <Badge tone="danger" icon="lock">{tr("Training Lock")}</Badge>}
         </div>
-        <Link to={`/horses/${data.horse.id}`}><Button tone="secondary">Horse profile</Button></Link>
+        <Link to={`/horses/${data.horse.id}`}><Button tone="secondary">{tr("Horse profile")}</Button></Link>
       </div>
 
       <Card pad={16}>
@@ -102,20 +103,20 @@ export default function FitnessChartPage() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
         <Card pad={16}>
-          <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>Best average speed</div>
-          <div style={{ fontSize: "var(--fs-kpi)", fontWeight: 700 }}>{s.bestAvgSpeed ? `${s.bestAvgSpeed.value} km/h` : "—"}</div>
+          <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>{tr("Best average speed")}</div>
+          <div style={{ fontSize: "var(--fs-kpi)", fontWeight: 700 }}>{s.bestAvgSpeed ? tr(`${s.bestAvgSpeed.value} km/h`) : "—"}</div>
           {s.bestAvgSpeed && <div style={{ fontSize: "var(--fs-caption)" }}>{clubParts(s.bestAvgSpeed.date).date}</div>}
         </Card>
         <Card pad={16}>
-          <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>Avg performance (last 4)</div>
+          <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>{tr("Avg performance (last 4)")}</div>
           <div style={{ fontSize: "var(--fs-kpi)", fontWeight: 700 }}>{s.avgScoreLast4 != null ? `${s.avgScoreLast4}/10` : "—"}</div>
         </Card>
         <Card pad={16}>
-          <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>Avg HR after 10 min (last 4)</div>
-          <div style={{ fontSize: "var(--fs-kpi)", fontWeight: 700 }}>{s.avgRecoveryLast4 != null ? `${s.avgRecoveryLast4} bpm` : "—"}</div>
+          <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>{tr("Avg HR after 10 min (last 4)")}</div>
+          <div style={{ fontSize: "var(--fs-kpi)", fontWeight: 700 }}>{s.avgRecoveryLast4 != null ? tr(`${s.avgRecoveryLast4} bpm`) : "—"}</div>
         </Card>
         <Card pad={16}>
-          <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>Load, last 7 days</div>
+          <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>{tr("Load, last 7 days")}</div>
           <div style={{ fontSize: "var(--fs-kpi)", fontWeight: 700 }}>{s.load7d}</div>
           {s.loadChangePct != null && (
             <div style={{ fontSize: "var(--fs-caption)", color: s.loadChangePct > 30 ? "var(--warn)" : "var(--text-muted)" }}>
@@ -127,14 +128,14 @@ export default function FitnessChartPage() {
 
       <Card pad={16}>
         {data.points.length === 0 ? (
-          <EmptyState title="No completed workouts to chart yet." />
+          <EmptyState title={tr("No completed workouts to chart yet.")} />
         ) : (
           <>
             <FitnessChart data={data} series={series} from={from} to={to} />
             {data.points.length < 3 && (
-              <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>At least 3 workouts are needed to see a trend.</div>
+              <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>{tr("At least 3 workouts are needed to see a trend.")}</div>
             )}
-            <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>Red bands: Training Lock periods. Click a point to open the result.</div>
+            <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>{tr("Red bands: Training Lock periods. Click a point to open the result.")}</div>
           </>
         )}
       </Card>

@@ -277,6 +277,10 @@ export const en = {
     noOtherActivePlan: "No other active plan for {{name}} (checked when you confirm)",
     horseInStatus: "The horse is in status {{status}}.",
   },
+  nameValidation: {
+    required: "Full name is required.",
+    lettersOnly: "Full name can only contain letters and spaces.",
+  },
   phoneValidation: {
     error: "Phone number must be a valid 10-digit mobile number (starting with 03, 05, 07, 08, 09).",
     hint: "10 digits (starting with 03, 05, 07, 08, 09)",

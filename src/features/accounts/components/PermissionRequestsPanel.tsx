@@ -10,7 +10,8 @@ import { ROLE_LABEL } from "@/shared/lib/permissions";
 import { listPermissionRequests, resolvePermissionRequest } from "../api";
 import type { PermissionRequest } from "../types";
 import styles from "./PermissionRequestsPanel.module.css";
-
+
+import { tr } from "@/shared/i18n/tr";
 // WorkFlow 1 §7.4: yêu cầu "Request the permission" gửi từ màn 403 hiện ở đây cho Club Manager.
 // Mở màn Permissions của người gửi để bật quyền, rồi đánh dấu Granted — hoặc Dismiss nếu không cấp.
 // Không có yêu cầu nào đang chờ => panel ẩn (bảng tài khoản bên dưới vẫn là nội dung chính của trang).
@@ -53,14 +54,14 @@ export function PermissionRequestsPanel() {
         <Alert
           tone="warn"
           icon="alert"
-          title="Permission requests could not be loaded"
+          title={tr("Permission requests could not be loaded")}
           action={
             <Button tone="secondary" size="sm" icon="refresh" onClick={load}>
               Try again
             </Button>
           }
         >
-          Requests sent from the access-denied page are safe; they appear here once the service answers.
+          {tr("Requests sent from the access-denied page are safe; they appear here once the service answers.")}
         </Alert>
       </div>
     );
@@ -71,30 +72,30 @@ export function PermissionRequestsPanel() {
     <Card
       pad={0}
       className={styles.panel}
-      title={`Permission requests · ${requests.length}`}
-      subtitle="Sent from the access-denied page. Open the permissions, switch on what the work needs, then mark it granted."
+      title={tr(`Permission requests · ${requests.length}`)}
+      subtitle={tr("Sent from the access-denied page. Open the permissions, switch on what the work needs, then mark it granted.")}
     >
       <ul className={styles.list}>
         {requests.map((r) => (
           <li key={r.id} className={styles.item}>
             <div className={styles.who}>
-              <strong>{r.account?.fullName ?? "Deleted account"}</strong>
-              {r.account ? ` · ${ROLE_LABEL[r.account.role]}` : ""} asks for <strong>{r.screen}</strong>
+              <strong>{r.account?.fullName ?? tr("Deleted account")}</strong>
+              {r.account ? ` · ${ROLE_LABEL[r.account.role]}` : ""} {tr("asks for")}{" "}<strong>{r.screen}</strong>
               <span className={styles.meta}>
-                {formatDateTime(r.at)} · reference {r.reference}
+                {formatDateTime(r.at)} {tr("· reference")}{" "}{r.reference}
               </span>
             </div>
             <div className={styles.actions}>
               {r.account && (
                 <Link to={`/accounts/${r.account.id}/permissions`} className={styles.link}>
-                  Open permissions
+                  {tr("Open permissions")}
                 </Link>
               )}
               <Button size="sm" icon="check" disabled={busyId === r.id} onClick={() => resolve(r, "GRANTED")}>
-                Mark granted
+                {tr("Mark granted")}
               </Button>
               <Button tone="ghost" size="sm" disabled={busyId === r.id} onClick={() => resolve(r, "DISMISSED")}>
-                Dismiss
+                {tr("Dismiss")}
               </Button>
             </div>
           </li>

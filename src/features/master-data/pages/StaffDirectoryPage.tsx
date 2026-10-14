@@ -13,7 +13,8 @@ import { ROLE_LABEL } from "@/shared/lib/permissions";
 import { ACCOUNT_STATUS } from "@/shared/lib/status";
 import { initials } from "@/shared/lib/format";
 import { Icon } from "@/shared/components/ui/Icon";
-
+
+import { tr } from "@/shared/i18n/tr";
 const STAFF_ROLES: Role[] = ["CLUB_MANAGER", "HEAD_TRAINER", "VETERINARIAN", "GROOM"];
 
 export default function StaffDirectoryPage() {
@@ -59,8 +60,8 @@ export default function StaffDirectoryPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
-        title="Staff Directory"
-        description="Active operating staff, trainers, veterinarians, and grooms managing EquiFlow facilities."
+        title={tr("Staff Directory")}
+        description={tr("Active operating staff, trainers, veterinarians, and grooms managing EquiFlow facilities.")}
         action={
           currentUser.permissions.manageAccounts ? (
             <Link to="/accounts">
@@ -96,7 +97,7 @@ export default function StaffDirectoryPage() {
 
           <div style={{ minWidth: 260 }}>
             <Input
-              placeholder="Search staff by name, email..."
+              placeholder={tr("Search staff by name, email...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -106,13 +107,13 @@ export default function StaffDirectoryPage() {
 
       {loading ? (
         <div style={{ textAlign: "center", padding: "3rem", color: "var(--text-muted)" }}>
-          Loading staff directory...
+          {tr("Loading staff directory...")}
         </div>
       ) : staffMembers.length === 0 ? (
         <Card pad={32}>
           <EmptyState
-            title="No staff members found"
-            description="No staff match your current filter or search criteria."
+            title={tr("No staff members found")}
+            description={tr("No staff match your current filter or search criteria.")}
           />
         </Card>
       ) : (
@@ -170,7 +171,7 @@ export default function StaffDirectoryPage() {
                   {currentUser.permissions.manageAccounts && (
                     <div style={{ marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border)", display: "flex", gap: "0.5rem" }}>
                       <Link to={`/accounts/${staff.id}/permissions`} style={{ fontSize: "var(--fs-body)", fontWeight: 600 }}>
-                        Permissions
+                        {tr("Permissions")}
                       </Link>
                     </div>
                   )}

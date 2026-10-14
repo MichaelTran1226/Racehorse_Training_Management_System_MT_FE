@@ -20,7 +20,8 @@ import { messageFor } from "@/shared/lib/messages";
 import type { HealthStatus } from "@/shared/types/enums";
 import { getDeletedHorses, restoreHorse } from "../api";
 import type { DeletedHorse } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 const PAGE_SIZE = 20;
 
 /** SC-1.05 Hồ sơ ngựa đã xóa (chỉ CM, chặn ở screenAccess + BE @Roles). */
@@ -81,7 +82,7 @@ export default function DeletedHorsesPage() {
       align: "right",
       render: (h) => (
         <Button size="sm" tone="secondary" onClick={() => setRestoring(h)}>
-          Restore
+          {tr("Restore")}
         </Button>
       ),
     },
@@ -90,8 +91,8 @@ export default function DeletedHorsesPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
-        title="Deleted horse profiles."
-        description="Profiles deleted by mistake. Restoring brings the horse back in the status it had when deleted, without a stall or groom."
+        title={tr("Deleted horse profiles.")}
+        description={tr("Profiles deleted by mistake. Restoring brings the horse back in the status it had when deleted, without a stall or groom.")}
         action={
           <Link to="/horses">
             <Button tone="secondary">← Back to roster</Button>
@@ -102,9 +103,9 @@ export default function DeletedHorsesPage() {
       <Card pad={16}>
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "flex-end" }}>
           <div style={{ flex: "1 1 240px" }}>
-            <Field label="Search">
+            <Field label={tr("Search")}>
               <Input
-                placeholder="Horse name, horse ID, microchip"
+                placeholder={tr("Horse name, horse ID, microchip")}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -113,20 +114,20 @@ export default function DeletedHorsesPage() {
               />
             </Field>
           </div>
-          <Field label="Deleted from">
+          <Field label={tr("Deleted from")}>
             <Input type="date" value={from} onChange={(e) => { setFrom(e.target.value); setPage(1); }} />
           </Field>
-          <Field label="Deleted to">
+          <Field label={tr("Deleted to")}>
             <Input type="date" value={to} onChange={(e) => { setTo(e.target.value); setPage(1); }} />
           </Field>
         </div>
       </Card>
 
-      {error && <Alert tone="danger" title="Could not load deleted profiles">{error}</Alert>}
+      {error && <Alert tone="danger" title={tr("Could not load deleted profiles")}>{error}</Alert>}
 
       <Card pad={0}>
         <DataTable
-          caption="Deleted horse profiles"
+          caption={tr("Deleted horse profiles")}
           columns={columns}
           rows={rows}
           rowKey={(h) => h.id}
@@ -184,7 +185,7 @@ function RestoreDialog({ horse, onClose, onRestored }: { horse: DeletedHorse; on
 
   return (
     <Modal
-      title={`Restore ${horse.name} (${horse.horseCode || horse.id})?`}
+      title={tr(`Restore ${horse.name} (${horse.horseCode || horse.id})?`)}
       onClose={onClose}
       foot={
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
@@ -199,10 +200,10 @@ function RestoreDialog({ horse, onClose, onRestored }: { horse: DeletedHorse; on
     >
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
         <p style={{ margin: 0 }}>
-          The horse returns to the status it had when deleted, without a stall and without a groom.
+          {tr("The horse returns to the status it had when deleted, without a stall and without a groom.")}
         </p>
-        {error && <Alert tone="danger" title="Cannot restore">{error}</Alert>}
-        <Field label="Reason" required hint="10-500 characters" error={touched ? reasonErr || undefined : undefined}>
+        {error && <Alert tone="danger" title={tr("Cannot restore")}>{error}</Alert>}
+        <Field label={tr("Reason")} required hint={tr("10-500 characters")} error={touched ? reasonErr || undefined : undefined}>
           <Textarea rows={3} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} />
         </Field>
       </div>

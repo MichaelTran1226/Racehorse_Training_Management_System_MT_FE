@@ -5,11 +5,10 @@ import { Button } from "@/shared/components/ui/Button";
 import { Card } from "@/shared/components/ui/Card";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Icon } from "@/shared/components/ui/Icon";
-import { useAuth } from "@/shared/components/layout/AuthProvider";
 import {
   type AppNotification,
   formatTimeAgo,
-  getStoredNotifications,
+  getNotifications,
   isToday,
   markAllNotificationsAsRead,
   markNotificationAsRead,
@@ -17,21 +16,21 @@ import {
   clearAllNotifications,
 } from "@/shared/lib/notifications";
 
+import { tr } from "@/shared/i18n/tr";
 export default function NotificationsPage() {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"all" | "unread">("all");
   const [notifications, setNotifications] = useState<AppNotification[]>(() =>
-    getStoredNotifications(user?.role),
+    getNotifications(),
   );
 
   useEffect(() => {
     const sync = () => {
-      setNotifications(getStoredNotifications(user?.role));
+      setNotifications(getNotifications());
     };
     sync();
     return subscribeNotifications(sync);
-  }, [user?.role]);
+  }, []);
 
   const filtered = notifications.filter((n) => {
     if (activeTab === "unread") return !n.read;
@@ -52,6 +51,8 @@ export default function NotificationsPage() {
         return { icon: "activity", bg: "var(--warn)", text: "var(--surface)", label: "Training & Workouts" };
       case "ACCOUNT":
         return { icon: "users", bg: "var(--violet)", text: "var(--surface)", label: "Accounts & Roles" };
+      case "HORSE":
+        return { icon: "horse", bg: "var(--brand)", text: "var(--surface)", label: "Horse Profiles" };
       default:
         return { icon: "bell", bg: "var(--muted)", text: "var(--surface)", label: "System Notification" };
     }
@@ -63,7 +64,7 @@ export default function NotificationsPage() {
       <div
         key={n.id}
         onClick={() => {
-          markNotificationAsRead(n.id);
+          void markNotificationAsRead(n.id);
           if (n.link) navigate(n.link);
         }}
         style={{
@@ -113,7 +114,7 @@ export default function NotificationsPage() {
             </Badge>
             {n.senderName && (
               <span style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>
-                From: <strong>{n.senderName}</strong>
+                {tr("From:")}{" "}<strong>{n.senderName}</strong>
               </span>
             )}
             <span style={{ marginLeft: "auto", fontSize: "var(--fs-caption)", color: "var(--text-muted)", flexShrink: 0 }}>
@@ -156,7 +157,7 @@ export default function NotificationsPage() {
                   color: "var(--brand)",
                 }}
               >
-                <span>View details</span>
+                <span>{tr("View details")}</span>
                 <Icon name="arrowRight" size={13} />
               </span>
             </div>
@@ -174,7 +175,7 @@ export default function NotificationsPage() {
                 background: "var(--info)",
                 display: "inline-block",
               }}
-              title="Unread"
+              title={tr("Unread")}
             />
           </div>
         )}
@@ -188,21 +189,21 @@ export default function NotificationsPage() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
           <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700, }}>
-            Notifications
+            {tr("Notifications")}
           </h1>
         </div>
 
         <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
           {unreadCount > 0 && (
-            <Button tone="secondary" onClick={() => markAllNotificationsAsRead(user?.role)}>
+            <Button tone="secondary" onClick={() => void markAllNotificationsAsRead()}>
               <Icon name="check" size={15} style={{ marginRight: 6 }} />
-              Mark all as read
+              {tr("Mark all as read")}
             </Button>
           )}
           <Link to="/notifications/settings">
             <Button tone="ghost">
               <Icon name="settings" size={15} style={{ marginRight: 6 }} />
-              Notification settings
+              {tr("Notification settings")}
             </Button>
           </Link>
         </div>
@@ -246,7 +247,7 @@ export default function NotificationsPage() {
                 gap: 8,
               }}
             >
-              <span>Unread</span>
+              <span>{tr("Unread")}</span>
               {unreadCount > 0 && (
                 <span
                   style={{
@@ -267,7 +268,7 @@ export default function NotificationsPage() {
           {notifications.length > 0 && (
             <button
               type="button"
-              onClick={() => clearAllNotifications(user?.role)}
+              onClick={() => void clearAllNotifications()}
               style={{
                 border: "none",
                 background: "transparent",
@@ -279,7 +280,7 @@ export default function NotificationsPage() {
               onMouseEnter={(e) => (e.currentTarget.style.color = "var(--danger)")}
               onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
             >
-              Clear notification history
+              {tr("Clear notification history")}
             </button>
           )}
         </div>
@@ -289,11 +290,11 @@ export default function NotificationsPage() {
       {filtered.length === 0 ? (
         <Card pad={40}>
           <EmptyState
-            title={activeTab === "unread" ? "You're all caught up!" : "No notifications yet"}
+            title={activeTab === "unread" ? tr("You're all caught up!") : tr("No notifications yet")}
             description={
               activeTab === "unread"
-                ? "All notifications for your role have been read or marked as reviewed."
-                : "When training locks, clinical alerts, vaccination schedules, or system updates occur, they will appear here."
+                ? tr("All notifications for your role have been read or marked as reviewed.")
+                : tr("When training locks, clinical alerts, vaccination schedules, or system updates occur, they will appear here.")
             }
           />
         </Card>
@@ -302,7 +303,7 @@ export default function NotificationsPage() {
           {todayList.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               <div style={{ fontSize: "var(--fs-body)", fontWeight: 700, color: "var(--text-strong)", padding: "0 4px" }}>
-                Today
+                {tr("Today")}
               </div>
               {todayList.map(renderItem)}
             </div>
@@ -311,7 +312,7 @@ export default function NotificationsPage() {
           {earlierList.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginTop: todayList.length > 0 ? "0.5rem" : 0 }}>
               <div style={{ fontSize: "var(--fs-body)", fontWeight: 700, color: "var(--text-strong)", padding: "0 4px" }}>
-                Earlier
+                {tr("Earlier")}
               </div>
               {earlierList.map(renderItem)}
             </div>

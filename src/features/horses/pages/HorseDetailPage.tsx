@@ -24,7 +24,8 @@ import { Icon } from "@/shared/components/ui/Icon";
 import { useToast } from "@/shared/components/ui/Toast";
 import { AssignStallDialog, ReturnStallDialog, TransferStallDialog } from "@/features/stable/components/StallDialogs";
 import { formatDate, formatDateTime } from "@/shared/lib/format";
-
+
+import { tr } from "@/shared/i18n/tr";
 /** Nguồn đổi trạng thái (Tab 4). */
 const STATUS_SOURCE_LABEL: Record<string, string> = {
   MANUAL: "Manual",
@@ -98,9 +99,9 @@ export default function HorseDetailPage() {
   if (loading) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-        <PageHeader title="Horse profile" />
+        <PageHeader title={tr("Horse profile")} />
         <Card pad={32}>
-          <p style={{ margin: 0, color: "var(--muted)" }} aria-busy="true">Loading horse profile…</p>
+          <p style={{ margin: 0, color: "var(--muted)" }} aria-busy="true">{tr("Loading horse profile…")}</p>
         </Card>
       </div>
     );
@@ -109,14 +110,14 @@ export default function HorseDetailPage() {
   if (error || !horse) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-        <PageHeader title="Horse profile not found" />
+        <PageHeader title={tr("Horse profile not found")} />
         <Card pad={24}>
-          <Alert tone="danger" title="This horse profile could not be opened">
-            {error || "This horse profile does not exist or your account lacks authorization."}
+          <Alert tone="danger" title={tr("This horse profile could not be opened")}>
+            {error || tr("This horse profile does not exist or your account lacks authorization.")}
           </Alert>
           <div style={{ marginTop: "1rem" }}>
             <LinkButton to="/horses" icon="arrowLeft">
-              Back to horses
+              {tr("Back to horses")}
             </LinkButton>
           </div>
         </Card>
@@ -229,15 +230,15 @@ export default function HorseDetailPage() {
 
       {/* Banner Medical Lock */}
       {horse.isMedicalLocked && (
-        <Alert tone="danger" icon="lock" title="Training Lock in effect">
+        <Alert tone="danger" icon="lock" title={tr("Training Lock in effect")}>
           <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
             <div>
               <div>
-                Heavy workouts and trial runs cannot be scheduled until the Veterinarian lifts the lock.
+                {tr("Heavy workouts and trial runs cannot be scheduled until the Veterinarian lifts the lock.")}
               </div>
               {horse.medicalLocks && horse.medicalLocks[0] && (
                 <div style={{ marginTop: "0.5rem", fontSize: "var(--fs-body)", opacity: 0.9 }}>
-                  <strong>Reason:</strong> {horse.medicalLocks[0].lockReason} (placed{" "}
+                  <strong>{tr("Reason:")}</strong> {horse.medicalLocks[0].lockReason} (placed{" "}
                   {formatDateTime(horse.medicalLocks[0].lockedAt)})
                 </div>
               )}
@@ -248,8 +249,8 @@ export default function HorseDetailPage() {
 
       {/* Banner Retired */}
       {horse.status === "RETIRED" && (
-        <Alert tone="info" title="No longer managed">
-          {horse.retireReason ? `Reason: ${RETIRE_REASON_LABEL[horse.retireReason]}. ` : ""}
+        <Alert tone="info" title={tr("No longer managed")}>
+          {horse.retireReason ? tr(`Reason: ${RETIRE_REASON_LABEL[horse.retireReason]}. `) : ""}
           Identity, stall and health history stay available for reference.
         </Alert>
       )}
@@ -299,7 +300,7 @@ export default function HorseDetailPage() {
               </Badge>
               {horse.isMedicalLocked && (
                 <Badge tone="danger" icon="lock">
-                  Training Lock
+                  {tr("Training Lock")}
                 </Badge>
               )}
             </div>
@@ -325,7 +326,7 @@ export default function HorseDetailPage() {
                   <button
                     type="button"
                     onClick={() => copyToClipboard(horse.microchip!, "Microchip")}
-                    title="Copy Microchip"
+                    title={tr("Copy Microchip")}
                     style={{
                       background: "transparent",
                       border: "none",
@@ -349,7 +350,7 @@ export default function HorseDetailPage() {
                   <button
                     type="button"
                     onClick={() => copyToClipboard(horse.rfid!, "RFID")}
-                    title="Copy RFID"
+                    title={tr("Copy RFID")}
                     style={{
                       background: "transparent",
                       border: "none",
@@ -379,15 +380,15 @@ export default function HorseDetailPage() {
             }}
           >
             <div style={{ color: "var(--ink-muted)", fontSize: "var(--fs-caption)", fontWeight: 700 }}>
-              Location & Care
+              {tr("Location & Care")}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontWeight: 600, color: "var(--brand)" }}>
               <Icon name="home" size={13} />
-              <span>{horse.stallCode ? `Stall ${horse.stallCode}` : "Unassigned Stall"}</span>
+              <span>{horse.stallCode ? tr(`Stall ${horse.stallCode}`) : tr("Unassigned Stall")}</span>
             </div>
             <div style={{ color: "var(--ink-secondary)", display: "flex", alignItems: "center", gap: "0.35rem" }}>
               <Icon name="user" size={13} />
-              <span>{horse.primaryGroom || "No Groom Assigned"}</span>
+              <span>{horse.primaryGroom || tr("No Groom Assigned")}</span>
             </div>
           </div>
         </div>
@@ -404,7 +405,7 @@ export default function HorseDetailPage() {
       {activeTab === "info" && (
         <Card pad={24}>
           <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "var(--fs-section)", fontWeight: 700 }}>
-            Identity
+            {tr("Identity")}
           </h3>
           <div
             style={{
@@ -415,24 +416,24 @@ export default function HorseDetailPage() {
             }}
           >
             <div>
-              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>Horse Code (ID)</div>
+              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>{tr("Horse Code (ID)")}</div>
               <div style={{ fontWeight: 600 }}>{horse.horseCode || horse.id}</div>
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>Registered Name</div>
+              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>{tr("Registered Name")}</div>
               <div style={{ fontWeight: 600 }}>{horse.name}</div>
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>Microchip Number (15 digits)</div>
+              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>{tr("Microchip Number (15 digits)")}</div>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                 <span style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{displayMicrochip}</span>
                 {horse.microchip && !isGroom && (
                   <button
                     type="button"
                     onClick={() => copyToClipboard(horse.microchip!, "Microchip")}
-                    title="Copy Microchip"
+                    title={tr("Copy Microchip")}
                     style={{
                       background: "transparent",
                       border: "none",
@@ -449,14 +450,14 @@ export default function HorseDetailPage() {
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>RFID Tag Code</div>
+              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>{tr("RFID Tag Code")}</div>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                 <span style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{horse.rfid || "—"}</span>
                 {horse.rfid && (
                   <button
                     type="button"
                     onClick={() => copyToClipboard(horse.rfid!, "RFID")}
-                    title="Copy RFID"
+                    title={tr("Copy RFID")}
                     style={{
                       background: "transparent",
                       border: "none",
@@ -473,36 +474,36 @@ export default function HorseDetailPage() {
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>Breed</div>
+              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>{tr("Breed")}</div>
               <div style={{ fontWeight: 600 }}>{horse.breed}</div>
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>Date of Birth / Age</div>
+              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>{tr("Date of Birth / Age")}</div>
               <div style={{ fontWeight: 600 }}>
                 {horse.dob ? formatDate(horse.dob) : "—"} ({ageText})
               </div>
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>Gender</div>
+              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>{tr("Gender")}</div>
               <div style={{ fontWeight: 600 }}>{horse.gender}</div>
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>Coat Color</div>
+              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>{tr("Coat Color")}</div>
               <div style={{ fontWeight: 600 }}>{horse.color}</div>
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>Operational Status</div>
+              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>{tr("Operational Status")}</div>
               <div>
                 <Badge tone={statusCfg.tone}>{statusCfg.label}</Badge>
               </div>
             </div>
 
             <div>
-              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>Registration Date</div>
+              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>{tr("Registration Date")}</div>
               <div style={{ fontWeight: 600 }}>
                 {horse.createdAt ? formatDateTime(horse.createdAt) : "—"}
               </div>
@@ -515,20 +516,20 @@ export default function HorseDetailPage() {
       {activeTab === "stable" && !isOwner && (
         <Card pad={24}>
           <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "var(--fs-section)", fontWeight: 700 }}>
-            Stabling & Assigned Caretakers
+            {tr("Stabling & Assigned Caretakers")}
           </h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
             <div style={{ border: "1px solid var(--border)", borderRadius: "var(--r)", padding: 16 }}>
-              <h4 style={{ margin: "0 0 0.75rem 0" }}>Current Stall Assignment</h4>
+              <h4 style={{ margin: "0 0 0.75rem 0" }}>{tr("Current Stall Assignment")}</h4>
               <p style={{ margin: "0 0 0.5rem 0" }}>
-                <strong>Stall Code:</strong> {horse.stallCode || "Unassigned"}
+                <strong>{tr("Stall Code:")}</strong> {horse.stallCode || tr("Unassigned")}
               </p>
               <p style={{ margin: "0 0 0.5rem 0" }}>
-                <strong>Barn Zone:</strong> {horse.zone || "Unassigned"}
+                <strong>{tr("Barn Zone:")}</strong> {horse.zone || tr("Unassigned")}
               </p>
               {horse.stallSince && (
                 <p style={{ margin: 0 }}>
-                  <strong>Since:</strong> {formatDate(horse.stallSince)}
+                  <strong>{tr("Since:")}</strong> {formatDate(horse.stallSince)}
                 </p>
               )}
               {canManageStall && (
@@ -536,15 +537,15 @@ export default function HorseDetailPage() {
                   {horse.allocationId ? (
                     <>
                       <Button size="sm" tone="secondary" blockedReason={retiredReason} onClick={() => setStallDialog("transfer")}>
-                        Move stall
+                        {tr("Move stall")}
                       </Button>
                       <Button size="sm" tone="ghost" blockedReason={retiredReason} onClick={() => setStallDialog("return")}>
-                        Release stall
+                        {tr("Release stall")}
                       </Button>
                     </>
                   ) : (
                     <Button size="sm" blockedReason={retiredReason} onClick={() => setStallDialog("assign")}>
-                      Assign stall
+                      {tr("Assign stall")}
                     </Button>
                   )}
                 </div>
@@ -552,9 +553,9 @@ export default function HorseDetailPage() {
             </div>
 
             <div style={{ border: "1px solid var(--border)", borderRadius: "var(--r)", padding: 16 }}>
-              <h4 style={{ margin: "0 0 0.75rem 0" }}>Assigned Groom Hand</h4>
+              <h4 style={{ margin: "0 0 0.75rem 0" }}>{tr("Assigned Groom Hand")}</h4>
               <p style={{ margin: 0 }}>
-                <strong>Primary Groom:</strong> {horse.primaryGroom || "Unassigned Groom"}
+                <strong>{tr("Primary Groom:")}</strong> {horse.primaryGroom || tr("Unassigned Groom")}
               </p>
             </div>
           </div>
@@ -565,10 +566,10 @@ export default function HorseDetailPage() {
       {(activeTab === "routine" || (activeTab === "stable" && isOwner)) && (
         <Card pad={24}>
           <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "var(--fs-section)", fontWeight: 700 }}>
-            Daily Routine Schedule
+            {tr("Daily Routine Schedule")}
           </h3>
           <p style={{ color: "var(--ink-muted)" }}>
-            Standard Stable Routine: Feed rations (06:00, 11:30, 17:00), Stall mucking & turnout (07:00), Training conditioning (08:00 - 10:00), Hydrotherapy & cryo leg hosing (10:30).
+            {tr("Standard Stable Routine: Feed rations (06:00, 11:30, 17:00), Stall mucking & turnout (07:00), Training conditioning (08:00 - 10:00), Hydrotherapy & cryo leg hosing (10:30).")}
           </p>
         </Card>
       )}
@@ -578,26 +579,26 @@ export default function HorseDetailPage() {
         <Card pad={24}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem", flexWrap: "wrap", gap: "0.75rem" }}>
             <h3 style={{ margin: 0, fontSize: "var(--fs-section)", fontWeight: 700 }}>
-              Ownership & Custody Details
+              {tr("Ownership & Custody Details")}
             </h3>
             {isManager && horse.status !== "RETIRED" && (
               <Button size="sm" tone="secondary" onClick={() => setIsOwnerModalOpen(true)}>
-                Transfer Ownership
+                {tr("Transfer Ownership")}
               </Button>
             )}
           </div>
           {horse.owner ? (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
               <div>
-                <strong>Horse Owner:</strong> {horse.owner.fullName}
+                <strong>{tr("Horse Owner:")}</strong> {horse.owner.fullName}
               </div>
               <div>
-                <strong>Email Contact:</strong> {horse.owner.email}
+                <strong>{tr("Email Contact:")}</strong> {horse.owner.email}
               </div>
             </div>
           ) : (
             <p style={{ color: "var(--ink-muted)" }}>
-              {horse.ownerName ? `Registered Owner: ${horse.ownerName}` : "No registered horse owner associated."}
+              {horse.ownerName ? tr(`Registered Owner: ${horse.ownerName}`) : tr("No registered horse owner associated.")}
             </p>
           )}
         </Card>
@@ -609,15 +610,15 @@ export default function HorseDetailPage() {
           <Card pad={24}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
               <h3 style={{ margin: 0, fontSize: "var(--fs-section)", fontWeight: 700 }}>
-                Status Transition History
+                {tr("Status Transition History")}
               </h3>
               <div>
-                Current Status: <Badge tone={statusCfg.tone}>{statusCfg.label}</Badge>
+                {tr("Current Status:")}{" "}<Badge tone={statusCfg.tone}>{statusCfg.label}</Badge>
               </div>
             </div>
             {history?.statusHistory && history.statusHistory.length > 0 ? (
               <DataTable
-                caption="Horse status transitions"
+                caption={tr("Horse status transitions")}
                 rowKey={(r) => r.id}
                 rows={history.statusHistory}
                 columns={[
@@ -654,7 +655,7 @@ export default function HorseDetailPage() {
               />
             ) : (
               <p style={{ color: "var(--ink-muted)", margin: 0 }}>
-                No recorded status transitions yet. Current status: <Badge tone={statusCfg.tone}>{statusCfg.label}</Badge>
+                {tr("No recorded status transitions yet. Current status:")}{" "}<Badge tone={statusCfg.tone}>{statusCfg.label}</Badge>
               </p>
             )}
           </Card>
@@ -662,10 +663,10 @@ export default function HorseDetailPage() {
           {history?.ownershipHistory && history.ownershipHistory.length > 0 && (
             <Card pad={24}>
               <h3 style={{ margin: "0 0 1rem 0", fontSize: "var(--fs-section)", fontWeight: 700 }}>
-                Ownership Transfer History
+                {tr("Ownership Transfer History")}
               </h3>
               <DataTable
-                caption="Ownership transfers"
+                caption={tr("Ownership transfers")}
                 rowKey={(r) => r.id}
                 rows={history.ownershipHistory}
                 columns={[
@@ -706,15 +707,15 @@ export default function HorseDetailPage() {
         <Card pad={24}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
             <h3 style={{ margin: 0, fontSize: "var(--fs-section)", fontWeight: 700 }}>
-              Stall Allocation History
+              {tr("Stall Allocation History")}
             </h3>
             <div>
-              Active Stall: <strong>{horse.stallCode || "Unassigned"}</strong> ({horse.zone || "Unassigned Zone"})
+              {tr("Active Stall:")}{" "}<strong>{horse.stallCode || tr("Unassigned")}</strong> ({horse.zone || tr("Unassigned Zone")})
             </div>
           </div>
           {history?.stallHistory && history.stallHistory.length > 0 ? (
             <DataTable
-              caption="Stall allocation records"
+              caption={tr("Stall allocation records")}
               rowKey={(r) => r.id}
               rows={history.stallHistory}
               columns={[
@@ -756,7 +757,7 @@ export default function HorseDetailPage() {
             />
           ) : (
             <p style={{ color: "var(--ink-muted)", margin: 0 }}>
-              No historical stall allocation records logged.
+              {tr("No historical stall allocation records logged.")}
             </p>
           )}
         </Card>
@@ -766,7 +767,7 @@ export default function HorseDetailPage() {
       {activeTab === "timeline" && (
         <Card pad={24}>
           <h3 style={{ margin: "0 0 1.25rem 0", fontSize: "var(--fs-section)", fontWeight: 700 }}>
-            Lifecycle Activity Timeline
+            {tr("Lifecycle Activity Timeline")}
           </h3>
           <LifecycleTimeline events={history?.timeline ?? []} isManager={isManager} />
         </Card>

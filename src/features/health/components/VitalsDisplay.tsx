@@ -4,7 +4,8 @@ import { cx } from "@/shared/lib/cx";
 import type { VitalSigns } from "../types";
 import styles from "./VitalsDisplay.module.css";
 import { formatDate, formatDateTime } from "@/shared/lib/format";
-
+
+import { tr } from "@/shared/i18n/tr";
 interface VitalsDisplayProps {
   vitals?: VitalSigns;
   history?: (VitalSigns & { recordedAt: string })[];
@@ -28,7 +29,7 @@ export function isRespiratoryWarning(rr?: number): boolean {
 
 export function VitalsDisplay({ vitals, history, recordedAt }: VitalsDisplayProps) {
   if (!vitals) {
-    return <div className={styles.notes}>No vital signs recorded yet.</div>;
+    return <div className={styles.notes}>{tr("No vital signs recorded yet.")}</div>;
   }
 
   const tempWarn = isTempWarning(vitals.temperature);
@@ -48,65 +49,65 @@ export function VitalsDisplay({ vitals, history, recordedAt }: VitalsDisplayProp
         {/* Temperature */}
         <div className={cx(styles.vitalCard, tempWarn && styles.warning)}>
           <div className={styles.headerRow}>
-            <span className={styles.vitalLabel}>Temperature</span>
+            <span className={styles.vitalLabel}>{tr("Temperature")}</span>
             <Badge tone={tempWarn ? "danger" : "ok"} dot>
-              {tempWarn ? "Abnormal" : "Normal"}
+              {tempWarn ? tr("Abnormal") : tr("Normal")}
             </Badge>
           </div>
           <div className={styles.valueRow}>
             <span className={styles.value}>{vitals.temperature !== undefined ? vitals.temperature.toFixed(1) : "—"}</span>
             <span className={styles.unit}>°C</span>
           </div>
-          <span className={styles.reference}>Reference: 37.2 – 38.6 °C</span>
+          <span className={styles.reference}>{tr("Reference: 37.2 – 38.6 °C")}</span>
         </div>
 
         {/* Resting Heart Rate */}
         <div className={cx(styles.vitalCard, hrWarn && styles.warning)}>
           <div className={styles.headerRow}>
-            <span className={styles.vitalLabel}>Resting Heart Rate</span>
+            <span className={styles.vitalLabel}>{tr("Resting Heart Rate")}</span>
             <Badge tone={hrWarn ? "danger" : "ok"} dot>
-              {hrWarn ? "Abnormal" : "Normal"}
+              {hrWarn ? tr("Abnormal") : tr("Normal")}
             </Badge>
           </div>
           <div className={styles.valueRow}>
             <span className={styles.value}>{vitals.restingHeartRate ?? "—"}</span>
             <span className={styles.unit}>bpm</span>
           </div>
-          <span className={styles.reference}>Reference: 28 – 44 bpm</span>
+          <span className={styles.reference}>{tr("Reference: 28 – 44 bpm")}</span>
         </div>
 
         {/* Respiratory Rate */}
         <div className={cx(styles.vitalCard, rrWarn && styles.warning)}>
           <div className={styles.headerRow}>
-            <span className={styles.vitalLabel}>Respiratory Rate</span>
+            <span className={styles.vitalLabel}>{tr("Respiratory Rate")}</span>
             <Badge tone={rrWarn ? "danger" : "ok"} dot>
-              {rrWarn ? "Abnormal" : "Normal"}
+              {rrWarn ? tr("Abnormal") : tr("Normal")}
             </Badge>
           </div>
           <div className={styles.valueRow}>
             <span className={styles.value}>{vitals.respiratoryRate ?? "—"}</span>
             <span className={styles.unit}>breaths/min</span>
           </div>
-          <span className={styles.reference}>Reference: 8 – 16 breaths/min</span>
+          <span className={styles.reference}>{tr("Reference: 8 – 16 breaths/min")}</span>
         </div>
 
         {/* Weight */}
         <div className={styles.vitalCard}>
           <div className={styles.headerRow}>
-            <span className={styles.vitalLabel}>Body Weight</span>
-            <Badge tone="neutral">Routine</Badge>
+            <span className={styles.vitalLabel}>{tr("Body Weight")}</span>
+            <Badge tone="neutral">{tr("Routine")}</Badge>
           </div>
           <div className={styles.valueRow}>
             <span className={styles.value}>{vitals.weightKg ?? "—"}</span>
             <span className={styles.unit}>kg</span>
           </div>
-          <span className={styles.reference}>Standard: 400 – 600 kg</span>
+          <span className={styles.reference}>{tr("Standard: 400 – 600 kg")}</span>
         </div>
       </div>
 
       {vitals.clinicalNotes && (
         <div className={styles.notes}>
-          <strong>Clinical Notes:</strong> {vitals.clinicalNotes}
+          <strong>{tr("Clinical Notes:")}</strong> {vitals.clinicalNotes}
         </div>
       )}
 
@@ -114,16 +115,16 @@ export function VitalsDisplay({ vitals, history, recordedAt }: VitalsDisplayProp
         <div className={styles.historySection}>
           <div className={styles.historyTitle}>
             <Icon name="trend" size={16} />
-            History of 5 Most Recent Readings
+            {tr("History of 5 Most Recent Readings")}
           </div>
           <table className={styles.historyTable}>
             <thead>
               <tr>
-                <th>Recorded At</th>
-                <th>Temperature (°C)</th>
-                <th>Heart Rate (bpm)</th>
-                <th>Respiratory Rate (breaths/min)</th>
-                <th>Weight (kg)</th>
+                <th>{tr("Recorded At")}</th>
+                <th>{tr("Temperature (°C)")}</th>
+                <th>{tr("Heart Rate (bpm)")}</th>
+                <th>{tr("Respiratory Rate (breaths/min)")}</th>
+                <th>{tr("Weight (kg)")}</th>
               </tr>
             </thead>
             <tbody>

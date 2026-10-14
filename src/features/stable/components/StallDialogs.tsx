@@ -11,7 +11,8 @@ import { getHorses } from "@/features/horses/api";
 import type { Horse } from "@/features/horses/types";
 import { assignHorse, getGrooms, getStalls, getZones, returnStall, transferHorse, type GroomOption } from "../api";
 import type { Stall, Zone } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 const NOTE_MAX = 500;
 
 /** Hủy khi đã nhập: hỏi lại trước khi bỏ (quy ước chung của dialog Flow 1). */
@@ -61,14 +62,14 @@ function useZoneStallPicker(excludeStallId?: string) {
 
   const fields = (
     <>
-      <Field label="Barn zone" required>
+      <Field label={tr("Barn zone")} required>
         <Select
           value={zoneId}
           onChange={(e) => setZoneId(e.target.value)}
           options={zones.map((z) => ({ value: z.id, label: z.name }))}
         />
       </Field>
-      <Field label="Stall" required hint={zoneId && stalls.length === 0 ? "This zone has no free stall." : undefined}>
+      <Field label={tr("Stall")} required hint={zoneId && stalls.length === 0 ? tr("This zone has no free stall.") : undefined}>
         <Select
           value={stallId}
           onChange={(e) => setStallId(e.target.value)}
@@ -91,7 +92,7 @@ function GroomField({ value, onChange }: { value: string; onChange: (v: string) 
       .catch(() => setGrooms([]));
   }, []);
   return (
-    <Field label="Groom (optional)">
+    <Field label={tr("Groom (optional)")}>
       <Select
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -107,7 +108,7 @@ function GroomField({ value, onChange }: { value: string; onChange: (v: string) 
 function NoteField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <Field
-      label="Note"
+      label={tr("Note")}
       hint={`${value.length}/${NOTE_MAX}`}
       error={value.length > NOTE_MAX ? `Note can be at most ${NOTE_MAX} characters.` : undefined}
     >
@@ -170,7 +171,7 @@ export function AssignStallDialog({ stall, horse, onClose, onDone }: AssignProps
   const close = () => confirmDiscard(dirty) && onClose();
   return (
     <Modal
-      title={stall ? `Assign a horse to stall ${stall.code}` : `Assign a stall to ${horse?.name}`}
+      title={stall ? tr(`Assign a horse to stall ${stall.code}`) : tr(`Assign a stall to ${horse?.name}`)}
       width={560}
       onClose={close}
       foot={
@@ -183,7 +184,7 @@ export function AssignStallDialog({ stall, horse, onClose, onDone }: AssignProps
       <div style={{ display: "grid", gap: "0.9rem" }}>
         {error && <Alert tone="danger" title={error} />}
         {!horse && (
-          <Field label="Horse" required hint={horses.length === 0 ? "Every active horse already has a stall." : undefined}>
+          <Field label={tr("Horse")} required hint={horses.length === 0 ? tr("Every active horse already has a stall.") : undefined}>
             <Select
               value={horseId}
               onChange={(e) => setHorseId(e.target.value)}
@@ -242,8 +243,8 @@ export function TransferStallDialog({ allocation, onClose, onDone }: { allocatio
   const close = () => confirmDiscard(dirty) && onClose();
   return (
     <Modal
-      title={`Move ${allocation.horseName} to another stall`}
-      subtitle={`Current stall: ${allocation.stallCode}`}
+      title={tr(`Move ${allocation.horseName} to another stall`)}
+      subtitle={tr(`Current stall: ${allocation.stallCode}`)}
       width={560}
       onClose={close}
       foot={
@@ -287,7 +288,7 @@ export function ReturnStallDialog({ allocation, onClose, onDone }: { allocation:
   const close = () => confirmDiscard(!!note) && onClose();
   return (
     <Modal
-      title={`Release stall ${allocation.stallCode}?`}
+      title={tr(`Release stall ${allocation.stallCode}?`)}
       tone="warn"
       width={520}
       onClose={close}

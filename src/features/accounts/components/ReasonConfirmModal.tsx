@@ -3,7 +3,8 @@ import type { ReactNode } from "react";
 import { Field } from "@/shared/components/form/Field";
 import { Textarea } from "@/shared/components/form/Textarea";
 import { ConfirmModal } from "@/shared/components/ui/ConfirmModal";
-
+
+import { tr } from "@/shared/i18n/tr";
 interface ReasonConfirmModalProps {
   title: string;
   subtitle?: string;
@@ -26,7 +27,7 @@ export function ReasonConfirmModal({ reasonHint, onConfirm, children, ...rest }:
     <ConfirmModal {...rest} onConfirm={() => onConfirm(reason.trim())}>
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
         {children && <div>{children}</div>}
-        <Field label="Reason (optional)" hint={reasonHint}>
+        <Field label={tr("Reason (optional)")} hint={reasonHint}>
           <Textarea rows={3} maxLength={300} value={reason} onChange={(e) => setReason(e.target.value)} />
         </Field>
       </div>

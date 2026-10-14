@@ -8,7 +8,8 @@ import { Button } from "@/shared/components/ui/Button";
 import { Icon } from "@/shared/components/ui/Icon";
 import { Modal } from "@/shared/components/ui/Modal";
 import type { CareInstructionItem, TreatmentPhaseInput } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 const ACTIVITY_OPTIONS = [
   { value: "Strict stall rest", label: "Strict stall rest" },
   { value: "Hand walk 10-15 mins", label: "Hand walk 10-15 mins" },
@@ -81,8 +82,8 @@ export function AddTreatmentPhaseModal({ onClose, onSubmit }: AddTreatmentPhaseM
 
   return (
     <Modal
-      title="Add Treatment Phase"
-      subtitle="Define phase objectives, allowed activity level, and care instructions for Grooms."
+      title={tr("Add Treatment Phase")}
+      subtitle={tr("Define phase objectives, allowed activity level, and care instructions for Grooms.")}
       width={560}
       onClose={onClose}
       foot={
@@ -103,25 +104,25 @@ export function AddTreatmentPhaseModal({ onClose, onSubmit }: AddTreatmentPhaseM
           </div>
         )}
 
-        <Field label="Phase Name *" hint="e.g., Phase 1: Acute inflammation reduction">
+        <Field label={tr("Phase Name *")} hint={tr("e.g., Phase 1: Acute inflammation reduction")}>
           <Input
             value={phaseName}
             onChange={(e) => setPhaseName(e.target.value)}
-            placeholder="Phase 1: Swelling reduction & anti-inflammatory..."
+            placeholder={tr("Phase 1: Swelling reduction & anti-inflammatory...")}
             required
           />
         </Field>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Field label="Start Date *">
+          <Field label={tr("Start Date *")}>
             <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
           </Field>
-          <Field label="End Date *">
+          <Field label={tr("End Date *")}>
             <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
           </Field>
         </div>
 
-        <Field label="Allowed Activity Level *">
+        <Field label={tr("Allowed Activity Level *")}>
           <Select
             options={ACTIVITY_OPTIONS}
             value={allowedActivity}
@@ -129,7 +130,7 @@ export function AddTreatmentPhaseModal({ onClose, onSubmit }: AddTreatmentPhaseM
           />
         </Field>
 
-        <Field label="Phase Objective *" hint="Clinical criteria required to progress to next phase">
+        <Field label={tr("Phase Objective *")} hint={tr("Clinical criteria required to progress to next phase")}>
           <Textarea
             rows={2}
             value={target}
@@ -141,9 +142,9 @@ export function AddTreatmentPhaseModal({ onClose, onSubmit }: AddTreatmentPhaseM
 
         <div style={{ borderTop: "1px solid var(--border)", paddingTop: 10 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <span style={{ fontSize: "var(--fs-body)", fontWeight: 600 }}>Daily Care Instructions (for Groom)</span>
+            <span style={{ fontSize: "var(--fs-body)", fontWeight: 600 }}>{tr("Daily Care Instructions (for Groom)")}</span>
             <Button size="sm" tone="ghost" icon="plus" onClick={addInstruction}>
-              Add Task
+              {tr("Add Task")}
             </Button>
           </div>
 
@@ -153,19 +154,19 @@ export function AddTreatmentPhaseModal({ onClose, onSubmit }: AddTreatmentPhaseM
                 <Input
                   value={item.activity}
                   onChange={(e) => updateInstruction(idx, "activity", e.target.value)}
-                  placeholder="Care activity (e.g., Ice boot therapy)"
+                  placeholder={tr("Care activity (e.g., Ice boot therapy)")}
                 />
                 <Input
                   value={item.frequency}
                   onChange={(e) => updateInstruction(idx, "frequency", e.target.value)}
-                  placeholder="Frequency (e.g., 2 times/day)"
+                  placeholder={tr("Frequency (e.g., 2 times/day)")}
                 />
                 {instructions.length > 1 && (
                   <button
                     type="button"
                     onClick={() => removeInstruction(idx)}
                     style={{ border: "none", background: "transparent", color: "var(--danger)", cursor: "pointer", padding: "4px" }}
-                    title="Delete row"
+                    title={tr("Delete row")}
                   >
                     <Icon name="trash" size={16} />
                   </button>

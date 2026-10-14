@@ -42,6 +42,7 @@ import {
   type MockPlan,
   type MockWorkout,
 } from "@/shared/mock/trainingData";
+import { mockNotificationsFor, updateMockNotifications } from "./notificationsData";
 
 const OTP_CODE = "123456";
 const OTP_TTL = 10 * 60 * 1000;
@@ -84,6 +85,13 @@ function currentUser(db: Db): Account {
 
 function requirePermission(user: Account, key: PermissionKey): void {
   if (!user.permissions[key]) throw new ApiError(403, "FORBIDDEN", "Not allowed");
+}
+
+function notificationList(role: Role) {
+  const notifications = mockNotificationsFor(role)
+    .map(({ targetRoles: _roles, ...n }) => n)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return { notifications, unreadCount: notifications.filter((n) => !n.read).length };
 }
 
 function findAccount(db: Db, id: string): Account {
@@ -767,6 +775,42 @@ const routes: Route[] = [
       user.notify[key] = Boolean(body.value);
       saveDb(db);
       return { user: toPublic(user) };
+    },
+  },
+  // ---------------------------------------------------------------- Thông báo (C-01), giống BE /notifications
+  {
+    method: "GET",
+    pattern: /^\/notifications$/,
+    handler({ db }) {
+      return notificationList(currentUser(db).role);
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/notifications\/read$/,
+    handler({ db, body }) {
+      const role = currentUser(db).role;
+      const ids = Array.isArray(body.ids) ? (body.ids as string[]) : [];
+      updateMockNotifications(role, (n) => (ids.includes(n.id) ? { ...n, read: true } : n));
+      return notificationList(role);
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/notifications\/read-all$/,
+    handler({ db }) {
+      const role = currentUser(db).role;
+      updateMockNotifications(role, (n) => ({ ...n, read: true }));
+      return notificationList(role);
+    },
+  },
+  {
+    method: "DELETE",
+    pattern: /^\/notifications$/,
+    handler({ db }) {
+      const role = currentUser(db).role;
+      updateMockNotifications(role, () => null);
+      return notificationList(role);
     },
   },
   {

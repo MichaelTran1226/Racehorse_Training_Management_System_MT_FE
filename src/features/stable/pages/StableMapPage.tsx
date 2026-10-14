@@ -18,7 +18,8 @@ import { GridCell, ZoneGrid, type CellLook } from "../components/ZoneGrid";
 import { AssignStallDialog, ReturnStallDialog, TransferStallDialog } from "../components/StallDialogs";
 import { HEALTH_STATUS } from "@/shared/lib/status";
 import { HORSE_STATUS_COLOR, allocationOf, useStallCounts } from "../stallUtils";
-
+
+import { tr } from "@/shared/i18n/tr";
 const REFRESH_MS = 60_000;
 
 type Dialog = "assign" | "transfer" | "return" | null;
@@ -159,12 +160,12 @@ export default function StableMapPage() {
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h2 style={{ margin: 0, fontSize: "var(--fs-section)" }}>Stall {s.code}</h2>
-          <Button tone="ghost" size="sm" icon="x" onClick={() => setSelectedId(null)} aria-label="Close panel" />
+          <h2 style={{ margin: 0, fontSize: "var(--fs-section)" }}>{tr("Stall")}{" "}{s.code}</h2>
+          <Button tone="ghost" size="sm" icon="x" onClick={() => setSelectedId(null)} aria-label={tr("Close panel")} />
         </div>
         <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>
           Zone {s.zone}
-          {s.row && s.col ? ` · Row ${s.row}, Col ${s.col}` : ""}
+          {s.row && s.col ? tr(` · Row ${s.row}, Col ${s.col}`) : ""}
         </div>
         {a ? (
           <>
@@ -173,30 +174,30 @@ export default function StableMapPage() {
             </div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               <HealthBadge status={a.horse.status as HealthStatus} />
-              {a.horse.isMedicalLocked && <Badge tone="danger" icon="lock">Training Lock</Badge>}
+              {a.horse.isMedicalLocked && <Badge tone="danger" icon="lock">{tr("Training Lock")}</Badge>}
             </div>
-            <div style={{ fontSize: "var(--fs-body)" }}>Groom: {a.assignedGroom?.fullName ?? "—"}</div>
+            <div style={{ fontSize: "var(--fs-body)" }}>{tr("Groom:")}{" "}{a.assignedGroom?.fullName ?? "—"}</div>
             <div style={{ fontSize: "var(--fs-body)" }}>In this stall since {formatDate(a.startDate)}</div>
             {canOpenProfile && (
               <Link to={`/horses/${a.horse.id}`}>
-                <Button tone="secondary" block>View horse profile</Button>
+                <Button tone="secondary" block>{tr("View horse profile")}</Button>
               </Link>
             )}
             {canManage && alloc && (
               <>
-                <Button tone="ghost" block onClick={() => setDialog("transfer")}>Move stall</Button>
-                <Button tone="danger" block onClick={() => setDialog("return")}>Release stall</Button>
+                <Button tone="ghost" block onClick={() => setDialog("transfer")}>{tr("Move stall")}</Button>
+                <Button tone="danger" block onClick={() => setDialog("return")}>{tr("Release stall")}</Button>
               </>
             )}
           </>
         ) : (
           <>
             <Badge tone={s.status === "MAINTENANCE" ? "warn" : "neutral"}>
-              {s.status === "MAINTENANCE" ? "Maintenance" : "Empty"}
+              {s.status === "MAINTENANCE" ? tr("Maintenance") : tr("Empty")}
             </Badge>
             {s.notes && <p style={{ margin: 0, fontSize: "var(--fs-body)" }}>{s.notes}</p>}
             {canManage && s.status === "AVAILABLE" && (
-              <Button block onClick={() => setDialog("assign")}>Assign a horse</Button>
+              <Button block onClick={() => setDialog("assign")}>{tr("Assign a horse")}</Button>
             )}
           </>
         )}
@@ -207,8 +208,8 @@ export default function StableMapPage() {
   return (
     <div style={{ display: "grid", gap: 16 }}>
       <PageHeader
-        title="Stable map"
-        description={updatedAt ? `Updated at ${formatTime(updatedAt)}` : undefined}
+        title={tr("Stable map")}
+        description={updatedAt ? tr(`Updated at ${formatTime(updatedAt)}`) : undefined}
         action={
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             {zones && zones.length > 0 && (
@@ -278,32 +279,32 @@ export default function StableMapPage() {
       />
 
       {error && (
-        <Alert tone="danger" title="Could not load the stable map." action={<Button size="sm" onClick={loadStalls}>Try again</Button>}>
+        <Alert tone="danger" title={tr("Could not load the stable map.")} action={<Button size="sm" onClick={loadStalls}>Try again</Button>}>
           {error}
         </Alert>
       )}
 
       {zones && zones.length === 0 ? (
         <div style={{ padding: 40, textAlign: "center", border: "2px dashed var(--border)", borderRadius: "var(--r-lg)" }}>
-          <p>No barn zones have been set up yet.</p>
+          <p>{tr("No barn zones have been set up yet.")}</p>
           {user.role === "CLUB_MANAGER" && (
             <Link to="/catalogs/stalls">
-              <Button>Go to the stall catalogue</Button>
+              <Button>{tr("Go to the stall catalogue")}</Button>
             </Link>
           )}
         </div>
       ) : (
         <>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: "var(--fs-body)" }}>
-            <span>Total stalls: <strong>{counts.total}</strong></span>
-            <span>Occupied: <strong>{counts.occupied}</strong></span>
-            <span>Empty: <strong>{counts.free}</strong></span>
-            <span>Maintenance: <strong>{counts.maintenance}</strong></span>
+            <span>{tr("Total stalls:")}{" "}<strong>{counts.total}</strong></span>
+            <span>{tr("Occupied:")}{" "}<strong>{counts.occupied}</strong></span>
+            <span>{tr("Empty:")}{" "}<strong>{counts.free}</strong></span>
+            <span>{tr("Maintenance:")}{" "}<strong>{counts.maintenance}</strong></span>
             {isGroom && (
-              <Checkbox checked={onlyMine} onChange={setOnlyMine} label="Only my horses" />
+              <Checkbox checked={onlyMine} onChange={setOnlyMine} label={tr("Only my horses")} />
             )}
           </div>
-          <ul aria-label="Legend" style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: "var(--fs-caption)", color: "var(--text-2)", margin: 0, padding: 0, listStyle: "none" }}>
+          <ul aria-label={tr("Legend")} style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: "var(--fs-caption)", color: "var(--text-2)", margin: 0, padding: 0, listStyle: "none" }}>
             {Object.entries(HORSE_STATUS_COLOR).map(([status, c]) => (
               <li key={status} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                 <span aria-hidden="true" style={{ width: 12, height: 12, borderRadius: "var(--r-xs)", background: c.bg, boxShadow: `inset 0 0 0 1px ${c.fg}` }} />
@@ -312,21 +313,21 @@ export default function StableMapPage() {
             ))}
             <li style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
               <span aria-hidden="true" style={{ width: 12, height: 12, borderRadius: "var(--r-xs)", border: "1px dashed var(--border-field)" }} />
-              Empty
+              {tr("Empty")}
             </li>
             <li style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
               <span aria-hidden="true" style={{ width: 12, height: 12, borderRadius: "var(--r-xs)", border: "2px solid var(--danger)" }} />
-              Training Lock
+              {tr("Training Lock")}
             </li>
           </ul>
 
           <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               {loading ? (
-                <div style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>Loading stable map…</div>
+                <div style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>{tr("Loading stable map…")}</div>
               ) : stalls.length === 0 ? (
                 <div style={{ padding: 40, textAlign: "center", border: "2px dashed var(--border)", borderRadius: "var(--r-lg)" }}>
-                  This zone has no stalls yet.
+                  {tr("This zone has no stalls yet.")}
                 </div>
               ) : view === "grid" && zone ? (
                 <ZoneGrid
@@ -354,7 +355,7 @@ export default function StableMapPage() {
                       }}
                     >
                       <strong>{s.code}</strong>
-                      <span>{s.allocations[0]?.horse.name ?? (s.status === "MAINTENANCE" ? "Maintenance" : "Empty")}</span>
+                      <span>{s.allocations[0]?.horse.name ?? (s.status === "MAINTENANCE" ? tr("Maintenance") : tr("Empty"))}</span>
                     </button>
                   ))}
                 </div>

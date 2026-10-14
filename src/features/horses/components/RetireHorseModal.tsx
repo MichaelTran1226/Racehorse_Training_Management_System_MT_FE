@@ -11,7 +11,8 @@ import { messageFor } from "@/shared/lib/messages";
 import { changeHorseStatus } from "../api";
 import { RETIRE_REASON_LABEL } from "../types";
 import type { Horse, RetireReason } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 interface RetireHorseModalProps {
   horse: Horse;
   isOpen: boolean;
@@ -85,7 +86,7 @@ export function RetireHorseModal({ horse, isOpen, onClose, onSuccess }: RetireHo
     <Modal
       onClose={onClose}
       tone={reactivate ? undefined : "danger"}
-      title={reactivate ? `Reactivate ${horse.name}?` : `Stop managing ${horse.name}`}
+      title={reactivate ? tr(`Reactivate ${horse.name}?`) : tr(`Stop managing ${horse.name}`)}
       foot={
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
           <Button tone="ghost" onClick={onClose} disabled={submitting}>
@@ -100,17 +101,17 @@ export function RetireHorseModal({ horse, isOpen, onClose, onSuccess }: RetireHo
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
         {reactivate ? (
           <p style={{ margin: 0 }}>
-            The horse goes back to <strong>Resting</strong>, without a stall and without a groom.
+            {tr("The horse goes back to")}{" "}<strong>{tr("Resting")}</strong>{tr(", without a stall and without a groom.")}
           </p>
         ) : (
           <>
             {horse.isMedicalLocked && (
-              <Alert tone="danger" title="Training Lock in effect">
-                While the horse is locked, only the reason "Deceased" can be chosen.
+              <Alert tone="danger" title={tr("Training Lock in effect")}>
+                {tr("While the horse is locked, only the reason \"Deceased\" can be chosen.")}
               </Alert>
             )}
             <Field
-              label="Reason for stopping"
+              label={tr("Reason for stopping")}
               required
               error={touched && reasonMissing ? "Please select a reason." : undefined}
             >
@@ -130,7 +131,7 @@ export function RetireHorseModal({ horse, isOpen, onClose, onSuccess }: RetireHo
           </>
         )}
 
-        <Field label="Note" required error={touched ? err || undefined : undefined} hint="10-500 characters">
+        <Field label={tr("Note")} required error={touched ? err || undefined : undefined} hint={tr("10-500 characters")}>
           <Textarea rows={3} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
         </Field>
 
@@ -138,7 +139,7 @@ export function RetireHorseModal({ horse, isOpen, onClose, onSuccess }: RetireHo
           <>
             {impacts.length > 0 && (
               <div style={{ fontSize: "var(--fs-body)" }}>
-                <strong>Impact</strong>
+                <strong>{tr("Impact")}</strong>
                 <ul style={{ margin: "0.25rem 0 0", paddingLeft: "1.25rem" }}>
                   {impacts.map((i) => (
                     <li key={i}>{i}</li>
@@ -146,7 +147,7 @@ export function RetireHorseModal({ horse, isOpen, onClose, onSuccess }: RetireHo
                 </ul>
               </div>
             )}
-            <Checkbox label="I understand the impact above" checked={understood} onChange={setUnderstood} />
+            <Checkbox label={tr("I understand the impact above")} checked={understood} onChange={setUnderstood} />
           </>
         )}
       </div>

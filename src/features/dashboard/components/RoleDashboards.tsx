@@ -13,7 +13,8 @@ import { getZones } from "@/features/stable/api";
 import { getHorses } from "@/features/horses/api";
 import { listAccounts } from "@/features/accounts/api";
 import { Block, Line, Stat, StatRow, TwoCols, useLoaded } from "./DashboardBlocks";
-
+
+import { tr } from "@/shared/i18n/tr";
 const COLOR = { ok: "var(--ok)", warn: "var(--warn)", danger: "var(--danger)", violet: "var(--violet)" };
 
 const byTime = (a: ExerciseSession, b: ExerciseSession) => a.scheduledAt.localeCompare(b.scheduledAt);
@@ -61,8 +62,8 @@ function TodaySessions({ title, recordLinks }: { title: string; recordLinks?: bo
 function MedicalWatch({ state }: { state: ReturnType<typeof useLoaded<HealthBoardResponse>> }) {
   return (
     <Block
-      title="Medical safety"
-      subtitle="Training Locks and horses under observation"
+      title={tr("Medical safety")}
+      subtitle={tr("Training Locks and horses under observation")}
       state={state}
       action={<Link to="/herd">Herd health →</Link>}
       empty={(b) => (b.data.some((h) => h.isMedicalLocked || h.healthGroup !== "QUALIFIED") ? null : "Every horse is fit to work.")}
@@ -117,27 +118,27 @@ export function ManagerDashboard({ user }: { user: AuthUser }) {
     <div style={{ display: "grid", gap: 16 }}>
       <StatRow>
         <Stat
-          label="Horses under management"
+          label={tr("Horses under management")}
           value={s?.total ?? "—"}
-          caption={s ? `${s.qualifiedCount} fit · ${s.total - s.qualifiedCount} in a medical status` : undefined}
+          caption={s ? tr(`${s.qualifiedCount} fit · ${s.total - s.qualifiedCount} in a medical status`) : undefined}
         />
         <Stat
-          label="Workouts today"
+          label={tr("Workouts today")}
           value={k ? `${k.todayCompleted}/${k.todayTotal}` : "—"}
-          caption={k ? `${k.activePlans} active plans · ${k.blockedNext7Days} blocked in 7 days` : undefined}
+          caption={k ? tr(`${k.activePlans} active plans · ${k.blockedNext7Days} blocked in 7 days`) : undefined}
         />
         <Stat
-          label="Medical attention"
+          label={tr("Medical attention")}
           value={s ? s.lockedCount + s.observationCount : "—"}
-          caption={s ? `${s.lockedCount} Training Lock · ${s.observationCount} under observation` : undefined}
+          caption={s ? tr(`${s.lockedCount} Training Lock · ${s.observationCount} under observation`) : undefined}
           tone={COLOR.danger}
         />
-        <Stat label="Stall occupancy" value={zones.data ? `${zoneUsed}/${zoneTotal}` : "—"} caption="occupied / active stalls" />
+        <Stat label={tr("Stall occupancy")} value={zones.data ? `${zoneUsed}/${zoneTotal}` : "—"} caption={tr("occupied / active stalls")} />
       </StatRow>
 
       <TwoCols>
         <Block
-          title="Action items"
+          title={tr("Action items")}
           state={overview}
           empty={() => null}
         >
@@ -168,7 +169,7 @@ export function ManagerDashboard({ user }: { user: AuthUser }) {
                 cta: "Stable map",
               },
             ].filter(Boolean) as Array<{ tag: string; text: string; to: string; cta: string }>;
-            if (items.length === 0) return <p style={{ margin: 0, color: "var(--text-muted)" }}>Nothing urgent today.</p>;
+            if (items.length === 0) return <p style={{ margin: 0, color: "var(--text-muted)" }}>{tr("Nothing urgent today.")}</p>;
             return (
               <div>
                 {items.map((i) => (
@@ -190,8 +191,8 @@ export function ManagerDashboard({ user }: { user: AuthUser }) {
       </TwoCols>
 
       <TwoCols>
-        <TodaySessions title="Today's training schedule" />
-        <Block title="Stall capacity" state={zones} action={<Link to="/stables/map">Stable map →</Link>} empty={(z) => (z.length ? null : "No barn zones yet.")}>
+        <TodaySessions title={tr("Today's training schedule")} />
+        <Block title={tr("Stall capacity")} state={zones} action={<Link to="/stables/map">Stable map →</Link>} empty={(z) => (z.length ? null : "No barn zones yet.")}>
           {(list) => (
             <div style={{ display: "grid", gap: 10 }}>
               {list.map((z) => {
@@ -229,16 +230,16 @@ export function TrainerDashboard() {
   return (
     <div style={{ display: "grid", gap: 16 }}>
       <StatRow>
-        <Stat label="Active training plans" value={k?.activePlans ?? "—"} />
-        <Stat label="Workouts today" value={k ? `${k.todayCompleted}/${k.todayTotal}` : "—"} caption="completed / scheduled" />
-        <Stat label="Blocked in the next 7 days" value={k?.blockedNext7Days ?? "—"} caption="heavy workouts under a Training Lock" tone={COLOR.danger} />
-        <Stat label="Sudden load increase" value={k?.loadSpikeHorses ?? "—"} caption="7-day load > 130% of the 4-week average" tone={COLOR.warn} />
+        <Stat label={tr("Active training plans")} value={k?.activePlans ?? "—"} />
+        <Stat label={tr("Workouts today")} value={k ? `${k.todayCompleted}/${k.todayTotal}` : "—"} caption={tr("completed / scheduled")} />
+        <Stat label={tr("Blocked in the next 7 days")} value={k?.blockedNext7Days ?? "—"} caption={tr("heavy workouts under a Training Lock")} tone={COLOR.danger} />
+        <Stat label={tr("Sudden load increase")} value={k?.loadSpikeHorses ?? "—"} caption={tr("7-day load > 130% of the 4-week average")} tone={COLOR.warn} />
       </StatRow>
       <TwoCols>
-        <TodaySessions title="Today's workouts" recordLinks />
+        <TodaySessions title={tr("Today's workouts")} recordLinks />
         <Block
-          title="Horses to watch"
-          subtitle="Training Lock or sudden load increase"
+          title={tr("Horses to watch")}
+          subtitle={tr("Training Lock or sudden load increase")}
           state={overview}
           action={<Link to="/training">Training overview →</Link>}
           empty={(ov) => (ov.rows.some((r) => r.loadSpike || r.horse.isMedicalLocked) ? null : "No horse needs attention.")}
@@ -265,15 +266,15 @@ export function TrainerDashboard() {
         </Block>
       </TwoCols>
       <Block
-        title="Abnormal-sign alerts"
-        subtitle="Reviewed by the Veterinarian"
+        title={tr("Abnormal-sign alerts")}
+        subtitle={tr("Reviewed by the Veterinarian")}
         state={alerts}
         action={<Link to="/alerts">All alerts →</Link>}
         empty={(list) => (list.length === 0 ? "No alerts." : null)}
       >
         {(list) => (
           <div>
-            <p style={{ margin: "0 0 6px", fontSize: "var(--fs-body)" }}>{openAlerts} waiting for the Veterinarian.</p>
+            <p style={{ margin: "0 0 6px", fontSize: "var(--fs-body)" }}>{openAlerts} {tr("waiting for the Veterinarian.")}</p>
             {list.slice(0, 5).map((a) => (
               <Line
                 key={a.id}
@@ -305,15 +306,15 @@ export function VetDashboard() {
   return (
     <div style={{ display: "grid", gap: 16 }}>
       <StatRow>
-        <Stat label="Training Locks in force" value={s?.lockedCount ?? "—"} tone={COLOR.danger} />
-        <Stat label="Under observation" value={s?.observationCount ?? "—"} tone={COLOR.warn} />
-        <Stat label="Injured / isolated" value={s ? s.injuredCount + s.isolatedCount : "—"} tone={COLOR.violet} />
-        <Stat label="Alerts to review" value={alerts.data ? openAlerts.length : "—"} tone={COLOR.danger} />
-        <Stat label="Preventive care overdue" value={s?.overdueCount ?? "—"} tone={COLOR.warn} />
+        <Stat label={tr("Training Locks in force")} value={s?.lockedCount ?? "—"} tone={COLOR.danger} />
+        <Stat label={tr("Under observation")} value={s?.observationCount ?? "—"} tone={COLOR.warn} />
+        <Stat label={tr("Injured / isolated")} value={s ? s.injuredCount + s.isolatedCount : "—"} tone={COLOR.violet} />
+        <Stat label={tr("Alerts to review")} value={alerts.data ? openAlerts.length : "—"} tone={COLOR.danger} />
+        <Stat label={tr("Preventive care overdue")} value={s?.overdueCount ?? "—"} tone={COLOR.warn} />
       </StatRow>
       <TwoCols>
         <Block
-          title="Abnormal signs to review"
+          title={tr("Abnormal signs to review")}
           state={alerts}
           action={<Link to="/alerts">All alerts →</Link>}
           empty={() => (openAlerts.length === 0 ? "No alert is waiting for you." : null)}
@@ -336,8 +337,8 @@ export function VetDashboard() {
           )}
         </Block>
         <Block
-          title="Lock reviews due"
-          subtitle="Review date within 3 days or passed"
+          title={tr("Lock reviews due")}
+          subtitle={tr("Review date within 3 days or passed")}
           state={board}
           action={<Link to="/medical/locks">Training Locks →</Link>}
           empty={() => (reviews.length === 0 ? "No lock review is due." : null)}
@@ -361,7 +362,7 @@ export function VetDashboard() {
         </Block>
       </TwoCols>
       <Block
-        title="Preventive care overdue"
+        title={tr("Preventive care overdue")}
         state={board}
         action={<Link to="/vaccine">Preventive care →</Link>}
         empty={(b) => (b.data.some((h) => h.hasOverduePreventive) ? null : "Nothing overdue.")}
@@ -393,9 +394,9 @@ export function GroomDashboard() {
   const horses = useLoaded(() => getHorses({ limit: 100 }));
   return (
     <TwoCols>
-      <TodaySessions title="My workouts today" />
+      <TodaySessions title={tr("My workouts today")} />
       <Block
-        title="My horses"
+        title={tr("My horses")}
         state={horses}
         action={<Link to="/stables/map">Stable map →</Link>}
         empty={(r) => (r.items.length ? null : "You have not been assigned any horse yet.")}
@@ -430,7 +431,7 @@ export function OwnerDashboard() {
   return (
     <TwoCols>
       <Block
-        title="My horses"
+        title={tr("My horses")}
         state={horses}
         action={<Link to="/my-horses">All →</Link>}
         empty={(r) => (r.items.length ? null : "No horse is registered under your name yet.")}
@@ -454,7 +455,7 @@ export function OwnerDashboard() {
         )}
       </Block>
       <Block
-        title="Training in progress"
+        title={tr("Training in progress")}
         state={plans}
         action={<Link to="/progress">Training progress →</Link>}
         empty={(list) => (list.length ? null : "No active training plan.")}

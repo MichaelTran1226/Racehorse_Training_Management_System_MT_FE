@@ -17,7 +17,8 @@ import { ProgressBar } from "../components/ProgressBar";
 import { EXERCISE_TYPE_LABEL } from "../types";
 import type { OverviewRow, TrainingOverview } from "../types";
 import { Icon } from "@/shared/components/ui/Icon";
-
+
+import { tr } from "@/shared/i18n/tr";
 type SortKey = "name" | "progress" | "score" | "load" | "next";
 
 /** SC-2.01 Tổng quan huấn luyện (CM, HT, VET). */
@@ -46,12 +47,12 @@ export default function TrainingOverviewPage() {
 
   if (error) {
     return (
-      <Alert tone="danger" title="Could not load data">
-        {error} <Button size="sm" tone="secondary" onClick={() => void load()}>Try again</Button>
+      <Alert tone="danger" title={tr("Could not load data")}>
+        {error} <Button size="sm" tone="secondary" onClick={() => void load()}>{tr("Try again")}</Button>
       </Alert>
     );
   }
-  if (!data) return <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Loading overview...</div>;
+  if (!data) return <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>{tr("Loading overview...")}</div>;
 
   const q = search.toLowerCase();
   const pct = (r: OverviewRow) => (r.progress && r.progress.due ? r.progress.completed / r.progress.due : -1);
@@ -75,15 +76,15 @@ export default function TrainingOverviewPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>Training Overview</h1>
+          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>{tr("Training Overview")}</h1>
           <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
-            Progress and fitness of every managed horse.
+            {tr("Progress and fitness of every managed horse.")}
           </p>
         </div>
         <div style={{ display: "flex", gap: "0.75rem" }}>
-          <Link to="/training/calendar"><Button tone="secondary">Today's schedule</Button></Link>
+          <Link to="/training/calendar"><Button tone="secondary">{tr("Today's schedule")}</Button></Link>
           {user.role === "HEAD_TRAINER" && (
-            <Button tone="primary" onClick={() => navigate("/training/plans/new")}>+ Create plan</Button>
+            <Button tone="primary" onClick={() => navigate("/training/plans/new")}>{tr("+ Create plan")}</Button>
           )}
         </div>
       </div>
@@ -91,37 +92,37 @@ export default function TrainingOverviewPage() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
         <Link to="/training/plans?status=ACTIVE" style={{ color: "inherit", textDecoration: "none" }}>
           <Card pad={16}>
-            <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>Active plans</div>
+            <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>{tr("Active plans")}</div>
             <div style={{ fontSize: "var(--fs-h1)", fontWeight: 700 }}>{k.activePlans} / {k.managedHorses}</div>
-            <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>horses managed</div>
+            <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>{tr("horses managed")}</div>
           </Card>
         </Link>
         <Link to="/training/calendar" style={{ color: "inherit", textDecoration: "none" }}>
           <Card pad={16}>
-            <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>Workouts today</div>
+            <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>{tr("Workouts today")}</div>
             <div style={{ fontSize: "var(--fs-h1)", fontWeight: 700 }}>{k.todayCompleted}/{k.todayTotal}</div>
             <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>completed</div>
           </Card>
         </Link>
         <Link to="/training/calendar?status=BLOCKED" style={{ color: "inherit", textDecoration: "none" }}>
           <Card pad={16}>
-            <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>Blocked by Training Lock</div>
+            <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>{tr("Blocked by Training Lock")}</div>
             <div style={{ fontSize: "var(--fs-h1)", fontWeight: 700, color: k.blockedNext7Days ? "var(--danger)" : undefined }}>{k.blockedNext7Days}</div>
-            <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>in the next 7 days</div>
+            <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>{tr("in the next 7 days")}</div>
           </Card>
         </Link>
         <button type="button" onClick={() => setSpikeOnly(true)} style={{ all: "unset", cursor: "pointer" }}>
           <Card pad={16}>
-            <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>Sudden load increase</div>
+            <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>{tr("Sudden load increase")}</div>
             <div style={{ fontSize: "var(--fs-h1)", fontWeight: 700, color: k.loadSpikeHorses ? "var(--warn)" : undefined }}>{k.loadSpikeHorses}</div>
-            <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>horses above 130% of their 4-week average</div>
+            <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>{tr("horses above 130% of their 4-week average")}</div>
           </Card>
         </button>
       </div>
 
       <Card pad={16}>
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
-          <Input placeholder="Horse name or code" value={search} onChange={(e) => setSearch(e.target.value)} style={{ width: 240 }} />
+          <Input placeholder={tr("Horse name or code")} value={search} onChange={(e) => setSearch(e.target.value)} style={{ width: 240 }} />
           <div style={{ width: 200 }}>
             <Select
               value={planFilter}
@@ -146,15 +147,15 @@ export default function TrainingOverviewPage() {
               ]}
             />
           </div>
-          <Checkbox label="Only sudden load increase" checked={spikeOnly} onChange={setSpikeOnly} />
+          <Checkbox label={tr("Only sudden load increase")} checked={spikeOnly} onChange={setSpikeOnly} />
         </div>
       </Card>
 
       <Card>
         {data.rows.length === 0 ? (
-          <EmptyState title="No horses to follow yet." />
+          <EmptyState title={tr("No horses to follow yet.")} />
         ) : rows.length === 0 ? (
-          <EmptyState title="No horses match the filter." />
+          <EmptyState title={tr("No horses match the filter.")} />
         ) : (
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "var(--fs-body)" }}>
@@ -180,9 +181,9 @@ export default function TrainingOverviewPage() {
                     <tr key={r.horse.id} style={{ borderBottom: "1px solid var(--border)" }}>
                       <td style={{ padding: "0.6rem 0.75rem" }}>
                         <Link to={`/horses/${r.horse.id}`}><strong>{r.horse.name}</strong></Link> {r.horse.isMedicalLocked && (
-                      <span title="Training Lock" style={{ color: "var(--danger)", display: "inline-flex", verticalAlign: "-2px" }}>
+                      <span title={tr("Training Lock")} style={{ color: "var(--danger)", display: "inline-flex", verticalAlign: "-2px" }}>
                         <Icon name="lock" size={14} />
-                        <span className="sr-only">Training Lock</span>
+                        <span className="sr-only">{tr("Training Lock")}</span>
                       </span>
                     )}
                         <div style={{ display: "flex", gap: "0.35rem", alignItems: "center" }}>
@@ -190,9 +191,9 @@ export default function TrainingOverviewPage() {
                           <Badge tone={st.tone as never}>{st.label}</Badge>
                         </div>
                       </td>
-                      <td style={{ padding: "0.6rem 0.75rem" }}>{r.plan ? `${r.plan.planCode ?? ""} ${r.plan.name}` : "None"}</td>
+                      <td style={{ padding: "0.6rem 0.75rem" }}>{r.plan ? `${r.plan.planCode ?? ""} ${r.plan.name}` : tr("None")}</td>
                       <td style={{ padding: "0.6rem 0.75rem" }}>
-                        {r.currentPhase ? `${r.currentPhase.name} · week ${r.currentPhase.week}/${r.currentPhase.weeks}` : "—"}
+                        {r.currentPhase ? tr(`${r.currentPhase.name} · week ${r.currentPhase.week}/${r.currentPhase.weeks}`) : "—"}
                       </td>
                       <td style={{ padding: "0.6rem 0.75rem", minWidth: 130 }}>
                         {r.progress ? <ProgressBar done={r.progress.completed} total={r.progress.due} /> : "—"}
@@ -208,7 +209,7 @@ export default function TrainingOverviewPage() {
                         )}
                       </td>
                       <td style={{ padding: "0.6rem 0.75rem", color: r.loadSpike ? "var(--warn)" : undefined }}>
-                        {r.load7d} {r.loadSpike && <Badge tone="warn">Sudden increase</Badge>}
+                        {r.load7d} {r.loadSpike && <Badge tone="warn">{tr("Sudden increase")}</Badge>}
                       </td>
                       <td style={{ padding: "0.6rem 0.75rem" }}>
                         {r.nextWorkout
@@ -218,9 +219,9 @@ export default function TrainingOverviewPage() {
                       <td style={{ padding: "0.6rem 0.75rem", whiteSpace: "nowrap" }}>
                         <div style={{ display: "flex", gap: "0.35rem" }}>
                           <Button size="sm" tone="secondary" disabled={!r.plan} onClick={() => r.plan && navigate(`/training/plans/${r.plan.id}`)}>
-                            View plan
+                            {tr("View plan")}
                           </Button>
-                          <Link to={`/horses/${r.horse.id}/fitness`}><Button size="sm" tone="ghost">Chart</Button></Link>
+                          <Link to={`/horses/${r.horse.id}/fitness`}><Button size="sm" tone="ghost">{tr("Chart")}</Button></Link>
                         </div>
                       </td>
                     </tr>

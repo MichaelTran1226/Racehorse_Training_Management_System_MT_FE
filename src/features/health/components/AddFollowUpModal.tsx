@@ -6,7 +6,8 @@ import { Textarea } from "@/shared/components/form/Textarea";
 import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
 import type { FollowUpInput } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 interface AddFollowUpModalProps {
   onClose: () => void;
   onSubmit: (input: FollowUpInput) => Promise<void>;
@@ -50,8 +51,8 @@ export function AddFollowUpModal({ onClose, onSubmit }: AddFollowUpModalProps) {
 
   return (
     <Modal
-      title="Add Follow-up Examination"
-      subtitle="Record latest vital signs, evaluate clinical progression, and adjust treatment protocol."
+      title={tr("Add Follow-up Examination")}
+      subtitle={tr("Record latest vital signs, evaluate clinical progression, and adjust treatment protocol.")}
       width={520}
       onClose={onClose}
       foot={
@@ -72,7 +73,7 @@ export function AddFollowUpModal({ onClose, onSubmit }: AddFollowUpModalProps) {
           </div>
         )}
 
-        <Field label="Follow-up Date & Time *">
+        <Field label={tr("Follow-up Date & Time *")}>
           <Input
             type="datetime-local"
             value={followUpDate}
@@ -82,7 +83,7 @@ export function AddFollowUpModal({ onClose, onSubmit }: AddFollowUpModalProps) {
         </Field>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-          <Field label="Temperature (°C) *" hint="Normal: 37.2 - 38.6">
+          <Field label={tr("Temperature (°C) *")} hint={tr("Normal: 37.2 - 38.6")}>
             <Input
               type="number"
               step="0.1"
@@ -93,7 +94,7 @@ export function AddFollowUpModal({ onClose, onSubmit }: AddFollowUpModalProps) {
               required
             />
           </Field>
-          <Field label="Heart Rate (bpm) *" hint="Normal: 28 - 44">
+          <Field label={tr("Heart Rate (bpm) *")} hint={tr("Normal: 28 - 44")}>
             <Input
               type="number"
               min={20}
@@ -103,7 +104,7 @@ export function AddFollowUpModal({ onClose, onSubmit }: AddFollowUpModalProps) {
               required
             />
           </Field>
-          <Field label="Respiratory Rate (breaths/min) *" hint="Normal: 8 - 16">
+          <Field label={tr("Respiratory Rate (breaths/min) *")} hint={tr("Normal: 8 - 16")}>
             <Input
               type="number"
               min={4}
@@ -115,22 +116,22 @@ export function AddFollowUpModal({ onClose, onSubmit }: AddFollowUpModalProps) {
           </Field>
         </div>
 
-        <Field label="Clinical Progress *" hint="Evaluate horse response to current treatment">
+        <Field label={tr("Clinical Progress *")} hint={tr("Evaluate horse response to current treatment")}>
           <Textarea
             rows={3}
             value={progressNotes}
             onChange={(e) => setProgressNotes(e.target.value)}
-            placeholder="Describe swelling, heat, gait lameness score, appetite, and attitude..."
+            placeholder={tr("Describe swelling, heat, gait lameness score, appetite, and attitude...")}
             required
           />
         </Field>
 
-        <Field label="Protocol Adjustments / Additional Notes" hint="Changes to exercise restrictions or medication">
+        <Field label={tr("Protocol Adjustments / Additional Notes")} hint={tr("Changes to exercise restrictions or medication")}>
           <Textarea
             rows={2}
             value={adjustments}
             onChange={(e) => setAdjustments(e.target.value)}
-            placeholder="e.g., Transition to 15-min hand walking, continue cold hosing for 3 more days..."
+            placeholder={tr("e.g., Transition to 15-min hand walking, continue cold hosing for 3 more days...")}
           />
         </Field>
       </form>

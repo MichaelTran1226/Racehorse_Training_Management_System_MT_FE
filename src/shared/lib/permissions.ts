@@ -189,8 +189,7 @@ export interface NavGroup {
 }
 
 function item(id: string, label: string, icon: string, extra: { i18nKey?: string; requires?: PermissionKey; alert?: boolean } = {}): NavItem {
-  // "permissions" dẫn tới danh sách tài khoản (nơi chọn tài khoản cần xem quyền).
-  const href = id === "dashboard" ? "/dashboard" : id === "permissions" ? "/accounts" : `/${id}`;
+  const href = id === "dashboard" ? "/dashboard" : `/${id}`;
   return { id, label, icon, href, ...extra };
 }
 
@@ -279,7 +278,8 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
     {
       label: "ADMINISTRATION",
       items: [
-        item("accounts", "Accounts", "users", { requires: "manageAccounts", alert: true }),
+        // Chấm đỏ của Accounts tính lúc chạy (yêu cầu đăng ký mới), xem useSidebarInfo.
+        item("accounts", "Accounts", "users", { requires: "manageAccounts" }),
         item("staff", "Staff Directory", "user", { requires: "manageAccounts" }),
         item("catalog", "Supplies Catalog", "package", { requires: "manageAccounts" }),
       ],
@@ -330,8 +330,6 @@ export function navFor(role: Role, permissions: PermissionMap): NavGroup[] {
 }
 
 export function isNavItemActive(navItem: NavItem, pathname: string): boolean {
-  if (navItem.id === "permissions") return /^\/accounts\/[^/]+\/permissions/.test(pathname);
-  if (navItem.id === "accounts") return pathname === "/accounts";
   return pathname === navItem.href || pathname.startsWith(navItem.href + "/");
 }
 

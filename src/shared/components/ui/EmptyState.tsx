@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Icon } from "./Icon";
 import styles from "./EmptyState.module.css";
+import { trNode } from "@/shared/i18n/tr";
 
 interface EmptyStateProps {
   icon?: string;
@@ -16,8 +17,8 @@ export function EmptyState({ icon = "inbox", title, description, action }: Empty
       <span className={styles.icon}>
         <Icon name={icon} size={22} />
       </span>
-      <strong className={styles.title}>{title}</strong>
-      {description && <p className={styles.desc}>{description}</p>}
+      <strong className={styles.title}>{trNode(title)}</strong>
+      {description && <p className={styles.desc}>{trNode(description)}</p>}
       {action && <div className={styles.action}>{action}</div>}
     </div>
   );

@@ -11,7 +11,8 @@ import { verifyInviteOtp } from "../api";
 import { resetFlow } from "../flow";
 import { OtpVerifyForm } from "../components/OtpVerifyForm";
 import styles from "./AuthPages.module.css";
-
+
+import { tr } from "@/shared/i18n/tr";
 const EMAIL_RE = /^[^\s@]+@gmail\.com$/i;
 
 // Accept Invite: nhân viên được Club Manager mời nhập mã trong email mời (OTP, không dùng link),
@@ -35,9 +36,9 @@ export default function AcceptInvitePage() {
 
   if (!email) {
     return (
-      <AuthLayout title="Accept your invitation." description="Enter the email the Club Manager invited. The invitation email holds a 6-digit code.">
+      <AuthLayout title={tr("Accept your invitation.")} description={tr("Enter the email the Club Manager invited. The invitation email holds a 6-digit code.")}>
         <form onSubmit={onEmail} noValidate style={{ display: "contents" }}>
-          <Field label="Club email" required error={error}>
+          <Field label={tr("Club email")} required error={error}>
             <Input
               type="email"
               icon="mail"
@@ -52,10 +53,10 @@ export default function AcceptInvitePage() {
             />
           </Field>
           <Button type="submit" size="lg" block iconAfter="arrowRight">
-            Continue
+            {tr("Continue")}
           </Button>
           <p className={styles.foot}>
-            Already set a password? <Link to="/login">Sign in</Link>
+            {tr("Already set a password?")}{" "}<Link to="/login">{tr("Sign in")}</Link>
           </p>
         </form>
       </AuthLayout>
@@ -63,7 +64,7 @@ export default function AcceptInvitePage() {
   }
 
   return (
-    <AuthLayout title="Accept your invitation." description={`Enter the 6-digit code from the invitation sent to ${email}. Then choose your password.`}>
+    <AuthLayout title={tr("Accept your invitation.")} description={tr(`Enter the 6-digit code from the invitation sent to ${email}. Then choose your password.`)}>
       <OtpVerifyForm
         key={email}
         email={email}

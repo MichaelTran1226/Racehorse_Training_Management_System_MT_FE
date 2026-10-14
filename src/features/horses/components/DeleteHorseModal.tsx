@@ -10,7 +10,8 @@ import { useToast } from "@/shared/components/ui/Toast";
 import { messageFor } from "@/shared/lib/messages";
 import { deleteHorse, restoreHorse } from "../api";
 import type { Horse } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 interface DeleteHorseModalProps {
   horse: Horse;
   isOpen: boolean;
@@ -72,7 +73,7 @@ export function DeleteHorseModal({ horse, isOpen, onClose }: DeleteHorseModalPro
     <Modal
       onClose={onClose}
       tone="danger"
-      title={`Delete profile: ${horse.name}`}
+      title={tr(`Delete profile: ${horse.name}`)}
       foot={
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
           <Button tone="ghost" onClick={onClose} disabled={submitting}>
@@ -85,16 +86,15 @@ export function DeleteHorseModal({ horse, isOpen, onClose }: DeleteHorseModalPro
       }
     >
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-        <Alert tone="danger" title="Only for profiles created by mistake">
-          A deleted profile is hidden from the roster but can be restored from Deleted horses. To stop managing a real
-          horse (sold, retired, deceased), use Stop managing instead.
+        <Alert tone="danger" title={tr("Only for profiles created by mistake")}>
+          {tr("A deleted profile is hidden from the roster but can be restored from Deleted horses. To stop managing a real horse (sold, retired, deceased), use Stop managing instead.")}
         </Alert>
 
-        <Field label="Reason for deletion" required error={touched ? reasonErr || undefined : undefined} hint="10-500 characters">
+        <Field label={tr("Reason for deletion")} required error={touched ? reasonErr || undefined : undefined} hint={tr("10-500 characters")}>
           <Textarea rows={3} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} />
         </Field>
 
-        <Field label={`Type the horse name "${horse.name}" to confirm`} required error={nameErr || undefined}>
+        <Field label={tr(`Type the horse name "${horse.name}" to confirm`)} required error={nameErr || undefined}>
           <Input value={confirmName} onChange={(e) => setConfirmName(e.target.value)} autoComplete="off" />
         </Field>
       </div>

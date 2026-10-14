@@ -6,7 +6,8 @@ import { Input } from "@/shared/components/form/Input";
 import { Icon } from "@/shared/components/ui/Icon";
 import { formatDateTime } from "@/shared/lib/format";
 import type { TimelineCategory, TimelineEvent } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 const PAGE = 30;
 
 const GROUPS: Array<{ id: TimelineCategory; label: string; iconName: string; managerOnly?: boolean }> = [
@@ -75,10 +76,10 @@ export function LifecycleTimeline({ events, isManager }: { events: TimelineEvent
           );
         })}
         <div style={{ width: 150 }}>
-          <Input type="date" aria-label="From date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          <Input type="date" aria-label={tr("From date")} value={from} onChange={(e) => setFrom(e.target.value)} />
         </div>
         <div style={{ width: 150 }}>
-          <Input type="date" aria-label="To date" value={to} onChange={(e) => setTo(e.target.value)} />
+          <Input type="date" aria-label={tr("To date")} value={to} onChange={(e) => setTo(e.target.value)} />
         </div>
         {(selected.length > 0 || from || to) && (
           <Button
@@ -90,13 +91,13 @@ export function LifecycleTimeline({ events, isManager }: { events: TimelineEvent
               setTo("");
             }}
           >
-            Clear filters
+            {tr("Clear filters")}
           </Button>
         )}
       </div>
 
       {filtered.length === 0 ? (
-        <p style={{ color: "var(--ink-muted)", margin: 0 }}>No events yet.</p>
+        <p style={{ color: "var(--ink-muted)", margin: 0 }}>{tr("No events yet.")}</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           {filtered.slice(0, shown).map((evt) => (
@@ -134,7 +135,7 @@ export function LifecycleTimeline({ events, isManager }: { events: TimelineEvent
                 </div>
                 {evt.link && (
                   <Link to={evt.link} style={{ fontSize: "var(--fs-body)" }}>
-                    View details
+                    {tr("View details")}
                   </Link>
                 )}
               </div>

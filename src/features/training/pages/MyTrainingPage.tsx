@@ -10,7 +10,8 @@ import { messageFor } from "@/shared/lib/messages";
 import { todayClub, trainingApi } from "../api";
 import { EXERCISE_TYPE_LABEL, isHeavy, SESSION_STATUS_LABEL, SESSION_STATUS_TONE, TRACK_LABEL } from "../types";
 import type { ExerciseSession } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 const REFRESH_MS = 5 * 60 * 1000;
 
 function plusDays(date: string, days: number): string {
@@ -54,8 +55,8 @@ export default function MyTrainingPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem", maxWidth: 720, margin: "0 auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem" }}>
-        <h1 style={{ margin: 0, fontSize: "var(--fs-kpi)" }}>My training schedule</h1>
-        <Button size="sm" tone="secondary" onClick={() => void load()}>Refresh</Button>
+        <h1 style={{ margin: 0, fontSize: "var(--fs-kpi)" }}>{tr("My training schedule")}</h1>
+        <Button size="sm" tone="secondary" onClick={() => void load()}>{tr("Refresh")}</Button>
       </div>
       <Tabs
         items={[
@@ -69,11 +70,11 @@ export default function MyTrainingPage() {
           setLoading(true);
         }}
       />
-      {error && <Alert tone="danger" title="Could not load data">{error}</Alert>}
+      {error && <Alert tone="danger" title={tr("Could not load data")}>{error}</Alert>}
       {loading ? (
-        <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>Loading...</div>
+        <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>{tr("Loading...")}</div>
       ) : sessions.length === 0 ? (
-        <EmptyState title={tab === "today" ? "You have no workouts assigned today." : "No workouts assigned in this period."} />
+        <EmptyState title={tab === "today" ? tr("You have no workouts assigned today.") : tr("No workouts assigned in this period.")} />
       ) : (
         sessions.map((s) => {
           const blocked = s.status === "BLOCKED";
@@ -88,26 +89,26 @@ export default function MyTrainingPage() {
                   <Badge tone={SESSION_STATUS_TONE[s.status]}>{SESSION_STATUS_LABEL[s.status]}</Badge>
                 </div>
                 <div style={{ fontSize: "var(--fs-body)", marginTop: "0.25rem" }}>
-                  Stall {s.stallCode ?? "—"} · {EXERCISE_TYPE_LABEL[s.sessionType]}{" "}
-                  {isHeavy(s.sessionType, s.intensity) && <Badge tone="danger">Heavy</Badge>} · {s.targetDistanceMeters} m × {s.repetitions} ·{" "}
-                  {TRACK_LABEL[s.trackType]} · Jockey: {s.jockeyName || "—"}
+                  {tr("Stall")}{" "}{s.stallCode ?? "—"} · {EXERCISE_TYPE_LABEL[s.sessionType]}{" "}
+                  {isHeavy(s.sessionType, s.intensity) && <Badge tone="danger">{tr("Heavy")}</Badge>} · {s.targetDistanceMeters} m × {s.repetitions} ·{" "}
+                  {TRACK_LABEL[s.trackType]} {tr("· Jockey:")}{" "}{s.jockeyName || "—"}
                 </div>
                 {blocked && (
                   <div style={{ color: "var(--danger)", fontWeight: 600, marginTop: "0.35rem" }}>
-                    Blocked by a veterinary Training Lock – do not take the horse to the track.
+                    {tr("Blocked by a veterinary Training Lock – do not take the horse to the track.")}
                   </div>
                 )}
                 {open === s.id ? (
                   <div style={{ marginTop: "0.5rem", fontSize: "var(--fs-body)" }}>
-                    <div><strong>Instructions:</strong> {s.notes || "—"}</div>
+                    <div><strong>{tr("Instructions:")}</strong> {s.notes || "—"}</div>
                     {s.status === "COMPLETED" && (
-                      <Link to={`/training/sessions/${s.id}/result`}>View result</Link>
+                      <Link to={`/training/sessions/${s.id}/result`}>{tr("View result")}</Link>
                     )}
                   </div>
                 ) : null}
                 <div style={{ marginTop: "0.5rem" }}>
                   <Button size="sm" tone="ghost" onClick={() => setOpen(open === s.id ? null : s.id)}>
-                    {open === s.id ? "Hide details" : "Details"}
+                    {open === s.id ? tr("Hide details") : tr("Details")}
                   </Button>
                 </div>
               </div>

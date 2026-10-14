@@ -72,7 +72,8 @@ import { getHorseInjuries, createInjury, updateInjury, deleteInjury } from "../a
 import { getHorseById, getHorses } from "@/features/horses/api";
 import type { Horse } from "@/features/horses/types";
 import { formatDate } from "@/shared/lib/format";
-
+
+import { tr } from "@/shared/i18n/tr";
 export default function InjuryMapPage() {
   const { id = "horse-1" } = useParams();
   const navigate = useNavigate();
@@ -320,17 +321,17 @@ export default function InjuryMapPage() {
       <div className={styles.headerCard}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Button tone="ghost" icon="arrowLeft" onClick={() => navigate(horse ? `/medical/horses/${id}` : "/medical/herd")}>
-            {horse ? "Medical Record" : "Herd Health"}
+            {horse ? tr("Medical Record") : tr("Herd Health")}
           </Button>
           <div>
             <h1 style={{ fontSize: "var(--fs-section)", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
-              <span>2D Anatomical Injury Map</span>
+              <span>{tr("2D Anatomical Injury Map")}</span>
               {horse && <span>{` · ${horse.name} (${horse.horseCode || horse.id.slice(0,6)})`}</span>}
             </h1>
             <span style={{ fontSize: "var(--fs-body)", color: "var(--muted)" }}>
               {horse
-                ? `Pinpoint anatomical lesions and monitor clinical progression for ${horse.name}.`
-                : "Pinpoint anatomical lesions and monitor clinical progression across recovery phases."}
+                ? tr(`Pinpoint anatomical lesions and monitor clinical progression for ${horse.name}.`)
+                : tr("Pinpoint anatomical lesions and monitor clinical progression across recovery phases.")}
             </span>
           </div>
         </div>
@@ -355,7 +356,7 @@ export default function InjuryMapPage() {
               icon="pin"
               onClick={() => setMarkingMode(!markingMode)}
             >
-              {markingMode ? "Marking Mode Active (Click on model)" : "Enable Marking Mode"}
+              {markingMode ? tr("Marking Mode Active (Click on model)") : tr("Enable Marking Mode")}
             </Button>
           )}
         </div>
@@ -366,43 +367,43 @@ export default function InjuryMapPage() {
         <div className={styles.modelCard}>
           <div className={styles.toolbar}>
             <div className={styles.toggleGroup}>
-              <span style={{ fontSize: "var(--fs-body)", fontWeight: 600, color: "var(--muted)" }}>View:</span>
+              <span style={{ fontSize: "var(--fs-body)", fontWeight: 600, color: "var(--muted)" }}>{tr("View:")}</span>
               <Button
                 size="sm"
                 tone={view === "LEFT" ? "primary" : "ghost"}
                 onClick={() => setView("LEFT")}
               >
-                Left View
+                {tr("Left View")}
               </Button>
               <Button
                 size="sm"
                 tone={view === "RIGHT" ? "primary" : "ghost"}
                 onClick={() => setView("RIGHT")}
               >
-                Right View
+                {tr("Right View")}
               </Button>
             </div>
 
             <div className={styles.toggleGroup}>
-              <span style={{ fontSize: "var(--fs-body)", fontWeight: 600, color: "var(--muted)" }}>Anatomy Layer:</span>
+              <span style={{ fontSize: "var(--fs-body)", fontWeight: 600, color: "var(--muted)" }}>{tr("Anatomy Layer:")}</span>
               <Button
                 size="sm"
                 tone={layer === "MUSCLE" ? "primary" : "ghost"}
                 onClick={() => handleLayerChange("MUSCLE")}
               >
-                Muscular Layer
+                {tr("Muscular Layer")}
               </Button>
               <Button
                 size="sm"
                 tone={layer === "SKELETON" ? "primary" : "ghost"}
                 onClick={() => handleLayerChange("SKELETON")}
               >
-                Skeletal Layer
+                {tr("Skeletal Layer")}
               </Button>
             </div>
 
             <Checkbox
-              label="Show healed injuries"
+              label={tr("Show healed injuries")}
               checked={showHealed}
               onChange={setShowHealed}
             />
@@ -428,11 +429,11 @@ export default function InjuryMapPage() {
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ display: "inline-flex" }}><Icon name="pin" size={18} /></span>
                 <span>
-                  <strong>Repositioning Mode:</strong> Click any spot on the {layer === "MUSCLE" ? "Muscular" : "Skeletal"} model to relocate pin #{visibleInjuries.findIndex((i) => i.id === repositioningId) + 1} ({injuries.find((i) => i.id === repositioningId)?.region}).
+                  <strong>{tr("Repositioning Mode:")}</strong> Click any spot on the {layer === "MUSCLE" ? tr("Muscular") : tr("Skeletal")} {tr("model to relocate pin #")}{visibleInjuries.findIndex((i) => i.id === repositioningId) + 1} ({injuries.find((i) => i.id === repositioningId)?.region}).
                 </span>
               </div>
               <Button size="sm" tone="ghost" onClick={() => setRepositioningId(null)}>
-                Cancel Move
+                {tr("Cancel Move")}
               </Button>
             </div>
           )}
@@ -456,11 +457,11 @@ export default function InjuryMapPage() {
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ display: "inline-flex" }}><Icon name="flag" size={18} /></span>
                 <span>
-                  <strong>Marking Mode Active:</strong> Click anywhere on the {layer === "MUSCLE" ? "Muscular" : "Skeletal"} model to place a new injury point.
+                  <strong>{tr("Marking Mode Active:")}</strong> Click anywhere on the {layer === "MUSCLE" ? tr("Muscular") : tr("Skeletal")} model to place a new injury point.
                 </span>
               </div>
               <Button size="sm" tone="ghost" onClick={() => setMarkingMode(false)}>
-                Cancel Marking
+                {tr("Cancel Marking")}
               </Button>
             </div>
           )}
@@ -499,22 +500,22 @@ export default function InjuryMapPage() {
           </div>
 
           <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap", fontSize: "var(--fs-caption)" }}>
-            <span style={{ fontWeight: 600 }}>Recovery Stage Legend:</span>
+            <span style={{ fontWeight: 600 }}>{tr("Recovery Stage Legend:")}</span>
             <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ width: 10, height: 10, borderRadius: "50%", background: STAGE_COLORS.ACUTE }} />
-              Acute
+              {tr("Acute")}
             </span>
             <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ width: 10, height: 10, borderRadius: "50%", background: STAGE_COLORS.SUBACUTE }} />
-              Subacute
+              {tr("Subacute")}
             </span>
             <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ width: 10, height: 10, borderRadius: "50%", background: STAGE_COLORS.RECOVERING }} />
-              Recovering
+              {tr("Recovering")}
             </span>
             <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ width: 10, height: 10, borderRadius: "50%", background: STAGE_COLORS.HEALED }} />
-              Healed
+              {tr("Healed")}
             </span>
           </div>
         </div>
@@ -525,13 +526,13 @@ export default function InjuryMapPage() {
           <div className={styles.panelCard}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <strong style={{ fontSize: "var(--fs-body)" }}>
-                Injury Points ({visibleInjuries.length}) · {layer === "MUSCLE" ? "Muscular" : "Skeletal"}
+                Injury Points ({visibleInjuries.length}) · {layer === "MUSCLE" ? tr("Muscular") : tr("Skeletal")}
               </strong>
             </div>
 
             {visibleInjuries.length === 0 ? (
               <div style={{ color: "var(--muted)", fontSize: "var(--fs-body)" }}>
-                No injury points recorded on the {layer === "MUSCLE" ? "Muscular" : "Skeletal"} layer ({view === "LEFT" ? "Left View" : "Right View"}).
+                No injury points recorded on the {layer === "MUSCLE" ? tr("Muscular") : tr("Skeletal")} layer ({view === "LEFT" ? tr("Left View") : tr("Right View")}).
               </div>
             ) : (
               <div className={styles.injuryList}>
@@ -555,7 +556,7 @@ export default function InjuryMapPage() {
                       {isVet && (
                         <button
                           type="button"
-                          title="Delete pin"
+                          title={tr("Delete pin")}
                           onClick={(e) => {
                             e.stopPropagation();
                             setDeleteTargetId(inj.id);
@@ -587,7 +588,7 @@ export default function InjuryMapPage() {
           {selectedInjury && (
             <div className={styles.panelCard}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-                <strong style={{ fontSize: "var(--fs-body)" }}>Injury Details</strong>
+                <strong style={{ fontSize: "var(--fs-body)" }}>{tr("Injury Details")}</strong>
                 {isVet && (
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     <Button
@@ -598,13 +599,13 @@ export default function InjuryMapPage() {
                         setMarkingMode(false);
                         setRepositioningId(repositioningId === selectedInjury.id ? null : selectedInjury.id);
                       }}
-                      title="Relocate this pin to a different position on the model"
+                      title={tr("Relocate this pin to a different position on the model")}
                     >
-                      {repositioningId === selectedInjury.id ? "Cancel Move" : "Relocate Pin"}
+                      {repositioningId === selectedInjury.id ? tr("Cancel Move") : tr("Relocate Pin")}
                     </Button>
                     {selectedInjury.stage !== "HEALED" && (
                       <Button size="sm" tone="primary" onClick={() => setShowStageModal(true)}>
-                        Update Recovery
+                        {tr("Update Recovery")}
                       </Button>
                     )}
                     <Button
@@ -612,28 +613,28 @@ export default function InjuryMapPage() {
                       tone="danger"
                       icon="trash"
                       onClick={() => setDeleteTargetId(selectedInjury.id)}
-                      title="Delete this injury point"
+                      title={tr("Delete this injury point")}
                     >
-                      Delete
+                      {tr("Delete")}
                     </Button>
                   </div>
                 )}
               </div>
 
               <div style={{ fontSize: "var(--fs-body)", display: "flex", flexDirection: "column", gap: 8 }}>
-                <div>Region: <strong>{selectedInjury.region}</strong> ({selectedInjury.view === "LEFT" ? "Left View" : "Right View"} · {selectedInjury.layer === "MUSCLE" ? "Muscular" : "Skeletal"} Layer)</div>
-                <div>Condition: <strong>{selectedInjury.injuryType}</strong></div>
+                <div>{tr("Region:")}{" "}<strong>{selectedInjury.region}</strong> ({selectedInjury.view === "LEFT" ? tr("Left View") : tr("Right View")} · {selectedInjury.layer === "MUSCLE" ? tr("Muscular") : tr("Skeletal")} Layer)</div>
+                <div>{tr("Condition:")}{" "}<strong>{selectedInjury.injuryType}</strong></div>
                 <div>
-                  Severity: <Badge tone={selectedInjury.severity === "CRITICAL" ? "danger" : "warn"}>{selectedInjury.severity}</Badge>
+                  {tr("Severity:")}{" "}<Badge tone={selectedInjury.severity === "CRITICAL" ? "danger" : "warn"}>{selectedInjury.severity}</Badge>
                 </div>
                 <div>
-                  Stage: <Badge tone={selectedInjury.stage === "ACUTE" ? "danger" : "ok"} dot>{STAGE_LABELS[selectedInjury.stage]}</Badge>
+                  {tr("Stage:")}{" "}<Badge tone={selectedInjury.stage === "ACUTE" ? "danger" : "ok"} dot>{STAGE_LABELS[selectedInjury.stage]}</Badge>
                 </div>
-                <div>Detected Date: <strong>{formatDate(selectedInjury.detectedDate)}</strong></div>
+                <div>{tr("Detected Date:")}{" "}<strong>{formatDate(selectedInjury.detectedDate)}</strong></div>
 
                 {selectedInjury.notes && (
                   <div style={{ background: "var(--surface-2)", padding: "8px 10px", borderRadius: "var(--r-sm)", marginTop: 4 }}>
-                    <strong>Clinical Notes / Progress:</strong>
+                    <strong>{tr("Clinical Notes / Progress:")}</strong>
                     <div style={{ whiteSpace: "pre-line", marginTop: 4 }}>{selectedInjury.notes}</div>
                   </div>
                 )}
@@ -641,7 +642,7 @@ export default function InjuryMapPage() {
                 <div className={styles.timeline}>
                   <div className={styles.timelineNode}>
                     <div className={styles.timelineDot} />
-                    <strong>Initial Diagnosis</strong>
+                    <strong>{tr("Initial Diagnosis")}</strong>
                     <span style={{ fontSize: "var(--fs-caption)", color: "var(--muted)" }}>{selectedInjury.detectedDate}</span>
                   </div>
                   {selectedInjury.updatedDate && (
@@ -661,8 +662,8 @@ export default function InjuryMapPage() {
       {/* Modal Add Injury */}
       {addModalPoint && (
         <Modal
-          title="Mark New Injury Point"
-          subtitle={`Layer: ${layer === "MUSCLE" ? "Muscular Layer" : "Skeletal Layer"} · Orientation: ${view === "LEFT" ? "Left View" : "Right View"} · Coordinates (${addModalPoint.x}%, ${addModalPoint.y}%)`}
+          title={tr("Mark New Injury Point")}
+          subtitle={tr(`Layer: ${layer === "MUSCLE" ? "Muscular Layer" : "Skeletal Layer"} · Orientation: ${view === "LEFT" ? "Left View" : "Right View"} · Coordinates (${addModalPoint.x}%, ${addModalPoint.y}%)`)}
           width={480}
           onClose={() => setAddModalPoint(null)}
           foot={
@@ -673,7 +674,7 @@ export default function InjuryMapPage() {
           }
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <Field label="Anatomical Region *">
+            <Field label={tr("Anatomical Region *")}>
               <Select
                 options={layer === "MUSCLE" ? MUSCLE_REGION_OPTIONS : SKELETON_REGION_OPTIONS}
                 value={formRegion}
@@ -681,25 +682,25 @@ export default function InjuryMapPage() {
               />
             </Field>
 
-            <Field label="Injury / Lesion Type *" hint="e.g. Tendinitis, Bone fissure, Desmitis, Fracture...">
+            <Field label={tr("Injury / Lesion Type *")} hint={tr("e.g. Tendinitis, Bone fissure, Desmitis, Fracture...")}>
               <Input
                 value={formType}
                 onChange={(e) => setFormType(e.target.value)}
-                placeholder="Enter injury classification..."
+                placeholder={tr("Enter injury classification...")}
                 required
               />
             </Field>
 
-            <Field label="Severity Level *">
+            <Field label={tr("Severity Level *")}>
               <Select options={SEVERITY_OPTIONS} value={formSeverity} onChange={(e) => setFormSeverity(e.target.value as SeverityLevel)} />
             </Field>
 
-            <Field label="Clinical Notes & Instructions">
+            <Field label={tr("Clinical Notes & Instructions")}>
               <Textarea
                 rows={2}
                 value={formNotes}
                 onChange={(e) => setFormNotes(e.target.value)}
-                placeholder="Note down lesion size, heat, pain response..."
+                placeholder={tr("Note down lesion size, heat, pain response...")}
               />
             </Field>
           </div>
@@ -709,8 +710,8 @@ export default function InjuryMapPage() {
       {/* Modal Update Stage */}
       {showStageModal && selectedInjury && (
         <Modal
-          title={`Update Recovery Stage: ${selectedInjury.region}`}
-          subtitle={`Current Phase: ${STAGE_LABELS[selectedInjury.stage]}`}
+          title={tr(`Update Recovery Stage: ${selectedInjury.region}`)}
+          subtitle={tr(`Current Phase: ${STAGE_LABELS[selectedInjury.stage]}`)}
           width={460}
           onClose={() => setShowStageModal(false)}
           foot={
@@ -721,7 +722,7 @@ export default function InjuryMapPage() {
           }
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <Field label="New Recovery Stage *">
+            <Field label={tr("New Recovery Stage *")}>
               <Select
                 options={[
                   { value: "ACUTE", label: "Acute" },
@@ -734,12 +735,12 @@ export default function InjuryMapPage() {
               />
             </Field>
 
-            <Field label="Clinical Evaluation Notes">
+            <Field label={tr("Clinical Evaluation Notes")}>
               <Textarea
                 rows={3}
                 value={stageNotes}
                 onChange={(e) => setStageNotes(e.target.value)}
-                placeholder="Describe pain reduction, gait recovery, palpation feedback..."
+                placeholder={tr("Describe pain reduction, gait recovery, palpation feedback...")}
               />
             </Field>
           </div>
@@ -749,8 +750,8 @@ export default function InjuryMapPage() {
       {/* Modal Delete Confirmation */}
       {deleteTargetId && (
         <Modal
-          title="Delete Injury Point"
-          subtitle="Confirm removal of anatomical lesion marker"
+          title={tr("Delete Injury Point")}
+          subtitle={tr("Confirm removal of anatomical lesion marker")}
           width={440}
           onClose={() => setDeleteTargetId(null)}
           foot={
@@ -765,21 +766,21 @@ export default function InjuryMapPage() {
           }
         >
           <div style={{ fontSize: "var(--fs-body)", lineHeight: "1.6", color: "var(--ink)" }}>
-            Are you sure you want to delete this injury pin?
+            {tr("Are you sure you want to delete this injury pin?")}
             <div style={{ margin: "12px 0", padding: "10px 12px", background: "var(--surface-2)", borderRadius: "var(--r-sm)" }}>
               {(() => {
                 const target = injuries.find((i) => i.id === deleteTargetId);
                 if (!target) return null;
                 return (
                   <>
-                    <div><strong>Region:</strong> {target.region}</div>
-                    <div><strong>Condition:</strong> {target.injuryType}</div>
-                    <div><strong>Layer:</strong> {target.layer === "MUSCLE" ? "Muscular" : "Skeletal"} Layer</div>
+                    <div><strong>{tr("Region:")}</strong> {target.region}</div>
+                    <div><strong>{tr("Condition:")}</strong> {target.injuryType}</div>
+                    <div><strong>{tr("Layer:")}</strong> {target.layer === "MUSCLE" ? tr("Muscular") : tr("Skeletal")} Layer</div>
                   </>
                 );
               })()}
             </div>
-            You can re-mark or create a new pin anytime using <strong>Enable Marking Mode</strong>.
+            {tr("You can re-mark or create a new pin anytime using")}{" "}<strong>{tr("Enable Marking Mode")}</strong>.
           </div>
         </Modal>
       )}

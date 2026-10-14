@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Field } from "@/shared/components/form/Field";
@@ -18,8 +18,9 @@ import { safeNext } from "../flow";
 import { EMAIL_PLACEHOLDER } from "@/shared/lib/brand";
 import styles from "./AuthPages.module.css";
 
+
+import { tr } from "@/shared/i18n/tr";
 const EMAIL_RE = /^[^\s@]+@gmail\.com$/i;
-const RETRY_AFTER_MS = 10_000;
 
 interface AlertState {
   tone: AlertTone;
@@ -48,7 +49,6 @@ export default function LoginPage() {
   const [lockUntil, setLockUntil] = useState<number | null>(null);
   const lockLeft = useCountdown(lockUntil);
   const locked = lockLeft > 0;
-  const retryTimer = useRef<number | undefined>(undefined);
 
   const next = safeNext(params?.get("next"));
   const justReset = params?.get("reset") === "1";
@@ -58,8 +58,6 @@ export default function LoginPage() {
   useEffect(() => {
     if (status === "authenticated" && params) navigate(next, { replace: true });
   }, [status, params, next, navigate]);
-
-  useEffect(() => () => window.clearTimeout(retryTimer.current), []);
 
   // Sửa email/mật khẩu => thoát trạng thái bị chặn của lần thử trước.
   function clearOutcome() {
@@ -78,7 +76,7 @@ export default function LoginPage() {
     if (!mail) eErr = "Club email is required.";
     else if (!EMAIL_RE.test(mail)) eErr = "Email must be a @gmail.com address.";
     if (!password) pErr = "Password is required.";
-    else if (password.length < 6) pErr = "Password must be at least 6 characters.";
+    else if (password.length < 8) pErr = "Password must be at least 8 characters.";
 
     if (eErr || pErr) {
       setEmailError(eErr);
@@ -92,16 +90,12 @@ export default function LoginPage() {
     clearOutcome();
     setChecking(true);
     setAlert({ tone: "info", icon: "clock", title: "Signing in", body: "Checking the credentials and the permissions granted to this account." });
-    // Sau 10 giây nút trả lại để có thể thử lại (design 0.2).
-    retryTimer.current = window.setTimeout(() => setChecking(false), RETRY_AFTER_MS);
 
     try {
       await signIn(mail, password, remember);
-      window.clearTimeout(retryTimer.current);
       setAlert({ tone: "ok", icon: "checkCircle", title: "Signed in", body: "Opening your workspace." });
       navigate(next, { replace: true });
     } catch (err) {
-      window.clearTimeout(retryTimer.current);
       const failure = loginFailure(err);
       // Khóa tạm: Alert đếm ngược (lockAlert) lo phần hiển thị, không giữ thêm bản tĩnh.
       setAlert(failure.retryAt ? null : failure.alert);
@@ -110,6 +104,7 @@ export default function LoginPage() {
       setFootNote(failure.footNote);
       setNextStep(failure.next);
       setLockUntil(failure.retryAt ?? null);
+    } finally {
       setChecking(false);
     }
   }
@@ -165,7 +160,6 @@ export default function LoginPage() {
           <Input
             type="email"
             icon="mail"
-            aria-label="Club email"
             placeholder={EMAIL_PLACEHOLDER}
             autoComplete="username"
             value={email}
@@ -184,7 +178,7 @@ export default function LoginPage() {
           <Input
             type="password"
             icon="key"
-            placeholder="Enter password"
+            placeholder={tr("Enter password")}
             autoComplete="current-password"
             value={password}
             disabled={checking}
@@ -207,7 +201,7 @@ export default function LoginPage() {
           block
           iconAfter="arrowRight"
           disabled={checking}
-          blockedReason={locked ? `Sign-in is paused. Try again in ${formatCountdown(lockLeft)}.` : blockedReason}
+          blockedReason={locked ? tr(`Sign-in is paused. Try again in ${formatCountdown(lockLeft)}.`) : blockedReason}
         >
           {checking ? t("auth.submitting", "Signing in…") : t("auth.enterWorkspace", "Enter workspace")}
         </Button>

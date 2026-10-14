@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 
 async function signIn(page: Page, email: string) {
   await page.goto('/login');
-  await page.getByLabel('Club email', { exact: false }).fill(email);
+  await page.locator('input[type=email]').fill(email);
   await page.locator('input[type=password]').fill('equiflow123');
   await page.locator('button[type=submit]').click();
   await expect(page).toHaveURL('/dashboard');

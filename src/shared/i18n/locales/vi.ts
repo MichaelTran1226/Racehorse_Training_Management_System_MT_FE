@@ -279,6 +279,10 @@ export const vi: TranslationResources = {
     noOtherActivePlan: "Không có giáo án nào khác đang chạy cho {{name}} (kiểm tra khi xác nhận)",
     horseInStatus: "Chiến mã đang ở trạng thái {{status}}.",
   },
+  nameValidation: {
+    required: "Họ và tên không được để trống.",
+    lettersOnly: "Họ và tên chỉ được gồm chữ cái và khoảng trắng.",
+  },
   phoneValidation: {
     error: "Số điện thoại phải gồm 10 chữ số hợp lệ (bắt đầu bằng 03, 05, 07, 08, 09).",
     hint: "10 chữ số (bắt đầu bằng 03, 05, 07, 08, 09)",

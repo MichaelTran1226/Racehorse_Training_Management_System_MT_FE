@@ -19,7 +19,8 @@ import { messageFor } from "@/shared/lib/messages";
 import type { HealthStatus, HorseStatus } from "@/shared/types/enums";
 import { getHorseCatalog, getHorses } from "../api";
 import type { Horse, HorseListFilter } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 const STATUS_FILTERS: Array<{ id: string; label: string }> = [
   { id: "ALL", label: "All" },
   { id: "ACTIVE", label: "Ready to Race" },
@@ -219,7 +220,7 @@ export default function HorseListPage() {
                   )}
                 </div>
               ) : (
-                <span style={{ color: "var(--muted)" }}>Not assigned</span>
+                <span style={{ color: "var(--muted)" }}>{tr("Not assigned")}</span>
               ),
           },
         ]
@@ -245,10 +246,10 @@ export default function HorseListPage() {
       render: (h) =>
         h.isMedicalLocked ? (
           <Badge tone="danger" icon="lock">
-            Locked
+            {tr("Locked")}
           </Badge>
         ) : (
-          <span style={{ color: "var(--muted)" }} aria-label="Not locked">
+          <span style={{ color: "var(--muted)" }} aria-label={tr("Not locked")}>
             —
           </span>
         ),
@@ -274,7 +275,7 @@ export default function HorseListPage() {
       align: "right",
       render: (h) => (
         <Menu
-          label={`Actions for ${h.name}`}
+          label={tr(`Actions for ${h.name}`)}
           items={[
             { label: "View profile", icon: "eye", to: `/horses/${h.id}` },
             { label: "Medical records", icon: "file", to: `/medical/horses/${h.id}`, hidden: !canSeeMedical },
@@ -302,10 +303,10 @@ export default function HorseListPage() {
   return (
     <div style={{ display: "grid", gap: 20 }}>
       <PageHeader
-        title={isOwner ? "My horses" : "Horses"}
+        title={isOwner ? tr("My horses") : tr("Horses")}
         description={
           loading || error
-            ? "Identity, stall, status and Training Lock of every managed horse."
+            ? tr("Identity, stall, status and Training Lock of every managed horse.")
             : `${total} ${total === 1 ? "horse" : "horses"}${filtered ? " match the current filters" : " managed"}.`
         }
         action={
@@ -327,7 +328,7 @@ export default function HorseListPage() {
       <Card pad={0}>
         <div style={{ padding: "0 20px", borderBottom: "1px solid var(--border)" }}>
           <Tabs
-            label="Filter by status"
+            label={tr("Filter by status")}
             items={STATUS_FILTERS.map((s) => ({
               id: s.id,
               label: s.label,
@@ -342,35 +343,35 @@ export default function HorseListPage() {
           <div style={{ flex: "1 1 240px", maxWidth: 320 }}>
             <Input
               icon="search"
-              aria-label="Search horses"
-              placeholder="Name, HR code, microchip or RFID"
+              aria-label={tr("Search horses")}
+              placeholder={tr("Name, HR code, microchip or RFID")}
               value={searchInput}
               onChange={(e) => handleSearchChange(e.target.value)}
             />
           </div>
           <div style={{ width: 160 }}>
-            <Select aria-label="Breed" value={queryBreed} options={breedOptions} onChange={(e) => updateUrl({ breed: e.target.value, page: 1 })} />
+            <Select aria-label={tr("Breed")} value={queryBreed} options={breedOptions} onChange={(e) => updateUrl({ breed: e.target.value, page: 1 })} />
           </div>
           <div style={{ width: 130 }}>
-            <Select aria-label="Sex" value={queryGender} options={GENDER_OPTIONS} onChange={(e) => updateUrl({ gender: e.target.value, page: 1 })} />
+            <Select aria-label={tr("Sex")} value={queryGender} options={GENDER_OPTIONS} onChange={(e) => updateUrl({ gender: e.target.value, page: 1 })} />
           </div>
           <div style={{ width: 190 }}>
             <Select
-              aria-label="Training Lock"
+              aria-label={tr("Training Lock")}
               value={queryLock}
               options={LOCK_OPTIONS}
               onChange={(e) => updateUrl({ lock: e.target.value, page: 1 })}
             />
           </div>
           {(currentUser.role === "CLUB_MANAGER" || currentUser.role === "HEAD_TRAINER") && (
-            <Checkbox checked={queryNoStall} onChange={(v) => updateUrl({ noStall: v ? "true" : undefined, page: 1 })} label="No stall yet" />
+            <Checkbox checked={queryNoStall} onChange={(v) => updateUrl({ noStall: v ? "true" : undefined, page: 1 })} label={tr("No stall yet")} />
           )}
           <div style={{ width: 180, marginLeft: "auto" }}>
-            <Select aria-label="Sort" value={querySort} options={SORT_OPTIONS} onChange={(e) => updateUrl({ sort: e.target.value, page: 1 })} />
+            <Select aria-label={tr("Sort")} value={querySort} options={SORT_OPTIONS} onChange={(e) => updateUrl({ sort: e.target.value, page: 1 })} />
           </div>
           {filtered && (
             <Button tone="ghost" size="sm" icon="x" onClick={resetFilters}>
-              Clear filters
+              {tr("Clear filters")}
             </Button>
           )}
         </div>
@@ -379,7 +380,7 @@ export default function HorseListPage() {
           <div style={{ padding: "0 20px 20px" }}>
             <Alert
               tone="danger"
-              title="Couldn’t load the horse list"
+              title={tr("Couldn’t load the horse list")}
               action={
                 <Button size="sm" tone="secondary" onClick={loadData}>
                   Try again
@@ -392,7 +393,7 @@ export default function HorseListPage() {
         ) : (
           <div style={{ borderTop: "1px solid var(--border)" }}>
             <DataTable
-              caption="Horses"
+              caption={tr("Horses")}
               columns={columns}
               rows={horses}
               rowKey={(h) => h.id}

@@ -38,17 +38,18 @@ export const ACCOUNT_STATUS: Record<AccountStatus, { label: string; tone: BadgeT
   PENDING_APPROVAL: { label: "Pending Approval", tone: "warn" },
   INVITED: { label: "Invited", tone: "info" },
   ACTIVE: { label: "Active", tone: "ok" },
-  INACTIVE: { label: "Inactive", tone: "neutral" },
+  INACTIVE: { label: "Deactivated", tone: "neutral" },
   REJECTED: { label: "Rejected", tone: "danger" },
   LOCKED: { label: "Locked", tone: "danger" },
 };
 
-export type AccountTab = "ALL" | "PENDING" | "ACTIVE" | "LOCKED";
+export type AccountTab = "ALL" | "ACTIVE" | "INACTIVE" | "PENDING" | "LOCKED";
 
 // Tab "Pending" gom mọi loại chờ xử lý.
 export function tabOf(status: AccountStatus): AccountTab {
   if (status === "ACTIVE") return "ACTIVE";
   if (status === "LOCKED") return "LOCKED";
+  if (status === "INACTIVE") return "INACTIVE";
   if (status === "PENDING_EMAIL" || status === "PENDING_APPROVAL" || status === "INVITED") {
     return "PENDING";
   }

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { cx } from "@/shared/lib/cx";
 import { EmptyState } from "./EmptyState";
 import styles from "./DataTable.module.css";
+import { trNode } from "@/shared/i18n/tr";
 
 export interface Column<T> {
   key: string;
@@ -34,7 +35,7 @@ export function DataTable<T>({ columns, rows, rowKey, loading, empty, caption }:
   return (
     <div className={styles.scroll}>
       <table className={styles.table} aria-busy={loading || undefined}>
-        <caption className="sr-only">{caption}</caption>
+        <caption className="sr-only">{trNode(caption)}</caption>
         <thead>
           <tr>
             {columns.map((c) => (
@@ -44,7 +45,7 @@ export function DataTable<T>({ columns, rows, rowKey, loading, empty, caption }:
                 className={cx(styles.th, c.align === "right" && styles.right, c.hideOnNarrow && styles.narrow)}
                 style={{ width: c.width }}
               >
-                {c.header}
+                {trNode(c.header)}
               </th>
             ))}
           </tr>
@@ -81,7 +82,7 @@ export function CellPrimary({ title, meta, avatar }: { title: string; meta?: str
     <div className={styles.primary}>
       {avatar}
       <div className={styles.primaryText}>
-        <strong>{title}</strong>
+        <strong>{trNode(title)}</strong>
         {meta && <span>{meta}</span>}
       </div>
     </div>

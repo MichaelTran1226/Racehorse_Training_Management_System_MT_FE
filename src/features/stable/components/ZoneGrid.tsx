@@ -1,7 +1,8 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Icon } from "@/shared/components/ui/Icon";
 import type { Stall, Zone } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 const BASE: CSSProperties = {
   width: "100%",
   height: "100%",
@@ -67,7 +68,7 @@ export function GridCell({
       {look.subtitle && <span style={{ fontSize: "var(--fs-caption)", opacity: 0.8 }}>{look.subtitle}</span>}
       {look.mine && (
         <span style={{ position: "absolute", right: 6, bottom: 4, fontSize: "var(--fs-caption)", fontWeight: 700, color: "var(--ok)" }}>
-          Mine
+          {tr("Mine")}
         </span>
       )}
     </button>

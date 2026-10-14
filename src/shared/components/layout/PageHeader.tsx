@@ -3,6 +3,7 @@ import { Icon } from "@/shared/components/ui/Icon";
 import { formatLongDate } from "@/shared/lib/format";
 import { useToday } from "@/shared/lib/hooks";
 import styles from "./PageHeader.module.css";
+import { tr, trNode } from "@/shared/i18n/tr";
 
 interface PageHeaderProps {
   eyebrow?: string; // không còn hiển thị (DESIGN.md: không dùng nhãn IN HOA phía trên tiêu đề)
@@ -17,8 +18,8 @@ export function PageHeader({ title, description, showDate, action }: PageHeaderP
   return (
     <header className={styles.header}>
       <div className={styles.text}>
-        <h1 className={styles.title}>{title.replace(/\.$/, "")}</h1>
-        {description && <p className={styles.description}>{description}</p>}
+        <h1 className={styles.title}>{tr(title).replace(/\.$/, "")}</h1>
+        {description && <p className={styles.description}>{trNode(description)}</p>}
       </div>
       <div className={styles.side}>
         {showDate && today && (

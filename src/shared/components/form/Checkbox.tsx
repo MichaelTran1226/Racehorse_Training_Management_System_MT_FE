@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Icon } from "@/shared/components/ui/Icon";
 import { cx } from "@/shared/lib/cx";
 import styles from "./Checkbox.module.css";
+import { trNode } from "@/shared/i18n/tr";
 
 interface CheckboxProps {
   label: ReactNode;
@@ -24,7 +25,7 @@ export function Checkbox({ label, checked, onChange, disabled }: CheckboxProps) 
       <span className={cx(styles.box, checked && styles.checked)}>
         {checked && <Icon name="check" size={11} strokeWidth={2.6} />}
       </span>
-      {label}
+      {trNode(label)}
     </label>
   );
 }

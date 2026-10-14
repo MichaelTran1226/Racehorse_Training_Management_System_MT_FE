@@ -15,7 +15,8 @@ import { ClonePlanDialog } from "../components/PlanDialogs";
 import { ProgressBar } from "../components/ProgressBar";
 import { PLAN_STATUS_LABEL, PLAN_STATUS_TONE } from "../types";
 import type { PlanStatus, TrainingPlan } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 const PAGE_SIZE = 20;
 
 /** SC-2.02 Danh sách giáo án. Bấm dòng để mở SC-2.04; HT có Lập giáo án và Nhân bản. */
@@ -63,18 +64,18 @@ export default function PlanListPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>Training Plans</h1>
+          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>{tr("Training Plans")}</h1>
           <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
-            Draft → Active → Completed / Cancelled. Open a plan to manage its phases and workouts.
+            {tr("Draft → Active → Completed / Cancelled. Open a plan to manage its phases and workouts.")}
           </p>
         </div>
         <div style={{ display: "flex", gap: "0.75rem" }}>
           <Link to="/training/plans/history">
-            <Button tone="secondary">History</Button>
+            <Button tone="secondary">{tr("History")}</Button>
           </Link>
           {isTrainer && (
             <Button tone="primary" onClick={() => navigate("/training/plans/new")}>
-              + Create New Plan
+              {tr("+ Create New Plan")}
             </Button>
           )}
         </div>
@@ -98,7 +99,7 @@ export default function PlanListPage() {
             }}
           />
           <Input
-            placeholder="Plan name, plan code, horse..."
+            placeholder={tr("Plan name, plan code, horse...")}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -110,17 +111,17 @@ export default function PlanListPage() {
       </Card>
 
       {error && (
-        <Alert tone="danger" title="Could not load data">
-          {error} <Button size="sm" tone="secondary" onClick={() => void loadPlans()}>Try again</Button>
+        <Alert tone="danger" title={tr("Could not load data")}>
+          {error} <Button size="sm" tone="secondary" onClick={() => void loadPlans()}>{tr("Try again")}</Button>
         </Alert>
       )}
 
       <Card>
         {loading ? (
-          <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Loading training plans...</div>
+          <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>{tr("Loading training plans...")}</div>
         ) : shown.length === 0 ? (
           <EmptyState
-            title={plans.length === 0 ? "No training plans yet." : "No plans match the filter."}
+            title={plans.length === 0 ? tr("No training plans yet.") : tr("No plans match the filter.")}
             action={isTrainer && plans.length === 0 ? <Button onClick={() => navigate("/training/plans/new")}>Create plan</Button> : undefined}
           />
         ) : (
@@ -128,15 +129,15 @@ export default function PlanListPage() {
             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "var(--fs-body)" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-sunken)" }}>
-                  <th style={{ padding: "0.75rem 1rem" }}>Code</th>
-                  <th style={{ padding: "0.75rem 1rem" }}>Plan</th>
-                  <th style={{ padding: "0.75rem 1rem" }}>Horse</th>
-                  <th style={{ padding: "0.75rem 1rem" }}>Dates</th>
-                  <th style={{ padding: "0.75rem 1rem" }}>Phases</th>
-                  <th style={{ padding: "0.75rem 1rem" }}>Progress</th>
-                  <th style={{ padding: "0.75rem 1rem" }}>Status</th>
-                  <th style={{ padding: "0.75rem 1rem" }}>Trainer</th>
-                  <th style={{ padding: "0.75rem 1rem", textAlign: "right" }}>Actions</th>
+                  <th style={{ padding: "0.75rem 1rem" }}>{tr("Code")}</th>
+                  <th style={{ padding: "0.75rem 1rem" }}>{tr("Plan")}</th>
+                  <th style={{ padding: "0.75rem 1rem" }}>{tr("Horse")}</th>
+                  <th style={{ padding: "0.75rem 1rem" }}>{tr("Dates")}</th>
+                  <th style={{ padding: "0.75rem 1rem" }}>{tr("Phases")}</th>
+                  <th style={{ padding: "0.75rem 1rem" }}>{tr("Progress")}</th>
+                  <th style={{ padding: "0.75rem 1rem" }}>{tr("Status")}</th>
+                  <th style={{ padding: "0.75rem 1rem" }}>{tr("Trainer")}</th>
+                  <th style={{ padding: "0.75rem 1rem", textAlign: "right" }}>{tr("Actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -152,7 +153,7 @@ export default function PlanListPage() {
                       {plan.horseName}
                       {plan.isLockedByMedical && (
                     <Badge tone="danger" icon="lock">
-                      Training Lock
+                      {tr("Training Lock")}
                     </Badge>
                   )}
                     </td>
@@ -170,10 +171,10 @@ export default function PlanListPage() {
                     <td style={{ padding: "0.75rem 1rem", textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
                       <div style={{ display: "inline-flex", gap: "0.5rem" }}>
                         <Link to={`/training/plans/${plan.id}`}>
-                          <Button tone="secondary" size="sm">View</Button>
+                          <Button tone="secondary" size="sm">{tr("View")}</Button>
                         </Link>
                         {isTrainer && (
-                          <Button tone="ghost" size="sm" onClick={() => setCloning(plan)}>Clone</Button>
+                          <Button tone="ghost" size="sm" onClick={() => setCloning(plan)}>{tr("Clone")}</Button>
                         )}
                       </div>
                     </td>

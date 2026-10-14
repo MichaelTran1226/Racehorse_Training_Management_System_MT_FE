@@ -28,7 +28,8 @@ import {
   TRACK_LABEL,
 } from "../types";
 import type { ExerciseSession, SessionStatus, TrainingPhase, TrainingPlan } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 type PlanWithSessions = TrainingPlan & { sessions: ExerciseSession[] };
 type Dialog =
   | { kind: "activate" | "complete" | "cancel" | "clone" }
@@ -92,12 +93,12 @@ export default function PlanDetailPage() {
 
   if (error) {
     return (
-      <Alert tone="danger" title="Could not load the plan">
-        {error} <Button size="sm" tone="secondary" onClick={() => void load()}>Try again</Button>
+      <Alert tone="danger" title={tr("Could not load the plan")}>
+        {error} <Button size="sm" tone="secondary" onClick={() => void load()}>{tr("Try again")}</Button>
       </Alert>
     );
   }
-  if (!plan) return <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Loading plan...</div>;
+  if (!plan) return <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>{tr("Loading plan...")}</div>;
 
   const open = plan.status === "DRAFT" || plan.status === "ACTIVE";
   const shownSessions = sessions.filter(
@@ -116,7 +117,7 @@ export default function PlanDetailPage() {
               <Badge tone={PLAN_STATUS_TONE[plan.status]}>{PLAN_STATUS_LABEL[plan.status]}</Badge>
             </div>
             <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-              Horse: <Link to={`/horses/${plan.horseId}`}>{plan.horseName}</Link> · {plan.startDate} → {plan.endDate} · Trainer:{" "}
+              {tr("Horse:")}{" "}<Link to={`/horses/${plan.horseId}`}>{plan.horseName}</Link> · {plan.startDate} → {plan.endDate} {tr("· Trainer:")}{" "}
               {plan.headTrainerName}
             </div>
             {plan.objective && <div style={{ fontSize: "var(--fs-body)", marginTop: "0.25rem" }}>Objective: {plan.objective}</div>}
@@ -126,7 +127,7 @@ export default function PlanDetailPage() {
           </div>
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "flex-start" }}>
             {isTrainer && open && (
-              <Button tone="secondary" onClick={() => navigate(`/training/plans/${plan.id}/edit`)}>Edit plan</Button>
+              <Button tone="secondary" onClick={() => navigate(`/training/plans/${plan.id}/edit`)}>{tr("Edit plan")}</Button>
             )}
             {isTrainer && plan.status === "DRAFT" && (
               <Button
@@ -135,20 +136,20 @@ export default function PlanDetailPage() {
                 disabled={plan.isLockedByMedical || sessions.every((s) => s.status === "CANCELLED")}
                 title={
                   plan.isLockedByMedical
-                    ? "The horse is under a Training Lock."
+                    ? tr("The horse is under a Training Lock.")
                     : sessions.every((s) => s.status === "CANCELLED")
-                      ? "The plan has no workouts yet."
+                      ? tr("The plan has no workouts yet.")
                       : ""
                 }
               >
-                Activate
+                {tr("Activate")}
               </Button>
             )}
             {isTrainer && plan.status === "ACTIVE" && (
-              <Button tone="accent" onClick={() => setDialog({ kind: "complete" })}>Complete</Button>
+              <Button tone="accent" onClick={() => setDialog({ kind: "complete" })}>{tr("Complete")}</Button>
             )}
             {isTrainer && open && (
-              <Button tone="danger" onClick={() => setDialog({ kind: "cancel" })}>Cancel plan</Button>
+              <Button tone="danger" onClick={() => setDialog({ kind: "cancel" })}>{tr("Cancel plan")}</Button>
             )}
             {isTrainer && plan.status === "DRAFT" && (
               <Button
@@ -164,31 +165,31 @@ export default function PlanDetailPage() {
                   }
                 }}
               >
-                Delete draft
+                {tr("Delete draft")}
               </Button>
             )}
-            {isTrainer && <Button tone="ghost" onClick={() => setDialog({ kind: "clone" })}>Clone</Button>}
+            {isTrainer && <Button tone="ghost" onClick={() => setDialog({ kind: "clone" })}>{tr("Clone")}</Button>}
             <Link to={`/horses/${plan.horseId}/fitness`}>
-              <Button tone="secondary">Fitness chart</Button>
+              <Button tone="secondary">{tr("Fitness chart")}</Button>
             </Link>
           </div>
         </div>
       </Card>
 
       {plan.isLockedByMedical && (
-        <Alert tone="danger" title="Training Lock">
+        <Alert tone="danger" title={tr("Training Lock")}>
           The horse has been under a veterinary Training Lock
-          {plan.lockedSince ? ` since ${formatDateTime(plan.lockedSince)}` : ""}. Heavy workouts are blocked and cannot be
+          {plan.lockedSince ? tr(` since ${formatDateTime(plan.lockedSince)}`) : ""}. Heavy workouts are blocked and cannot be
           added until the Veterinarian lifts the lock.
         </Alert>
       )}
       {!plan.isLockedByMedical && MEDICAL.includes(plan.horseStatus ?? "") && (
-        <Alert tone="warn" title="Medical status">
+        <Alert tone="warn" title={tr("Medical status")}>
           The horse is in status {plan.horseStatus}. Think carefully before scheduling heavy workouts.
         </Alert>
       )}
       {plan.status === "CANCELLED" && plan.cancelledReason && (
-        <Alert tone="info" title="Cancelled">{plan.cancelledReason}</Alert>
+        <Alert tone="info" title={tr("Cancelled")}>{plan.cancelledReason}</Alert>
       )}
 
       <Card pad={16}>
@@ -205,7 +206,7 @@ export default function PlanDetailPage() {
 
       {tab === "phases" && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
-          {plan.phases.length === 0 && <EmptyState title="No phases" />}
+          {plan.phases.length === 0 && <EmptyState title={tr("No phases")} />}
           {plan.phases.map((ph) => (
             <PhaseCard key={ph.id} phase={ph} sessions={sessions.filter((s) => s.phaseId === ph.id)} current={ph.startDate <= today && today <= ph.endDate} />
           ))}
@@ -233,10 +234,10 @@ export default function PlanDetailPage() {
               />
             </div>
             <div style={{ flex: 1 }} />
-            {isTrainer && open && <Button tone="primary" onClick={() => setDialog({ kind: "add" })}>+ Add workout</Button>}
+            {isTrainer && open && <Button tone="primary" onClick={() => setDialog({ kind: "add" })}>{tr("+ Add workout")}</Button>}
           </div>
           {shownSessions.length === 0 ? (
-            <EmptyState title="No workouts yet." />
+            <EmptyState title={tr("No workouts yet.")} />
           ) : (
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "var(--fs-body)" }}>
@@ -255,11 +256,11 @@ export default function PlanDetailPage() {
                         <td style={{ padding: "0.6rem 0.75rem", whiteSpace: "nowrap" }}>{s.sessionDate} {s.startTime}</td>
                         <td style={{ padding: "0.6rem 0.75rem" }}>{s.phaseName ?? "—"}</td>
                         <td style={{ padding: "0.6rem 0.75rem" }}>
-                          {EXERCISE_TYPE_LABEL[s.sessionType]} {isHeavy(s.sessionType, s.intensity) && <Badge tone="danger">Heavy</Badge>}
+                          {EXERCISE_TYPE_LABEL[s.sessionType]} {isHeavy(s.sessionType, s.intensity) && <Badge tone="danger">{tr("Heavy")}</Badge>}
                         </td>
                         <td style={{ padding: "0.6rem 0.75rem" }}>{INTENSITY_LABEL[s.intensity]}</td>
                         <td style={{ padding: "0.6rem 0.75rem" }}>{s.targetDistanceMeters} m × {s.repetitions}</td>
-                        <td style={{ padding: "0.6rem 0.75rem" }}>{s.targetSpeedKmh ? `${s.targetSpeedKmh} km/h` : "—"}</td>
+                        <td style={{ padding: "0.6rem 0.75rem" }}>{s.targetSpeedKmh ? tr(`${s.targetSpeedKmh} km/h`) : "—"}</td>
                         <td style={{ padding: "0.6rem 0.75rem" }}>{TRACK_LABEL[s.trackType]}</td>
                         <td style={{ padding: "0.6rem 0.75rem" }}>{s.jockeyName || "—"}</td>
                         <td style={{ padding: "0.6rem 0.75rem" }}>{s.groomName || "—"}</td>
@@ -267,16 +268,16 @@ export default function PlanDetailPage() {
                           <Badge tone={SESSION_STATUS_TONE[s.status]}>{SESSION_STATUS_LABEL[s.status]}</Badge>
                         </td>
                         <td style={{ padding: "0.6rem 0.75rem" }}>
-                          {s.result ? `${s.result.performanceScore ?? "—"}/10 · ${s.result.avgSpeedKmh ?? "—"} km/h` : "—"}
+                          {s.result ? tr(`${s.result.performanceScore ?? "—"}/10 · ${s.result.avgSpeedKmh ?? "—"} km/h`) : "—"}
                         </td>
                         <td style={{ padding: "0.6rem 0.75rem", whiteSpace: "nowrap" }}>
                           <div style={{ display: "flex", gap: "0.35rem", justifyContent: "flex-end" }}>
-                            {b.edit && <Button size="sm" tone="ghost" onClick={() => setDialog({ kind: "edit", session: s })}>Edit</Button>}
+                            {b.edit && <Button size="sm" tone="ghost" onClick={() => setDialog({ kind: "edit", session: s })}>{tr("Edit")}</Button>}
                             {b.record && (
-                              <Link to={`/training/sessions/${s.id}/result`}><Button size="sm" tone="secondary">Record result</Button></Link>
+                              <Link to={`/training/sessions/${s.id}/result`}><Button size="sm" tone="secondary">{tr("Record result")}</Button></Link>
                             )}
                             {b.viewResult && (
-                              <Link to={`/training/sessions/${s.id}/result`}><Button size="sm" tone="secondary">View result</Button></Link>
+                              <Link to={`/training/sessions/${s.id}/result`}><Button size="sm" tone="secondary">{tr("View result")}</Button></Link>
                             )}
                             {b.restore && (
                               <Button
@@ -286,11 +287,11 @@ export default function PlanDetailPage() {
                                 title={b.restoreBlockedReason ?? ""}
                                 onClick={() => setDialog({ kind: "restore", session: s })}
                               >
-                                Restore
+                                {tr("Restore")}
                               </Button>
                             )}
                             {b.cancel && (
-                              <Button size="sm" tone="danger" onClick={() => setDialog({ kind: "cancelWorkout", session: s })}>Cancel</Button>
+                              <Button size="sm" tone="danger" onClick={() => setDialog({ kind: "cancelWorkout", session: s })}>{tr("Cancel")}</Button>
                             )}
                           </div>
                         </td>
@@ -308,11 +309,11 @@ export default function PlanDetailPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           {plan.completionSummary && (
             <Card pad={16}>
-              <strong>Plan summary:</strong> {plan.completionSummary}
+              <strong>{tr("Plan summary:")}</strong> {plan.completionSummary}
             </Card>
           )}
           {comments.length === 0 ? (
-            <EmptyState title="No comments yet." />
+            <EmptyState title={tr("No comments yet.")} />
           ) : (
             comments.slice(0, commentLimit).map((s) => (
               <Card key={s.id} pad={16}>
@@ -320,7 +321,7 @@ export default function PlanDetailPage() {
                   <strong>{s.sessionDate} {s.startTime}</strong>
                   <span>{EXERCISE_TYPE_LABEL[s.sessionType]}</span>
                   {s.result?.performanceScore != null && <Badge tone="info">{s.result.performanceScore}/10</Badge>}
-                  {s.result?.hasAbnormalSigns && <Badge tone="danger">Abnormal signs</Badge>}
+                  {s.result?.hasAbnormalSigns && <Badge tone="danger">{tr("Abnormal signs")}</Badge>}
                   <span style={{ color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>by {s.result?.recordedBy ?? "—"}</span>
                 </div>
                 <div style={{ marginTop: "0.35rem" }}>{s.result?.headTrainerFeedback || "—"}</div>
@@ -333,7 +334,7 @@ export default function PlanDetailPage() {
             ))
           )}
           {comments.length > commentLimit && (
-            <Button tone="secondary" onClick={() => setCommentLimit((n) => n + 20)}>Load more</Button>
+            <Button tone="secondary" onClick={() => setCommentLimit((n) => n + 20)}>{tr("Load more")}</Button>
           )}
         </div>
       )}
@@ -384,15 +385,15 @@ function PhaseCard({ phase, sessions, current }: { phase: TrainingPhase; session
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
           <strong>{phase.name}</strong>
           <Badge tone="neutral">{PHASE_TYPE_LABEL[phase.type] ?? phase.type}</Badge>
-          {current && <Badge tone="info">Current</Badge>}
+          {current && <Badge tone="info">{tr("Current")}</Badge>}
         </div>
         <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>
           {phase.startDate} → {phase.endDate}
         </div>
         {phase.goal && <div style={{ fontSize: "var(--fs-body)", marginTop: "0.35rem" }}>{phase.goal}</div>}
         <div style={{ fontSize: "var(--fs-body)", marginTop: "0.5rem" }}>
-          Quota: {phase.sessionsPerWeek}/week · max {phase.maxWeeklyDistance} m/week · {TRACK_LABEL[phase.surface] ?? phase.surface}
-          {phase.targetSpeedKmh ? ` · ${phase.targetSpeedKmh} km/h` : ""}
+          Quota: {phase.sessionsPerWeek}{tr("/week · max")}{" "}{phase.maxWeeklyDistance} {tr("m/week ·")}{" "}{TRACK_LABEL[phase.surface] ?? phase.surface}
+          {phase.targetSpeedKmh ? tr(` · ${phase.targetSpeedKmh} km/h`) : ""}
         </div>
         <div style={{ fontSize: "var(--fs-body)" }}>
           Actual: {done.length} workout(s) completed · {run} m run

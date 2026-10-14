@@ -6,7 +6,8 @@ import { useQueryParams } from "@/shared/lib/hooks";
 import { verifyResetOtp } from "../api";
 import { resetFlow } from "../flow";
 import { OtpVerifyForm } from "../components/OtpVerifyForm";
-
+
+import { tr } from "@/shared/i18n/tr";
 // Bước 2 quên mật khẩu (design 1.5, đã đổi từ "link" sang "mã OTP"): nhập mã nhận được qua email.
 export default function ResetOtpPage() {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ export default function ResetOtpPage() {
   if (!email) return null;
 
   return (
-    <AuthLayout title="Check the club mailbox." description={`If ${email} belongs to an account, a 6-digit code was sent to it. Enter the code below.`}>
+    <AuthLayout title={tr("Check the club mailbox.")} description={tr(`If ${email} belongs to an account, a 6-digit code was sent to it. Enter the code below.`)}>
       <OtpVerifyForm
         email={email}
         purpose="reset"

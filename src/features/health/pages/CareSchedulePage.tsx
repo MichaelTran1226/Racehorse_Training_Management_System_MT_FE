@@ -18,7 +18,8 @@ import { useAuth } from "@/shared/components/layout/AuthProvider";
 import { useToast } from "@/shared/components/ui/Toast";
 import { healthApi } from "../api";
 import type { PreventiveCareItem, PreventiveStatus } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 const CATEGORY_LABELS: Record<string, string> = {
   ALL: "All Categories",
   VACCINATION: "Vaccination",
@@ -180,7 +181,7 @@ export default function CareSchedulePage() {
       header: "Last given",
       render: (item) => (
         <div style={{ display: "grid" }}>
-          <span className="num nowrap">{item.lastAdministeredDate ? formatDate(item.lastAdministeredDate) : "Not recorded"}</span>
+          <span className="num nowrap">{item.lastAdministeredDate ? formatDate(item.lastAdministeredDate) : tr("Not recorded")}</span>
           {item.administeredBy && (
             <span className="nowrap" style={{ fontSize: "var(--fs-caption)", lineHeight: "18px", color: "var(--muted)" }}>
               {item.administeredBy}
@@ -240,7 +241,7 @@ export default function CareSchedulePage() {
             align: "right" as const,
             render: (item: PreventiveCareItem) => (
               <Button tone="secondary" size="sm" icon="check" onClick={() => handleOpenCompleteModal(item)}>
-                Record
+                {tr("Record")}
               </Button>
             ),
           },
@@ -251,14 +252,14 @@ export default function CareSchedulePage() {
   return (
     <div style={{ display: "grid", gap: 20 }}>
       <PageHeader
-        title="Preventive care"
-        description="Vaccinations, deworming, farrier and dental care for every horse, with the next due date."
+        title={tr("Preventive care")}
+        description={tr("Vaccinations, deworming, farrier and dental care for every horse, with the next due date.")}
       />
 
       <Card pad={0}>
         <div style={{ padding: "0 20px", borderBottom: "1px solid var(--border)" }}>
           <Tabs
-            label="Filter by status"
+            label={tr("Filter by status")}
             items={[
               { id: "ALL", label: "All", count: items.length },
               { id: "OVERDUE", label: "Overdue", count: count("OVERDUE") },
@@ -273,15 +274,15 @@ export default function CareSchedulePage() {
           <div style={{ flex: "1 1 260px", maxWidth: 360 }}>
             <Input
               icon="search"
-              aria-label="Search care items"
-              placeholder="Service, horse or note"
+              aria-label={tr("Search care items")}
+              placeholder={tr("Service, horse or note")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <div style={{ width: 200 }}>
             <Select
-              aria-label="Category"
+              aria-label={tr("Category")}
               value={selectedCategory}
               options={Object.entries(CATEGORY_LABELS).map(([value, label]) => ({ value, label: value === "ALL" ? "Category: All" : label }))}
               onChange={(e) => setSelectedCategory(e.target.value)}
@@ -290,7 +291,7 @@ export default function CareSchedulePage() {
         </div>
         <div style={{ borderTop: "1px solid var(--border)" }}>
           <DataTable
-            caption="Preventive care schedule"
+            caption={tr("Preventive care schedule")}
             columns={columns}
             rows={filteredItems}
             rowKey={(item) => item.id}
@@ -310,7 +311,7 @@ export default function CareSchedulePage() {
       {selectedCare && (
         <Modal
           onClose={() => setSelectedCare(null)}
-          title={`Record completion: ${selectedCare.type}`}
+          title={tr(`Record completion: ${selectedCare.type}`)}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div
@@ -323,15 +324,15 @@ export default function CareSchedulePage() {
               }}
             >
               <div>
-                <strong>Horse:</strong> {selectedCare.horseId}
+                <strong>{tr("Horse:")}</strong> {selectedCare.horseId}
               </div>
               <div style={{ marginTop: 3 }}>
-                <strong>Service:</strong> {selectedCare.type} (
+                <strong>{tr("Service:")}</strong> {selectedCare.type} (
                 {CATEGORY_LABELS[selectedCare.category] || selectedCare.category})
               </div>
             </div>
 
-            <Field label="Administered Date" required>
+            <Field label={tr("Administered Date")} required>
               <Input
                 type="date"
                 value={adminDate}
@@ -339,15 +340,15 @@ export default function CareSchedulePage() {
               />
             </Field>
 
-            <Field label="Administered By / Vet Clinic" required>
+            <Field label={tr("Administered By / Vet Clinic")} required>
               <Input
                 value={adminBy}
                 onChange={(e) => setAdminBy(e.target.value)}
-                placeholder="Veterinarian or clinic name"
+                placeholder={tr("Veterinarian or clinic name")}
               />
             </Field>
 
-            <Field label="Performed By Mode" required>
+            <Field label={tr("Performed By Mode")} required>
               <Select
                 value={performedByMode}
                 onChange={(e) => setPerformedByMode(e.target.value as "SELF" | "EXTERNAL")}
@@ -358,24 +359,24 @@ export default function CareSchedulePage() {
               />
             </Field>
 
-            <Field label="Product / Vaccine Administered">
+            <Field label={tr("Product / Vaccine Administered")}>
               <Input
                 value={productAdministered}
                 onChange={(e) => setProductAdministered(e.target.value)}
-                placeholder="e.g., Equi-Flu Standard Formulation"
+                placeholder={tr("e.g., Equi-Flu Standard Formulation")}
               />
             </Field>
 
-            <Field label="Batch / Lot Number">
+            <Field label={tr("Batch / Lot Number")}>
               <Input
                 value={batchNumber}
                 onChange={(e) => setBatchNumber(e.target.value)}
-                placeholder="e.g., LOT-2026-VACC-091"
+                placeholder={tr("e.g., LOT-2026-VACC-091")}
               />
             </Field>
 
             <Field
-              label="Next Due Date"
+              label={tr("Next Due Date")}
               required
               hint="Auto-calculated from protocol interval; can be manually adjusted"
             >
@@ -386,12 +387,12 @@ export default function CareSchedulePage() {
               />
             </Field>
 
-            <Field label="Notes & Post-Care Observations">
+            <Field label={tr("Notes & Post-Care Observations")}>
               <Textarea
                 rows={3}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="e.g., Deep IM injection, no febrile reaction, normal appetite and gait..."
+                placeholder={tr("e.g., Deep IM injection, no febrile reaction, normal appetite and gait...")}
               />
             </Field>
 
@@ -404,14 +405,14 @@ export default function CareSchedulePage() {
               }}
             >
               <Button tone="ghost" onClick={() => setSelectedCare(null)}>
-                Cancel
+                {tr("Cancel")}
               </Button>
               <Button
                 tone="primary"
                 onClick={() => void handleSubmitComplete()}
                 disabled={submitting}
               >
-                {submitting ? "Saving..." : "Confirm Completion"}
+                {submitting ? tr("Saving...") : tr("Confirm Completion")}
               </Button>
             </div>
           </div>

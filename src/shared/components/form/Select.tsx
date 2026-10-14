@@ -3,6 +3,7 @@ import { Icon } from "@/shared/components/ui/Icon";
 import { cx } from "@/shared/lib/cx";
 import { useFieldControl } from "./Field";
 import styles from "./Control.module.css";
+import { trNode } from "@/shared/i18n/tr";
 
 export interface SelectOption {
   value: string;
@@ -30,7 +31,7 @@ export function Select({ options, invalid, className, id, ...rest }: SelectProps
       >
         {options.map((o) => (
           <option key={o.value} value={o.value} disabled={o.disabled}>
-            {o.label}
+            {trNode(o.label)}
           </option>
         ))}
       </select>

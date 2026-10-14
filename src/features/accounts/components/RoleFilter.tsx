@@ -5,7 +5,8 @@ import { ROLE_LABEL } from "@/shared/lib/permissions";
 import { ROLES } from "@/shared/types/auth";
 import type { Role } from "@/shared/types/auth";
 import styles from "./RoleFilter.module.css";
-
+
+import { tr } from "@/shared/i18n/tr";
 interface RoleFilterProps {
   value: Role | "ALL";
   onChange: (value: Role | "ALL") => void;
@@ -47,7 +48,7 @@ export function RoleFilter({ value, onChange }: RoleFilterProps) {
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
       >
-        {value === "ALL" ? "Filter by role" : `Role: ${ROLE_LABEL[value]}`}
+        {value === "ALL" ? tr("Filter by role") : tr(`Role: ${ROLE_LABEL[value]}`)}
       </Button>
       {open && (
         <div role="menu" className={styles.menu}>

@@ -6,7 +6,8 @@ import { useQueryParams } from "@/shared/lib/hooks";
 import { verifyEmail } from "../api";
 import { signupFlow } from "../flow";
 import { OtpVerifyForm } from "../components/OtpVerifyForm";
-
+
+import { tr } from "@/shared/i18n/tr";
 // Bước 2 của đăng ký: nhập mã OTP gửi về email. Đúng mã => yêu cầu chuyển tới Club Manager.
 export default function VerifyEmailPage() {
   const navigate = useNavigate();
@@ -22,8 +23,8 @@ export default function VerifyEmailPage() {
   return (
     <AuthLayout
       hero={HERO_TEAM}
-      title="Verify your email."
-      description={`Enter the 6-digit code sent to ${email}. It confirms that the address is yours.`}
+      title={tr("Verify your email.")}
+      description={tr(`Enter the 6-digit code sent to ${email}. It confirms that the address is yours.`)}
     >
       <OtpVerifyForm
         email={email}

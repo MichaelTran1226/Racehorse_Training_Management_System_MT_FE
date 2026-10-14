@@ -20,7 +20,8 @@ import { ACCOUNT_STATUS } from "@/shared/lib/status";
 import type { PermissionKey, PermissionMap, PublicAccount } from "@/shared/types/auth";
 import { getAccount, savePermissions } from "../api";
 import styles from "./PermissionMatrix.module.css";
-
+
+import { tr } from "@/shared/i18n/tr";
 const GENERIC_EFFECT = "The matching sidebar items disappear at the next page load, and opening their URLs returns 403 Access Denied.";
 
 // Giá trị thực sự hiển thị của một công tắc: quyền bị khóa thì lấy giá trị ép buộc.
@@ -76,7 +77,7 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
   if (state === "loading") {
     return (
       <>
-        <PageHeader title="Loading permissions…" />
+        <PageHeader title={tr("Loading permissions…")} />
         <Card>
           <div aria-busy="true" style={{ height: 240 }} />
         </Card>
@@ -87,15 +88,15 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
   if (state === "missing" || state === "error" || !account || !draft) {
     return (
       <>
-        <PageHeader title="Permissions of an account." />
+        <PageHeader title={tr("Permissions of an account.")} />
         <Card>
           <EmptyState
             icon={state === "missing" ? "users" : "refresh"}
-            title={state === "missing" ? "This account does not exist." : "The account could not be loaded."}
+            title={state === "missing" ? tr("This account does not exist.") : tr("The account could not be loaded.")}
             description={
               state === "missing"
-                ? "It may have been removed. Go back to the account list and pick another one."
-                : "The account service did not answer. Nothing was changed."
+                ? tr("It may have been removed. Go back to the account list and pick another one.")
+                : tr("The account service did not answer. Nothing was changed.")
             }
             action={
               <Button size="sm" icon={state === "missing" ? "arrowLeft" : "refresh"} onClick={() => (state === "missing" ? navigate("/accounts") : load())}>
@@ -109,8 +110,10 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
   }
 
   const status = ACCOUNT_STATUS[account.status];
-  const total = PERMISSIONS.length;
-  const on = PERMISSIONS.filter((m) => effective(account, draft, m)).length;
+  // Chỉ hiện quyền vai trò này có thể có; quyền thuộc vai trò khác (VD: Place a Training Lock với Head Trainer) bị ẩn.
+  const applicable = PERMISSIONS.filter((m) => !m.ownerRoles || m.ownerRoles.includes(account.role));
+  const total = applicable.length;
+  const on = applicable.filter((m) => effective(account, draft, m)).length;
 
   function toggle(key: PermissionKey, next: boolean) {
     if (next) setDraft((d) => (d ? { ...d, [key]: true } : d));
@@ -142,28 +145,28 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
   const revokeMeta = revokeKey ? PERMISSIONS.find((p) => p.key === revokeKey) : undefined;
 
   const saveButton = (size: "sm" | "md", block: boolean) => (
-    <Button size={size} block={block} icon="check" disabled={saving} blockedReason={!dirty ? "No changes to save." : undefined} onClick={save}>
-      {saving ? "Saving…" : "Save permissions"}
+    <Button size={size} block={block} icon="check" disabled={saving} blockedReason={!dirty ? tr("No changes to save.") : undefined} onClick={save}>
+      {saving ? tr("Saving…") : tr("Save permissions")}
     </Button>
   );
   const discardButton = (size: "sm" | "md", block: boolean) => (
     <Button tone="secondary" size={size} block={block} icon="refresh" disabled={!dirty || saving} onClick={discard}>
-      {size === "sm" ? "Discard" : "Discard changes"}
+      {size === "sm" ? tr("Discard") : tr("Discard changes")}
     </Button>
   );
 
   return (
     <>
       <PageHeader
-        title={`Permissions of ${account.fullName}.`}
-        description={`${ROLE_LABEL[account.role]} · ${account.email} · active since ${formatDate(account.createdAt)}. Changes take effect at the next page load for that account.`}
+        title={tr(`Permissions of ${account.fullName}.`)}
+        description={tr(`${ROLE_LABEL[account.role]} · ${account.email} · active since ${formatDate(account.createdAt)}. Changes take effect at the next page load for that account.`)}
       />
 
       {dirty && (
-        <Alert tone="warn" icon="alert" title="Unsaved permission changes">
-          {changes.granted > 0 && `${changes.granted} to grant`}
+        <Alert tone="warn" icon="alert" title={tr("Unsaved permission changes")}>
+          {changes.granted > 0 && tr(`${changes.granted} to grant`)}
           {changes.granted > 0 && changes.revoked > 0 && " · "}
-          {changes.revoked > 0 && `${changes.revoked} to revoke`}. Save to apply them, or discard to keep the saved list.
+          {changes.revoked > 0 && tr(`${changes.revoked} to revoke`)}. Save to apply them, or discard to keep the saved list.
         </Alert>
       )}
 
@@ -175,7 +178,7 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
               {account.fullName} · {ROLE_LABEL[account.role]}
             </strong>
             <span>
-              Granted {padCount(on)} of {padCount(total)} · last change {account.permissionsChangedAt ? formatDate(account.permissionsChangedAt) : "—"}
+              {tr("Granted")}{" "}{padCount(on)} of {padCount(total)} {tr("· last change")}{" "}{account.permissionsChangedAt ? formatDate(account.permissionsChangedAt) : "—"}
             </span>
           </div>
         </div>
@@ -186,12 +189,12 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
       </div>
 
       <div className={styles.grid}>
-        <Card title="Permission list" subtitle="Grouped the same way as the sidebar">
+        <Card title={tr("Permission list")} subtitle={tr("Grouped the same way as the sidebar")}>
           <div className={styles.groups}>
-            {PERMISSION_GROUPS.map((group) => (
+            {PERMISSION_GROUPS.filter((group) => applicable.some((p) => p.group === group)).map((group) => (
               <div key={group}>
                 <p className={styles.groupLabel}>{group}</p>
-                {PERMISSIONS.filter((p) => p.group === group).map((meta) => {
+                {applicable.filter((p) => p.group === group).map((meta) => {
                   const lock = permissionLock(account.role, meta);
                   return (
                     <div key={meta.key} className={styles.row}>
@@ -214,7 +217,7 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
         </Card>
 
         <div className={styles.aside}>
-          <Card title="Account">
+          <Card title={tr("Account")}>
             <div className={styles.facts}>
               <div className={styles.identity}>
                 <Avatar name={account.fullName} size={38} />
@@ -224,30 +227,30 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
                 </div>
               </div>
               <div>
-                <span>Status</span>
+                <span>{tr("Status")}</span>
                 <Badge tone={status.tone}>{status.label}</Badge>
               </div>
               <div>
-                <span>Granted</span>
+                <span>{tr("Granted")}</span>
                 <b className={styles.num}>
                   {padCount(on)} of {padCount(total)}
                 </b>
               </div>
               <div>
-                <span>Last change</span>
+                <span>{tr("Last change")}</span>
                 <b>{account.permissionsChangedAt ? formatDate(account.permissionsChangedAt) : "—"}</b>
               </div>
               <div>
-                <span>Changed by</span>
+                <span>{tr("Changed by")}</span>
                 <b>{account.permissionsChangedBy ?? "—"}</b>
               </div>
             </div>
           </Card>
-          <Card title="Save changes" subtitle="Revoking asks for confirmation first">
+          <Card title={tr("Save changes")} subtitle={tr("Revoking asks for confirmation first")}>
             <div className={styles.saveStack}>
               {saveButton("md", true)}
               {discardButton("md", true)}
-              <p className={styles.note}>Every change is written to the Audit Log with the time, the editor and the previous value.</p>
+              <p className={styles.note}>{tr("Every change is written to the Audit Log with the time, the editor and the previous value.")}</p>
             </div>
           </Card>
         </div>
@@ -255,11 +258,11 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
 
       {revokeMeta && (
         <ConfirmModal
-          title={`Revoke “${revokeMeta.name}”?`}
+          title={tr(`Revoke “${revokeMeta.name}”?`)}
           subtitle={`${account.fullName} · ${ROLE_LABEL[account.role]}`}
           tone="danger"
-          confirmLabel="Revoke permission"
-          cancelLabel="Keep permission"
+          confirmLabel={tr("Revoke permission")}
+          cancelLabel={tr("Keep permission")}
           onCancel={() => setRevokeKey(null)}
           onConfirm={() => {
             setDraft((d) => (d ? { ...d, [revokeMeta.key]: false } : d));

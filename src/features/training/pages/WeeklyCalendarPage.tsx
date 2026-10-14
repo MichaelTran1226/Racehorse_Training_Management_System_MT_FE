@@ -26,6 +26,8 @@ import type { ExerciseSession, ExerciseType, SessionStatus, TrackType, TrainingP
 
 import styles from "./WeeklyCalendarPage.module.css";
 
+
+import { tr } from "@/shared/i18n/tr";
 function shiftDay(date: string, days: number): string {
   const d = new Date(`${date}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
@@ -163,8 +165,7 @@ export default function WeeklyCalendarPage() {
         type="button"
         onClick={() => setSelected(s)}
         className={cardClass}
-        aria-label={`${s.horseName} – ${s.startTime} – ${SESSION_STATUS_LABEL[s.status]}`}
-        title={overlapping.has(s.id) ? (isVietnamese ? `Nhân viên ${s.groomName} có 2 bài tập cùng giờ.` : `Groom ${s.groomName} has two workouts at the same time.`) : ""}
+        title={overlapping.has(s.id) ? (isVietnamese ? tr(`Nhân viên ${s.groomName} có 2 bài tập cùng giờ.`) : tr(`Groom ${s.groomName} has two workouts at the same time.`)) : ""}
       >
         <div className={styles.cardTop}>
           <span className={styles.timeTag}>{s.startTime}</span>
@@ -176,12 +177,12 @@ export default function WeeklyCalendarPage() {
         <div className={styles.cardMeta}>
           <div>
             <strong>{EXERCISE_TYPE_LABEL[s.sessionType]}</strong>
-            {isHeavySession && (isVietnamese ? " · Nặng" : " · Heavy")}
-            {isTrial && (isVietnamese ? " · Chạy thử" : " · Trial Run")}
+            {isHeavySession && (isVietnamese ? " · Nặng" : tr(" · Heavy"))}
+            {isTrial && (isVietnamese ? " · Chạy thử" : tr(" · Trial Run"))}
           </div>
           <div>{s.targetDistanceMeters}m × {s.repetitions} · {TRACK_LABEL[s.trackType]}</div>
           <div>👤 {s.groomName ?? (isVietnamese ? "Chưa giao" : "—")}</div>
-          {overlapping.has(s.id) && <div className={styles.overlapAlert}>{isVietnamese ? "⚠️ Trùng giờ chăm sóc" : "⚠️ Groom overlap"}</div>}
+          {overlapping.has(s.id) && <div className={styles.overlapAlert}>{isVietnamese ? "⚠️ Trùng giờ chăm sóc" : tr("⚠️ Groom overlap")}</div>}
         </div>
       </button>
     );
@@ -189,34 +190,6 @@ export default function WeeklyCalendarPage() {
 
   const days = mode === "week" ? Array.from({ length: 7 }, (_, i) => shiftDay(from, i)) : [date];
   const b = selected ? sessionButtons(selected, user.role) : null;
-
-  const DAY_TRACKS: { key: TrackType; labelVi: string; labelEn: string; icon: string }[] = [
-    { key: "TURF", labelVi: "Sân cỏ (Turf)", labelEn: "Turf Track", icon: "🌱" },
-    { key: "DIRT", labelVi: "Sân cát (Dirt)", labelEn: "Dirt Track", icon: "🏜️" },
-    { key: "SYNTHETIC", labelVi: "Sân tổng hợp (Synthetic)", labelEn: "Synthetic Track", icon: "⚡" },
-  ];
-
-  const hasOtherTrack = shown.some((s) => s.trackType === "NONE");
-  const dayTrackCols = hasOtherTrack
-    ? [...DAY_TRACKS, { key: "NONE" as TrackType, labelVi: "Khu vực khác", labelEn: "Other / Arena", icon: "🏟️" }]
-    : DAY_TRACKS;
-
-  const sessionHours = shown.map((s) => parseInt(s.startTime.split(":")[0], 10)).filter((h) => !isNaN(h));
-  const minHour = sessionHours.length > 0 ? Math.min(5, Math.min(...sessionHours)) : 5;
-  const maxHour = sessionHours.length > 0 ? Math.max(18, Math.max(...sessionHours)) : 18;
-  const dayHours = Array.from({ length: maxHour - minHour + 1 }, (_, i) => minHour + i);
-
-  const hasTrackConflict = (list: ExerciseSession[]) => {
-    if (list.length < 2) return false;
-    for (let i = 0; i < list.length; i++) {
-      for (let j = i + 1; j < list.length; j++) {
-        if (Math.abs(minutes(list[i].startTime) - minutes(list[j].startTime)) < 30) {
-          return true;
-        }
-      }
-    }
-    return false;
-  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
@@ -235,9 +208,9 @@ export default function WeeklyCalendarPage() {
 
       <Card pad={16}>
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
-          <Button tone="ghost" size="sm" onClick={() => setDate(shiftDay(date, mode === "day" ? -1 : -7))} aria-label={isVietnamese ? "Trước" : "Previous"}>‹</Button>
+          <Button tone="ghost" size="sm" onClick={() => setDate(shiftDay(date, mode === "day" ? -1 : -7))} aria-label={isVietnamese ? "Trước" : tr("Previous")}>‹</Button>
           <Input type="date" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} style={{ width: 170 }} />
-          <Button tone="ghost" size="sm" onClick={() => setDate(shiftDay(date, mode === "day" ? 1 : 7))} aria-label={isVietnamese ? "Sau" : "Next"}>›</Button>
+          <Button tone="ghost" size="sm" onClick={() => setDate(shiftDay(date, mode === "day" ? 1 : 7))} aria-label={isVietnamese ? "Sau" : tr("Next")}>›</Button>
           <Button tone="secondary" size="sm" onClick={() => setDate(todayClub())}>{t("calendar.today")}</Button>
           <Button tone={mode === "day" ? "primary" : "secondary"} size="sm" onClick={() => setMode("day")}>{t("calendar.day")}</Button>
           <Button tone={mode === "week" ? "primary" : "secondary"} size="sm" onClick={() => setMode("week")}>{t("calendar.week")}</Button>
@@ -268,88 +241,28 @@ export default function WeeklyCalendarPage() {
       </Card>
 
       {error && (
-        <Alert tone="danger" title={isVietnamese ? "Không thể tải dữ liệu" : "Could not load data"}>
-          {error} <Button size="sm" tone="secondary" onClick={() => void load()}>{isVietnamese ? "Thử lại" : "Try again"}</Button>
+        <Alert tone="danger" title={isVietnamese ? "Không thể tải dữ liệu" : tr("Could not load data")}>
+          {error} <Button size="sm" tone="secondary" onClick={() => void load()}>{isVietnamese ? "Thử lại" : tr("Try again")}</Button>
         </Alert>
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: selected ? "minmax(0, 1fr) 320px" : "minmax(0, 1fr)", gap: "1rem", alignItems: "start" }}>
         <div>
           {loading ? (
-            <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>{isVietnamese ? "Đang tải lịch tập..." : "Loading schedule..."}</div>
+            <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>{isVietnamese ? "Đang tải lịch tập..." : tr("Loading schedule...")}</div>
           ) : mode === "day" ? (
-            <div className={styles.dayGridContainer}>
-              <div className={styles.daySummaryBanner}>
-                <div className={styles.daySummaryDate}>
-                  {formatCalendarDay(date, isVietnamese).weekdayFull}, {date} · {shown.length} {isVietnamese ? "bài tập" : shown.length === 1 ? "workout" : "workouts"}
+            shown.length === 0 ? (
+              <EmptyState title={isVietnamese ? tr(`Không có bài tập vào ngày ${date}.`) : tr(`No workouts on ${date}.`)} />
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                <div style={{ fontWeight: 700, fontSize: "var(--fs-body-lg)", marginBottom: "0.25rem" }}>
+                  {formatCalendarDay(date, isVietnamese).weekdayFull}, {date} ({shown.length} {isVietnamese ? "bài tập" : shown.length === 1 ? "workout" : "workouts"})
                 </div>
-                <div className={styles.dayTrackPills}>
-                  {dayTrackCols.map((col) => {
-                    const count = shown.filter((s) => s.trackType === col.key).length;
-                    return (
-                      <span key={col.key} className={styles.dayTrackPill}>
-                        <span>{col.icon}</span>
-                        <span>{isVietnamese ? col.labelVi : col.labelEn}: <strong>{count}</strong></span>
-                      </span>
-                    );
-                  })}
-                </div>
+                {shown.map((s) => (
+                  <SessionBlock key={s.id} s={s} />
+                ))}
               </div>
-
-              {shown.length === 0 ? (
-                <EmptyState title={isVietnamese ? `Không có bài tập vào ngày ${date}.` : `No workouts on ${date}.`} />
-              ) : (
-                <div className={styles.dayGridCard}>
-                  <div
-                    className={styles.dayMatrix}
-                    style={{
-                      gridTemplateColumns: `80px repeat(${dayTrackCols.length}, minmax(220px, 1fr))`,
-                    }}
-                  >
-                    <div className={`${styles.matrixHeaderCell} ${styles.matrixTimeHeader}`}>
-                      {isVietnamese ? "Giờ" : "Time"}
-                    </div>
-                    {dayTrackCols.map((col) => (
-                      <div key={col.key} className={styles.matrixHeaderCell}>
-                        <span>{col.icon}</span>
-                        <span>{isVietnamese ? col.labelVi : col.labelEn}</span>
-                      </div>
-                    ))}
-
-                    {dayHours.map((hour) => {
-                      const timeLabel = `${String(hour).padStart(2, "0")}:00`;
-                      return (
-                        <div key={hour} style={{ display: "contents" }}>
-                          <div className={styles.matrixTimeCell}>
-                            {timeLabel}
-                          </div>
-                          {dayTrackCols.map((col) => {
-                            const slotSessions = shown.filter((s) => {
-                              const sHour = parseInt(s.startTime.split(":")[0], 10);
-                              return sHour === hour && s.trackType === col.key;
-                            });
-                            const conflict = hasTrackConflict(slotSessions);
-                            return (
-                              <div key={col.key} className={styles.matrixSlotCell}>
-                                {conflict && (
-                                  <div className={styles.conflictWarning}>
-                                    <span>⚠️</span>
-                                    <span>{isVietnamese ? "Trùng giờ trên sân!" : "Track conflict!"}</span>
-                                  </div>
-                                )}
-                                {slotSessions.map((s) => (
-                                  <SessionBlock key={s.id} s={s} />
-                                ))}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
+            )
           ) : (
             <div className={styles.calendarCard}>
               <div className={styles.calendarGrid}>
@@ -367,7 +280,7 @@ export default function WeeklyCalendarPage() {
                         <span className={`${styles.workoutCountPill} ${daySessions.length > 0 ? styles.hasWorkoutsPill : ""}`}>
                           {daySessions.length > 0
                             ? `${daySessions.length} ${isVietnamese ? "bài tập" : daySessions.length === 1 ? "workout" : "workouts"}`
-                            : (isVietnamese ? "0 bài" : "0 workouts")}
+                            : (isVietnamese ? "0 bài" : tr("0 workouts"))}
                         </span>
                       </div>
                       <div className={styles.columnBody}>
@@ -391,28 +304,28 @@ export default function WeeklyCalendarPage() {
           <Card pad={16}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <strong>{selected.horseName}</strong>
-              <Button tone="ghost" size="sm" onClick={() => setSelected(null)} aria-label={isVietnamese ? "Đóng" : "Close"} icon="x" />
+              <Button tone="ghost" size="sm" onClick={() => setSelected(null)} aria-label={isVietnamese ? "Đóng" : tr("Close")} icon="x" />
             </div>
             <div style={{ fontSize: "var(--fs-body)", display: "flex", flexDirection: "column", gap: "0.25rem", marginTop: "0.5rem" }}>
               <div>{selected.sessionDate} {selected.startTime} · {EXERCISE_TYPE_LABEL[selected.sessionType]} · {INTENSITY_LABEL[selected.intensity]}</div>
-              <div>{selected.targetDistanceMeters} m × {selected.repetitions}{selected.targetSpeedKmh ? ` · ${selected.targetSpeedKmh} km/h` : ""}</div>
-              <div>{TRACK_LABEL[selected.trackType]} · {isVietnamese ? "Nài ngựa" : "Jockey"}: {selected.jockeyName || "—"} · {isVietnamese ? "Chăm sóc" : "Groom"}: {selected.groomName || (isVietnamese ? "Chưa giao" : "—")}</div>
-              <div>{isVietnamese ? "Giáo án" : "Plan"}: {selected.planName} {selected.phaseName ? `· ${selected.phaseName}` : ""}</div>
-              {selected.notes && <div>{isVietnamese ? "Chỉ dẫn" : "Instructions"}: {selected.notes}</div>}
+              <div>{selected.targetDistanceMeters} m × {selected.repetitions}{selected.targetSpeedKmh ? tr(` · ${selected.targetSpeedKmh} km/h`) : ""}</div>
+              <div>{TRACK_LABEL[selected.trackType]} · {isVietnamese ? "Nài ngựa" : tr("Jockey")}: {selected.jockeyName || "—"} · {isVietnamese ? "Chăm sóc" : tr("Groom")}: {selected.groomName || (isVietnamese ? "Chưa giao" : "—")}</div>
+              <div>{isVietnamese ? "Giáo án" : tr("Plan")}: {selected.planName} {selected.phaseName ? `· ${selected.phaseName}` : ""}</div>
+              {selected.notes && <div>{isVietnamese ? "Chỉ dẫn" : tr("Instructions")}: {selected.notes}</div>}
               {selected.statusReason && <div style={{ color: "var(--danger)" }}>{selected.statusReason}</div>}
-              {selected.medicalOverride && <Badge tone="warn">{isVietnamese ? "Xếp lịch trong trạng thái y tế" : "Scheduled in a medical status"}</Badge>}
+              {selected.medicalOverride && <Badge tone="warn">{isVietnamese ? "Xếp lịch trong trạng thái y tế" : tr("Scheduled in a medical status")}</Badge>}
             </div>
             <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", marginTop: "0.75rem" }}>
-              {b.edit && <Button size="sm" tone="ghost" onClick={() => setDialog({ kind: "edit", session: selected })}>{isVietnamese ? "Sửa" : "Edit"}</Button>}
-              {b.record && <Link to={`/training/sessions/${selected.id}/result`}><Button size="sm" tone="secondary">{isVietnamese ? "Ghi kết quả" : "Record result"}</Button></Link>}
-              {b.viewResult && <Link to={`/training/sessions/${selected.id}/result`}><Button size="sm" tone="secondary">{isVietnamese ? "Xem kết quả" : "View result"}</Button></Link>}
+              {b.edit && <Button size="sm" tone="ghost" onClick={() => setDialog({ kind: "edit", session: selected })}>{isVietnamese ? "Sửa" : tr("Edit")}</Button>}
+              {b.record && <Link to={`/training/sessions/${selected.id}/result`}><Button size="sm" tone="secondary">{isVietnamese ? "Ghi kết quả" : tr("Record result")}</Button></Link>}
+              {b.viewResult && <Link to={`/training/sessions/${selected.id}/result`}><Button size="sm" tone="secondary">{isVietnamese ? "Xem kết quả" : tr("View result")}</Button></Link>}
               {b.restore && (
                 <Button size="sm" tone="primary" disabled={Boolean(b.restoreBlockedReason)} title={b.restoreBlockedReason ?? ""} onClick={() => setDialog({ kind: "restore", session: selected })}>
-                  {isVietnamese ? "Khôi phục" : "Restore"}
+                  {isVietnamese ? "Khôi phục" : tr("Restore")}
                 </Button>
               )}
-              {b.cancel && <Button size="sm" tone="danger" onClick={() => setDialog({ kind: "cancel", session: selected })}>{isVietnamese ? "Hủy bài tập" : "Cancel workout"}</Button>}
-              {user.role !== ROLES.GROOM && <Link to={`/training/plans/${selected.planId}`}><Button size="sm" tone="ghost">{isVietnamese ? "Mở giáo án" : "Open plan"}</Button></Link>}
+              {b.cancel && <Button size="sm" tone="danger" onClick={() => setDialog({ kind: "cancel", session: selected })}>{isVietnamese ? "Hủy bài tập" : tr("Cancel workout")}</Button>}
+              {user.role !== ROLES.GROOM && <Link to={`/training/plans/${selected.planId}`}><Button size="sm" tone="ghost">{isVietnamese ? "Mở giáo án" : tr("Open plan")}</Button></Link>}
             </div>
           </Card>
         )}

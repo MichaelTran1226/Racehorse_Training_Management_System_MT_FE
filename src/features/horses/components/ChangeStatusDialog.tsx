@@ -9,7 +9,8 @@ import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
 import { Badge } from "@/shared/components/ui/Badge";
 import type { HealthStatus, HorseStatus } from "@/shared/types/enums";
 import type { Horse } from "../types";
-
+
+import { tr } from "@/shared/i18n/tr";
 interface ChangeStatusDialogProps {
   horse: Horse;
   onSuccess: (updatedHorse: Horse) => void;
@@ -101,12 +102,12 @@ export function ChangeStatusDialog({ horse, onSuccess }: ChangeStatusDialogProps
         disabled={allowedStatuses.length === 0}
         title={disabledHint}
       >
-        Change Status
+        {tr("Change Status")}
       </Button>
 
       {open && (
         <Modal
-          title="Change Horse Status"
+          title={tr("Change Horse Status")}
           onClose={() => setOpen(false)}
           foot={
             <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
@@ -122,14 +123,14 @@ export function ChangeStatusDialog({ horse, onSuccess }: ChangeStatusDialogProps
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div>
               <label style={{ display: "block", marginBottom: "0.25rem", fontWeight: 500 }}>
-                Current Status
+                {tr("Current Status")}
               </label>
               <Badge tone={currentStatusCfg.tone as any}>{currentStatusCfg.label}</Badge>
             </div>
 
             <div>
               <label style={{ display: "block", marginBottom: "0.25rem", fontWeight: 500 }}>
-                New Status <span style={{ color: "red" }}>*</span>
+                {tr("New Status")}{" "}<span style={{ color: "red" }}>*</span>
               </label>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 {allowedStatuses.map((s) => {
@@ -152,7 +153,7 @@ export function ChangeStatusDialog({ horse, onSuccess }: ChangeStatusDialogProps
 
             <div>
               <label style={{ display: "block", marginBottom: "0.25rem", fontWeight: 500 }}>
-                Reason {reasonRequired ? <span style={{ color: "red" }}>*</span> : "(Optional)"}
+                {tr("Reason")}{" "}{reasonRequired ? <span style={{ color: "red" }}>*</span> : "(Optional)"}
               </label>
               <textarea
                 value={reason}
@@ -167,7 +168,7 @@ export function ChangeStatusDialog({ horse, onSuccess }: ChangeStatusDialogProps
                   background: "var(--bg-card)",
                   color: "var(--ink)",
                 }}
-                placeholder={reasonRequired ? "Clinical rationale (10-500 characters)..." : "Operational note..."}
+                placeholder={reasonRequired ? tr("Clinical rationale (10-500 characters)...") : tr("Operational note...")}
               />
               {reasonError && reason.length > 0 && (
                 <div style={{ color: "var(--danger)", fontSize: "var(--fs-body)", marginTop: "0.25rem" }}>{reasonError}</div>

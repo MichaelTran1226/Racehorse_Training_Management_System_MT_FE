@@ -4,6 +4,7 @@ import { cx } from "@/shared/lib/cx";
 import { DisabledHint } from "./DisabledHint";
 import { Icon } from "./Icon";
 import styles from "./Button.module.css";
+import { trNode } from "@/shared/i18n/tr";
 
 type Tone = "primary" | "secondary" | "ghost" | "quiet" | "danger" | "accent";
 type Size = "sm" | "md" | "lg";
@@ -56,14 +57,14 @@ export function Button({
       {...rest}
     >
       {icon && <Icon name={icon} size={ICON_SIZE[size]} />}
-      {children}
+      {trNode(children)}
       {iconAfter && <Icon name={iconAfter} size={ICON_SIZE[size]} />}
-      {blocked && <span className="sr-only">{`Unavailable: ${blockedReason}`}</span>}
+      {blocked && <span className="sr-only">{`Unavailable: ${trNode(blockedReason)}`}</span>}
     </button>
   );
 
   return (
-    <DisabledHint reason={blockedReason} block={block}>
+    <DisabledHint reason={trNode(blockedReason)} block={block}>
       {button}
     </DisabledHint>
   );
@@ -82,7 +83,7 @@ export function LinkButton({ to, tone = "secondary", size = "md", icon, children
   return (
     <Link to={to} className={cx(styles.btn, styles[tone], styles[size], styles.link)}>
       {icon && <Icon name={icon} size={ICON_SIZE[size]} />}
-      {children}
+      {trNode(children)}
     </Link>
   );
 }

@@ -3,6 +3,7 @@ import { Children } from "react";
 import { cx } from "@/shared/lib/cx";
 import { Icon } from "./Icon";
 import styles from "./KpiTile.module.css";
+import { trNode } from "@/shared/i18n/tr";
 
 interface KpiTileProps {
   label: string;
@@ -19,7 +20,7 @@ export function KpiTile({ label, value, unit, caption, icon, trend, accent }: Kp
   return (
     <div className={styles.tile}>
       <div className={styles.head}>
-        <span className={styles.label}>{label}</span>
+        <span className={styles.label}>{trNode(label)}</span>
         {icon && (
           <span className={styles.icon}>
             <Icon name={icon} size={16} />
@@ -41,7 +42,7 @@ export function KpiTile({ label, value, unit, caption, icon, trend, accent }: Kp
               {trend.value}
             </span>
           )}
-          {caption}
+          {trNode(caption)}
         </p>
       )}
     </div>

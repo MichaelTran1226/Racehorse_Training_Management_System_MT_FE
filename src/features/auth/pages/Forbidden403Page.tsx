@@ -12,7 +12,8 @@ import type { ScreenAccess } from "@/shared/lib/permissions";
 import { logForbidden, requestPermission } from "../api";
 import type { ForbiddenInfo } from "../types";
 import styles from "./Forbidden403Page.module.css";
-
+
+import { tr } from "@/shared/i18n/tr";
 interface Forbidden403PageProps {
   // Có `access` khi RoleGuard chặn một route; không có khi vào thẳng /forbidden (API trả 403).
   access?: ScreenAccess;
@@ -70,38 +71,38 @@ export default function Forbidden403Page({ access }: Forbidden403PageProps) {
           <Icon name="ban" size={24} />
         </span>
         <div>
-          <p className={styles.eyebrow}>403 · ACCESS DENIED</p>
-          <h1 className={styles.title}>This screen is not part of your permissions.</h1>
+          <p className={styles.eyebrow}>{tr("403 · ACCESS DENIED")}</p>
+          <h1 className={styles.title}>{tr("This screen is not part of your permissions.")}</h1>
           <p className={styles.text}>
             {reason} Ask {manager} to grant the permission if the work requires it.
           </p>
         </div>
         <div className={styles.actions}>
           <Button icon="home" onClick={() => navigate("/dashboard")}>
-            Back to my workspace
+            {tr("Back to my workspace")}
           </Button>
           <Button
             tone="secondary"
             icon="mail"
             onClick={onRequest}
-            blockedReason={requested ? "The request was already sent to the Club Manager." : !info ? "Preparing the request…" : undefined}
+            blockedReason={requested ? tr("The request was already sent to the Club Manager.") : !info ? tr("Preparing the request…") : undefined}
           >
-            Request the permission
+            {tr("Request the permission")}
           </Button>
         </div>
         <dl className={styles.facts}>
           <div>
-            <dt>Screen</dt>
+            <dt>{tr("Screen")}</dt>
             <dd>{screen}</dd>
           </div>
           <div>
-            <dt>Signed in as</dt>
+            <dt>{tr("Signed in as")}</dt>
             <dd>
               {user.fullName}, {ROLE_LABEL[user.role]}
             </dd>
           </div>
           <div>
-            <dt>Reference</dt>
+            <dt>{tr("Reference")}</dt>
             <dd>{info?.reference ?? "…"}</dd>
           </div>
         </dl>

@@ -2,6 +2,7 @@ import { createContext, useContext, useId } from "react";
 import type { ReactNode } from "react";
 import { Icon } from "@/shared/components/ui/Icon";
 import styles from "./Field.module.css";
+import { trNode } from "@/shared/i18n/tr";
 
 interface FieldControl {
   id: string;
@@ -34,18 +35,18 @@ export function Field({ label, required, hint, error, children }: FieldProps) {
     <FieldContext.Provider value={control}>
       <div className={styles.field}>
         <label htmlFor={id} className={styles.label}>
-          {label}
+          {trNode(label)}
           {required && <span className={styles.required} aria-hidden="true">*</span>}
         </label>
         {children}
         {error ? (
           <span id={messageId} className={styles.error}>
             <Icon name="alert" size={12} />
-            {error}
+            {trNode(error)}
           </span>
         ) : hint ? (
           <span id={messageId} className={styles.hint}>
-            {hint}
+            {trNode(hint)}
           </span>
         ) : null}
       </div>

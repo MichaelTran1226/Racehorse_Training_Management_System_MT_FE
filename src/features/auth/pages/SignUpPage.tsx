@@ -13,7 +13,9 @@ import { passwordError } from "@/shared/lib/password";
 import { register } from "../api";
 import { EMAIL_PLACEHOLDER } from "@/shared/lib/brand";
 import styles from "./AuthPages.module.css";
-
+import { fullNameError } from "@/shared/lib/name";
+
+import { tr } from "@/shared/i18n/tr";
 const EMAIL_RE = /^[^\s@]+@gmail\.com$/i;
 
 // Trang này CHỈ để Horse Owner tự đăng ký (không có ô chọn vai trò); nhân viên do Club Manager mời.
@@ -51,7 +53,7 @@ export default function SignUpPage() {
 
     const mail = email.trim().toLowerCase();
     const next: Errors = {};
-    if (!name.trim()) next.name = "Full name is required.";
+    if (fullNameError(name)) next.name = fullNameError(name);
     if (!mail) next.email = "Club email is required.";
     else if (!EMAIL_RE.test(mail)) next.email = "Email must be a @gmail.com address.";
     if (!password) next.password = "Password is required.";
@@ -83,17 +85,17 @@ export default function SignUpPage() {
     <AuthLayout
       compact
       hero={HERO_TEAM}
-      title="Request a Horse Owner account."
-      description="For owners who keep horses at the club. The Club Manager reviews every request before the account can be used. Staff accounts are created by the Club Manager."
+      title={tr("Request a Horse Owner account.")}
+      description={tr("For owners who keep horses at the club. The Club Manager reviews every request before the account can be used. Staff accounts are created by the Club Manager.")}
     >
       <form onSubmit={onSubmit} noValidate style={{ display: "contents" }}>
         {alertBody && (
-          <Alert tone="danger" icon="alert" title="Request not sent">
+          <Alert tone="danger" icon="alert" title={tr("Request not sent")}>
             {alertBody}
           </Alert>
         )}
 
-        <Field label="Full name" required error={errors.name}>
+        <Field label={tr("Full name")} required error={errors.name}>
           <Input
             icon="user"
             placeholder="Jane Smith"
@@ -106,7 +108,7 @@ export default function SignUpPage() {
           />
         </Field>
 
-        <Field label="Club email" required error={errors.email} hint={`For example ${EMAIL_PLACEHOLDER}`}>
+        <Field label={tr("Club email")} required error={errors.email} hint={tr(`For example ${EMAIL_PLACEHOLDER}`)}>
           <Input
             type="email"
             icon="mail"
@@ -120,11 +122,11 @@ export default function SignUpPage() {
           />
         </Field>
 
-        <Field label="Password" required error={errors.password}>
+        <Field label={tr("Password")} required error={errors.password}>
           <Input
             type="password"
             icon="key"
-            placeholder="At least 8 characters"
+            placeholder={tr("At least 8 characters")}
             autoComplete="new-password"
             value={password}
             onChange={(e) => {
@@ -134,11 +136,11 @@ export default function SignUpPage() {
           />
         </Field>
 
-        <Field label="Confirm password" required error={errors.confirm}>
+        <Field label={tr("Confirm password")} required error={errors.confirm}>
           <Input
             type="password"
             icon="key"
-            placeholder="Repeat the password"
+            placeholder={tr("Repeat the password")}
             autoComplete="new-password"
             value={confirm}
             onChange={(e) => {
@@ -148,7 +150,7 @@ export default function SignUpPage() {
           />
         </Field>
 
-        <Checkbox label="I accept the club data and stable safety rules" checked={agree} onChange={setAgree} />
+        <Checkbox label={tr("I accept the club data and stable safety rules")} checked={agree} onChange={setAgree} />
 
         <Button
           type="submit"
@@ -156,15 +158,15 @@ export default function SignUpPage() {
           block
           iconAfter="arrowRight"
           disabled={busy}
-          blockedReason={!agree ? "Accept the club rules to send the request." : undefined}
+          blockedReason={!agree ? tr("Accept the club rules to send the request.") : undefined}
         >
-          {busy ? "Sending…" : "Send request to Club Manager"}
+          {busy ? tr("Sending…") : tr("Send request to Club Manager")}
         </Button>
 
         <p className={styles.foot}>
-          Already have an account? <Link to="/login">Sign in</Link>
+          {tr("Already have an account?")}{" "}<Link to="/login">{tr("Sign in")}</Link>
         </p>
-        {hasErrors && <span className="sr-only" role="status">The form has errors.</span>}
+        {hasErrors && <span className="sr-only" role="status">{tr("The form has errors.")}</span>}
       </form>
     </AuthLayout>
   );

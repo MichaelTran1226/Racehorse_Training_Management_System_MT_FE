@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "@/shared/components/ui/Icon";
-import type { Role } from "@/shared/types/enums";
 import {
   type AppNotification,
   formatTimeAgo,
@@ -9,10 +8,10 @@ import {
   markAllNotificationsAsRead,
   markNotificationAsRead,
 } from "@/shared/lib/notifications";
-
+
+import { tr } from "@/shared/i18n/tr";
 interface NotificationPopoverProps {
   notifications: AppNotification[];
-  userRole?: Role;
   open: boolean;
   onClose: () => void;
   triggerRef?: React.RefObject<HTMLElement | null>;
@@ -20,7 +19,6 @@ interface NotificationPopoverProps {
 
 export function NotificationPopover({
   notifications,
-  userRole,
   open,
   onClose,
   triggerRef,
@@ -73,6 +71,8 @@ export function NotificationPopover({
         return { icon: "activity", bg: "var(--warn)", text: "var(--surface)" };
       case "ACCOUNT":
         return { icon: "users", bg: "var(--violet)", text: "var(--surface)" };
+      case "HORSE":
+        return { icon: "horse", bg: "var(--brand)", text: "var(--surface)" };
       default:
         return { icon: "bell", bg: "var(--muted)", text: "var(--surface)" };
     }
@@ -84,7 +84,7 @@ export function NotificationPopover({
       <div
         key={n.id}
         onClick={() => {
-          markNotificationAsRead(n.id);
+          void markNotificationAsRead(n.id);
           if (n.link) navigate(n.link);
           onClose();
         }}
@@ -161,7 +161,7 @@ export function NotificationPopover({
               background: "var(--info)",
               flexShrink: 0,
             }}
-            title="Unread"
+            title={tr("Unread")}
           />
         )}
       </div>
@@ -197,14 +197,14 @@ export function NotificationPopover({
           position: "relative",
         }}
       >
-        <h3 style={{ margin: 0, fontSize: "var(--fs-section)", fontWeight: 700, }}>Notifications</h3>
+        <h3 style={{ margin: 0, fontSize: "var(--fs-section)", fontWeight: 700, }}>{tr("Notifications")}</h3>
 
         {/* ... More Action Button */}
         <div style={{ position: "relative" }}>
           <button
             type="button"
             onClick={() => setMenuOpen((prev) => !prev)}
-            aria-label="More options"
+            aria-label={tr("More options")}
             style={{
               width: 32,
               height: 32,
@@ -249,7 +249,7 @@ export function NotificationPopover({
               <button
                 type="button"
                 onClick={() => {
-                  markAllNotificationsAsRead(userRole);
+                  void markAllNotificationsAsRead();
                   setMenuOpen(false);
                 }}
                 style={{
@@ -271,7 +271,7 @@ export function NotificationPopover({
                 onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
               >
                 <Icon name="check" size={16} />
-                <span>Mark all as read</span>
+                <span>{tr("Mark all as read")}</span>
               </button>
 
               <button
@@ -300,7 +300,7 @@ export function NotificationPopover({
                 onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
               >
                 <Icon name="settings" size={16} />
-                <span>Notification settings</span>
+                <span>{tr("Notification settings")}</span>
               </button>
 
               <button
@@ -329,7 +329,7 @@ export function NotificationPopover({
                 onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
               >
                 <Icon name="file" size={16} />
-                <span>Open notifications page</span>
+                <span>{tr("Open notifications page")}</span>
               </button>
             </div>
           )}
@@ -352,7 +352,7 @@ export function NotificationPopover({
             color: activeTab === "all" ? "var(--nav-item-active-text)" : "var(--text-muted)",
           }}
         >
-          All
+          {tr("All")}
         </button>
 
         <button
@@ -372,7 +372,7 @@ export function NotificationPopover({
             gap: 6,
           }}
         >
-          <span>Unread</span>
+          <span>{tr("Unread")}</span>
           {unreadCount > 0 && (
             <span
               style={{
@@ -394,9 +394,9 @@ export function NotificationPopover({
         {filteredNotifications.length === 0 ? (
           <div style={{ padding: "40px 16px", textAlign: "center", color: "var(--text-muted)" }}>
             <Icon name="bell" size={32} style={{ margin: "0 auto 10px", opacity: 0.35 }} />
-            <div style={{ fontSize: "var(--fs-body)", fontWeight: 600 }}>No notifications yet</div>
+            <div style={{ fontSize: "var(--fs-body)", fontWeight: 600 }}>{tr("No notifications yet")}</div>
             <div style={{ fontSize: "var(--fs-caption)", marginTop: 4 }}>
-              {activeTab === "unread" ? "You're all caught up." : "No new notifications."}
+              {activeTab === "unread" ? tr("You're all caught up.") : tr("No new notifications.")}
             </div>
           </div>
         ) : (
@@ -404,7 +404,7 @@ export function NotificationPopover({
             {todayList.length > 0 && (
               <div>
                 <div style={{ padding: "8px 16px 4px", fontSize: "var(--fs-body)", fontWeight: 700, color: "var(--text)" }}>
-                  Today
+                  {tr("Today")}
                 </div>
                 {todayList.map(renderItem)}
               </div>
@@ -420,7 +420,7 @@ export function NotificationPopover({
                     padding: "8px 16px 4px",
                   }}
                 >
-                  <span style={{ fontSize: "var(--fs-body)", fontWeight: 700, color: "var(--text)" }}>Earlier</span>
+                  <span style={{ fontSize: "var(--fs-body)", fontWeight: 700, color: "var(--text)" }}>{tr("Earlier")}</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -437,7 +437,7 @@ export function NotificationPopover({
                       padding: 0,
                     }}
                   >
-                    See all
+                    {tr("See all")}
                   </button>
                 </div>
                 {earlierList.map(renderItem)}
@@ -476,7 +476,7 @@ export function NotificationPopover({
           onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface)")}
           onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
         >
-          View earlier notifications
+          {tr("View earlier notifications")}
         </button>
       </div>
     </div>

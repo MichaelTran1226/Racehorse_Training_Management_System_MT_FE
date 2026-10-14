@@ -18,7 +18,8 @@ import { TrainingLockModal } from "../components/TrainingLockModal";
 import type { TrainingLockHistoryItem } from "../types";
 import { getHorses } from "@/features/horses/api";
 import { HEALTH_STATUS } from "@/shared/lib/status";
-
+
+import { tr } from "@/shared/i18n/tr";
 export default function TrainingLockPage() {
   const { user } = useAuth();
   const toast = useToast();
@@ -142,11 +143,11 @@ export default function TrainingLockPage() {
       render: (lock) =>
         lock.status === "ACTIVE" ? (
           <Badge tone="danger" icon="lock">
-            Active
+            {tr("Active")}
           </Badge>
         ) : (
           <Badge tone="neutral" icon="unlock">
-            Released
+            {tr("Released")}
           </Badge>
         ),
     },
@@ -167,7 +168,7 @@ export default function TrainingLockPage() {
                       setModalMode("extend");
                     }}
                   >
-                    Extend
+                    {tr("Extend")}
                   </Button>
                   <Button
                     tone="secondary"
@@ -178,12 +179,12 @@ export default function TrainingLockPage() {
                       setModalMode("lift");
                     }}
                   >
-                    Lift lock
+                    {tr("Lift lock")}
                   </Button>
                 </div>
               ) : (
                 <span className="nowrap" style={{ fontSize: "var(--fs-caption)", color: "var(--muted)" }}>
-                  Released {lock.releasedAt ? formatDate(lock.releasedAt) : ""} · {lock.releaseReason || "Recovered"}
+                  {tr("Released")}{" "}{lock.releasedAt ? formatDate(lock.releasedAt) : ""} · {lock.releaseReason || tr("Recovered")}
                 </span>
               ),
           },
@@ -194,8 +195,8 @@ export default function TrainingLockPage() {
   return (
     <div style={{ display: "grid", gap: 20 }}>
       <PageHeader
-        title="Training Locks"
-        description="Heavy workouts and trial runs are blocked while a horse has an active lock. Only the Veterinarian places, extends or lifts a lock."
+        title={tr("Training Locks")}
+        description={tr("Heavy workouts and trial runs are blocked while a horse has an active lock. Only the Veterinarian places, extends or lifts a lock.")}
         action={
           isVet && (
             <Button
@@ -214,7 +215,7 @@ export default function TrainingLockPage() {
       <Card pad={0}>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 16, padding: "0 20px", borderBottom: "1px solid var(--border)" }}>
           <Tabs
-            label="Filter by lock status"
+            label={tr("Filter by lock status")}
             items={[
               { id: "ACTIVE", label: "Active", count: counts.ACTIVE },
               { id: "RELEASED", label: "Released", count: counts.RELEASED },
@@ -226,15 +227,15 @@ export default function TrainingLockPage() {
           <div style={{ width: 300, padding: "8px 0" }}>
             <Input
               icon="search"
-              aria-label="Search locks"
-              placeholder="Lock code, horse or reason"
+              aria-label={tr("Search locks")}
+              placeholder={tr("Lock code, horse or reason")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
         </div>
         <DataTable
-          caption="Training locks"
+          caption={tr("Training locks")}
           columns={columns}
           rows={filteredLocks}
           rowKey={(lock) => lock.id || lock.lockCode}

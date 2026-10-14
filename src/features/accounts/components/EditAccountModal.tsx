@@ -14,7 +14,9 @@ import { ACCOUNT_STATUS } from "@/shared/lib/status";
 import type { AccountStatus, PublicAccount } from "@/shared/types/auth";
 import { updateAccount } from "../api";
 import styles from "./EditAccountModal.module.css";
-
+import { fullNameError } from "@/shared/lib/name";
+
+import { tr } from "@/shared/i18n/tr";
 // Chỉ xóa hẳn được tài khoản chưa từng hoạt động (khớp backend); tài khoản đã dùng thì vô hiệu hóa.
 const DELETABLE: AccountStatus[] = ["INVITED", "PENDING_EMAIL", "REJECTED"];
 
@@ -52,7 +54,7 @@ export function EditAccountModal({ account, isSelf, isLastManager, onClose, onSa
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (busy) return;
-    if (!fullName.trim()) return setErrors({ fullName: isVietnamese ? "Họ và tên không được để trống." : "Full name is required." });
+    if (fullNameError(fullName)) return setErrors({ fullName: fullNameError(fullName) });
 
     const cleanPhone = phone.replace(/[\s-]/g, "");
     if (cleanPhone && !VN_PHONE_RE.test(cleanPhone)) {
@@ -74,16 +76,16 @@ export function EditAccountModal({ account, isSelf, isLastManager, onClose, onSa
   }
 
   return (
-    <Modal title="Edit account" subtitle={`${ROLE_LABEL[account.role]} · ${account.email}`} width={500} onClose={onClose}>
+    <Modal title={tr("Edit account")} subtitle={`${ROLE_LABEL[account.role]} · ${account.email}`} width={500} onClose={onClose}>
       <form onSubmit={onSubmit} noValidate className={styles.form}>
         <dl className={styles.facts}>
-          <dt>Status</dt>
+          <dt>{tr("Status")}</dt>
           <dd>
             <Badge tone={status.tone}>{status.label}</Badge>
           </dd>
           {account.statusChangedBy && account.statusChangedAt && (
             <>
-              <dt>Last change</dt>
+              <dt>{tr("Last change")}</dt>
               <dd>
                 {account.statusChangedBy} · {formatDateTime(account.statusChangedAt)}
               </dd>
@@ -91,13 +93,13 @@ export function EditAccountModal({ account, isSelf, isLastManager, onClose, onSa
           )}
           {account.statusReason && (
             <>
-              <dt>Reason</dt>
+              <dt>{tr("Reason")}</dt>
               <dd>{account.statusReason}</dd>
             </>
           )}
           {account.invitedBy && (
             <>
-              <dt>Invited by</dt>
+              <dt>{tr("Invited by")}</dt>
               <dd>
                 {account.invitedBy} · {formatDateTime(account.createdAt)}
               </dd>
@@ -105,7 +107,7 @@ export function EditAccountModal({ account, isSelf, isLastManager, onClose, onSa
           )}
           {account.requestCode && (
             <>
-              <dt>Request</dt>
+              <dt>{tr("Request")}</dt>
               <dd>
                 {account.requestCode}
                 {account.requestedAt ? ` · ${formatDateTime(account.requestedAt)}` : ""}
@@ -115,44 +117,44 @@ export function EditAccountModal({ account, isSelf, isLastManager, onClose, onSa
         </dl>
 
         {errors.form && <span className={styles.formError}>{errors.form}</span>}
-        <Field label="Full name" required error={errors.fullName}>
+        <Field label={tr("Full name")} required error={errors.fullName}>
           <Input icon="user" value={fullName} data-autofocus onChange={(e) => setFullName(e.target.value)} />
         </Field>
-        <Field label={isVietnamese ? "Số điện thoại" : "Phone"} error={errors.phone} hint={t("phoneValidation.hint")}>
+        <Field label={isVietnamese ? "Số điện thoại" : tr("Phone")} error={errors.phone} hint={t("phoneValidation.hint")}>
           <Input type="tel" autoComplete="off" maxLength={15} placeholder="0901 234 567" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </Field>
-        <Field label="Club email" hint="The email is the sign-in name, so it cannot be changed here.">
+        <Field label={tr("Club email")} hint={tr("The email is the sign-in name, so it cannot be changed here.")}>
           <Input icon="mail" value={account.email} readOnly disabled />
         </Field>
 
         <div className={styles.buttons}>
           <Button tone="secondary" size="sm" onClick={onClose} disabled={busy}>
-            Cancel
+            {tr("Cancel")}
           </Button>
           <Button type="submit" size="sm" icon="check" disabled={busy || unchanged}>
-            {busy ? "Saving…" : "Save changes"}
+            {busy ? tr("Saving…") : tr("Save changes")}
           </Button>
         </div>
 
         {deletable && (
           <div className={styles.danger}>
             <p className={styles.dangerText}>
-              <strong>Delete this account</strong>
-              It has never been used, so it can be removed for good.
+              <strong>{tr("Delete this account")}</strong>
+              {tr("It has never been used, so it can be removed for good.")}
             </p>
             <Button tone="danger" size="sm" icon="trash" disabled={busy} onClick={onDelete}>
-              Delete
+              {tr("Delete")}
             </Button>
           </div>
         )}
         {canDeactivate && (
           <div className={styles.danger}>
             <p className={styles.dangerText}>
-              <strong>Deactivate this account</strong>
-              Sign-in stops and every session ends. Its records stay in place; it can be reactivated later.
+              <strong>{tr("Deactivate this account")}</strong>
+              {tr("Sign-in stops and every session ends. Its records stay in place; it can be reactivated later.")}
             </p>
             <Button tone="danger" size="sm" icon="ban" disabled={busy} blockedReason={removeBlocked} onClick={onDeactivate}>
-              Deactivate
+              {tr("Deactivate")}
             </Button>
           </div>
         )}

@@ -8,7 +8,8 @@ import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
 import { messageFor } from "@/shared/lib/messages";
 import { formatDate } from "@/shared/lib/format";
-
+
+import { tr } from "@/shared/i18n/tr";
 const APPLIED_STATUS_OPTIONS = [
   { value: "INJURED", label: "Injured" },
   { value: "UNDER_OBSERVATION", label: "Under Observation" },
@@ -201,18 +202,18 @@ export function TrainingLockModal({
               }}
             >
               <div style={{ fontWeight: 600, color: "var(--danger)", display: "flex", alignItems: "center", gap: 6 }}>
-                <span>⚠️ Clinical Order Impact Assessment</span>
+                <span>{tr("⚠️ Clinical Order Impact Assessment")}</span>
               </div>
               <div style={{ color: "var(--text)", lineHeight: 1.5 }}>
-                • <strong>Health Status:</strong> Transitions horse to <strong>{appliedStatus}</strong> immediately.<br/>
-                • <strong>Training Impact:</strong> Automatically <strong>BLOCKS</strong> all upcoming high-intensity workouts.<br/>
-                • <strong>Racing:</strong> Suspends pending race nominations during the medical hold.<br/>
-                • <strong>Notifications:</strong> Urgent alerts dispatched to Head Trainer, Club Manager, Groom & Owner.
+                • <strong>{tr("Health Status:")}</strong> {tr("Transitions horse to")}{" "}<strong>{appliedStatus}</strong> immediately.<br/>
+                • <strong>{tr("Training Impact:")}</strong> {tr("Automatically")}{" "}<strong>{tr("BLOCKS")}</strong> {tr("all upcoming high-intensity workouts.")}<br/>
+                • <strong>{tr("Racing:")}</strong> {tr("Suspends pending race nominations during the medical hold.")}<br/>
+                • <strong>{tr("Notifications:")}</strong> {tr("Urgent alerts dispatched to Head Trainer, Club Manager, Groom & Owner.")}
               </div>
             </div>
 
             {horseOptions && horseOptions.length > 0 && (
-              <Field label="Target Horse *">
+              <Field label={tr("Target Horse *")}>
                 <Select
                   options={horseOptions}
                   value={selectedHorseId}
@@ -221,7 +222,7 @@ export function TrainingLockModal({
               </Field>
             )}
 
-            <Field label="Applied Health Status *">
+            <Field label={tr("Applied Health Status *")}>
               <Select
                 options={APPLIED_STATUS_OPTIONS}
                 value={appliedStatus}
@@ -229,7 +230,7 @@ export function TrainingLockModal({
               />
             </Field>
 
-            <Field label="Review Date *" hint="Review date must be between tomorrow and 180 days">
+            <Field label={tr("Review Date *")} hint={tr("Review date must be between tomorrow and 180 days")}>
               <Input
                 type="date"
                 value={reviewDate}
@@ -241,8 +242,8 @@ export function TrainingLockModal({
             </Field>
 
             <Field
-              label={`Lock Reason * (${reason.trim().length}/500)`}
-              hint={reason.trim().length > 0 && reason.trim().length < 10 ? "Min 10 characters required (currently " + reason.trim().length + ")" : "Min 10, max 500 characters"}
+              label={tr(`Lock Reason * (${reason.trim().length}/500)`)}
+              hint={reason.trim().length > 0 && reason.trim().length < 10 ? "Min 10 characters required (currently " + reason.trim().length + ")" : tr("Min 10, max 500 characters")}
             >
               <Textarea
                 rows={3}
@@ -253,7 +254,7 @@ export function TrainingLockModal({
               />
             </Field>
 
-            <Field label="Unlock Conditions" hint="Clinical criteria required before lifting lock">
+            <Field label={tr("Unlock Conditions")} hint={tr("Clinical criteria required before lifting lock")}>
               <Input
                 value={unlockConditions}
                 onChange={(e) => setUnlockConditions(e.target.value)}
@@ -265,7 +266,7 @@ export function TrainingLockModal({
 
         {mode === "lift" && (
           <>
-            <Field label="Post-Lift Health Status *">
+            <Field label={tr("Post-Lift Health Status *")}>
               <Select
                 options={RESTORE_STATUS_OPTIONS}
                 value={restoreStatus}
@@ -274,14 +275,14 @@ export function TrainingLockModal({
             </Field>
 
             <Field
-              label={`Reason for Lifting Lock * (${reason.trim().length}/500)`}
-              hint={reason.trim().length > 0 && reason.trim().length < 10 ? "Min 10 characters required" : "Veterinary evaluation notes prior to releasing horse"}
+              label={tr(`Reason for Lifting Lock * (${reason.trim().length}/500)`)}
+              hint={reason.trim().length > 0 && reason.trim().length < 10 ? tr("Min 10 characters required") : tr("Veterinary evaluation notes prior to releasing horse")}
             >
               <Textarea
                 rows={3}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="e.g., Re-examination today confirms joint stability, full range of motion, normal gait..."
+                placeholder={tr("e.g., Re-examination today confirms joint stability, full range of motion, normal gait...")}
                 required
               />
             </Field>
@@ -292,11 +293,11 @@ export function TrainingLockModal({
           <>
             {currentReviewDate && (
               <div style={{ fontSize: "var(--fs-body)", color: "var(--muted)" }}>
-                Current review date: <strong>{formatDate(currentReviewDate)}</strong>
+                {tr("Current review date:")}{" "}<strong>{formatDate(currentReviewDate)}</strong>
               </div>
             )}
 
-            <Field label="New Review Date *" hint="Must be between tomorrow and 180 days">
+            <Field label={tr("New Review Date *")} hint={tr("Must be between tomorrow and 180 days")}>
               <Input
                 type="date"
                 value={newReviewDate}
@@ -308,14 +309,14 @@ export function TrainingLockModal({
             </Field>
 
             <Field
-              label={`Reason for Extension * (${reason.trim().length}/500)`}
-              hint={reason.trim().length > 0 && reason.trim().length < 10 ? "Min 10 characters required" : "State clinical reasons for extending rehabilitation"}
+              label={tr(`Reason for Extension * (${reason.trim().length}/500)`)}
+              hint={reason.trim().length > 0 && reason.trim().length < 10 ? tr("Min 10 characters required") : tr("State clinical reasons for extending rehabilitation")}
             >
               <Textarea
                 rows={3}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="e.g., Lesion not fully resolved, requires 7 more days of physical therapy..."
+                placeholder={tr("e.g., Lesion not fully resolved, requires 7 more days of physical therapy...")}
                 required
               />
             </Field>

@@ -47,7 +47,8 @@ const PROPOSED_STATUS_OPTIONS = [
 ];
 
 import { getHorses } from "@/features/horses/api";
-
+
+import { tr } from "@/shared/i18n/tr";
 export default function RecordFormPage() {
   const { id } = useParams(); // If id exists, it's edit mode
   const [searchParams] = useSearchParams();
@@ -133,7 +134,7 @@ export default function RecordFormPage() {
 
   useEffect(() => {
     if (blocker.state === "blocked") {
-      if (window.confirm("You have unsaved changes in this medical record. Leaving will lose them. Continue?")) {
+      if (window.confirm(tr("You have unsaved changes in this medical record. Leaving will lose them. Continue?"))) {
         blocker.proceed();
       } else {
         blocker.reset();
@@ -143,7 +144,7 @@ export default function RecordFormPage() {
 
   function handleCancel() {
     if (dirty) {
-      if (window.confirm("You have unsaved changes in this medical record. Leaving will lose them. Continue?")) {
+      if (window.confirm(tr("You have unsaved changes in this medical record. Leaving will lose them. Continue?"))) {
         setDirty(false);
         navigate(-1);
       }
@@ -277,10 +278,10 @@ export default function RecordFormPage() {
         <div className={styles.headerTop}>
           <div className={styles.titleArea}>
             <h1 className={styles.horseTitle}>
-              {isEdit ? "Edit Medical Record (Draft)" : "New Electronic Medical Record"}
+              {isEdit ? tr("Edit Medical Record (Draft)") : tr("New Electronic Medical Record")}
             </h1>
             <span style={{ fontSize: "var(--fs-body)", color: "var(--muted)" }}>
-              Record clinical exam findings, vital signs, and initialize the treatment plan.
+              {tr("Record clinical exam findings, vital signs, and initialize the treatment plan.")}
             </span>
           </div>
         </div>
@@ -296,11 +297,11 @@ export default function RecordFormPage() {
       <div className={styles.sectionCard}>
         <h2 className={styles.sectionTitle}>
           <Icon name="clipboard" size={18} />
-          1. Examination Information
+          {tr("1. Examination Information")}
         </h2>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
-          <Field label="Horse *" hint="Select the horse to examine">
+          <Field label={tr("Horse *")} hint={tr("Select the horse to examine")}>
             <Select
               options={horseOptions}
               value={horseId}
@@ -309,7 +310,7 @@ export default function RecordFormPage() {
             />
           </Field>
 
-          <Field label="Examination Date & Time *">
+          <Field label={tr("Examination Date & Time *")}>
             <Input
               type="datetime-local"
               value={examinationDate}
@@ -318,7 +319,7 @@ export default function RecordFormPage() {
             />
           </Field>
 
-          <Field label="Examination Type *">
+          <Field label={tr("Examination Type *")}>
             <Select
               options={EXAM_TYPE_OPTIONS}
               value={examinationType}
@@ -326,7 +327,7 @@ export default function RecordFormPage() {
             />
           </Field>
 
-          <Field label="Discovery Source">
+          <Field label={tr("Discovery Source")}>
             <Select
               options={DISCOVERY_OPTIONS}
               value={discoverySource}
@@ -335,27 +336,24 @@ export default function RecordFormPage() {
           </Field>
 
           <div style={{ gridColumn: "1 / -1" }}>
-            <Field label="Reason for Examination *" hint="Between 5 and 500 characters">
+            <Field label={tr("Reason for Examination *")} hint={tr("Between 5 and 500 characters")}>
               <Textarea
                 rows={2}
                 value={examinationReason}
-                onChange={(e) => {
-                  setExaminationReason(e.target.value);
-                  setDirty(true);
-                }}
-                placeholder="e.g., Horse exhibits front limb lameness following morning gallop workout..."
+                onChange={(e) => setExaminationReason(e.target.value)}
+                placeholder={tr("e.g., Horse exhibits front limb lameness following morning gallop workout...")}
                 required
               />
             </Field>
           </div>
 
           <div style={{ gridColumn: "1 / -1" }}>
-            <Field label="Observed Clinical Symptoms" hint="Max 2,000 characters">
+            <Field label={tr("Observed Clinical Symptoms")} hint={tr("Max 2,000 characters")}>
               <Textarea
                 rows={2}
                 value={symptoms}
                 onChange={(e) => setSymptoms(e.target.value)}
-                placeholder="e.g., Mild swelling around the fetlock joint, tender on palpation..."
+                placeholder={tr("e.g., Mild swelling around the fetlock joint, tender on palpation...")}
               />
             </Field>
           </div>
@@ -367,17 +365,17 @@ export default function RecordFormPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h2 className={styles.sectionTitle}>
             <Icon name="pulse" size={18} />
-            2. Vital Signs
+            {tr("2. Vital Signs")}
           </h2>
           <span style={{ fontSize: "var(--fs-caption)", color: "var(--muted)" }}>
-            Values exceeding adult equine physiological reference ranges will be highlighted in red.
+            {tr("Values exceeding adult equine physiological reference ranges will be highlighted in red.")}
           </span>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
           <Field
-            label="Temperature (°C) *"
-            hint={tempWarn ? "Outside reference range (37.2 – 38.6 °C)!" : "Normal: 37.2 – 38.6 °C"}
+            label={tr("Temperature (°C) *")}
+            hint={tempWarn ? tr("Outside reference range (37.2 – 38.6 °C)!") : tr("Normal: 37.2 – 38.6 °C")}
           >
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <Input
@@ -390,13 +388,13 @@ export default function RecordFormPage() {
                 style={tempWarn ? { borderColor: "var(--danger)", color: "var(--danger)" } : undefined}
                 required
               />
-              {tempWarn && <Badge tone="danger">Alert</Badge>}
+              {tempWarn && <Badge tone="danger">{tr("Alert")}</Badge>}
             </div>
           </Field>
 
           <Field
-            label="Resting Heart Rate (bpm) *"
-            hint={hrWarn ? "Outside reference range (28 – 44 bpm)!" : "Normal: 28 – 44 bpm"}
+            label={tr("Resting Heart Rate (bpm) *")}
+            hint={hrWarn ? tr("Outside reference range (28 – 44 bpm)!") : tr("Normal: 28 – 44 bpm")}
           >
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <Input
@@ -408,13 +406,13 @@ export default function RecordFormPage() {
                 style={hrWarn ? { borderColor: "var(--danger)", color: "var(--danger)" } : undefined}
                 required
               />
-              {hrWarn && <Badge tone="danger">Alert</Badge>}
+              {hrWarn && <Badge tone="danger">{tr("Alert")}</Badge>}
             </div>
           </Field>
 
           <Field
-            label="Respiratory Rate (breaths/min) *"
-            hint={rrWarn ? "Outside reference range (8 – 16 breaths/min)!" : "Normal: 8 – 16 breaths/min"}
+            label={tr("Respiratory Rate (breaths/min) *")}
+            hint={rrWarn ? tr("Outside reference range (8 – 16 breaths/min)!") : tr("Normal: 8 – 16 breaths/min")}
           >
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <Input
@@ -426,11 +424,11 @@ export default function RecordFormPage() {
                 style={rrWarn ? { borderColor: "var(--danger)", color: "var(--danger)" } : undefined}
                 required
               />
-              {rrWarn && <Badge tone="danger">Alert</Badge>}
+              {rrWarn && <Badge tone="danger">{tr("Alert")}</Badge>}
             </div>
           </Field>
 
-          <Field label="Weight (kg)" hint="Standard: 200 – 800 kg">
+          <Field label={tr("Weight (kg)")} hint={tr("Standard: 200 – 800 kg")}>
             <Input
               type="number"
               min={200}
@@ -441,12 +439,12 @@ export default function RecordFormPage() {
           </Field>
 
           <div style={{ gridColumn: "1 / -1" }}>
-            <Field label="Detailed Clinical Examination *" hint="10 to 4,000 characters">
+            <Field label={tr("Detailed Clinical Examination *")} hint={tr("10 to 4,000 characters")}>
               <Textarea
                 rows={3}
                 value={clinicalNotes}
                 onChange={(e) => setClinicalNotes(e.target.value)}
-                placeholder="Note lung sounds, gut sounds, mucous membranes, skin turgor, gait..."
+                placeholder={tr("Note lung sounds, gut sounds, mucous membranes, skin turgor, gait...")}
               />
             </Field>
           </div>
@@ -458,16 +456,16 @@ export default function RecordFormPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h2 className={styles.sectionTitle}>
             <Icon name="file" size={18} />
-            3. Diagnostic Tests & Imaging (0–20 items)
+            {tr("3. Diagnostic Tests & Imaging (0–20 items)")}
           </h2>
           <Button size="sm" tone="ghost" icon="plus" onClick={addLabTest}>
-            Add Diagnostic Result
+            {tr("Add Diagnostic Result")}
           </Button>
         </div>
 
         {labTests.length === 0 ? (
           <div style={{ color: "var(--muted)", fontSize: "var(--fs-body)" }}>
-            No diagnostic tests added yet. Click &quot;Add Diagnostic Result&quot; to record blood work, X-rays, or ultrasound findings.
+            {tr("No diagnostic tests added yet. Click &quot;Add Diagnostic Result&quot; to record blood work, X-rays, or ultrasound findings.")}
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -499,7 +497,7 @@ export default function RecordFormPage() {
                 <Input
                   value={test.result}
                   onChange={(e) => updateLabTest(idx, "result", e.target.value)}
-                  placeholder="Result description (e.g., Elevated WBC count, hairline fissure on lateral condyle...)"
+                  placeholder={tr("Result description (e.g., Elevated WBC count, hairline fissure on lateral condyle...)")}
                 />
 
                 <button
@@ -519,11 +517,11 @@ export default function RecordFormPage() {
       <div className={styles.sectionCard}>
         <h2 className={styles.sectionTitle}>
           <Icon name="stethoscope" size={18} />
-          4. Confirmatory Diagnosis & Proposed Actions
+          {tr("4. Confirmatory Diagnosis & Proposed Actions")}
         </h2>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <Field label="Definitive Diagnosis *" hint="Between 5 and 1,000 characters">
+          <Field label={tr("Definitive Diagnosis *")} hint={tr("Between 5 and 1,000 characters")}>
             <Textarea
               rows={3}
               value={diagnosis}
@@ -533,7 +531,7 @@ export default function RecordFormPage() {
             />
           </Field>
 
-          <Field label="Severity Level *">
+          <Field label={tr("Severity Level *")}>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
               <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
                 <input
@@ -542,7 +540,7 @@ export default function RecordFormPage() {
                   checked={severity === "MILD"}
                   onChange={() => setSeverity("MILD")}
                 />
-                Mild
+                {tr("Mild")}
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
                 <input
@@ -551,7 +549,7 @@ export default function RecordFormPage() {
                   checked={severity === "MODERATE"}
                   onChange={() => setSeverity("MODERATE")}
                 />
-                Moderate
+                {tr("Moderate")}
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
                 <input
@@ -560,7 +558,7 @@ export default function RecordFormPage() {
                   checked={severity === "SEVERE"}
                   onChange={() => setSeverity("SEVERE")}
                 />
-                Severe
+                {tr("Severe")}
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
                 <input
@@ -569,13 +567,13 @@ export default function RecordFormPage() {
                   checked={severity === "CRITICAL"}
                   onChange={() => setSeverity("CRITICAL")}
                 />
-                Critical
+                {tr("Critical")}
               </label>
             </div>
           </Field>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "center" }}>
-            <Field label="Proposed Horse Status">
+            <Field label={tr("Proposed Horse Status")}>
               <Select
                 options={PROPOSED_STATUS_OPTIONS}
                 value={proposedStatus}
@@ -585,12 +583,12 @@ export default function RecordFormPage() {
 
             <div>
               <Checkbox
-                label="Propose Training Lock activation"
+                label={tr("Propose Training Lock activation")}
                 checked={proposeMedicalLock}
                 onChange={setProposeMedicalLock}
               />
               <span style={{ fontSize: "var(--fs-caption)", color: "var(--muted)", display: "block", marginTop: 4 }}>
-                Upon finalizing the medical record, a confirmation step will be prompted to issue a protective training lock.
+                {tr("Upon finalizing the medical record, a confirmation step will be prompted to issue a protective training lock.")}
               </span>
             </div>
           </div>
@@ -611,15 +609,15 @@ export default function RecordFormPage() {
         }}
       >
         <Button tone="ghost" onClick={handleCancel} disabled={busy}>
-          Cancel
+          {tr("Cancel")}
         </Button>
 
         <div style={{ display: "flex", gap: 12 }}>
           <Button tone="ghost" icon="file" onClick={() => void handleSave(true)} disabled={busy}>
-            Save Draft (DRAFT)
+            {tr("Save Draft (DRAFT)")}
           </Button>
           <Button tone="primary" icon="checkCircle" onClick={() => void handleSave(false)} disabled={busy}>
-            Save & Finalize (OPEN)
+            {tr("Save & Finalize (OPEN)")}
           </Button>
         </div>
       </div>

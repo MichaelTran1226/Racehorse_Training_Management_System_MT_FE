@@ -1,252 +1,100 @@
 import type { Role } from "@/shared/types/enums";
+import { api } from "@/shared/lib/api";
 
+// Thông báo trong ứng dụng (C-01): dữ liệu từ BE GET /notifications, giữ trong bộ nhớ và hỏi lại mỗi 30 giây.
+// Các màn hình đọc bản sao trong bộ nhớ (getNotifications) và đăng ký nghe thay đổi (subscribeNotifications).
 export interface AppNotification {
   id: string;
+  type?: string; // mã sự kiện từ BE (VD LOCK_PLACED) — dùng để dịch
+  params?: Record<string, string | number>;
   title: string;
   message: string;
-  category: "LOCK" | "MEDICAL" | "TRAINING" | "ACCOUNT" | "SYSTEM";
+  category: "LOCK" | "MEDICAL" | "TRAINING" | "ACCOUNT" | "HORSE" | "SYSTEM";
   createdAt: string;
   read: boolean;
   link?: string;
-  targetRoles: Role[];
   senderName?: string;
 }
 
-// Version v6 to automatically purge any legacy notifications and ensure full English
-const NOTIFICATIONS_STORAGE_KEY = "equiflow.notifications.v7";
+interface NotificationList {
+  notifications: AppNotification[];
+  unreadCount: number;
+}
+
+const POLL_MS = 30_000;
 const NOTIFICATIONS_EVENT = "equiflow:notifications_updated";
 
-if (typeof window !== "undefined") {
+let items: AppNotification[] = [];
+let pollTimer: number | undefined;
+
+function apply(res: NotificationList): void {
+  items = res.notifications;
+  window.dispatchEvent(new CustomEvent(NOTIFICATIONS_EVENT));
+}
+
+export async function refreshNotifications(): Promise<void> {
   try {
-    localStorage.removeItem("equiflow.notifications.v1");
-    localStorage.removeItem("equiflow.notifications.v2");
-    localStorage.removeItem("equiflow.notifications.v3");
-    localStorage.removeItem("equiflow.notifications.v4");
-    localStorage.removeItem("equiflow.notifications.v5");
+    apply(await api<NotificationList>("GET", "/notifications"));
   } catch {
-    // ignore
+    // Lỗi mạng/hết phiên: giữ danh sách cũ, lần hỏi sau thử lại (401 đã được api.ts xử lý chung).
   }
 }
 
-const INITIAL_ROLE_NOTIFICATIONS: AppNotification[] = [
-  // VETERINARIAN
-  {
-    id: "notif-vet-1",
-    title: "Active Medical Training Lock in Force",
-    message: "Superficial digital flexor tendon desmitis protocol active for Northern Dancer Legacy (EQ-002).",
-    category: "LOCK",
-    createdAt: new Date(Date.now() - 25 * 60000).toISOString(),
-    read: false,
-    link: "/locks",
-    targetRoles: ["VETERINARIAN", "HEAD_TRAINER"],
-    senderName: "Dr. Lê Minh Châu (Lead Vet)",
-  },
-  {
-    id: "notif-vet-2",
-    title: "Clinical Observation Recorded",
-    message: "Groom reported slight warmth at left fetlock during morning stall walk for Northern Dancer Legacy.",
-    category: "MEDICAL",
-    createdAt: new Date(Date.now() - 2 * 3600000).toISOString(),
-    read: false,
-    link: "/herd",
-    targetRoles: ["VETERINARIAN"],
-    senderName: "Phạm Thị Bình (Equine Groom)",
-  },
-  {
-    id: "notif-vet-3",
-    title: "Ultrasound Re-evaluation Reminder",
-    message: "7-day post-injury ultrasound follow-up scheduled to evaluate lock release criteria.",
-    category: "MEDICAL",
-    createdAt: new Date(Date.now() - 26 * 3600000).toISOString(),
-    read: true,
-    link: "/locks",
-    targetRoles: ["VETERINARIAN"],
-    senderName: "EquiFlow Veterinary Station",
-  },
-
-  // CLUB_MANAGER
-  {
-    id: "notif-mgr-1",
-    title: "New Account Registration Request",
-    message: "Nguyễn Hoàng Anh (HORSE_OWNER) submitted membership application (REQ-2609-012).",
-    category: "ACCOUNT",
-    createdAt: new Date(Date.now() - 40 * 60000).toISOString(),
-    read: false,
-    link: "/accounts",
-    targetRoles: ["CLUB_MANAGER"],
-    senderName: "Membership Intake",
-  },
-  {
-    id: "notif-mgr-2",
-    title: "Permission Access Request",
-    message: "Trần Văn Nam requested access permission to screen: Audit Log (Ref: 403-2609-0071).",
-    category: "ACCOUNT",
-    createdAt: new Date(Date.now() - 4 * 3600000).toISOString(),
-    read: false,
-    link: "/accounts",
-    targetRoles: ["CLUB_MANAGER"],
-    senderName: "Đinh Quang Trung",
-  },
-  {
-    id: "notif-mgr-3",
-    title: "Monthly Facility Compliance Report",
-    message: "Q3 Equine health audit and medication stock verification report ready for sign-off.",
-    category: "SYSTEM",
-    createdAt: new Date(Date.now() - 28 * 3600000).toISOString(),
-    read: true,
-    link: "/audit",
-    targetRoles: ["CLUB_MANAGER"],
-    senderName: "Barn Operations",
-  },
-
-  // HEAD_TRAINER
-  {
-    id: "notif-trn-1",
-    title: "Medical Training Lock Alert",
-    message: "Northern Dancer Legacy is medically locked by Vet. Fast-work and gallop sessions are suspended.",
-    category: "TRAINING",
-    createdAt: new Date(Date.now() - 30 * 60000).toISOString(),
-    read: false,
-    link: "/locks",
-    targetRoles: ["HEAD_TRAINER"],
-    senderName: "Dr. Lê Minh Châu (Lead Vet)",
-  },
-  {
-    id: "notif-trn-2",
-    title: "Workout Session Metrics Uploaded",
-    message: "Sensor metrics uploaded for Thunderbolt Swift: Avg HR 118 bpm, Recovery 6 mins.",
-    category: "TRAINING",
-    createdAt: new Date(Date.now() - 3 * 3600000).toISOString(),
-    read: true,
-    link: "/plans",
-    targetRoles: ["HEAD_TRAINER"],
-    senderName: "Track Sensor Station",
-  },
-];
-
-export function getStoredNotifications(userRole?: Role): AppNotification[] {
-  let all: AppNotification[] = [];
-  if (typeof window !== "undefined") {
-    try {
-      const raw = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
-      if (raw) {
-        all = JSON.parse(raw) as AppNotification[];
-      } else {
-        localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(INITIAL_ROLE_NOTIFICATIONS));
-        all = INITIAL_ROLE_NOTIFICATIONS;
-      }
-    } catch {
-      all = INITIAL_ROLE_NOTIFICATIONS;
-    }
-  } else {
-    all = INITIAL_ROLE_NOTIFICATIONS;
-  }
-
-  if (!userRole) return all;
-  return all.filter((n) => !n.targetRoles || n.targetRoles.includes(userRole));
-}
-
-export function saveStoredNotifications(items: AppNotification[]): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(items));
-    window.dispatchEvent(new CustomEvent(NOTIFICATIONS_EVENT));
-  } catch {
-    // ignore
-  }
-}
-
-export function addAppNotification(item: {
-  title: string;
-  message: string;
-  category: "LOCK" | "MEDICAL" | "TRAINING" | "ACCOUNT" | "SYSTEM";
-  targetRoles: Role[];
-  link?: string;
-  senderName?: string;
-}): AppNotification {
-  let all: AppNotification[] = [];
-  try {
-    const raw = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
-    all = raw ? (JSON.parse(raw) as AppNotification[]) : INITIAL_ROLE_NOTIFICATIONS;
-  } catch {
-    all = INITIAL_ROLE_NOTIFICATIONS;
-  }
-
-  const newNotif: AppNotification = {
-    id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-    title: item.title,
-    message: item.message,
-    category: item.category,
-    createdAt: new Date().toISOString(),
-    read: false,
-    link: item.link,
-    targetRoles: item.targetRoles,
-    senderName: item.senderName,
+// Gọi khi đã đăng nhập; trả về hàm dừng (gọi khi đăng xuất / rời app).
+export function startNotificationPolling(): () => void {
+  void refreshNotifications();
+  window.clearInterval(pollTimer);
+  pollTimer = window.setInterval(() => void refreshNotifications(), POLL_MS);
+  return () => {
+    window.clearInterval(pollTimer);
+    pollTimer = undefined;
+    items = [];
   };
-
-  saveStoredNotifications([newNotif, ...all]);
-  return newNotif;
 }
 
-export function markNotificationAsRead(id: string): void {
-  let all: AppNotification[] = [];
+export function getNotifications(): AppNotification[] {
+  return items;
+}
+
+export function getUnreadNotificationsCount(): number {
+  return items.filter((n) => !n.read).length;
+}
+
+export async function markNotificationsRead(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  items = items.map((n) => (ids.includes(n.id) ? { ...n, read: true } : n));
+  window.dispatchEvent(new CustomEvent(NOTIFICATIONS_EVENT));
   try {
-    const raw = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
-    all = raw ? (JSON.parse(raw) as AppNotification[]) : INITIAL_ROLE_NOTIFICATIONS;
+    apply(await api<NotificationList>("POST", "/notifications/read", { ids }));
   } catch {
-    all = INITIAL_ROLE_NOTIFICATIONS;
+    void refreshNotifications();
   }
-  const updated = all.map((n) => (n.id === id ? { ...n, read: true } : n));
-  saveStoredNotifications(updated);
 }
 
-export function markAllNotificationsAsRead(userRole?: Role): void {
-  let all: AppNotification[] = [];
+export function markNotificationAsRead(id: string): Promise<void> {
+  return markNotificationsRead([id]);
+}
+
+export async function markAllNotificationsAsRead(): Promise<void> {
   try {
-    const raw = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
-    all = raw ? (JSON.parse(raw) as AppNotification[]) : INITIAL_ROLE_NOTIFICATIONS;
+    apply(await api<NotificationList>("POST", "/notifications/read-all"));
   } catch {
-    all = INITIAL_ROLE_NOTIFICATIONS;
+    void refreshNotifications();
   }
-  const updated = all.map((n) => {
-    if (!userRole || n.targetRoles.includes(userRole)) {
-      return { ...n, read: true };
-    }
-    return n;
-  });
-  saveStoredNotifications(updated);
 }
 
-export function clearAllNotifications(userRole?: Role): void {
-  if (!userRole) {
-    saveStoredNotifications([]);
-    return;
-  }
-  let all: AppNotification[] = [];
+export async function clearAllNotifications(): Promise<void> {
   try {
-    const raw = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
-    all = raw ? (JSON.parse(raw) as AppNotification[]) : [];
+    apply(await api<NotificationList>("DELETE", "/notifications"));
   } catch {
-    all = [];
+    void refreshNotifications();
   }
-  const remaining = all.filter((n) => !n.targetRoles.includes(userRole));
-  saveStoredNotifications(remaining);
-}
-
-export function getUnreadNotificationsCount(userRole?: Role): number {
-  const list = getStoredNotifications(userRole);
-  return list.filter((n) => !n.read).length;
 }
 
 export function subscribeNotifications(onChange: () => void): () => void {
   if (typeof window === "undefined") return () => {};
-  const handler = () => onChange();
-  window.addEventListener(NOTIFICATIONS_EVENT, handler);
-  window.addEventListener("storage", handler);
-  return () => {
-    window.removeEventListener(NOTIFICATIONS_EVENT, handler);
-    window.removeEventListener("storage", handler);
-  };
+  window.addEventListener(NOTIFICATIONS_EVENT, onChange);
+  return () => window.removeEventListener(NOTIFICATIONS_EVENT, onChange);
 }
 
 export function formatTimeAgo(isoString: string): string {

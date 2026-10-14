@@ -1,4 +1,4 @@
-import { api, USE_MOCK } from "@/shared/lib/api";
+import { api } from "@/shared/lib/api";
 import type {
   CloseRecordInput,
   CreateMedicalRecordInput,

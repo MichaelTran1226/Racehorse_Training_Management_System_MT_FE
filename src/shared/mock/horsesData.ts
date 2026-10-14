@@ -1,4 +1,4 @@
-import { addAppNotification } from "@/shared/lib/notifications";
+import { addAppNotification } from "./notificationsData";
 import { blockHeavyWorkouts } from "@/shared/mock/trainingData";
 
 export interface HerdHorse {

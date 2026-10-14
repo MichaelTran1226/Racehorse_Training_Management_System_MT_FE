@@ -11,7 +11,8 @@ import { messageFor } from "@/shared/lib/messages";
 import { forgotPassword } from "../api";
 import { EMAIL_PLACEHOLDER } from "@/shared/lib/brand";
 import styles from "./AuthPages.module.css";
-
+
+import { tr } from "@/shared/i18n/tr";
 const EMAIL_RE = /^[^\s@]+@gmail\.com$/i;
 
 // Bước 1 quên mật khẩu: nhập email để nhận mã OTP.
@@ -46,16 +47,16 @@ export default function ForgotPasswordPage() {
 
   return (
     <AuthLayout
-      title="Reset your password."
-      description="Enter the club email of the account. A 6-digit code follows by email and stays valid for 10 minutes."
+      title={tr("Reset your password.")}
+      description={tr("Enter the club email of the account. A 6-digit code follows by email and stays valid for 10 minutes.")}
     >
       <form onSubmit={onSubmit} noValidate style={{ display: "contents" }}>
         {failure && (
-          <Alert tone="danger" icon="xCircle" title="The code could not be sent">
+          <Alert tone="danger" icon="xCircle" title={tr("The code could not be sent")}>
             {failure}
           </Alert>
         )}
-        <Field label="Club email" required error={error} hint="For security the answer is the same whether or not the email exists">
+        <Field label={tr("Club email")} required error={error} hint={tr("For security the answer is the same whether or not the email exists")}>
           <Input
             type="email"
             icon="mail"
@@ -70,10 +71,10 @@ export default function ForgotPasswordPage() {
           />
         </Field>
         <Button type="submit" size="lg" block iconAfter="arrowRight" disabled={busy}>
-          {busy ? "Sending…" : "Send OTP"}
+          {busy ? tr("Sending…") : tr("Send OTP")}
         </Button>
         <p className={styles.foot}>
-          <Link to="/login">Back to sign in</Link>
+          <Link to="/login">{tr("Back to sign in")}</Link>
         </p>
       </form>
     </AuthLayout>

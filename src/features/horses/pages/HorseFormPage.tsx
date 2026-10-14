@@ -13,7 +13,8 @@ import { ApiError } from "@/shared/lib/api";
 import { getHorseById, createHorse, updateHorse, getHorseCatalog } from "../api";
 import type { Horse, CreateHorsePayload, UpdateHorsePayload, HorseCatalogItem } from "../types";
 
-
+
+import { tr } from "@/shared/i18n/tr";
 const GENDER_OPTIONS = [
   { value: "Stallion", label: "Stallion (male)" },
   { value: "Mare", label: "Mare (female)" },
@@ -269,16 +270,16 @@ export default function HorseFormPage() {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
         <PageHeader
-          title="Retired Horse Record"
-          description="This horse has been retired. Please reactivate prior to performing profile edits."
+          title={tr("Retired Horse Record")}
+          description={tr("This horse has been retired. Please reactivate prior to performing profile edits.")}
         />
         <Card pad={24}>
-          <Alert tone="warn" title="Editing Restricted">
-            This horse is marked as Retired. Historical profiles cannot be modified without reactivation.
+          <Alert tone="warn" title={tr("Editing Restricted")}>
+            {tr("This horse is marked as Retired. Historical profiles cannot be modified without reactivation.")}
           </Alert>
           <div style={{ marginTop: "1rem" }}>
             <Link to={id ? `/horses/${id}` : "/horses"}>
-              <Button tone="secondary">Back to Profile</Button>
+              <Button tone="secondary">{tr("Back to Profile")}</Button>
             </Link>
           </div>
         </Card>
@@ -289,9 +290,9 @@ export default function HorseFormPage() {
   if (loading) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-        <PageHeader title={isEdit ? "Edit horse profile" : "Register horse"} />
+        <PageHeader title={isEdit ? tr("Edit horse profile") : tr("Register horse")} />
         <Card pad={32}>
-          <p style={{ color: "var(--ink-muted)" }}>Loading horse profile data...</p>
+          <p style={{ color: "var(--ink-muted)" }}>{tr("Loading horse profile data...")}</p>
         </Card>
       </div>
     );
@@ -300,11 +301,11 @@ export default function HorseFormPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
-        title={isEdit ? `Edit ${name || horseCode}` : "Register horse"}
+        title={isEdit ? tr(`Edit ${name || horseCode}`) : tr("Register horse")}
         description={
           isEdit
-            ? "Update the identity details of this horse."
-            : "Enter the identity details. The HR- code is created when you save."
+            ? tr("Update the identity details of this horse.")
+            : tr("Enter the identity details. The HR- code is created when you save.")
         }
         action={
           <div style={{ display: "flex", gap: "0.75rem" }}>
@@ -332,7 +333,7 @@ export default function HorseFormPage() {
       />
 
       {generalError && (
-        <Alert tone="danger" title="Error">
+        <Alert tone="danger" title={tr("Error")}>
           {generalError}
         </Alert>
       )}
@@ -342,10 +343,10 @@ export default function HorseFormPage() {
           {/* Column 1: Identity */}
           <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
             <h3 style={{ margin: 0, fontSize: "var(--fs-body-lg)", fontWeight: 700, borderBottom: "1px solid var(--border)", paddingBottom: "0.5rem" }}>
-              Identity & Microchip Credentials
+              {tr("Identity & Microchip Credentials")}
             </h3>
 
-            <Field label="Horse Code (ID)" hint="System auto-generates code formatted as HR-XXXXXX upon save">
+            <Field label={tr("Horse Code (ID)")} hint={tr("System auto-generates code formatted as HR-XXXXXX upon save")}>
               <Input
                 value={isEdit ? horseCode : "Auto-generated on save"}
                 disabled
@@ -353,9 +354,9 @@ export default function HorseFormPage() {
               />
             </Field>
 
-            <Field label="Horse Name *" error={errors.name} hint="Between 2 and 100 characters (alphanumeric, spaces, ' - .)">
+            <Field label={tr("Horse Name *")} error={errors.name} hint={tr("Between 2 and 100 characters (alphanumeric, spaces, ' - .)")}>
               <Input
-                placeholder="Enter horse name..."
+                placeholder={tr("Enter horse name...")}
                 value={name}
                 invalid={Boolean(errors.name)}
                 onChange={(e) => {
@@ -367,13 +368,13 @@ export default function HorseFormPage() {
             </Field>
 
             <Field
-              label="Microchip Number *"
+              label={tr("Microchip Number *")}
               error={errors.microchip}
-              hint={isEdit ? "Exactly 15 digits." : "Exactly 15 digits. Leave it as generated or type the implanted chip number."}
+              hint={isEdit ? tr("Exactly 15 digits.") : tr("Exactly 15 digits. Leave it as generated or type the implanted chip number.")}
             >
               <div style={{ display: "flex", gap: "0.5rem" }}>
                 <Input
-                  placeholder="15 digits"
+                  placeholder={tr("15 digits")}
                   value={microchip}
                   invalid={Boolean(errors.microchip)}
                   onChange={(e) => {
@@ -392,22 +393,22 @@ export default function HorseFormPage() {
                       setIsDirty(true);
                       if (errors.microchip) setErrors((prev) => ({ ...prev, microchip: "" }));
                     }}
-                    title="Generate a new 15-digit number"
+                    title={tr("Generate a new 15-digit number")}
                   >
-                    Generate
+                    {tr("Generate")}
                   </Button>
                 )}
               </div>
             </Field>
 
             <Field
-              label="RFID Tag Code (optional)"
+              label={tr("RFID Tag Code (optional)")}
               error={errors.rfid}
-              hint="4-32 upper-case letters, digits or hyphens."
+              hint={tr("4-32 upper-case letters, digits or hyphens.")}
             >
               <div style={{ display: "flex", gap: "0.5rem" }}>
                 <Input
-                  placeholder="e.g. RFID-985141002341..."
+                  placeholder={tr("e.g. RFID-985141002341...")}
                   value={rfid}
                   invalid={Boolean(errors.rfid)}
                   onChange={(e) => {
@@ -426,9 +427,9 @@ export default function HorseFormPage() {
                       setIsDirty(true);
                       if (errors.rfid) setErrors((prev) => ({ ...prev, rfid: "" }));
                     }}
-                    title="Generate a new RFID code"
+                    title={tr("Generate a new RFID code")}
                   >
-                    Generate
+                    {tr("Generate")}
                   </Button>
                 )}
               </div>
@@ -438,10 +439,10 @@ export default function HorseFormPage() {
           {/* Column 2: Traits & Pedigree */}
           <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
             <h3 style={{ margin: 0, fontSize: "var(--fs-body-lg)", fontWeight: 700, borderBottom: "1px solid var(--border)", paddingBottom: "0.5rem" }}>
-              Biological Traits & Conformation
+              {tr("Biological Traits & Conformation")}
             </h3>
 
-            <Field label="Breed *" error={errors.breed}>
+            <Field label={tr("Breed *")} error={errors.breed}>
               <Select
                 value={breed}
                 options={catalogOptions(breeds, breed)}
@@ -453,9 +454,9 @@ export default function HorseFormPage() {
             </Field>
 
             <Field
-              label="Date of Birth *"
+              label={tr("Date of Birth *")}
               error={errors.dob}
-              hint={`Up to 12 years old (${minDobStr} – ${todayStr})`}
+              hint={tr(`Up to 12 years old (${minDobStr} – ${todayStr})`)}
             >
               <Input
                 type="date"
@@ -471,7 +472,7 @@ export default function HorseFormPage() {
               />
             </Field>
 
-            <Field label="Gender *" error={errors.gender}>
+            <Field label={tr("Gender *")} error={errors.gender}>
               <Select
                 value={gender}
                 options={GENDER_OPTIONS}
@@ -482,7 +483,7 @@ export default function HorseFormPage() {
               />
             </Field>
 
-            <Field label="Coat Color *" error={errors.color}>
+            <Field label={tr("Coat Color *")} error={errors.color}>
               <Select
                 value={color}
                 options={catalogOptions(colors, color)}
@@ -497,7 +498,7 @@ export default function HorseFormPage() {
 
         <div style={{ marginTop: "2rem", paddingTop: "1rem", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
           <Button tone="secondary" onClick={handleCancel}>
-            Cancel
+            {tr("Cancel")}
           </Button>
           {!isEdit && (
             <Button
@@ -505,7 +506,7 @@ export default function HorseFormPage() {
               disabled={submitting}
               onClick={() => handleSave(true)}
             >
-              Save & Add Another
+              {tr("Save & Add Another")}
             </Button>
           )}
           <Button
@@ -513,7 +514,7 @@ export default function HorseFormPage() {
             disabled={submitting}
             onClick={() => handleSave(false)}
           >
-            {submitting ? "Saving..." : "Save Profile"}
+            {submitting ? tr("Saving...") : tr("Save Profile")}
           </Button>
         </div>
       </Card>
@@ -521,9 +522,9 @@ export default function HorseFormPage() {
       {/* Discard changes modal */}
       {showCancelConfirm && (
         <ConfirmModal
-          title="Discard Unsaved Changes"
-          confirmLabel="Discard & Leave"
-          cancelLabel="Keep Editing"
+          title={tr("Discard Unsaved Changes")}
+          confirmLabel={tr("Discard & Leave")}
+          cancelLabel={tr("Keep Editing")}
           tone="danger"
           onConfirm={() => {
             setShowCancelConfirm(false);
@@ -533,7 +534,7 @@ export default function HorseFormPage() {
           onCancel={() => setShowCancelConfirm(false)}
         >
           <p style={{ margin: 0, color: "var(--ink-muted)" }}>
-            You have unsaved changes on this form. If you leave now, all input will be lost. Are you sure you want to discard?
+            {tr("You have unsaved changes on this form. If you leave now, all input will be lost. Are you sure you want to discard?")}
           </p>
         </ConfirmModal>
       )}

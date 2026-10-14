@@ -6,18 +6,22 @@ import { useTheme } from "@/shared/lib/theme";
 import { useAppLanguage } from "@/shared/lib/language";
 import { cx } from "@/shared/lib/cx";
 import {
-  getStoredNotifications,
+  getNotifications,
   subscribeNotifications,
   getUnreadNotificationsCount,
   type AppNotification,
 } from "@/shared/lib/notifications";
-import { getStoredHorses } from "@/shared/mock/horsesData";
+import type { HerdHorse } from "@/shared/mock/horsesData";
+import { getHealthBoard, type HealthBoardHorse } from "@/features/health/api";
+import { HEALTH_STATUS } from "@/shared/lib/status";
+import type { HealthStatus } from "@/shared/types/enums";
 import type { BreadcrumbSegment } from "@/shared/lib/navigation";
 import { useAuth } from "./AuthProvider";
 import { NotificationPopover } from "./NotificationPopover";
 import { SearchSuggestionsPopover } from "./SearchSuggestionsPopover";
 import styles from "./Topbar.module.css";
-
+
+import { tr } from "@/shared/i18n/tr";
 interface TopbarProps {
   breadcrumb: (string | BreadcrumbSegment)[]; // đoạn cuối in đậm, các đoạn trước có link điều hướng
   notifications?: number;
@@ -34,10 +38,10 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const bellTriggerRef = useRef<HTMLDivElement>(null);
   const [notificationsList, setNotificationsList] = useState<AppNotification[]>(() =>
-    getStoredNotifications(user?.role),
+    getNotifications(),
   );
   const [unreadCount, setUnreadCount] = useState<number>(() =>
-    getUnreadNotificationsCount(user?.role),
+    getUnreadNotificationsCount(),
   );
 
   // Search suggestions state
@@ -45,31 +49,25 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  // Scoped horses by user role with real-time reactive sync
-  const [allStoredHorses, setAllStoredHorses] = useState(() => getStoredHorses());
+  // Ngựa cho ô tìm kiếm: lấy từ GET /medical/health-board (BE đã lọc theo vai trò: OWNER ngựa mình, GROOM ngựa mình chăm).
+  // Tải khi mở ô tìm kiếm; tài khoản không có quyền xem y tế thì không tìm (kết quả dẫn tới trang y tế).
+  const canSearch = Boolean(user?.permissions.viewMedical);
+  const [scopedHorses, setScopedHorses] = useState<HerdHorse[]>([]);
 
   useEffect(() => {
-    const handleSyncHorses = () => {
-      setAllStoredHorses(getStoredHorses());
-    };
-    window.addEventListener("horsesUpdated", handleSyncHorses);
-    window.addEventListener("storage", handleSyncHorses);
+    if (!searchOpen || !canSearch) return;
+    let cancelled = false;
+    getHealthBoard()
+      .then((res) => {
+        if (!cancelled) setScopedHorses(res.data.map(toSearchHorse));
+      })
+      .catch(() => {
+        // Lỗi tải: giữ danh sách cũ, lần mở sau thử lại.
+      });
     return () => {
-      window.removeEventListener("horsesUpdated", handleSyncHorses);
-      window.removeEventListener("storage", handleSyncHorses);
+      cancelled = true;
     };
-  }, []);
-
-  const scopedHorses = useMemo(() => {
-    if (!user) return [];
-    if (user.role === "HORSE_OWNER") {
-      return allStoredHorses.filter((h) => (h.ownerId ? h.ownerId === user.id : true));
-    }
-    if (user.role === "GROOM") {
-      return allStoredHorses.filter((h) => (h.assignedGroomId ? h.assignedGroomId === user.id : true));
-    }
-    return allStoredHorses;
-  }, [user, allStoredHorses]);
+  }, [searchOpen, canSearch]);
 
   const filteredHorses = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -95,12 +93,12 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
 
   useEffect(() => {
     const sync = () => {
-      setNotificationsList(getStoredNotifications(user?.role));
-      setUnreadCount(getUnreadNotificationsCount(user?.role));
+      setNotificationsList(getNotifications());
+      setUnreadCount(getUnreadNotificationsCount());
     };
     sync();
     return subscribeNotifications(sync);
-  }, [user?.role]);
+  }, []);
 
   // Trang cấp 1 đã có tiêu đề H1 nên không cần breadcrumb; chỉ trang con (Accounts › Tên) mới hiện.
   const trail = breadcrumb.slice(1);
@@ -109,12 +107,12 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
   return (
     <header className={styles.bar}>
       <div className={styles.leftGroup}>
-        <button type="button" aria-label={isVietnamese ? "Mở menu" : "Open menu"} onClick={onMenu} className={styles.menu}>
+        <button type="button" aria-label={isVietnamese ? "Mở menu" : tr("Open menu")} onClick={onMenu} className={styles.menu}>
           <Icon name="list" size={18} />
         </button>
 
         {showTrail && (
-          <nav aria-label={isVietnamese ? "Đường dẫn" : "Breadcrumb"} className={styles.crumbs}>
+          <nav aria-label={isVietnamese ? "Đường dẫn" : tr("Breadcrumb")} className={styles.crumbs}>
             <ol>
               {trail.map((part, i) => {
                 const last = i === trail.length - 1;
@@ -153,11 +151,9 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
             placeholder={t("topbar.searchPlaceholder", "Search horses, plans, people")}
             className={cx(searchQuery && styles.hasValue)}
             onFocus={() => {
-              setAllStoredHorses(getStoredHorses());
               setSearchOpen(true);
             }}
             onClick={() => {
-              setAllStoredHorses(getStoredHorses());
               setSearchOpen(true);
             }}
             onChange={(e) => {
@@ -175,7 +171,7 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
             }}
           />
           {searchQuery && (
-            <button type="button" onClick={() => setSearchQuery("")} aria-label={isVietnamese ? "Xóa tìm kiếm" : "Clear search"} className={styles.clear}>
+            <button type="button" onClick={() => setSearchQuery("")} aria-label={isVietnamese ? "Xóa tìm kiếm" : tr("Clear search")} className={styles.clear}>
               <Icon name="x" size={14} />
             </button>
           )}
@@ -201,8 +197,8 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
           <div ref={bellTriggerRef} className={styles.bellTrigger}>
             <button
               type="button"
-              aria-label={unreadCount > 0 ? (isVietnamese ? `Thông báo, ${unreadCount} chưa đọc` : `Notifications, ${unreadCount} unread`) : (isVietnamese ? "Thông báo" : "Notifications")}
-              title={isVietnamese ? "Thông báo" : "Notifications"}
+              aria-label={unreadCount > 0 ? (isVietnamese ? tr(`Thông báo, ${unreadCount} chưa đọc`) : tr(`Notifications, ${unreadCount} unread`)) : (isVietnamese ? "Thông báo" : tr("Notifications"))}
+              title={isVietnamese ? "Thông báo" : tr("Notifications")}
               onClick={() => setPopoverOpen((prev) => !prev)}
               className={styles.actionBtn}
             >
@@ -212,7 +208,6 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
           </div>
             <NotificationPopover
               notifications={notificationsList}
-              userRole={user?.role}
               open={popoverOpen}
               onClose={() => setPopoverOpen(false)}
               triggerRef={bellTriggerRef}
@@ -246,4 +241,29 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
         </div>
     </header>
   );
+}
+
+const HEALTH_GROUP: Record<HealthBoardHorse["healthGroup"], HerdHorse["healthGroup"]> = {
+  QUALIFIED: "FIT",
+  OBSERVATION: "WATCH",
+  INJURED: "INJURED",
+  ISOLATED: "QUARANTINED",
+};
+
+function toSearchHorse(h: HealthBoardHorse): HerdHorse {
+  return {
+    id: h.id,
+    name: h.name,
+    code: h.horseCode ?? "",
+    stall: h.stallCode ?? "—",
+    zone: h.zone ?? undefined,
+    healthGroup: HEALTH_GROUP[h.healthGroup],
+    status: h.status,
+    statusText: HEALTH_STATUS[h.status as HealthStatus]?.label ?? h.status,
+    isLocked: h.isMedicalLocked,
+    primaryDiagnosis: h.latestRecord?.diagnosis,
+    lastExamDate: h.latestRecord?.examinationDate,
+    unresolvedInjuriesCount: h.openInjuries.length,
+    hasOverdueRoutine: h.hasOverduePreventive,
+  };
 }
