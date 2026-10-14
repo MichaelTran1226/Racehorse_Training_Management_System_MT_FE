@@ -17,7 +17,6 @@ import {
   extendTrainingLock,
 } from "../api";
 import { TrainingLockModal } from "../components/TrainingLockModal";
-import { VitalsDisplay } from "../components/VitalsDisplay";
 import { HorseAnatomyGraphic } from "../components/HorseAnatomyGraphic";
 import type { HorseMedicalProfile, ObservationNote } from "../types";
 import styles from "./MedicalRecordPage.module.css";
@@ -271,19 +270,6 @@ export default function MedicalRecordPage() {
                 )}
               </div>
             )}
-          </div>
-
-          {/* Vital Signs */}
-          <div className={styles.sectionCard}>
-            <h2 className={styles.sectionTitle}>
-              <Icon name="pulse" size={18} />
-              {tr("Latest Vital Signs & History")}
-            </h2>
-            <VitalsDisplay
-              vitals={overview.latestVitals}
-              history={overview.vitalsHistory}
-              recordedAt={overview.latestVitals?.recordedAt}
-            />
           </div>
         </div>
       )}
