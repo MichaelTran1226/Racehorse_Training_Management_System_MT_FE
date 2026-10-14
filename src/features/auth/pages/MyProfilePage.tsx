@@ -18,6 +18,7 @@ import { NOTIFY_META, notifyLock, PERMISSIONS, ROLE_LABEL } from "@/shared/lib/p
 import { ACCOUNT_STATUS } from "@/shared/lib/status";
 import { updateNotification, updateProfile } from "../api";
 import styles from "./ProfilePages.module.css";
+import { fullNameError } from "@/shared/lib/name";
 
 // Design 1.15: hồ sơ cá nhân — dùng chung cho cả 5 vai trò, mỗi người chỉ thấy hồ sơ của mình.
 export default function MyProfilePage() {
@@ -38,8 +39,8 @@ export default function MyProfilePage() {
   const VN_PHONE_RE = /^0[35789]\d{8}$/;
 
   async function onSave() {
-    if (!fullName.trim()) {
-      setNameError(isVietnamese ? "Họ và tên không được để trống." : "Full name is required.");
+    if (fullNameError(fullName)) {
+      setNameError(fullNameError(fullName));
       return;
     }
     const cleanPhone = phone.replace(/[\s-]/g, "");

@@ -109,8 +109,10 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
   }
 
   const status = ACCOUNT_STATUS[account.status];
-  const total = PERMISSIONS.length;
-  const on = PERMISSIONS.filter((m) => effective(account, draft, m)).length;
+  // Chỉ hiện quyền vai trò này có thể có; quyền thuộc vai trò khác (VD: Place a Training Lock với Head Trainer) bị ẩn.
+  const applicable = PERMISSIONS.filter((m) => !m.ownerRoles || m.ownerRoles.includes(account.role));
+  const total = applicable.length;
+  const on = applicable.filter((m) => effective(account, draft, m)).length;
 
   function toggle(key: PermissionKey, next: boolean) {
     if (next) setDraft((d) => (d ? { ...d, [key]: true } : d));
@@ -188,10 +190,10 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
       <div className={styles.grid}>
         <Card title="Permission list" subtitle="Grouped the same way as the sidebar">
           <div className={styles.groups}>
-            {PERMISSION_GROUPS.map((group) => (
+            {PERMISSION_GROUPS.filter((group) => applicable.some((p) => p.group === group)).map((group) => (
               <div key={group}>
                 <p className={styles.groupLabel}>{group}</p>
-                {PERMISSIONS.filter((p) => p.group === group).map((meta) => {
+                {applicable.filter((p) => p.group === group).map((meta) => {
                   const lock = permissionLock(account.role, meta);
                   return (
                     <div key={meta.key} className={styles.row}>

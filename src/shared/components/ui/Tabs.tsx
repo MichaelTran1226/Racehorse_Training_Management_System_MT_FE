@@ -5,6 +5,7 @@ export interface TabItem<T extends string> {
   id: T;
   label: string;
   count?: number;
+  dot?: boolean; // chấm báo có việc mới (không kèm số)
 }
 
 interface TabsProps<T extends string> {
@@ -40,6 +41,7 @@ export function Tabs<T extends string>({ items, active, onChange, label = "Filte
           >
             {t.label}
             {t.count != null && <span className={styles.count}>{t.count}</span>}
+            {t.dot && <span className={styles.dot} aria-label="New" />}
           </button>
         );
       })}

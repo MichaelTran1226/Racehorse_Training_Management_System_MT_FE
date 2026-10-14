@@ -14,6 +14,7 @@ import { ACCOUNT_STATUS } from "@/shared/lib/status";
 import type { AccountStatus, PublicAccount } from "@/shared/types/auth";
 import { updateAccount } from "../api";
 import styles from "./EditAccountModal.module.css";
+import { fullNameError } from "@/shared/lib/name";
 
 // Chỉ xóa hẳn được tài khoản chưa từng hoạt động (khớp backend); tài khoản đã dùng thì vô hiệu hóa.
 const DELETABLE: AccountStatus[] = ["INVITED", "PENDING_EMAIL", "REJECTED"];
@@ -52,7 +53,7 @@ export function EditAccountModal({ account, isSelf, isLastManager, onClose, onSa
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (busy) return;
-    if (!fullName.trim()) return setErrors({ fullName: isVietnamese ? "Họ và tên không được để trống." : "Full name is required." });
+    if (fullNameError(fullName)) return setErrors({ fullName: fullNameError(fullName) });
 
     const cleanPhone = phone.replace(/[\s-]/g, "");
     if (cleanPhone && !VN_PHONE_RE.test(cleanPhone)) {

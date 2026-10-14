@@ -13,6 +13,7 @@ import { passwordError } from "@/shared/lib/password";
 import { register } from "../api";
 import { EMAIL_PLACEHOLDER } from "@/shared/lib/brand";
 import styles from "./AuthPages.module.css";
+import { fullNameError } from "@/shared/lib/name";
 
 const EMAIL_RE = /^[^\s@]+@gmail\.com$/i;
 
@@ -51,7 +52,7 @@ export default function SignUpPage() {
 
     const mail = email.trim().toLowerCase();
     const next: Errors = {};
-    if (!name.trim()) next.name = "Full name is required.";
+    if (fullNameError(name)) next.name = fullNameError(name);
     if (!mail) next.email = "Club email is required.";
     else if (!EMAIL_RE.test(mail)) next.email = "Email must be a @gmail.com address.";
     if (!password) next.password = "Password is required.";

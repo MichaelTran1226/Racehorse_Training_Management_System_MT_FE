@@ -5,11 +5,10 @@ import { Button } from "@/shared/components/ui/Button";
 import { Card } from "@/shared/components/ui/Card";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Icon } from "@/shared/components/ui/Icon";
-import { useAuth } from "@/shared/components/layout/AuthProvider";
 import {
   type AppNotification,
   formatTimeAgo,
-  getStoredNotifications,
+  getNotifications,
   isToday,
   markAllNotificationsAsRead,
   markNotificationAsRead,
@@ -18,20 +17,19 @@ import {
 } from "@/shared/lib/notifications";
 
 export default function NotificationsPage() {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"all" | "unread">("all");
   const [notifications, setNotifications] = useState<AppNotification[]>(() =>
-    getStoredNotifications(user?.role),
+    getNotifications(),
   );
 
   useEffect(() => {
     const sync = () => {
-      setNotifications(getStoredNotifications(user?.role));
+      setNotifications(getNotifications());
     };
     sync();
     return subscribeNotifications(sync);
-  }, [user?.role]);
+  }, []);
 
   const filtered = notifications.filter((n) => {
     if (activeTab === "unread") return !n.read;
@@ -52,6 +50,8 @@ export default function NotificationsPage() {
         return { icon: "activity", bg: "var(--warn)", text: "var(--surface)", label: "Training & Workouts" };
       case "ACCOUNT":
         return { icon: "users", bg: "var(--violet)", text: "var(--surface)", label: "Accounts & Roles" };
+      case "HORSE":
+        return { icon: "horse", bg: "var(--brand)", text: "var(--surface)", label: "Horse Profiles" };
       default:
         return { icon: "bell", bg: "var(--muted)", text: "var(--surface)", label: "System Notification" };
     }
@@ -63,7 +63,7 @@ export default function NotificationsPage() {
       <div
         key={n.id}
         onClick={() => {
-          markNotificationAsRead(n.id);
+          void markNotificationAsRead(n.id);
           if (n.link) navigate(n.link);
         }}
         style={{
@@ -194,7 +194,7 @@ export default function NotificationsPage() {
 
         <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
           {unreadCount > 0 && (
-            <Button tone="secondary" onClick={() => markAllNotificationsAsRead(user?.role)}>
+            <Button tone="secondary" onClick={() => void markAllNotificationsAsRead()}>
               <Icon name="check" size={15} style={{ marginRight: 6 }} />
               Mark all as read
             </Button>
@@ -267,7 +267,7 @@ export default function NotificationsPage() {
           {notifications.length > 0 && (
             <button
               type="button"
-              onClick={() => clearAllNotifications(user?.role)}
+              onClick={() => void clearAllNotifications()}
               style={{
                 border: "none",
                 background: "transparent",

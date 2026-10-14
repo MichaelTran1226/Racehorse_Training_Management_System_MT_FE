@@ -11,6 +11,7 @@ import { EMAIL_PLACEHOLDER } from "@/shared/lib/brand";
 import { ROLE_LABEL } from "@/shared/lib/permissions";
 import type { PublicAccount, Role } from "@/shared/types/auth";
 import { createAccount } from "../api";
+import { fullNameError } from "@/shared/lib/name";
 
 const EMAIL_RE = /^[^\s@]+@gmail\.com$/i;
 
@@ -35,7 +36,7 @@ export function CreateAccountModal({ onClose, onCreated }: CreateAccountModalPro
     if (busy) return;
     const mail = email.trim().toLowerCase();
     const found: typeof errors = {};
-    if (!fullName.trim()) found.name = "Full name is required.";
+    if (fullNameError(fullName)) found.name = fullNameError(fullName);
     if (!mail) found.email = "Club email is required.";
     else if (!EMAIL_RE.test(mail)) found.email = "Email must be a @gmail.com address.";
     if (found.name || found.email) return setErrors(found);

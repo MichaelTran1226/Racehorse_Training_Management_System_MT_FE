@@ -7,6 +7,7 @@ import { BRAND } from "@/shared/lib/brand";
 import { breadcrumbFor } from "@/shared/lib/navigation";
 import { ROLE_LABEL } from "@/shared/lib/permissions";
 import { useAppLanguage } from "@/shared/lib/language";
+import { startNotificationPolling } from "@/shared/lib/notifications";
 import { useAuth } from "./AuthProvider";
 import { BreadcrumbContext } from "./BreadcrumbContext";
 import { Sidebar } from "./Sidebar";
@@ -30,6 +31,12 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (status === "anonymous") navigate(`/login?next=${encodeURIComponent(pathname)}`, { replace: true });
   }, [status, pathname, navigate]);
 
+  // Thông báo: hỏi BE mỗi 30 giây khi đã đăng nhập; đổi tài khoản/đăng xuất thì dừng.
+  useEffect(() => {
+    if (status !== "authenticated" || !user) return;
+    return startNotificationPolling();
+  }, [status, user?.id]);
+
   // Mỗi lần đổi trang: đóng menu hẹp và hỏi lại server (quyền có thể vừa bị đổi).
   useEffect(() => {
     setMenuOpen(false);
@@ -49,7 +56,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <BreadcrumbContext.Provider value={setCrumbTail}>
       <div className={styles.shell}>
-        <Sidebar user={user} pathname={pathname} note={info.note} open={menuOpen} onNavigate={() => setMenuOpen(false)} />
+        <Sidebar user={user} pathname={pathname} note={info.note} accountsAlert={info.accountsAlert} open={menuOpen} onNavigate={() => setMenuOpen(false)} />
         {menuOpen && <button type="button" className={styles.scrim} aria-label="Close menu" onClick={() => setMenuOpen(false)} />}
         <div className={styles.main}>
           <Topbar

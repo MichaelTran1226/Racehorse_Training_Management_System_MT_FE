@@ -25,3 +25,4 @@
   color: var(--muted);
 }
 .on .count { color: var(--brand); }
+.dot { width: 8px; height: 8px; border-radius: 999px; background: var(--danger); flex-shrink: 0; }

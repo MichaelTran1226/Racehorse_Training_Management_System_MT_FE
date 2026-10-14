@@ -6,7 +6,7 @@ import { useTheme } from "@/shared/lib/theme";
 import { useAppLanguage } from "@/shared/lib/language";
 import { cx } from "@/shared/lib/cx";
 import {
-  getStoredNotifications,
+  getNotifications,
   subscribeNotifications,
   getUnreadNotificationsCount,
   type AppNotification,
@@ -34,10 +34,10 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const bellTriggerRef = useRef<HTMLDivElement>(null);
   const [notificationsList, setNotificationsList] = useState<AppNotification[]>(() =>
-    getStoredNotifications(user?.role),
+    getNotifications(),
   );
   const [unreadCount, setUnreadCount] = useState<number>(() =>
-    getUnreadNotificationsCount(user?.role),
+    getUnreadNotificationsCount(),
   );
 
   // Search suggestions state
@@ -95,12 +95,12 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
 
   useEffect(() => {
     const sync = () => {
-      setNotificationsList(getStoredNotifications(user?.role));
-      setUnreadCount(getUnreadNotificationsCount(user?.role));
+      setNotificationsList(getNotifications());
+      setUnreadCount(getUnreadNotificationsCount());
     };
     sync();
     return subscribeNotifications(sync);
-  }, [user?.role]);
+  }, []);
 
   // Trang cấp 1 đã có tiêu đề H1 nên không cần breadcrumb; chỉ trang con (Accounts › Tên) mới hiện.
   const trail = breadcrumb.slice(1);
@@ -212,7 +212,6 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
           </div>
             <NotificationPopover
               notifications={notificationsList}
-              userRole={user?.role}
               open={popoverOpen}
               onClose={() => setPopoverOpen(false)}
               triggerRef={bellTriggerRef}

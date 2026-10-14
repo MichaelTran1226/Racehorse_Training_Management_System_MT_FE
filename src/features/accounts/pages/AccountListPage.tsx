@@ -20,6 +20,7 @@ import { formatDate, formatDateTime, formatTime } from "@/shared/lib/format";
 import { messageFor } from "@/shared/lib/messages";
 import { ROLE_LABEL } from "@/shared/lib/permissions";
 import { getStoredHorses } from "@/shared/mock/horsesData";
+import { hasNewPendingRequests, markPendingRequestsSeen, subscribePendingSeen } from "@/shared/lib/pendingRequests";
 import { ACCOUNT_STATUS, tabOf } from "@/shared/lib/status";
 import type { AccountTab } from "@/shared/lib/status";
 import type { PublicAccount, Role } from "@/shared/types/auth";
@@ -48,6 +49,10 @@ const EMPTY_COPY: Record<AccountTab, { title: string; description: string }> = {
   },
   PENDING: { title: "No requests are waiting.", description: "New sign-up requests and invitations appear here until they are settled." },
   ACTIVE: { title: "No active accounts match this filter.", description: "Approve a pending request or unlock an account to see it here." },
+  INACTIVE: {
+    title: "No deactivated accounts.",
+    description: "Accounts of people who left the club appear here. They can be reactivated at any time.",
+  },
   LOCKED: {
     title: "No locked accounts.",
     description: "Locked accounts appear here with the reason and the time they were locked. Nothing is locked at the moment.",
@@ -70,6 +75,7 @@ export default function AccountListPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const horses = useMemo(() => getStoredHorses(), []);
+  const [pendingNews, setPendingNews] = useState(false);
 
   const load = useCallback(async () => {
     setAccounts(null);
@@ -86,6 +92,15 @@ export default function AccountListPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Chấm ở tab Pending: tính lại khi danh sách đổi hoặc thông báo đổi; mở tab Pending => coi như đã xem.
+  useEffect(() => {
+    if (!accounts) return;
+    if (tab === "PENDING") markPendingRequestsSeen(accounts);
+    const update = () => setPendingNews(hasNewPendingRequests(accounts));
+    update();
+    return subscribePendingSeen(update);
+  }, [accounts, tab]);
 
   const replace = (updated: PublicAccount) =>
     setAccounts((list) => (list ? list.map((a) => (a.id === updated.id ? updated : a)) : list));
@@ -142,15 +157,6 @@ export default function AccountListPage() {
     const q = search.trim().toLowerCase();
     return (accounts ?? []).filter((a) => (roleFilter === "ALL" || a.role === roleFilter) && (!q || a.fullName.toLowerCase().includes(q)));
   }, [accounts, roleFilter, search]);
-  const counts = useMemo(
-    () => ({
-      ALL: scoped.length,
-      PENDING: scoped.filter((a) => tabOf(a.status) === "PENDING").length,
-      ACTIVE: scoped.filter((a) => a.status === "ACTIVE").length,
-      LOCKED: scoped.filter((a) => a.status === "LOCKED").length,
-    }),
-    [scoped],
-  );
   const rows = useMemo(() => scoped.filter((a) => tab === "ALL" || tabOf(a.status) === tab), [scoped, tab]);
   const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const current = Math.min(page, pageCount);
@@ -354,10 +360,11 @@ export default function AccountListPage() {
               setPage(1);
             }}
             items={[
-              { id: "ALL", label: "All", count: counts.ALL },
-              { id: "PENDING", label: "Pending", count: counts.PENDING },
-              { id: "ACTIVE", label: "Active", count: counts.ACTIVE },
-              { id: "LOCKED", label: "Locked", count: counts.LOCKED },
+              { id: "ALL", label: "All" },
+              { id: "ACTIVE", label: "Active" },
+              { id: "INACTIVE", label: "Deactivated" },
+              { id: "PENDING", label: "Pending", dot: pendingNews },
+              { id: "LOCKED", label: "Locked" },
             ]}
           />
           <div className={styles.tools}>
@@ -469,7 +476,7 @@ export default function AccountListPage() {
           onConfirm={(reason) => run(dialog.target, "deactivate", reason)}
         >
           Use this when the person leaves the club. Sign-in stops and every session ends; everything this account recorded stays in place.
-          It can be reactivated from the All tab.
+          It can be reactivated from the Deactivated tab.
         </ReasonConfirmModal>
       )}
 

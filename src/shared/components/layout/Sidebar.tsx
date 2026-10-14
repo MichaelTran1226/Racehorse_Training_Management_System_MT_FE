@@ -16,13 +16,14 @@ interface SidebarProps {
   user: AuthUser;
   pathname: string;
   note: SidebarNote | null;
+  accountsAlert: boolean;
   open: boolean; // chỉ có ý nghĩa ở màn hình hẹp (menu trượt ra)
   onNavigate: () => void;
 }
 
 // Sidebar xây từ DANH SÁCH QUYỀN của tài khoản (navFor), không chỉ từ tên vai trò:
 // thu hồi quyền => mục tương ứng biến mất ở lần tải trang kế tiếp.
-export function Sidebar({ user, pathname, note, open, onNavigate }: SidebarProps) {
+export function Sidebar({ user, pathname, note, accountsAlert, open, onNavigate }: SidebarProps) {
   const { t, isVietnamese } = useAppLanguage();
   const groups = navFor(user.role, user.permissions);
   const [hasActiveLocks, setHasActiveLocks] = useState(() => getStoredLocks().some((l) => l.status === "ACTIVE"));
@@ -71,7 +72,8 @@ export function Sidebar({ user, pathname, note, open, onNavigate }: SidebarProps
               <p className={styles.groupLabel}>{t(`nav.group_${rawKey}`, t(`nav.${rawKey}`, capitalize(g.label)))}</p>
             {g.items.map((it) => {
               const active = isNavItemActive(it, pathname);
-              const showAlertDot = (it.id === "locks" && hasActiveLocks) || (it.id !== "locks" && Boolean(it.alert));
+              const showAlertDot =
+                (it.id === "locks" && hasActiveLocks) || (it.id === "accounts" && accountsAlert) || Boolean(it.alert);
               const itemKey = it.i18nKey || it.id;
               const itemLabel = isVietnamese ? t(`nav.${itemKey}`, it.label) : it.label;
               return (

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "@/shared/components/ui/Icon";
-import type { Role } from "@/shared/types/enums";
 import {
   type AppNotification,
   formatTimeAgo,
@@ -12,7 +11,6 @@ import {
 
 interface NotificationPopoverProps {
   notifications: AppNotification[];
-  userRole?: Role;
   open: boolean;
   onClose: () => void;
   triggerRef?: React.RefObject<HTMLElement | null>;
@@ -20,7 +18,6 @@ interface NotificationPopoverProps {
 
 export function NotificationPopover({
   notifications,
-  userRole,
   open,
   onClose,
   triggerRef,
@@ -73,6 +70,8 @@ export function NotificationPopover({
         return { icon: "activity", bg: "var(--warn)", text: "var(--surface)" };
       case "ACCOUNT":
         return { icon: "users", bg: "var(--violet)", text: "var(--surface)" };
+      case "HORSE":
+        return { icon: "horse", bg: "var(--brand)", text: "var(--surface)" };
       default:
         return { icon: "bell", bg: "var(--muted)", text: "var(--surface)" };
     }
@@ -84,7 +83,7 @@ export function NotificationPopover({
       <div
         key={n.id}
         onClick={() => {
-          markNotificationAsRead(n.id);
+          void markNotificationAsRead(n.id);
           if (n.link) navigate(n.link);
           onClose();
         }}
@@ -249,7 +248,7 @@ export function NotificationPopover({
               <button
                 type="button"
                 onClick={() => {
-                  markAllNotificationsAsRead(userRole);
+                  void markAllNotificationsAsRead();
                   setMenuOpen(false);
                 }}
                 style={{

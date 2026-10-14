@@ -6,7 +6,7 @@ import styles from "./Tooltip.module.css";
 interface TooltipProps {
   label: string;
   children: ReactNode;
-  placement?: "top" | "bottom" | "right";
+  placement?: "top" | "topEnd" | "bottom" | "right";
   block?: boolean;
 }
 

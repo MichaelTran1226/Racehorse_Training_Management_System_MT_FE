@@ -28,5 +28,12 @@ export function Switch({ checked, onChange, label, disabled, blockedReason }: Sw
       <span className={styles.knob} />
     </button>
   );
-  return blockedReason ? <Tooltip label={blockedReason}>{control}</Tooltip> : control;
+  // Công tắc luôn nằm sát mép phải của thẻ (thẻ có overflow: hidden) => tooltip canh mép phải để không bị cắt chữ.
+  return blockedReason ? (
+    <Tooltip label={blockedReason} placement="topEnd">
+      {control}
+    </Tooltip>
+  ) : (
+    control
+  );
 }
