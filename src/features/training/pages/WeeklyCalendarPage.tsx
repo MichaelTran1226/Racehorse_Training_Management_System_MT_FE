@@ -163,6 +163,7 @@ export default function WeeklyCalendarPage() {
         type="button"
         onClick={() => setSelected(s)}
         className={cardClass}
+        aria-label={`${s.horseName} – ${s.startTime} – ${SESSION_STATUS_LABEL[s.status]}`}
         title={overlapping.has(s.id) ? (isVietnamese ? `Nhân viên ${s.groomName} có 2 bài tập cùng giờ.` : `Groom ${s.groomName} has two workouts at the same time.`) : ""}
       >
         <div className={styles.cardTop}>

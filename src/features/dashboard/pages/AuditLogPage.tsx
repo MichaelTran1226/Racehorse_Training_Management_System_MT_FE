@@ -240,7 +240,7 @@ export default function AuditLogPage() {
       {result && (
         <div className={styles.pagination}>
           <span role="status">
-            {result.total} {isVietnamese ? "sự kiện" : "events"} · {isVietnamese ? "Trang" : "Page"} {result.page} / {Math.max(1, Math.ceil(result.total / result.pageSize))}
+            {result.total} {isVietnamese ? "sự kiện" : "events"} · {isVietnamese ? `Trang ${result.page} / ${Math.max(1, Math.ceil(result.total / result.pageSize))}` : `Page ${result.page} of ${Math.max(1, Math.ceil(result.total / result.pageSize))}`}
           </span>
           <div className={styles.actions}>
             <Button tone="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>
