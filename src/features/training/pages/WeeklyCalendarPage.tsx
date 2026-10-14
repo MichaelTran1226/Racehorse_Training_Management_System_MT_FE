@@ -8,6 +8,7 @@ import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Input } from "@/shared/components/form/Input";
 import { Select } from "@/shared/components/form/Select";
 import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
+import { useAppLanguage } from "@/shared/lib/language";
 import { messageFor } from "@/shared/lib/messages";
 import { todayClub, trainingApi } from "../api";
 import { sessionButtons } from "../components/sessionRules";
@@ -21,6 +22,8 @@ import {
   TRACK_LABEL,
 } from "../types";
 import type { ExerciseSession, ExerciseType, SessionStatus, TrackType, TrainingPlan } from "../types";
+
+import styles from "./WeeklyCalendarPage.module.css";
 
 function shiftDay(date: string, days: number): string {
   const d = new Date(`${date}T00:00:00Z`);
@@ -36,6 +39,25 @@ function minutes(t: string): number {
   return h * 60 + m;
 }
 
+const WEEKDAYS_VI = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+const WEEKDAYS_SHORT_VI = ["CN", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+const WEEKDAYS_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const WEEKDAYS_SHORT_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function formatCalendarDay(dateStr: string, isVi: boolean) {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  const dayIdx = d.getUTCDay();
+  const dayNum = d.getUTCDate();
+  const monthNum = d.getUTCMonth() + 1;
+  return {
+    weekdayFull: isVi ? WEEKDAYS_VI[dayIdx] : WEEKDAYS_EN[dayIdx],
+    weekdayShort: isVi ? WEEKDAYS_SHORT_VI[dayIdx] : WEEKDAYS_SHORT_EN[dayIdx],
+    dayNum,
+    monthNum,
+    dateLabel: `${dayNum}/${monthNum}`,
+  };
+}
+
 type Dialog =
   | { kind: "add" }
   | { kind: "edit" | "cancel" | "restore"; session: ExerciseSession }
@@ -44,6 +66,7 @@ type Dialog =
 /** SC-2.05 Lịch tập. HT thêm / sửa / hủy / khôi phục; CM, VET xem; GROOM dùng "Lịch tập của tôi". */
 export default function WeeklyCalendarPage() {
   const user = useCurrentUser();
+  const { isVietnamese, t } = useAppLanguage();
   const [params] = useSearchParams();
   const isTrainer = user.role === "HEAD_TRAINER";
 
@@ -118,41 +141,49 @@ export default function WeeklyCalendarPage() {
   const uniq = <T,>(rows: T[], key: (r: T) => string, label: (r: T) => string) =>
     [...new Map(rows.map((r) => [key(r), label(r)])).entries()].map(([value, l]) => ({ value, label: l }));
 
-  const SessionBlock = ({ s }: { s: ExerciseSession }) => (
-    <button
-      type="button"
-      onClick={() => setSelected(s)}
-      style={{
-        all: "unset",
-        cursor: "pointer",
-        display: "block",
-        padding: "0.6rem 0.75rem",
-        borderRadius: "var(--r)",
-        border: `1px solid ${overlapping.has(s.id) ? "var(--warn)" : "var(--border)"}`,
-        background:
-          selected?.id === s.id
-            ? "var(--surface-3)"
-            : s.status === "BLOCKED"
-              ? "var(--danger-bg)"
-              : s.status === "COMPLETED"
-                ? "var(--ok-bg)"
-                : "var(--brand-50)",
-        textDecoration: s.status === "CANCELLED" ? "line-through" : undefined,
-        width: "100%",
-        boxSizing: "border-box",
-      }}
-      title={overlapping.has(s.id) ? `Groom ${s.groomName} has two workouts at the same time.` : ""}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", gap: "0.35rem", flexWrap: "wrap" }}>
-        <strong>{s.startTime} {s.horseName}</strong>
-        <Badge tone={SESSION_STATUS_TONE[s.status]}>{SESSION_STATUS_LABEL[s.status]}</Badge>
-      </div>
-      <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>
-        {EXERCISE_TYPE_LABEL[s.sessionType]} {isHeavy(s.sessionType, s.intensity) && "· heavy"} · {s.targetDistanceMeters} m × {s.repetitions} · {TRACK_LABEL[s.trackType]} · {s.groomName ?? "—"}
-        {overlapping.has(s.id) && " · groom overlap"}
-      </div>
-    </button>
-  );
+  const SessionBlock = ({ s }: { s: ExerciseSession }) => {
+    const isSelected = selected?.id === s.id;
+    const isBlocked = s.status === "BLOCKED";
+    const isCompleted = s.status === "COMPLETED";
+    const isCancelled = s.status === "CANCELLED";
+    const isTrial = s.sessionType === "TRIAL";
+    const isHeavySession = isHeavy(s.sessionType, s.intensity);
+
+    let cardClass = styles.sessionCard;
+    if (isSelected) cardClass += ` ${styles.selectedCard}`;
+    if (isCancelled) cardClass += ` ${styles.cancelledCard}`;
+    else if (isBlocked) cardClass += ` ${styles.blockedCard}`;
+    else if (isCompleted) cardClass += ` ${styles.completedCard}`;
+    else if (isTrial) cardClass += ` ${styles.trialRunCard}`;
+    else if (isHeavySession) cardClass += ` ${styles.heavyCard}`;
+
+    return (
+      <button
+        type="button"
+        onClick={() => setSelected(s)}
+        className={cardClass}
+        title={overlapping.has(s.id) ? (isVietnamese ? `Nhân viên ${s.groomName} có 2 bài tập cùng giờ.` : `Groom ${s.groomName} has two workouts at the same time.`) : ""}
+      >
+        <div className={styles.cardTop}>
+          <span className={styles.timeTag}>{s.startTime}</span>
+          <Badge tone={SESSION_STATUS_TONE[s.status]}>{SESSION_STATUS_LABEL[s.status]}</Badge>
+        </div>
+        <div className={styles.horseName} title={s.horseName}>
+          {s.horseName}
+        </div>
+        <div className={styles.cardMeta}>
+          <div>
+            <strong>{EXERCISE_TYPE_LABEL[s.sessionType]}</strong>
+            {isHeavySession && (isVietnamese ? " · Nặng" : " · Heavy")}
+            {isTrial && (isVietnamese ? " · Chạy thử" : " · Trial Run")}
+          </div>
+          <div>{s.targetDistanceMeters}m × {s.repetitions} · {TRACK_LABEL[s.trackType]}</div>
+          <div>👤 {s.groomName ?? (isVietnamese ? "Chưa giao" : "—")}</div>
+          {overlapping.has(s.id) && <div className={styles.overlapAlert}>{isVietnamese ? "⚠️ Trùng giờ chăm sóc" : "⚠️ Groom overlap"}</div>}
+        </div>
+      </button>
+    );
+  };
 
   const days = mode === "week" ? Array.from({ length: 7 }, (_, i) => shiftDay(from, i)) : [date];
   const b = selected ? sessionButtons(selected, user.role) : null;
@@ -161,81 +192,107 @@ export default function WeeklyCalendarPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>Training Schedule</h1>
+          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>{t("calendar.title")}</h1>
           <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
-            Workouts by day or week. Heavy workouts are blocked while a horse is under a Training Lock.
+            {t("calendar.subtitle")}
           </p>
         </div>
         <div style={{ display: "flex", gap: "0.75rem" }}>
-          <Link to="/training/trials"><Button tone="secondary">Trial runs</Button></Link>
-          {isTrainer && <Button tone="primary" onClick={() => setDialog({ kind: "add" })}>+ Schedule Workout</Button>}
+          <Link to="/training/trials"><Button tone="secondary">{t("calendar.trialRuns")}</Button></Link>
+          {isTrainer && <Button tone="primary" onClick={() => setDialog({ kind: "add" })}>{t("calendar.scheduleWorkout")}</Button>}
         </div>
       </div>
 
       <Card pad={16}>
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
-          <Button tone="ghost" size="sm" onClick={() => setDate(shiftDay(date, mode === "day" ? -1 : -7))} aria-label="Previous">‹</Button>
+          <Button tone="ghost" size="sm" onClick={() => setDate(shiftDay(date, mode === "day" ? -1 : -7))} aria-label={isVietnamese ? "Trước" : "Previous"}>‹</Button>
           <Input type="date" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} style={{ width: 170 }} />
-          <Button tone="ghost" size="sm" onClick={() => setDate(shiftDay(date, mode === "day" ? 1 : 7))} aria-label="Next">›</Button>
-          <Button tone="secondary" size="sm" onClick={() => setDate(todayClub())}>Today</Button>
-          <Button tone={mode === "day" ? "primary" : "secondary"} size="sm" onClick={() => setMode("day")}>Day</Button>
-          <Button tone={mode === "week" ? "primary" : "secondary"} size="sm" onClick={() => setMode("week")}>Week</Button>
+          <Button tone="ghost" size="sm" onClick={() => setDate(shiftDay(date, mode === "day" ? 1 : 7))} aria-label={isVietnamese ? "Sau" : "Next"}>›</Button>
+          <Button tone="secondary" size="sm" onClick={() => setDate(todayClub())}>{t("calendar.today")}</Button>
+          <Button tone={mode === "day" ? "primary" : "secondary"} size="sm" onClick={() => setMode("day")}>{t("calendar.day")}</Button>
+          <Button tone={mode === "week" ? "primary" : "secondary"} size="sm" onClick={() => setMode("week")}>{t("calendar.week")}</Button>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.5rem", marginTop: "0.75rem" }}>
-          <Select value={horse} onChange={(e) => setHorse(e.target.value)} options={[{ value: "ALL", label: "All horses" }, ...uniq(sessions, (s) => s.horseId, (s) => s.horseName)]} />
+          <Select value={horse} onChange={(e) => setHorse(e.target.value)} options={[{ value: "ALL", label: t("calendar.allHorses") }, ...uniq(sessions, (s) => s.horseId, (s) => s.horseName)]} />
           <Select
             value={groom}
             onChange={(e) => setGroom(e.target.value)}
-            options={[{ value: "ALL", label: "All grooms" }, ...uniq(sessions.filter((s) => s.groomId), (s) => s.groomId as string, (s) => s.groomName ?? "—")]}
+            options={[{ value: "ALL", label: t("calendar.allGrooms") }, ...uniq(sessions.filter((s) => s.groomId), (s) => s.groomId as string, (s) => s.groomName ?? (isVietnamese ? "Chưa giao" : "—"))]}
           />
           <Select
             value={surface}
             onChange={(e) => setSurface(e.target.value)}
-            options={[{ value: "ALL", label: "All surfaces" }, ...(Object.keys(TRACK_LABEL) as TrackType[]).map((t) => ({ value: t, label: TRACK_LABEL[t] }))]}
+            options={[{ value: "ALL", label: t("calendar.allSurfaces") }, ...(Object.keys(TRACK_LABEL) as TrackType[]).map((tr) => ({ value: tr, label: TRACK_LABEL[tr] }))]}
           />
           <Select
             value={type}
             onChange={(e) => setType(e.target.value)}
-            options={[{ value: "ALL", label: "All types" }, ...(Object.keys(EXERCISE_TYPE_LABEL) as ExerciseType[]).map((t) => ({ value: t, label: EXERCISE_TYPE_LABEL[t] }))]}
+            options={[{ value: "ALL", label: t("calendar.allTypes") }, ...(Object.keys(EXERCISE_TYPE_LABEL) as ExerciseType[]).map((ty) => ({ value: ty, label: EXERCISE_TYPE_LABEL[ty] }))]}
           />
           <Select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            options={[{ value: "ALL", label: "All statuses" }, ...(Object.keys(SESSION_STATUS_LABEL) as SessionStatus[]).map((s) => ({ value: s, label: SESSION_STATUS_LABEL[s] }))]}
+            options={[{ value: "ALL", label: t("calendar.allStatuses") }, ...(Object.keys(SESSION_STATUS_LABEL) as SessionStatus[]).map((st) => ({ value: st, label: SESSION_STATUS_LABEL[st] }))]}
           />
         </div>
       </Card>
 
       {error && (
-        <Alert tone="danger" title="Could not load data">
-          {error} <Button size="sm" tone="secondary" onClick={() => void load()}>Try again</Button>
+        <Alert tone="danger" title={isVietnamese ? "Không thể tải dữ liệu" : "Could not load data"}>
+          {error} <Button size="sm" tone="secondary" onClick={() => void load()}>{isVietnamese ? "Thử lại" : "Try again"}</Button>
         </Alert>
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: selected ? "minmax(0, 1fr) 320px" : "minmax(0, 1fr)", gap: "1rem", alignItems: "start" }}>
         <div>
           {loading ? (
-            <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Loading schedule...</div>
+            <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>{isVietnamese ? "Đang tải lịch tập..." : "Loading schedule..."}</div>
           ) : mode === "day" ? (
             shown.length === 0 ? (
-              <EmptyState title={`No workouts on ${date}.`} />
+              <EmptyState title={isVietnamese ? `Không có bài tập vào ngày ${date}.` : `No workouts on ${date}.`} />
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                <div style={{ fontWeight: 700, fontSize: "var(--fs-body-lg)", marginBottom: "0.25rem" }}>
+                  {formatCalendarDay(date, isVietnamese).weekdayFull}, {date} ({shown.length} {isVietnamese ? "bài tập" : shown.length === 1 ? "workout" : "workouts"})
+                </div>
                 {shown.map((s) => (
                   <SessionBlock key={s.id} s={s} />
                 ))}
               </div>
             )
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(140px, 1fr))", gap: "0.5rem", overflowX: "auto" }}>
-              {days.map((d) => (
-                <div key={d} style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                  <div style={{ fontWeight: 700, fontSize: "var(--fs-body)", color: d === todayClub() ? "var(--brand)" : undefined }}>{d.slice(5)}</div>
-                  {shown.filter((s) => s.sessionDate === d).map((s) => (
-                    <SessionBlock key={s.id} s={s} />
-                  ))}
-                </div>
-              ))}
+            <div className={styles.calendarCard}>
+              <div className={styles.calendarGrid}>
+                {days.map((d) => {
+                  const dayInfo = formatCalendarDay(d, isVietnamese);
+                  const daySessions = shown.filter((s) => s.sessionDate === d);
+                  const isToday = d === todayClub();
+                  return (
+                    <div key={d} className={`${styles.dayColumn} ${isToday ? styles.todayColumn : ""}`}>
+                      <div className={styles.dayHeader}>
+                        <span className={styles.weekdayLabel}>{dayInfo.weekdayFull}</span>
+                        <div className={`${styles.dateCircle} ${isToday ? styles.todayCircle : ""}`} title={d}>
+                          {dayInfo.dayNum}
+                        </div>
+                        <span className={`${styles.workoutCountPill} ${daySessions.length > 0 ? styles.hasWorkoutsPill : ""}`}>
+                          {daySessions.length > 0
+                            ? `${daySessions.length} ${isVietnamese ? "bài tập" : daySessions.length === 1 ? "workout" : "workouts"}`
+                            : (isVietnamese ? "0 bài" : "0 workouts")}
+                        </span>
+                      </div>
+                      <div className={styles.columnBody}>
+                        {daySessions.length === 0 ? (
+                          <div className={styles.emptySlot}>{t("calendar.emptyDay")}</div>
+                        ) : (
+                          daySessions.map((s) => (
+                            <SessionBlock key={s.id} s={s} />
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
@@ -244,28 +301,28 @@ export default function WeeklyCalendarPage() {
           <Card pad={16}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <strong>{selected.horseName}</strong>
-              <Button tone="ghost" size="sm" onClick={() => setSelected(null)} aria-label="Close" icon="x" />
+              <Button tone="ghost" size="sm" onClick={() => setSelected(null)} aria-label={isVietnamese ? "Đóng" : "Close"} icon="x" />
             </div>
             <div style={{ fontSize: "var(--fs-body)", display: "flex", flexDirection: "column", gap: "0.25rem", marginTop: "0.5rem" }}>
               <div>{selected.sessionDate} {selected.startTime} · {EXERCISE_TYPE_LABEL[selected.sessionType]} · {INTENSITY_LABEL[selected.intensity]}</div>
               <div>{selected.targetDistanceMeters} m × {selected.repetitions}{selected.targetSpeedKmh ? ` · ${selected.targetSpeedKmh} km/h` : ""}</div>
-              <div>{TRACK_LABEL[selected.trackType]} · Jockey: {selected.jockeyName || "—"} · Groom: {selected.groomName || "—"}</div>
-              <div>Plan: {selected.planName} {selected.phaseName ? `· ${selected.phaseName}` : ""}</div>
-              {selected.notes && <div>Instructions: {selected.notes}</div>}
+              <div>{TRACK_LABEL[selected.trackType]} · {isVietnamese ? "Nài ngựa" : "Jockey"}: {selected.jockeyName || "—"} · {isVietnamese ? "Chăm sóc" : "Groom"}: {selected.groomName || (isVietnamese ? "Chưa giao" : "—")}</div>
+              <div>{isVietnamese ? "Giáo án" : "Plan"}: {selected.planName} {selected.phaseName ? `· ${selected.phaseName}` : ""}</div>
+              {selected.notes && <div>{isVietnamese ? "Chỉ dẫn" : "Instructions"}: {selected.notes}</div>}
               {selected.statusReason && <div style={{ color: "var(--danger)" }}>{selected.statusReason}</div>}
-              {selected.medicalOverride && <Badge tone="warn">Scheduled in a medical status</Badge>}
+              {selected.medicalOverride && <Badge tone="warn">{isVietnamese ? "Xếp lịch trong trạng thái y tế" : "Scheduled in a medical status"}</Badge>}
             </div>
             <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", marginTop: "0.75rem" }}>
-              {b.edit && <Button size="sm" tone="ghost" onClick={() => setDialog({ kind: "edit", session: selected })}>Edit</Button>}
-              {b.record && <Link to={`/training/sessions/${selected.id}/result`}><Button size="sm" tone="secondary">Record result</Button></Link>}
-              {b.viewResult && <Link to={`/training/sessions/${selected.id}/result`}><Button size="sm" tone="secondary">View result</Button></Link>}
+              {b.edit && <Button size="sm" tone="ghost" onClick={() => setDialog({ kind: "edit", session: selected })}>{isVietnamese ? "Sửa" : "Edit"}</Button>}
+              {b.record && <Link to={`/training/sessions/${selected.id}/result`}><Button size="sm" tone="secondary">{isVietnamese ? "Ghi kết quả" : "Record result"}</Button></Link>}
+              {b.viewResult && <Link to={`/training/sessions/${selected.id}/result`}><Button size="sm" tone="secondary">{isVietnamese ? "Xem kết quả" : "View result"}</Button></Link>}
               {b.restore && (
                 <Button size="sm" tone="primary" disabled={Boolean(b.restoreBlockedReason)} title={b.restoreBlockedReason ?? ""} onClick={() => setDialog({ kind: "restore", session: selected })}>
-                  Restore
+                  {isVietnamese ? "Khôi phục" : "Restore"}
                 </Button>
               )}
-              {b.cancel && <Button size="sm" tone="danger" onClick={() => setDialog({ kind: "cancel", session: selected })}>Cancel workout</Button>}
-              {user.role !== "GROOM" && <Link to={`/training/plans/${selected.planId}`}><Button size="sm" tone="ghost">Open plan</Button></Link>}
+              {b.cancel && <Button size="sm" tone="danger" onClick={() => setDialog({ kind: "cancel", session: selected })}>{isVietnamese ? "Hủy bài tập" : "Cancel workout"}</Button>}
+              {user.role !== "GROOM" && <Link to={`/training/plans/${selected.planId}`}><Button size="sm" tone="ghost">{isVietnamese ? "Mở giáo án" : "Open plan"}</Button></Link>}
             </div>
           </Card>
         )}

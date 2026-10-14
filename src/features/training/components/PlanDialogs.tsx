@@ -8,6 +8,7 @@ import { Input } from "@/shared/components/form/Input";
 import { Select } from "@/shared/components/form/Select";
 import { Textarea } from "@/shared/components/form/Textarea";
 import { useToast } from "@/shared/components/ui/Toast";
+import { useAppLanguage } from "@/shared/lib/language";
 import { ApiError } from "@/shared/lib/api";
 import { messageFor } from "@/shared/lib/messages";
 import { getHorses } from "@/features/horses/api";
@@ -28,6 +29,7 @@ interface DialogProps {
  */
 export function ActivatePlanDialog({ plan, onClose, onDone }: DialogProps) {
   const toast = useToast();
+  const { isVietnamese } = useAppLanguage();
   const medical = ["UNDER_OBSERVATION", "INJURED", "ISOLATED"].includes(plan.horseStatus ?? "");
   const [moveHorse, setMoveHorse] = useState(plan.horseStatus === "RESTING");
   const [vetConsulted, setVetConsulted] = useState(false);
@@ -35,10 +37,20 @@ export function ActivatePlanDialog({ plan, onClose, onDone }: DialogProps) {
   const [submitting, setSubmitting] = useState(false);
 
   const checks: { ok: boolean; text: string }[] = [
-    { ok: !plan.isLockedByMedical, text: plan.isLockedByMedical ? "The horse is under a Training Lock." : "No Training Lock" },
-    { ok: plan.horseStatus !== "RETIRED", text: "Horse still managed" },
-    { ok: plan.workoutCount > 0, text: plan.workoutCount > 0 ? `${plan.workoutCount} workout(s) scheduled` : "The plan has no workouts yet." },
-    { ok: plan.endDate >= todayClub(), text: "End date not passed" },
+    {
+      ok: !plan.isLockedByMedical,
+      text: plan.isLockedByMedical
+        ? (isVietnamese ? "Chiến mã đang bị Khóa huấn luyện." : "The horse is under a Training Lock.")
+        : (isVietnamese ? "Không bị Khóa huấn luyện" : "No Training Lock"),
+    },
+    { ok: plan.horseStatus !== "RETIRED", text: isVietnamese ? "Chiến mã còn trong quản lý" : "Horse still managed" },
+    {
+      ok: plan.workoutCount > 0,
+      text: plan.workoutCount > 0
+        ? (isVietnamese ? `Đã lên lịch ${plan.workoutCount} bài tập` : `${plan.workoutCount} workout(s) scheduled`)
+        : (isVietnamese ? "Giáo án chưa có bài tập nào." : "The plan has no workouts yet."),
+    },
+    { ok: plan.endDate >= todayClub(), text: isVietnamese ? "Chưa quá ngày kết thúc" : "End date not passed" },
   ];
   const blocked = checks.some((c) => !c.ok);
 
@@ -47,7 +59,7 @@ export function ActivatePlanDialog({ plan, onClose, onDone }: DialogProps) {
     setError("");
     try {
       const updated = await trainingApi.activatePlan(plan.id, { moveHorseToTraining: moveHorse, vetConsulted });
-      toast.show("Training plan activated.", "ok");
+      toast.show(isVietnamese ? "Đã kích hoạt kế hoạch huấn luyện." : "Training plan activated.", "ok");
       onDone(updated);
       onClose();
     } catch (err) {
@@ -59,19 +71,19 @@ export function ActivatePlanDialog({ plan, onClose, onDone }: DialogProps) {
 
   return (
     <Modal
-      title={`Activate ${plan.name}`}
+      title={isVietnamese ? `Kích hoạt ${plan.name}` : `Activate ${plan.name}`}
       onClose={onClose}
       foot={
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
-          <Button tone="ghost" onClick={onClose}>Cancel</Button>
+          <Button tone="ghost" onClick={onClose}>{isVietnamese ? "Hủy" : "Cancel"}</Button>
           <Button tone="primary" onClick={() => void submit()} disabled={submitting || blocked || (medical && !vetConsulted)}>
-            Activate
+            {isVietnamese ? "Kích hoạt" : "Activate"}
           </Button>
         </div>
       }
     >
       <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-        {error && <Alert tone="danger" title="Cannot activate yet">{error}</Alert>}
+        {error && <Alert tone="danger" title={isVietnamese ? "Chưa thể kích hoạt" : "Cannot activate yet"}>{error}</Alert>}
         <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: "0.35rem" }}>
           {checks.map((c) => (
             <li key={c.text} style={{ color: c.ok ? "var(--ok)" : "var(--danger)" }}>
@@ -80,14 +92,42 @@ export function ActivatePlanDialog({ plan, onClose, onDone }: DialogProps) {
                 {c.text}
             </li>
           ))}
-          <li style={{ color: "var(--text-muted)" }}>• No other active plan for {plan.horseName} (checked when you confirm)</li>
-          {medical && <li style={{ color: "var(--warn)" }}><Icon name="alert" size={14} style={{ display: "inline-block", verticalAlign: "-2px", marginRight: 6 }} />The horse is in status {plan.horseStatus}.</li>}
+          <li style={{ color: "var(--text-muted)" }}>
+            • {isVietnamese ? `Không có giáo án nào khác đang chạy cho ${plan.horseName} (kiểm tra khi xác nhận)` : `No other active plan for ${plan.horseName} (checked when you confirm)`}
+          </li>
+          {medical && (
+            <li style={{ color: "var(--warn)" }}>
+              <Icon name="alert" size={14} style={{ display: "inline-block", verticalAlign: "-2px", marginRight: 6 }} />
+              {isVietnamese ? `Chiến mã đang ở trạng thái ${plan.horseStatus}.` : `The horse is in status ${plan.horseStatus}.`}
+            </li>
+          )}
         </ul>
+        {plan.workoutCount === 0 && (
+          <div style={{ marginTop: "0.5rem", padding: "0.6rem 0.8rem", borderRadius: "8px", background: "var(--surface-sunken)", border: "1px solid var(--border)", fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>
+            {isVietnamese ? (
+              <>
+                💡 <strong>Hướng dẫn:</strong> Giáo án cần có ít nhất 1 bài tập trước khi kích hoạt. Hãy đóng hộp thoại này, mở tab <strong>Workouts</strong> của giáo án và bấm <strong>+ Add workout</strong> để thêm bài tập (hoặc thêm một lượt chạy thử Trial run).
+              </>
+            ) : (
+              <>
+                💡 <strong>Tip:</strong> A training plan must have at least 1 workout before activation. Please close this dialog, switch to the <strong>Workouts</strong> tab and click <strong>+ Add workout</strong> to schedule a workout or trial run.
+              </>
+            )}
+          </div>
+        )}
         {plan.horseStatus === "RESTING" && (
-          <Checkbox label="Also move the horse from Resting to In Training" checked={moveHorse} onChange={setMoveHorse} />
+          <Checkbox
+            label={isVietnamese ? "Đồng thời chuyển ngựa từ Nghỉ ngơi sang Huấn luyện" : "Also move the horse from Resting to In Training"}
+            checked={moveHorse}
+            onChange={setMoveHorse}
+          />
         )}
         {medical && (
-          <Checkbox label="I have discussed this plan with the Veterinarian" checked={vetConsulted} onChange={setVetConsulted} />
+          <Checkbox
+            label={isVietnamese ? "Tôi đã trao đổi kế hoạch này với Bác sĩ thú y" : "I have discussed this plan with the Veterinarian"}
+            checked={vetConsulted}
+            onChange={setVetConsulted}
+          />
         )}
       </div>
     </Modal>

@@ -64,9 +64,11 @@ export function Sidebar({ user, pathname, note, open, onNavigate }: SidebarProps
       </div>
 
       <div className={styles.groups}>
-        {groups.map((g) => (
-          <div key={g.label} className={styles.group}>
-            <p className={styles.groupLabel}>{t(`nav.${g.label.toLowerCase()}`, capitalize(g.label))}</p>
+        {groups.map((g) => {
+          const rawKey = g.label.toLowerCase().replace(/\s+/g, "_");
+          return (
+            <div key={g.label} className={styles.group}>
+              <p className={styles.groupLabel}>{t(`nav.group_${rawKey}`, t(`nav.${rawKey}`, capitalize(g.label)))}</p>
             {g.items.map((it) => {
               const active = isNavItemActive(it, pathname);
               const showAlertDot = (it.id === "locks" && hasActiveLocks) || (it.id !== "locks" && Boolean(it.alert));
@@ -85,7 +87,8 @@ export function Sidebar({ user, pathname, note, open, onNavigate }: SidebarProps
               );
             })}
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {note && (

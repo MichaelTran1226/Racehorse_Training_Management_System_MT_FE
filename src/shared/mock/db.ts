@@ -26,6 +26,8 @@ export interface AuditEntry {
   actor: string;
   action: string;
   detail: string;
+  oldValues?: Record<string, any> | null;
+  newValues?: Record<string, any> | null;
 }
 
 export interface PermissionRequest {
@@ -104,7 +106,14 @@ export function toPublic(account: Account): PublicAccount {
   return rest;
 }
 
-export function audit(db: Db, actor: string, action: string, detail: string): void {
-  db.audit.unshift({ at: new Date().toISOString(), actor, action, detail });
+export function audit(
+  db: Db,
+  actor: string,
+  action: string,
+  detail: string,
+  oldValues?: Record<string, any> | null,
+  newValues?: Record<string, any> | null,
+): void {
+  db.audit.unshift({ at: new Date().toISOString(), actor, action, detail, oldValues: oldValues ?? null, newValues: newValues ?? null });
   db.audit = db.audit.slice(0, 200);
 }

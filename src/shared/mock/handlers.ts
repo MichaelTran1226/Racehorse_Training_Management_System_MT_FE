@@ -256,10 +256,21 @@ const routes: Route[] = [
           (from && to && Date.parse(from) > Date.parse(to))) throw new ApiError(400, "VALIDATION", "Invalid audit filters");
       const logs = db.audit.map((entry, index) => {
         const user = db.accounts.find(a => a.fullName === entry.actor || (entry.actor.includes("Tran") && a.id === "viet"));
-        return { id: `demo-${entry.at}-${db.audit.length - index}`, userId: user?.id ?? null, actor: entry.actor, action: entry.action,
-          entityName: "DemoActivity", entityId: null, oldValuesJson: null,
-          newValuesJson: JSON.stringify({ actor: entry.actor, detail: entry.detail }), ipAddress: null, userAgent: null,
-          timestamp: entry.at, user: user ? { id: user.id, fullName: user.fullName } : null };
+        return {
+          id: `demo-${entry.at}-${db.audit.length - index}`,
+          userId: user?.id ?? null,
+          actor: entry.actor,
+          action: entry.action,
+          entityName: "Account / System",
+          entityId: null,
+          oldValuesJson: entry.oldValues ? JSON.stringify(entry.oldValues) : null,
+          newValuesJson: entry.newValues ? JSON.stringify(entry.newValues) : JSON.stringify({ actor: entry.actor, detail: entry.detail }),
+          ipAddress: null,
+          userAgent: null,
+          timestamp: entry.at,
+          user: user ? { id: user.id, fullName: user.fullName } : null,
+          detail: entry.detail,
+        };
       }).filter(entry => {
         const actorFilter = q.get("actor")?.toLowerCase().trim();
         if (actorFilter) {
@@ -641,12 +652,26 @@ const routes: Route[] = [
       const fullName = String(body.fullName ?? "").trim();
       const phone = String(body.phone ?? "").trim();
       if (!fullName) throw new ApiError(400, "VALIDATION", "Full name is required.", { field: "fullName" });
-      if (phone.length > 30) throw new ApiError(400, "VALIDATION", "Phone number is too long.", { field: "phone" });
+      const cleanPhone = phone.replace(/[\s-]/g, "");
+      const VN_PHONE_RE = /^0[35789]\d{8}$/;
+      if (cleanPhone && !VN_PHONE_RE.test(cleanPhone)) {
+        throw new ApiError(400, "VALIDATION", "Số điện thoại phải gồm 10 chữ số hợp lệ (bắt đầu bằng 03, 05, 07, 08, 09).", { field: "phone" });
+      }
       const changes: string[] = [];
-      if (fullName !== target.fullName) changes.push(`name ${target.fullName} → ${fullName}`);
-      if (phone !== target.phone) changes.push(`phone ${target.phone || "—"} → ${phone || "—"}`);
+      const oldVals: Record<string, any> = {};
+      const newVals: Record<string, any> = {};
+      if (fullName !== target.fullName) {
+        changes.push(`họ tên: ${target.fullName} → ${fullName}`);
+        oldVals["Họ và tên"] = target.fullName;
+        newVals["Họ và tên"] = fullName;
+      }
+      if (phone !== target.phone) {
+        changes.push(`số điện thoại: ${target.phone || "—"} → ${phone || "—"}`);
+        oldVals["Số điện thoại"] = target.phone || "—";
+        newVals["Số điện thoại"] = phone || "—";
+      }
       if (changes.length > 0) {
-        audit(db, actor.fullName, "ACCOUNT_EDITED", `${target.fullName}: ${changes.join(", ")}`);
+        audit(db, actor.fullName, "ACCOUNT_EDITED", `${target.fullName}: ${changes.join(", ")}`, oldVals, newVals);
         target.fullName = fullName;
         target.phone = phone;
         saveDb(db);
@@ -702,10 +727,31 @@ const routes: Route[] = [
     handler({ db, body }) {
       const user = currentUser(db);
       const fullName = String(body.fullName ?? "").trim();
+      const phone = String(body.phone ?? "").trim();
       if (!fullName) throw new ApiError(400, "VALIDATION", "Full name is required.", { field: "fullName" });
-      if (fullName !== user.fullName) audit(db, user.fullName, "NAME_CHANGED", `${user.fullName} → ${fullName}`);
+      const cleanPhone = phone.replace(/[\s-]/g, "");
+      const VN_PHONE_RE = /^0[35789]\d{8}$/;
+      if (cleanPhone && !VN_PHONE_RE.test(cleanPhone)) {
+        throw new ApiError(400, "VALIDATION", "Số điện thoại phải gồm 10 chữ số hợp lệ (bắt đầu bằng 03, 05, 07, 08, 09).", { field: "phone" });
+      }
+      const oldVals: Record<string, any> = {};
+      const newVals: Record<string, any> = {};
+      const changes: string[] = [];
+      if (fullName !== user.fullName) {
+        changes.push(`họ tên: ${user.fullName} → ${fullName}`);
+        oldVals["Họ và tên"] = user.fullName;
+        newVals["Họ và tên"] = fullName;
+      }
+      if (phone !== user.phone) {
+        changes.push(`số điện thoại: ${user.phone || "—"} → ${phone || "—"}`);
+        oldVals["Số điện thoại"] = user.phone || "—";
+        newVals["Số điện thoại"] = phone || "—";
+      }
+      if (changes.length > 0) {
+        audit(db, user.fullName, "PROFILE_UPDATED", `${user.fullName}: ${changes.join(", ")}`, oldVals, newVals);
+      }
       user.fullName = fullName;
-      user.phone = String(body.phone ?? "").trim();
+      user.phone = phone;
       saveDb(db);
       return { user: toPublic(user) };
     },
