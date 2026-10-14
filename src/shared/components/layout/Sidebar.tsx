@@ -6,8 +6,8 @@ import { cx } from "@/shared/lib/cx";
 import { capitalize, initials } from "@/shared/lib/format";
 import { isNavItemActive, navFor, ROLE_LABEL } from "@/shared/lib/permissions";
 import { useAppLanguage } from "@/shared/lib/language";
-import { getStoredLocks } from "@/shared/mock/horsesData";
 import { healthApi } from "@/features/health/api";
+import { subscribeNotifications } from "@/shared/lib/notifications";
 import type { AuthUser } from "@/shared/types/auth";
 import type { SidebarNote } from "./useSidebarInfo";
 import styles from "./Sidebar.module.css";
@@ -26,9 +26,12 @@ interface SidebarProps {
 export function Sidebar({ user, pathname, note, accountsAlert, open, onNavigate }: SidebarProps) {
   const { t, isVietnamese } = useAppLanguage();
   const groups = navFor(user.role, user.permissions);
-  const [hasActiveLocks, setHasActiveLocks] = useState(() => getStoredLocks().some((l) => l.status === "ACTIVE"));
+  const [hasActiveLocks, setHasActiveLocks] = useState(false);
+  const canViewLocks = Boolean(user.permissions.viewMedical);
 
+  // Chấm đỏ cạnh Training Locks: có ít nhất 1 khóa đang hiệu lực (đọc từ API; lỗi thì không hiện chấm).
   useEffect(() => {
+    if (!canViewLocks) return;
     let cancelled = false;
     const updateLocks = () => {
       healthApi.getLocks()
@@ -38,19 +41,20 @@ export function Sidebar({ user, pathname, note, accountsAlert, open, onNavigate 
           }
         })
         .catch(() => {
-          if (!cancelled) setHasActiveLocks(getStoredLocks().some((l) => l.status === "ACTIVE"));
+          // Giữ trạng thái cũ, lần cập nhật sau thử lại.
         });
     };
 
     updateLocks();
+    // Có thông báo mới (VD vừa đặt/gỡ khóa) => đọc lại; dữ liệu mock phát "horsesUpdated".
+    const offNotifications = subscribeNotifications(updateLocks);
     window.addEventListener("horsesUpdated", updateLocks);
-    window.addEventListener("storage", updateLocks);
     return () => {
       cancelled = true;
+      offNotifications();
       window.removeEventListener("horsesUpdated", updateLocks);
-      window.removeEventListener("storage", updateLocks);
     };
-  }, []);
+  }, [canViewLocks]);
 
   return (
     <nav aria-label="Main navigation" className={cx(styles.nav, open && styles.open)}>

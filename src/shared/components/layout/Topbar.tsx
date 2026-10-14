@@ -11,7 +11,10 @@ import {
   getUnreadNotificationsCount,
   type AppNotification,
 } from "@/shared/lib/notifications";
-import { getStoredHorses } from "@/shared/mock/horsesData";
+import type { HerdHorse } from "@/shared/mock/horsesData";
+import { getHealthBoard, type HealthBoardHorse } from "@/features/health/api";
+import { HEALTH_STATUS } from "@/shared/lib/status";
+import type { HealthStatus } from "@/shared/types/enums";
 import type { BreadcrumbSegment } from "@/shared/lib/navigation";
 import { useAuth } from "./AuthProvider";
 import { NotificationPopover } from "./NotificationPopover";
@@ -45,31 +48,25 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  // Scoped horses by user role with real-time reactive sync
-  const [allStoredHorses, setAllStoredHorses] = useState(() => getStoredHorses());
+  // Ngựa cho ô tìm kiếm: lấy từ GET /medical/health-board (BE đã lọc theo vai trò: OWNER ngựa mình, GROOM ngựa mình chăm).
+  // Tải khi mở ô tìm kiếm; tài khoản không có quyền xem y tế thì không tìm (kết quả dẫn tới trang y tế).
+  const canSearch = Boolean(user?.permissions.viewMedical);
+  const [scopedHorses, setScopedHorses] = useState<HerdHorse[]>([]);
 
   useEffect(() => {
-    const handleSyncHorses = () => {
-      setAllStoredHorses(getStoredHorses());
-    };
-    window.addEventListener("horsesUpdated", handleSyncHorses);
-    window.addEventListener("storage", handleSyncHorses);
+    if (!searchOpen || !canSearch) return;
+    let cancelled = false;
+    getHealthBoard()
+      .then((res) => {
+        if (!cancelled) setScopedHorses(res.data.map(toSearchHorse));
+      })
+      .catch(() => {
+        // Lỗi tải: giữ danh sách cũ, lần mở sau thử lại.
+      });
     return () => {
-      window.removeEventListener("horsesUpdated", handleSyncHorses);
-      window.removeEventListener("storage", handleSyncHorses);
+      cancelled = true;
     };
-  }, []);
-
-  const scopedHorses = useMemo(() => {
-    if (!user) return [];
-    if (user.role === "HORSE_OWNER") {
-      return allStoredHorses.filter((h) => (h.ownerId ? h.ownerId === user.id : true));
-    }
-    if (user.role === "GROOM") {
-      return allStoredHorses.filter((h) => (h.assignedGroomId ? h.assignedGroomId === user.id : true));
-    }
-    return allStoredHorses;
-  }, [user, allStoredHorses]);
+  }, [searchOpen, canSearch]);
 
   const filteredHorses = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -153,11 +150,9 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
             placeholder={t("topbar.searchPlaceholder", "Search horses, plans, people")}
             className={cx(searchQuery && styles.hasValue)}
             onFocus={() => {
-              setAllStoredHorses(getStoredHorses());
               setSearchOpen(true);
             }}
             onClick={() => {
-              setAllStoredHorses(getStoredHorses());
               setSearchOpen(true);
             }}
             onChange={(e) => {
@@ -245,4 +240,29 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
         </div>
     </header>
   );
+}
+
+const HEALTH_GROUP: Record<HealthBoardHorse["healthGroup"], HerdHorse["healthGroup"]> = {
+  QUALIFIED: "FIT",
+  OBSERVATION: "WATCH",
+  INJURED: "INJURED",
+  ISOLATED: "QUARANTINED",
+};
+
+function toSearchHorse(h: HealthBoardHorse): HerdHorse {
+  return {
+    id: h.id,
+    name: h.name,
+    code: h.horseCode ?? "",
+    stall: h.stallCode ?? "—",
+    zone: h.zone ?? undefined,
+    healthGroup: HEALTH_GROUP[h.healthGroup],
+    status: h.status,
+    statusText: HEALTH_STATUS[h.status as HealthStatus]?.label ?? h.status,
+    isLocked: h.isMedicalLocked,
+    primaryDiagnosis: h.latestRecord?.diagnosis,
+    lastExamDate: h.latestRecord?.examinationDate,
+    unresolvedInjuriesCount: h.openInjuries.length,
+    hasOverdueRoutine: h.hasOverduePreventive,
+  };
 }

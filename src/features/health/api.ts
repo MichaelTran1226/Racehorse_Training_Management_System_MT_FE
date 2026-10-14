@@ -1,11 +1,4 @@
-import { api, USE_MOCK } from "@/shared/lib/api";
-import {
-  getStoredHorses,
-  getStoredLocks,
-  placeHorseTrainingLock,
-  extendHorseTrainingLock,
-  liftHorseTrainingLock,
-} from "@/shared/mock/horsesData";
+import { api } from "@/shared/lib/api";
 import type {
   CloseRecordInput,
   CreateMedicalRecordInput,

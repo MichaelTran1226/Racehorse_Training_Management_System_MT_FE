@@ -19,7 +19,8 @@ import { useToast } from "@/shared/components/ui/Toast";
 import { formatDate, formatDateTime, formatTime } from "@/shared/lib/format";
 import { messageFor } from "@/shared/lib/messages";
 import { ROLE_LABEL } from "@/shared/lib/permissions";
-import { getStoredHorses } from "@/shared/mock/horsesData";
+import { getHorses } from "@/features/horses/api";
+import type { Horse } from "@/features/horses/types";
 import { hasNewPendingRequests, markPendingRequestsSeen, subscribePendingSeen } from "@/shared/lib/pendingRequests";
 import { ACCOUNT_STATUS, tabOf } from "@/shared/lib/status";
 import type { AccountTab } from "@/shared/lib/status";
@@ -74,7 +75,7 @@ export default function AccountListPage() {
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const horses = useMemo(() => getStoredHorses(), []);
+  const [horses, setHorses] = useState<Horse[]>([]);
   const [pendingNews, setPendingNews] = useState(false);
 
   const load = useCallback(async () => {
@@ -92,6 +93,25 @@ export default function AccountListPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Số ngựa của từng Chủ ngựa (cột Role): đọc mọi trang của GET /horses (tối đa 100 dòng/trang).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const all: Horse[] = [];
+      for (let page = 1; ; page += 1) {
+        const res = await getHorses({ page, limit: 100 });
+        all.push(...res.items);
+        if (page >= res.totalPages) break;
+      }
+      if (!cancelled) setHorses(all.filter((h) => h.status !== "RETIRED"));
+    })().catch(() => {
+      // Không tải được danh sách ngựa: cột chỉ hiện vai trò, không chặn trang.
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Chấm ở tab Pending: tính lại khi danh sách đổi hoặc thông báo đổi; mở tab Pending => coi như đã xem.
   useEffect(() => {
@@ -182,9 +202,7 @@ export default function AccountListPage() {
       render: (r) => {
         const roleLabel = ROLE_LABEL[r.role];
         if (r.role === "HORSE_OWNER") {
-          const owned = horses.filter(
-            (h) => h.ownerId === r.id || (h.ownerName && h.ownerName.toLowerCase().includes(r.fullName.toLowerCase()))
-          );
+          const owned = horses.filter((h) => (h.ownerId ?? h.owner?.id) === r.id);
           return (
             <div>
               <div style={{ fontWeight: 600 }}>{roleLabel}</div>
@@ -200,7 +218,7 @@ export default function AccountListPage() {
                   marginTop: 2,
                   textDecoration: "none",
                 }}
-                title={owned.length > 0 ? owned.map((h) => `${h.name} (${h.code})`).join(", ") : "No horses assigned yet"}
+                title={owned.length > 0 ? owned.map((h) => `${h.name} (${h.horseCode ?? "—"})`).join(", ") : "No horses assigned yet"}
               >
                 <Icon name="horse" size={14} />
                 <span>{owned.length > 0 ? `${owned.length} horse${owned.length > 1 ? "s" : ""} at club` : "0 horses assigned"}</span>
