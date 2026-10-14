@@ -26,7 +26,8 @@ const GENERIC: Record<string, string> = {
   NOT_FOUND: "The requested resource could not be found.",
   LAST_MANAGER: "The club must keep at least one active Club Manager.",
   RESET_EXPIRED: "This reset session has expired. Request a new code.",
-  ATTEMPTS_EXCEEDED: "Too many wrong passwords. Wait 15 minutes, or use Forgot password to unlock it now.",
+  ATTEMPTS_EXCEEDED: "Too many wrong passwords. Wait until the sign-in unlocks, or use Forgot password to unlock it now.",
+  RATE_LIMITED: "Too many requests from this device. Wait a minute and try again.",
   FORBIDDEN: "This action is not part of your permissions.",
   VET_ONLY: "Only a Veterinarian can change medical data. You can still view it.",
   // Flow 1 - hồ sơ ngựa
