@@ -17,7 +17,8 @@ import type { LoginFailure } from "@/shared/lib/messages";
 import { safeNext } from "../flow";
 import { EMAIL_PLACEHOLDER } from "@/shared/lib/brand";
 import styles from "./AuthPages.module.css";
-
+
+
 import { tr } from "@/shared/i18n/tr";
 const EMAIL_RE = /^[^\s@]+@gmail\.com$/i;
 

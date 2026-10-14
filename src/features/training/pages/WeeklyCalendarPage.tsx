@@ -25,7 +25,8 @@ import {
 import type { ExerciseSession, ExerciseType, SessionStatus, TrackType, TrainingPlan } from "../types";
 
 import styles from "./WeeklyCalendarPage.module.css";
-
+
+
 import { tr } from "@/shared/i18n/tr";
 function shiftDay(date: string, days: number): string {
   const d = new Date(`${date}T00:00:00Z`);

@@ -138,7 +138,7 @@ export const en = {
     signOut: "Sign Out",
     loginTitle: "Sign in to your workspace.",
     loginEyebrow: "CLUB WORKSPACE",
-    email: "Email address",
+    email: "Club email",
     emailPlaceholder: "name@equiflow.com",
     password: "Password",
     passwordPlaceholder: "Enter your password",
