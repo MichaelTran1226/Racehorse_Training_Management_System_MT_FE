@@ -241,7 +241,7 @@ export interface ActivateOptions {
 
 export const trainingApi = {
   // Giáo án
-  async getPlans(query?: { horseId?: string; status?: PlanStatus; search?: string }): Promise<TrainingPlan[]> {
+  async getPlans(query?: { horseId?: string; status?: PlanStatus | string; search?: string }): Promise<TrainingPlan[]> {
     const params = new URLSearchParams({ pageSize: "100" });
     if (query?.horseId) params.set("horseId", query.horseId);
     if (query?.status) params.set("status", query.status);
