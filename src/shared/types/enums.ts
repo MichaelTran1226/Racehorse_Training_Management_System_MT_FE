@@ -3,7 +3,16 @@
 
 // 5 vai trò của hệ thống.
 export type Role = "HEAD_TRAINER" | "VETERINARIAN" | "GROOM" | "HORSE_OWNER" | "CLUB_MANAGER";
-export const ROLES: Role[] = ["HEAD_TRAINER", "VETERINARIAN", "GROOM", "HORSE_OWNER", "CLUB_MANAGER"];
+export const ROLES = Object.assign(
+  ["HEAD_TRAINER", "VETERINARIAN", "GROOM", "HORSE_OWNER", "CLUB_MANAGER"] as Role[],
+  {
+    HEAD_TRAINER: "HEAD_TRAINER" as const,
+    VETERINARIAN: "VETERINARIAN" as const,
+    GROOM: "GROOM" as const,
+    HORSE_OWNER: "HORSE_OWNER" as const,
+    CLUB_MANAGER: "CLUB_MANAGER" as const,
+  }
+);
 
 // 7 trạng thái sức khỏe / vòng đời ngựa (khớp 100% với schema.prisma HorseStatus và đặc tả BA Flow 1).
 export type HorseStatus =

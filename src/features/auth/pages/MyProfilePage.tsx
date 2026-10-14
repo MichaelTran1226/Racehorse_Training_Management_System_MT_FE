@@ -12,6 +12,7 @@ import { Switch } from "@/shared/components/ui/Switch";
 import { Tooltip } from "@/shared/components/ui/Tooltip";
 import { useToast } from "@/shared/components/ui/Toast";
 import { formatDate, formatDateTime, padCount } from "@/shared/lib/format";
+import { useAppLanguage } from "@/shared/lib/language";
 import { messageFor } from "@/shared/lib/messages";
 import { NOTIFY_META, notifyLock, PERMISSIONS, ROLE_LABEL } from "@/shared/lib/permissions";
 import { ACCOUNT_STATUS } from "@/shared/lib/status";
@@ -22,28 +23,37 @@ import styles from "./ProfilePages.module.css";
 export default function MyProfilePage() {
   const user = useCurrentUser();
   const { setUser } = useAuth();
+  const { isVietnamese, t } = useAppLanguage();
   const navigate = useNavigate();
   const toast = useToast();
 
   const [fullName, setFullName] = useState(user.fullName);
   const [phone, setPhone] = useState(user.phone);
   const [nameError, setNameError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [saving, setSaving] = useState(false);
 
   const granted = PERMISSIONS.filter((p) => user.permissions[p.key]).length;
   const status = ACCOUNT_STATUS[user.status];
+  const VN_PHONE_RE = /^0[35789]\d{8}$/;
 
   async function onSave() {
     if (!fullName.trim()) {
-      setNameError("Full name is required.");
+      setNameError(isVietnamese ? "Họ và tên không được để trống." : "Full name is required.");
+      return;
+    }
+    const cleanPhone = phone.replace(/[\s-]/g, "");
+    if (cleanPhone && !VN_PHONE_RE.test(cleanPhone)) {
+      setPhoneError(t("phoneValidation.error"));
       return;
     }
     setSaving(true);
     setNameError("");
+    setPhoneError("");
     try {
       const res = await updateProfile({ fullName: fullName.trim(), phone: phone.trim() });
       setUser(res.user);
-      toast.show("Details saved.", "ok");
+      toast.show(isVietnamese ? "Đã lưu thông tin." : "Details saved.", "ok");
     } catch (err) {
       toast.show(messageFor(err), "danger");
     } finally {
@@ -83,8 +93,17 @@ export default function MyProfilePage() {
                   }}
                 />
               </Field>
-              <Field label="Phone">
-                <Input autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <Field label={isVietnamese ? "Số điện thoại" : "Phone"} error={phoneError} hint={t("phoneValidation.hint")}>
+                <Input
+                  autoComplete="tel"
+                  maxLength={15}
+                  placeholder="0901 234 567"
+                  value={phone}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    setPhoneError("");
+                  }}
+                />
               </Field>
               <Field label="Club email" hint="The sign-in address is changed by the Club Manager">
                 <Input icon="mail" value={user.email} disabled readOnly />

@@ -7,6 +7,7 @@ import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
 import { ApiError } from "@/shared/lib/api";
 import { formatDateTime } from "@/shared/lib/format";
+import { useAppLanguage } from "@/shared/lib/language";
 import { messageFor } from "@/shared/lib/messages";
 import { ROLE_LABEL } from "@/shared/lib/permissions";
 import { ACCOUNT_STATUS } from "@/shared/lib/status";
@@ -30,6 +31,7 @@ interface EditAccountModalProps {
 // Club Manager sửa họ tên + số điện thoại của một tài khoản, xem ai mời / ai đổi trạng thái gần nhất,
 // và (vùng cuối) vô hiệu hóa hoặc xóa hẳn tài khoản. Email và vai trò chỉ để xem.
 export function EditAccountModal({ account, isSelf, isLastManager, onClose, onSaved, onDeactivate, onDelete }: EditAccountModalProps) {
+  const { isVietnamese, t } = useAppLanguage();
   const [fullName, setFullName] = useState(account.fullName);
   const [phone, setPhone] = useState(account.phone);
   const [errors, setErrors] = useState<{ fullName?: string; phone?: string; form?: string }>({});
@@ -40,15 +42,22 @@ export function EditAccountModal({ account, isSelf, isLastManager, onClose, onSa
   const deletable = DELETABLE.includes(account.status);
   const canDeactivate = account.status === "ACTIVE" || account.status === "LOCKED";
   const removeBlocked = isSelf
-    ? "You cannot do this to your own account. Ask another Club Manager."
+    ? (isVietnamese ? "Bạn không thể thao tác trên tài khoản của chính mình. Hãy nhờ một Quản trị viên khác." : "You cannot do this to your own account. Ask another Club Manager.")
     : isLastManager
-      ? "The club must keep at least one active Club Manager."
+      ? (isVietnamese ? "Câu lạc bộ phải duy trì ít nhất một Quản trị viên hoạt động." : "The club must keep at least one active Club Manager.")
       : undefined;
+
+  const VN_PHONE_RE = /^0[35789]\d{8}$/;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (busy) return;
-    if (!fullName.trim()) return setErrors({ fullName: "Full name is required." });
+    if (!fullName.trim()) return setErrors({ fullName: isVietnamese ? "Họ và tên không được để trống." : "Full name is required." });
+
+    const cleanPhone = phone.replace(/[\s-]/g, "");
+    if (cleanPhone && !VN_PHONE_RE.test(cleanPhone)) {
+      return setErrors({ phone: t("phoneValidation.error") });
+    }
 
     setBusy(true);
     setErrors({});
@@ -109,8 +118,8 @@ export function EditAccountModal({ account, isSelf, isLastManager, onClose, onSa
         <Field label="Full name" required error={errors.fullName}>
           <Input icon="user" value={fullName} data-autofocus onChange={(e) => setFullName(e.target.value)} />
         </Field>
-        <Field label="Phone" error={errors.phone}>
-          <Input type="tel" autoComplete="off" maxLength={30} value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <Field label={isVietnamese ? "Số điện thoại" : "Phone"} error={errors.phone} hint={t("phoneValidation.hint")}>
+          <Input type="tel" autoComplete="off" maxLength={15} placeholder="0901 234 567" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </Field>
         <Field label="Club email" hint="The email is the sign-in name, so it cannot be changed here.">
           <Input icon="mail" value={account.email} readOnly disabled />

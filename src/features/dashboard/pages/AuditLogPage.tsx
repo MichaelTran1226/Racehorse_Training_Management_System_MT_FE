@@ -9,6 +9,7 @@ import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Modal } from "@/shared/components/ui/Modal";
 import { api } from "@/shared/lib/api";
 import { formatDateTime } from "@/shared/lib/format";
+import { useAppLanguage } from "@/shared/lib/language";
 import styles from "./AuditLogPage.module.css";
 
 interface AuditLog {
@@ -17,13 +18,126 @@ interface AuditLog {
   userAgent: string | null; timestamp: string; user: { id: string; fullName: string } | null;
 }
 interface Result { logs: AuditLog[]; total: number; page: number; pageSize: number }
-const emptyFilters = { actor: "", action: "", from: "", to: "" };
-function pretty(value: string | null) {
-  if (!value) return "Not recorded";
-  try { return JSON.stringify(JSON.parse(value), null, 2); } catch { return value; }
+interface ChangeItem {
+  field: string;
+  before: string;
+  after: string;
 }
 
+function parseAuditChanges(log: AuditLog, isVi: boolean): { summary: string; changes: ChangeItem[] } {
+  const changes: ChangeItem[] = [];
+  let summary = "";
+
+  let oldObj: Record<string, any> | null = null;
+  let newObj: Record<string, any> | null = null;
+  try { if (log.oldValuesJson) oldObj = JSON.parse(log.oldValuesJson); } catch {}
+  try { if (log.newValuesJson) newObj = JSON.parse(log.newValuesJson); } catch {}
+
+  const fieldNameMapVi: Record<string, string> = {
+    fullName: "Họ và tên",
+    name: "Họ và tên",
+    phone: "Số điện thoại",
+    phoneNumber: "Số điện thoại",
+    email: "Email liên hệ",
+    role: "Vai trò người dùng",
+    status: "Trạng thái",
+    stall: "Ô chuồng",
+  };
+
+  const fieldNameMapEn: Record<string, string> = {
+    fullName: "Full Name",
+    name: "Full Name",
+    phone: "Phone Number",
+    phoneNumber: "Phone Number",
+    email: "Email Address",
+    role: "User Role",
+    status: "Status",
+    stall: "Stall",
+  };
+
+  const fieldMap = isVi ? fieldNameMapVi : fieldNameMapEn;
+
+  const fieldAliases: Record<string, string> = {
+    "họ và tên": "fullName",
+    "họ tên": "fullName",
+    "số điện thoại": "phone",
+  };
+
+  if (oldObj && newObj) {
+    const keys = Array.from(new Set([...Object.keys(oldObj), ...Object.keys(newObj)]));
+    for (const k of keys) {
+      if (k === "actor" || k === "detail") continue;
+      const before = String(oldObj[k] ?? "—");
+      const after = String(newObj[k] ?? "—");
+      const canonical = fieldAliases[k.toLowerCase()] ?? k;
+      if (before !== after) {
+        changes.push({
+          field: fieldMap[canonical] ?? fieldMap[k] ?? k,
+          before,
+          after,
+        });
+      }
+    }
+  }
+
+  if (changes.length === 0 && newObj && typeof newObj.detail === "string") {
+    summary = newObj.detail;
+    const parts = newObj.detail.split(/,\s*/);
+    for (const part of parts) {
+      const match = part.match(/(?:.*:\s*)?([a-zA-ZÀ-ỹ\s]+?)\s+([^\s→-]+(?:\s+[^\s→-]+)*)\s*(?:->|→)\s*(.+)$/);
+      if (match) {
+        const rawField = match[1].trim().toLowerCase();
+        const before = match[2].trim();
+        const after = match[3].trim();
+        changes.push({
+          field: fieldMap[rawField] ?? (rawField === "phone" ? (isVi ? "Số điện thoại" : "Phone Number") : rawField === "name" ? (isVi ? "Họ và tên" : "Full Name") : match[1].trim()),
+          before,
+          after,
+        });
+      }
+    }
+  }
+
+  const actionDescriptionsVi: Record<string, string> = {
+    AUTH_LOGIN: "Đăng nhập thành công vào hệ thống",
+    AUTH_LOGOUT: "Đăng xuất khỏi phiên làm việc",
+    ACCOUNT_EDITED: "Cập nhật thông tin tài khoản người dùng",
+    PROFILE_UPDATED: "Cập nhật hồ sơ cá nhân",
+    NAME_CHANGED: "Thay đổi họ và tên tài khoản",
+    ACCOUNT_CREATED: "Tạo mới tài khoản nhân sự",
+    ACCOUNT_DEACTIVATED: "Vô hiệu hóa tài khoản người dùng",
+    ACCOUNT_LOCKED: "Khóa tài khoản do vi phạm hoặc cảnh báo",
+    ACCOUNT_ACTIVATED: "Kích hoạt lại tài khoản người dùng",
+    PERMISSIONS_CHANGED: "Cập nhật phân quyền truy cập",
+    INVITE_SENT: "Gửi thư mời kích hoạt tài khoản",
+    INVITE_RESENT: "Gửi lại mã OTP kích hoạt tài khoản",
+  };
+
+  const actionDescriptionsEn: Record<string, string> = {
+    AUTH_LOGIN: "User signed in successfully",
+    AUTH_LOGOUT: "User signed out",
+    ACCOUNT_EDITED: "User account information updated",
+    PROFILE_UPDATED: "Personal profile updated",
+    NAME_CHANGED: "Full name changed",
+    ACCOUNT_CREATED: "New staff account created",
+    ACCOUNT_DEACTIVATED: "Account deactivated",
+    ACCOUNT_LOCKED: "Account locked",
+    ACCOUNT_ACTIVATED: "Account reactivated",
+    PERMISSIONS_CHANGED: "Access permissions updated",
+    INVITE_SENT: "Invitation email sent",
+    INVITE_RESENT: "Invitation verification code resent",
+  };
+
+  const actionDescriptions = isVi ? actionDescriptionsVi : actionDescriptionsEn;
+  const fallback = summary || (isVi ? `Thao tác hệ thống (${log.action})` : `System action (${log.action})`);
+  const actionText = actionDescriptions[log.action] ?? fallback;
+  return { summary: changes.length > 0 ? "" : actionText, changes };
+}
+
+const emptyFilters = { actor: "", action: "", from: "", to: "" };
+
 export default function AuditLogPage() {
+  const { isVietnamese } = useAppLanguage();
   const [draft, setDraft] = useState(emptyFilters);
   const [filters, setFilters] = useState(emptyFilters);
   const [page, setPage] = useState(1);
@@ -34,6 +148,7 @@ export default function AuditLogPage() {
   const error = response?.key === requestKey && response?.error;
   const [detail, setDetail] = useState<AuditLog | null>(null);
   const invalidDates = Boolean(draft.from && draft.to && draft.from > draft.to);
+
   useEffect(() => {
     let active = true;
     const query = new URLSearchParams({ page: String(page), pageSize: "20" });
@@ -46,31 +161,161 @@ export default function AuditLogPage() {
     }).catch(() => { if (active) setResponse({ key: requestKey, result: null, error: true }); });
     return () => { active = false; };
   }, [filters, page, requestKey]);
+
   const columns: Column<AuditLog>[] = [
-    { key: "time", header: "Time", render: row => formatDateTime(row.timestamp) },
-    { key: "actor", header: "Actor", render: row => row.user?.fullName ?? row.userId ?? "System / unavailable" },
-    { key: "action", header: "Action", render: row => <span className={styles.wrap}>{row.action}</span> },
-    { key: "entity", header: "Entity", render: row => <span className={styles.wrap}>{row.entityName}{row.entityId ? ` · ${row.entityId}` : ""}</span> },
-    { key: "detail", header: "Details", align: "right", render: row => <Button tone="ghost" size="sm" onClick={() => setDetail(row)} aria-label={`View details for ${row.action}`}>View details</Button> },
+    { key: "time", header: isVietnamese ? "Thời gian" : "Time", render: row => formatDateTime(row.timestamp) },
+    { key: "actor", header: isVietnamese ? "Người thực hiện" : "Actor", render: row => row.user?.fullName ?? row.userId ?? (isVietnamese ? "Hệ thống / Không xác định" : "System / unavailable") },
+    { key: "action", header: isVietnamese ? "Hành động" : "Action", render: row => <span className={styles.wrap}>{row.action}</span> },
+    { key: "entity", header: isVietnamese ? "Đối tượng" : "Entity", render: row => <span className={styles.wrap}>{row.entityName}{row.entityId ? ` · ${row.entityId}` : ""}</span> },
+    {
+      key: "detail",
+      header: isVietnamese ? "Chi tiết" : "Details",
+      align: "right",
+      render: row => (
+        <Button
+          tone="ghost"
+          size="sm"
+          onClick={() => setDetail(row)}
+          aria-label={isVietnamese ? `Xem chi tiết cho ${row.action}` : `View details for ${row.action}`}
+        >
+          {isVietnamese ? "Xem chi tiết" : "View details"}
+        </Button>
+      ),
+    },
   ];
+
   return <>
-    <PageHeader title="Audit Log" description="Review recorded activity and changes. Times and date filters use your local timezone." showDate />
-    {import.meta.env.VITE_USE_MOCK === "true" && <Alert tone="info" title="Demo audit history">Only activity recorded in this browser is shown (up to 200 events). Historical before/after values and request metadata are not recorded in demo mode.</Alert>}
+    <PageHeader
+      title={isVietnamese ? "Nhật ký hệ thống" : "Audit Log"}
+      description={isVietnamese ? "Theo dõi lịch sử hoạt động và các thay đổi trong hệ thống. Bộ lọc sử dụng múi giờ thiết bị của bạn." : "Review recorded activity and changes. Times and date filters use your local timezone."}
+      showDate
+    />
+    {import.meta.env.VITE_USE_MOCK === "true" && (
+      <Alert
+        tone="info"
+        title={isVietnamese ? "Dữ liệu nhật ký thử nghiệm" : "Demo audit history"}
+      >
+        {isVietnamese
+          ? "Chỉ hiển thị các hoạt động được ghi lại trên trình duyệt này (tối đa 200 sự kiện). Các giá trị lịch sử và siêu dữ liệu yêu cầu không được lưu trữ trong chế độ demo."
+          : "Only activity recorded in this browser is shown (up to 200 events). Historical before/after values and request metadata are not recorded in demo mode."}
+      </Alert>
+    )}
     <Card pad={0}>
       <form className={styles.filters} onSubmit={event => { event.preventDefault(); if (!invalidDates) { setFilters({ ...draft }); setPage(1); } }}>
-        <label>Actor<Input value={draft.actor} maxLength={200} onChange={e => setDraft({ ...draft, actor: e.target.value })} placeholder="Search actor name" /></label>
-        <label>Action<Input value={draft.action} maxLength={100} onChange={e => setDraft({ ...draft, action: e.target.value })} placeholder="Exact action, e.g. AUTH_LOGIN" /></label>
-        <label>From<Input type="datetime-local" value={draft.from} onChange={e => setDraft({ ...draft, from: e.target.value })} /></label>
-        <label>To<Input type="datetime-local" value={draft.to} onChange={e => setDraft({ ...draft, to: e.target.value })} /></label>
-        <div className={styles.actions}><Button type="submit" disabled={invalidDates}>Apply filters</Button><Button tone="secondary" type="button" onClick={() => { setDraft(emptyFilters); setFilters(emptyFilters); setPage(1); }}>Reset</Button></div>
-        {invalidDates && <p role="alert">The end date must be on or after the start date.</p>}
+        <label>{isVietnamese ? "Người thực hiện" : "Actor"}<Input value={draft.actor} maxLength={200} onChange={e => setDraft({ ...draft, actor: e.target.value })} placeholder={isVietnamese ? "Tìm kiếm tên người thực hiện" : "Search actor name"} /></label>
+        <label>{isVietnamese ? "Hành động" : "Action"}<Input value={draft.action} maxLength={100} onChange={e => setDraft({ ...draft, action: e.target.value })} placeholder={isVietnamese ? "Mã hành động, ví dụ AUTH_LOGIN" : "Exact action, e.g. AUTH_LOGIN"} /></label>
+        <label>{isVietnamese ? "Từ ngày" : "From"}<Input type="datetime-local" value={draft.from} onChange={e => setDraft({ ...draft, from: e.target.value })} /></label>
+        <label>{isVietnamese ? "Đến ngày" : "To"}<Input type="datetime-local" value={draft.to} onChange={e => setDraft({ ...draft, to: e.target.value })} /></label>
+        <div className={styles.actions}>
+          <Button type="submit" disabled={invalidDates}>{isVietnamese ? "Áp dụng" : "Apply filters"}</Button>
+          <Button tone="secondary" type="button" onClick={() => { setDraft(emptyFilters); setFilters(emptyFilters); setPage(1); }}>{isVietnamese ? "Đặt lại" : "Reset"}</Button>
+        </div>
+        {invalidDates && <p role="alert">{isVietnamese ? "Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu." : "The end date must be on or after the start date."}</p>}
       </form>
-      {error ? <Alert tone="danger" title="Audit history could not be loaded" action={<Button tone="secondary" onClick={() => setRetry(n => n + 1)}>Try again</Button>}>Check your connection and try again.</Alert> : <div className={styles.table}><DataTable columns={columns} rows={result?.logs ?? []} rowKey={row => row.id} loading={!result} caption="Audit history, newest first" empty={<EmptyState title="No audit events match these filters." description="Adjust the actor, action or date range to see recorded activity." />} /></div>}
-      {result && <div className={styles.pagination}><span role="status">{result.total} events · Page {result.page} of {Math.max(1, Math.ceil(result.total / result.pageSize))}</span><div className={styles.actions}><Button tone="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous page</Button><Button tone="secondary" disabled={page * result.pageSize >= result.total} onClick={() => setPage(page + 1)}>Next page</Button></div></div>}
+      {error ? (
+        <Alert
+          tone="danger"
+          title={isVietnamese ? "Không thể tải nhật ký hệ thống" : "Audit history could not be loaded"}
+          action={<Button tone="secondary" onClick={() => setRetry(n => n + 1)}>{isVietnamese ? "Thử lại" : "Try again"}</Button>}
+        >
+          {isVietnamese ? "Vui lòng kiểm tra kết nối mạng và thử lại." : "Check your connection and try again."}
+        </Alert>
+      ) : (
+        <div className={styles.table}>
+          <DataTable
+            columns={columns}
+            rows={result?.logs ?? []}
+            rowKey={row => row.id}
+            loading={!result}
+            caption={isVietnamese ? "Lịch sử hoạt động, mới nhất ở trên" : "Audit history, newest first"}
+            empty={
+              <EmptyState
+                title={isVietnamese ? "Không có sự kiện nào khớp với bộ lọc." : "No audit events match these filters."}
+                description={isVietnamese ? "Hãy điều chỉnh người thực hiện, hành động hoặc khoảng thời gian để xem hoạt động đã ghi nhận." : "Adjust the actor, action or date range to see recorded activity."}
+              />
+            }
+          />
+        </div>
+      )}
+      {result && (
+        <div className={styles.pagination}>
+          <span role="status">
+            {result.total} {isVietnamese ? "sự kiện" : "events"} · {isVietnamese ? "Trang" : "Page"} {result.page} / {Math.max(1, Math.ceil(result.total / result.pageSize))}
+          </span>
+          <div className={styles.actions}>
+            <Button tone="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+              {isVietnamese ? "Trang trước" : "Previous page"}
+            </Button>
+            <Button tone="secondary" disabled={page * result.pageSize >= result.total} onClick={() => setPage(page + 1)}>
+              {isVietnamese ? "Trang sau" : "Next page"}
+            </Button>
+          </div>
+        </div>
+      )}
     </Card>
-    {detail && <Modal title="Audit event details" subtitle={`${detail.action} · ${formatDateTime(detail.timestamp)}`} width={760} onClose={() => setDetail(null)}>
-      <dl className={styles.metadata}>{Object.entries({ Actor: detail.user?.fullName ?? detail.userId ?? "System / unavailable", Entity: detail.entityName, "Entity ID": detail.entityId, "Event ID": detail.id, "IP address": detail.ipAddress, "User agent": detail.userAgent }).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value ?? "Not recorded"}</dd></div>)}</dl>
-      <div className={styles.values}><section><h3>Before</h3><pre>{pretty(detail.oldValuesJson)}</pre></section><section><h3>After</h3><pre>{pretty(detail.newValuesJson)}</pre></section></div>
-    </Modal>}
+    {detail && (() => {
+      const { summary, changes } = parseAuditChanges(detail, isVietnamese);
+      return (
+        <Modal
+          title={isVietnamese ? "Chi tiết sự kiện nhật ký" : "Audit Event Details"}
+          subtitle={`${detail.action} · ${formatDateTime(detail.timestamp)}`}
+          width={720}
+          onClose={() => setDetail(null)}
+        >
+          <dl className={styles.metadata}>
+            <div>
+              <dt>{isVietnamese ? "Người thực hiện" : "Actor"}</dt>
+              <dd>{detail.user?.fullName ?? detail.userId ?? (isVietnamese ? "Hệ thống" : "System")}</dd>
+            </div>
+            <div>
+              <dt>{isVietnamese ? "Hành động" : "Action"}</dt>
+              <dd><strong>{detail.action}</strong></dd>
+            </div>
+            <div>
+              <dt>{isVietnamese ? "Đối tượng thao tác" : "Target Entity"}</dt>
+              <dd>{detail.entityName || (isVietnamese ? "Tài khoản / Hệ thống" : "Account / System")}</dd>
+            </div>
+            <div>
+              <dt>{isVietnamese ? "Thời gian" : "Time"}</dt>
+              <dd>{formatDateTime(detail.timestamp)}</dd>
+            </div>
+          </dl>
+
+          <div className={styles.changeSection}>
+            <div className={styles.changeTitle}>{isVietnamese ? "Nội dung thay đổi chi tiết" : "Detailed Changes"}</div>
+            {changes.length > 0 ? (
+              <div className={styles.changeTableWrapper}>
+                <table className={styles.changeTable}>
+                  <thead>
+                    <tr>
+                      <th style={{ width: "30%" }}>{isVietnamese ? "Thông tin thay đổi" : "Field Name"}</th>
+                      <th style={{ width: "35%" }}>{isVietnamese ? "Trước khi sửa (Before)" : "Before (Old Value)"}</th>
+                      <th style={{ width: "35%" }}>{isVietnamese ? "Sau khi sửa (After)" : "After (New Value)"}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {changes.map((c, i) => (
+                      <tr key={i}>
+                        <td><strong>{c.field}</strong></td>
+                        <td><span className={styles.valPillOld}>{c.before}</span></td>
+                        <td><span className={styles.valPillNew}>➔ {c.after}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className={styles.actionCard}>
+                <div className={styles.actionIcon}>📝</div>
+                <div className={styles.actionText}>
+                  <strong>{summary}</strong>
+                  <p>{isVietnamese ? "Hành động đã được ghi nhận và áp dụng thành công trong hệ thống." : "Action was successfully executed and recorded in the audit log."}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </Modal>
+      );
+    })()}
   </>;
 }

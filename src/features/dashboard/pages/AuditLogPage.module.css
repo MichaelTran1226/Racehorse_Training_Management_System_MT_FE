@@ -6,8 +6,16 @@
 .metadata { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .metadata dt { font-weight: 600; }
 .metadata dd { margin: 4px 0 0; overflow-wrap: anywhere; color: var(--muted); }
-.values { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
-.values pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--fs-caption); padding: 12px; border: 1px solid var(--border-soft); max-height: 300px; overflow: auto; }
-@media (max-width: 720px) { .values, .metadata { grid-template-columns: minmax(0, 1fr); } }
-
-.table table { min-width: 720px; }
+.changeSection { margin-top: 20px; }
+.changeTitle { font-size: var(--fs-body); font-weight: 700; margin-bottom: 8px; color: var(--text); }
+.changeTableWrapper { border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.changeTable { width: 100%; border-collapse: collapse; font-size: var(--fs-body); text-align: left; }
+.changeTable th { background: var(--surface-sunken); padding: 10px 14px; font-weight: 600; border-bottom: 1px solid var(--border-soft); color: var(--muted); font-size: var(--fs-caption); }
+.changeTable td { padding: 12px 14px; border-bottom: 1px solid var(--border-soft); }
+.changeTable tr:last-child td { border-bottom: none; }
+.valPillOld { display: inline-block; padding: 3px 8px; border-radius: 4px; background: color-mix(in srgb, var(--danger) 10%, transparent); color: var(--danger); font-weight: 500; font-size: var(--fs-caption); }
+.valPillNew { display: inline-block; padding: 3px 8px; border-radius: 4px; background: color-mix(in srgb, var(--ok) 12%, transparent); color: var(--ok); font-weight: 600; font-size: var(--fs-caption); }
+.actionCard { margin-top: 16px; padding: 16px; border-radius: 8px; background: var(--surface-sunken); border: 1px solid var(--border-soft); display: flex; align-items: flex-start; gap: 12px; }
+.actionIcon { font-size: 1.4rem; line-height: 1; }
+.actionText strong { display: block; font-size: var(--fs-body); color: var(--text); }
+.actionText p { margin: 4px 0 0; font-size: var(--fs-caption); color: var(--muted); }

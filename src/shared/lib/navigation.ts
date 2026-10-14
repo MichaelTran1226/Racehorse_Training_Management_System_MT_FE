@@ -2,6 +2,7 @@
 
 import { ROLE_WORKSPACE, screenAccess } from "@/shared/lib/permissions";
 import type { AuthUser } from "@/shared/types/auth";
+import i18n from "@/shared/i18n";
 
 export interface BreadcrumbSegment {
   label: string;
@@ -9,7 +10,7 @@ export interface BreadcrumbSegment {
 }
 
 export function breadcrumbFor(user: AuthUser, pathname: string, accountName?: string): BreadcrumbSegment[] {
-  const workspace = ROLE_WORKSPACE[user.role];
+  const workspace = i18n.t(`nav.ws_${user.role}`, ROLE_WORKSPACE[user.role]);
   const homeSegment: BreadcrumbSegment = { label: workspace, href: "/dashboard" };
 
   // 1. Dashboard: chỉ hiện tên không gian (Medical workspace), không hiện > Dashboard thừa
@@ -19,44 +20,44 @@ export function breadcrumbFor(user: AuthUser, pathname: string, accountName?: st
 
   // 2. Tài khoản cá nhân
   if (pathname === "/profile") {
-    return [homeSegment, { label: "My Profile" }];
+    return [homeSegment, { label: i18n.t("nav.profile", "My Profile") }];
   }
   if (pathname === "/profile/password") {
-    return [homeSegment, { label: "My Profile", href: "/profile" }, { label: "Change password" }];
+    return [homeSegment, { label: i18n.t("nav.profile", "My Profile"), href: "/profile" }, { label: i18n.t("nav.changePassword", "Change password") }];
   }
 
   // 3. Thông báo
   if (pathname === "/notifications") {
-    return [homeSegment, { label: "Notifications" }];
+    return [homeSegment, { label: i18n.t("nav.notifications", "Notifications") }];
   }
   if (pathname === "/notifications/settings" || pathname === "/settings/notifications") {
-    return [homeSegment, { label: "Notifications", href: "/notifications" }, { label: "Notification Settings" }];
+    return [homeSegment, { label: i18n.t("nav.notifications", "Notifications"), href: "/notifications" }, { label: i18n.t("nav.notificationSettings", "Notification Settings") }];
   }
 
   // 4. Quản lý tài khoản
   if (pathname === "/accounts") {
-    return [homeSegment, { label: "Accounts" }];
+    return [homeSegment, { label: i18n.t("nav.accounts", "Accounts") }];
   }
   if (/^\/accounts\/[^/]+\/permissions/.test(pathname)) {
     return [
       homeSegment,
-      { label: "Accounts", href: "/accounts" },
+      { label: i18n.t("nav.accounts", "Accounts"), href: "/accounts" },
       { label: accountName ?? "Account Permissions" },
     ];
   }
   // 5. Trang lỗi hệ thống & Alerts
-  if (pathname === "/forbidden") return [homeSegment, { label: "Access denied" }];
-  if (pathname === "/session-expired") return [homeSegment, { label: "Session expired" }];
-  if (pathname === "/alerts" || pathname === "/training/alerts") return [homeSegment, { label: "Threshold Alerts" }];
-  if (pathname === "/monitor" || pathname === "/training/monitor") return [homeSegment, { label: "Session Telemetry" }];
+  if (pathname === "/forbidden") return [homeSegment, { label: i18n.t("nav.accessDenied", "Access denied") }];
+  if (pathname === "/session-expired") return [homeSegment, { label: i18n.t("nav.sessionExpired", "Session expired") }];
+  if (pathname === "/alerts" || pathname === "/training/alerts") return [homeSegment, { label: i18n.t("nav.alerts", "Threshold Alerts") }];
+  if (pathname === "/monitor" || pathname === "/training/monitor") return [homeSegment, { label: i18n.t("nav.monitor", "Session Telemetry") }];
 
 
   // 6. Chi tiết ngựa & hồ sơ bệnh án & 2D Map (các trang lồng cấp)
   if (pathname.includes("/injuries") || pathname.startsWith("/injuries")) {
     return [
       homeSegment,
-      { label: "Herd Health", href: "/herd" },
-      { label: "2D Musculoskeletal Map" },
+      { label: i18n.t("nav.medical", "Herd Health"), href: "/herd" },
+      { label: i18n.t("nav.injuries", "2D Musculoskeletal Map") },
     ];
   }
   if (pathname.startsWith("/medical/horses/") || pathname.startsWith("/records/horse/")) {

@@ -178,6 +178,7 @@ export interface NavItem {
   label: string;
   icon: string;
   href: string;
+  i18nKey?: string;
   requires?: PermissionKey; // thiếu quyền này => mục không hiện trên sidebar và route trả 403
   alert?: boolean; // chấm đỏ: có việc đang chờ
 }
@@ -187,7 +188,7 @@ export interface NavGroup {
   items: NavItem[];
 }
 
-function item(id: string, label: string, icon: string, extra: { requires?: PermissionKey; alert?: boolean } = {}): NavItem {
+function item(id: string, label: string, icon: string, extra: { i18nKey?: string; requires?: PermissionKey; alert?: boolean } = {}): NavItem {
   // "permissions" dẫn tới danh sách tài khoản (nơi chọn tài khoản cần xem quyền).
   const href = id === "dashboard" ? "/dashboard" : id === "permissions" ? "/accounts" : `/${id}`;
   return { id, label, icon, href, ...extra };
@@ -207,8 +208,8 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
     {
       label: "TRAINING",
       items: [
-        item("training", "Training Overview", "chart"),
-        item("plans", "Training Plans", "clipboard", { requires: "createPlan" }),
+        item("training", "Training Overview", "chart", { i18nKey: "trainingOverview" }),
+        item("plans", "Training Plans", "clipboard", { i18nKey: "trainingPlans", requires: "createPlan" }),
         item("calendar", "Weekly Calendar", "calendar", { requires: "assignSchedule" }),
         item("trials", "Trial Runs", "play", { requires: "assignSchedule" }),
         item("metrics", "Session Metrics", "pulse", { requires: "recordMetrics" }),
@@ -245,8 +246,8 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
         item("rx", "Prescriptions", "pill", { requires: "viewMedical" }),
         // Danh sách khóa huấn luyện (Training Locks) yêu cầu quyền viewMedical (đồng bộ với HEAD_TRAINER và CLUB_MANAGER)
         item("locks", "Training Locks", "lock", { requires: "viewMedical" }),
-        item("alerts", "Biomechanical Alerts", "alert", { alert: true }),
-        item("vaccine", "Vaccination Schedule", "syringe", { requires: "viewMedical" }),
+        item("alerts", "Biomechanical Alerts", "alert", { i18nKey: "biomechanicalAlerts", alert: true }),
+        item("vaccine", "Vaccination Schedule", "syringe", { i18nKey: "vaccinationSchedule", requires: "viewMedical" }),
       ],
     },
     { label: "REPORTS", items: [item("health-report", "Health Reports", "chart", { requires: "viewMedical" })] },
@@ -264,13 +265,13 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
         item("incidents", "Incident Reports", "camera"),
       ],
     },
-    { label: "SUPPLIES", items: [item("supplies", "Supply Tracking", "package")] },
+    { label: "SUPPLIES", items: [item("supplies", "Supply Tracking", "package", { i18nKey: "supplyTracking" })] },
     { label: "OTHER", items: [item("profile", "My Profile", "user")] },
   ],
   HORSE_OWNER: [
     { label: "WORKSPACE", items: [item("dashboard", "Dashboard", "home"), item("my-horses", "My Horses", "horse", { requires: "viewHorses" })] },
     { label: "MONITORING", items: [item("progress", "Training Progress", "activity"), item("health", "Health Status", "stethoscope")] },
-    { label: "REPORTS", items: [item("costs", "Cost Report", "dollar"), item("race-record", "Race Record", "trophy")] },
+    { label: "REPORTS", items: [item("costs", "Cost Report", "dollar", { i18nKey: "costReport" }), item("race-record", "Race Record", "trophy")] },
     { label: "OTHER", items: [item("profile", "My Profile", "user")] },
   ],
   CLUB_MANAGER: [
@@ -279,7 +280,6 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
       label: "ADMINISTRATION",
       items: [
         item("accounts", "Accounts", "users", { requires: "manageAccounts", alert: true }),
-        item("permissions", "Permissions", "shield", { requires: "manageAccounts" }),
         item("staff", "Staff Directory", "user", { requires: "manageAccounts" }),
         item("catalog", "Supplies Catalog", "package", { requires: "manageAccounts" }),
       ],
@@ -288,8 +288,8 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
     {
       label: "TRAINING",
       items: [
-        item("plans", "Training Plans", "clipboard", { requires: "createPlan" }),
-        item("calendar", "Weekly Calendar", "calendar", { requires: "assignSchedule" }),
+        item("plans", "Training Plans", "clipboard", { i18nKey: "trainingPlans" }),
+        item("calendar", "Weekly Calendar", "calendar"),
       ],
     },
     // Menu Y tế (MEDICAL) cho CLUB_MANAGER (quản lý, giám sát sức khỏe, bệnh án và lịch chăm sóc)
@@ -306,7 +306,7 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
       label: "REPORTS",
       items: [
         item("performance", "Performance", "chart"),
-        item("costs", "Operating Costs", "dollar"),
+        item("costs", "Operating Costs", "dollar", { i18nKey: "operatingCosts" }),
         item("audit", "Audit Log", "history", { requires: "viewAudit" }),
       ],
     },

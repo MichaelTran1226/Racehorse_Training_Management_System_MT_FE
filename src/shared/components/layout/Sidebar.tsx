@@ -5,6 +5,7 @@ import { BRAND } from "@/shared/lib/brand";
 import { cx } from "@/shared/lib/cx";
 import { capitalize, initials } from "@/shared/lib/format";
 import { isNavItemActive, navFor, ROLE_LABEL } from "@/shared/lib/permissions";
+import { useAppLanguage } from "@/shared/lib/language";
 import { getStoredLocks } from "@/shared/mock/horsesData";
 import { healthApi } from "@/features/health/api";
 import type { AuthUser } from "@/shared/types/auth";
@@ -22,6 +23,7 @@ interface SidebarProps {
 // Sidebar xây từ DANH SÁCH QUYỀN của tài khoản (navFor), không chỉ từ tên vai trò:
 // thu hồi quyền => mục tương ứng biến mất ở lần tải trang kế tiếp.
 export function Sidebar({ user, pathname, note, open, onNavigate }: SidebarProps) {
+  const { t, isVietnamese } = useAppLanguage();
   const groups = navFor(user.role, user.permissions);
   const [hasActiveLocks, setHasActiveLocks] = useState(() => getStoredLocks().some((l) => l.status === "ACTIVE"));
 
@@ -62,12 +64,16 @@ export function Sidebar({ user, pathname, note, open, onNavigate }: SidebarProps
       </div>
 
       <div className={styles.groups}>
-        {groups.map((g) => (
-          <div key={g.label} className={styles.group}>
-            <p className={styles.groupLabel}>{capitalize(g.label)}</p>
+        {groups.map((g) => {
+          const rawKey = g.label.toLowerCase().replace(/\s+/g, "_");
+          return (
+            <div key={g.label} className={styles.group}>
+              <p className={styles.groupLabel}>{t(`nav.group_${rawKey}`, t(`nav.${rawKey}`, capitalize(g.label)))}</p>
             {g.items.map((it) => {
               const active = isNavItemActive(it, pathname);
               const showAlertDot = (it.id === "locks" && hasActiveLocks) || (it.id !== "locks" && Boolean(it.alert));
+              const itemKey = it.i18nKey || it.id;
+              const itemLabel = isVietnamese ? t(`nav.${itemKey}`, it.label) : it.label;
               return (
                 <Link
                   key={it.id}
@@ -77,13 +83,14 @@ export function Sidebar({ user, pathname, note, open, onNavigate }: SidebarProps
                   className={cx(styles.item, active && styles.active)}
                 >
                   <Icon name={it.icon} size={18} />
-                  <span className={styles.itemLabel}>{it.label}</span>
+                  <span className={styles.itemLabel}>{itemLabel}</span>
                   {showAlertDot && <span className={cx(styles.dot, styles.alertDot)} aria-label="Action required" />}
                 </Link>
               );
             })}
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {note && (
@@ -93,13 +100,13 @@ export function Sidebar({ user, pathname, note, open, onNavigate }: SidebarProps
         </Link>
       )}
 
-      <div className={styles.user} title={`${user.fullName} · ${ROLE_LABEL[user.role]}`}>
+      <div className={styles.user} title={`${user.fullName} · ${t(`nav.role_${user.role}`, ROLE_LABEL[user.role])}`}>
         <span className={styles.userAvatar} aria-hidden="true">
           {initials(user.fullName)}
         </span>
         <div className={styles.userText}>
           <strong>{user.fullName}</strong>
-          <span>{ROLE_LABEL[user.role]}</span>
+          <span>{t(`nav.role_${user.role}`, ROLE_LABEL[user.role])}</span>
         </div>
       </div>
     </nav>

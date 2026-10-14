@@ -169,6 +169,81 @@ const routes: Route[] = [
         .map((a) => ({ id: a.id, fullName: a.fullName, email: a.email, horseCount: getStoredHorses().filter((h) => h.assignedGroomId === a.id).length })),
   },
   { method: "GET", pattern: /^\/stalls$/, handler: ({ db, url }) => mockStalls(db, url) },
+  // Đăng ký ô chuồng cho ngựa (Allocate Stall)
+  {
+    method: "POST",
+    pattern: /^\/stalls\/([^/]+)\/allocations$/,
+    handler: ({ db, params, body }) => {
+      const [stallId] = params;
+      const horseId = String(body.horseId ?? "");
+      const groomId = body.assignedGroomUserId ? String(body.assignedGroomUserId) : undefined;
+      const horses = getStoredHorses();
+      const horse = horses.find((h) => h.id === horseId);
+      if (!horse) throw new ApiError(404, "HORSE_NOT_FOUND", "Horse not found");
+      const stalls = mockStallList(db);
+      const stall = stalls.find(
+        (s) =>
+          s.id === stallId ||
+          s.code === stallId ||
+          s.id.toLowerCase() === stallId.toLowerCase() ||
+          s.code.toLowerCase() === stallId.toLowerCase(),
+      );
+      if (!stall) throw new ApiError(404, "STALL_NOT_FOUND", "Stall not found");
+      horse.stall = stall.code;
+      if (groomId) horse.assignedGroomId = groomId;
+      saveStoredHorses(horses);
+      if (typeof window !== "undefined") window.dispatchEvent(new Event("horsesUpdated"));
+      return { stallCode: stall.code, horseName: horse.name };
+    },
+  },
+  // Di chuyển ô chuồng (Transfer Stall)
+  {
+    method: "PUT",
+    pattern: /^\/stalls\/allocations\/([^/]+)\/transfer$/,
+    handler: ({ db, params, body }) => {
+      const [allocId] = params;
+      const toStallId = String(body.newStallId ?? body.toStallId ?? "");
+      const groomId = body.newGroomId ? String(body.newGroomId) : body.assignedGroomUserId ? String(body.assignedGroomUserId) : undefined;
+      const stalls = mockStallList(db);
+      const toStall = stalls.find(
+        (s) =>
+          s.id === toStallId ||
+          s.code === toStallId ||
+          s.id.toLowerCase() === toStallId.toLowerCase() ||
+          s.code.toLowerCase() === toStallId.toLowerCase(),
+      );
+      if (!toStall) throw new ApiError(404, "TARGET_STALL_NOT_FOUND", "Target stall not found");
+      const horses = getStoredHorses();
+      const horse = horses.find(
+        (h) => h.id === allocId || `alloc-${h.id}` === allocId,
+      );
+      if (!horse) throw new ApiError(404, "ALLOCATION_NOT_FOUND", "Allocation not found");
+      const fromStallCode = horse.stall || "";
+      horse.stall = toStall.code;
+      if (groomId) horse.assignedGroomId = groomId;
+      saveStoredHorses(horses);
+      if (typeof window !== "undefined") window.dispatchEvent(new Event("horsesUpdated"));
+      return { fromStallCode, stallCode: toStall.code, horseName: horse.name };
+    },
+  },
+  // Trả ô chuồng (Return Stall)
+  {
+    method: "PUT",
+    pattern: /^\/stalls\/allocations\/([^/]+)\/return$/,
+    handler: ({ params }) => {
+      const [allocId] = params;
+      const horses = getStoredHorses();
+      const horse = horses.find(
+        (h) => h.id === allocId || `alloc-${h.id}` === allocId,
+      );
+      if (!horse) throw new ApiError(404, "ALLOCATION_NOT_FOUND", "Allocation not found");
+      const stallCode = horse.stall || "";
+      horse.stall = "";
+      saveStoredHorses(horses);
+      if (typeof window !== "undefined") window.dispatchEvent(new Event("horsesUpdated"));
+      return { stallCode, horseName: horse.name };
+    },
+  },
   {
     method: "GET", pattern: /^\/audit-logs$/,
     handler: ({ db, url }) => {
@@ -181,10 +256,21 @@ const routes: Route[] = [
           (from && to && Date.parse(from) > Date.parse(to))) throw new ApiError(400, "VALIDATION", "Invalid audit filters");
       const logs = db.audit.map((entry, index) => {
         const user = db.accounts.find(a => a.fullName === entry.actor || (entry.actor.includes("Tran") && a.id === "viet"));
-        return { id: `demo-${entry.at}-${db.audit.length - index}`, userId: user?.id ?? null, actor: entry.actor, action: entry.action,
-          entityName: "DemoActivity", entityId: null, oldValuesJson: null,
-          newValuesJson: JSON.stringify({ actor: entry.actor, detail: entry.detail }), ipAddress: null, userAgent: null,
-          timestamp: entry.at, user: user ? { id: user.id, fullName: user.fullName } : null };
+        return {
+          id: `demo-${entry.at}-${db.audit.length - index}`,
+          userId: user?.id ?? null,
+          actor: entry.actor,
+          action: entry.action,
+          entityName: "Account / System",
+          entityId: null,
+          oldValuesJson: entry.oldValues ? JSON.stringify(entry.oldValues) : null,
+          newValuesJson: entry.newValues ? JSON.stringify(entry.newValues) : JSON.stringify({ actor: entry.actor, detail: entry.detail }),
+          ipAddress: null,
+          userAgent: null,
+          timestamp: entry.at,
+          user: user ? { id: user.id, fullName: user.fullName } : null,
+          detail: entry.detail,
+        };
       }).filter(entry => {
         const actorFilter = q.get("actor")?.toLowerCase().trim();
         if (actorFilter) {
@@ -566,12 +652,26 @@ const routes: Route[] = [
       const fullName = String(body.fullName ?? "").trim();
       const phone = String(body.phone ?? "").trim();
       if (!fullName) throw new ApiError(400, "VALIDATION", "Full name is required.", { field: "fullName" });
-      if (phone.length > 30) throw new ApiError(400, "VALIDATION", "Phone number is too long.", { field: "phone" });
+      const cleanPhone = phone.replace(/[\s-]/g, "");
+      const VN_PHONE_RE = /^0[35789]\d{8}$/;
+      if (cleanPhone && !VN_PHONE_RE.test(cleanPhone)) {
+        throw new ApiError(400, "VALIDATION", "Số điện thoại phải gồm 10 chữ số hợp lệ (bắt đầu bằng 03, 05, 07, 08, 09).", { field: "phone" });
+      }
       const changes: string[] = [];
-      if (fullName !== target.fullName) changes.push(`name ${target.fullName} → ${fullName}`);
-      if (phone !== target.phone) changes.push(`phone ${target.phone || "—"} → ${phone || "—"}`);
+      const oldVals: Record<string, any> = {};
+      const newVals: Record<string, any> = {};
+      if (fullName !== target.fullName) {
+        changes.push(`họ tên: ${target.fullName} → ${fullName}`);
+        oldVals.fullName = target.fullName;
+        newVals.fullName = fullName;
+      }
+      if (phone !== target.phone) {
+        changes.push(`số điện thoại: ${target.phone || "—"} → ${phone || "—"}`);
+        oldVals.phone = target.phone || "—";
+        newVals.phone = phone || "—";
+      }
       if (changes.length > 0) {
-        audit(db, actor.fullName, "ACCOUNT_EDITED", `${target.fullName}: ${changes.join(", ")}`);
+        audit(db, actor.fullName, "ACCOUNT_EDITED", `${target.fullName}: ${changes.join(", ")}`, oldVals, newVals);
         target.fullName = fullName;
         target.phone = phone;
         saveDb(db);
@@ -627,10 +727,31 @@ const routes: Route[] = [
     handler({ db, body }) {
       const user = currentUser(db);
       const fullName = String(body.fullName ?? "").trim();
+      const phone = String(body.phone ?? "").trim();
       if (!fullName) throw new ApiError(400, "VALIDATION", "Full name is required.", { field: "fullName" });
-      if (fullName !== user.fullName) audit(db, user.fullName, "NAME_CHANGED", `${user.fullName} → ${fullName}`);
+      const cleanPhone = phone.replace(/[\s-]/g, "");
+      const VN_PHONE_RE = /^0[35789]\d{8}$/;
+      if (cleanPhone && !VN_PHONE_RE.test(cleanPhone)) {
+        throw new ApiError(400, "VALIDATION", "Số điện thoại phải gồm 10 chữ số hợp lệ (bắt đầu bằng 03, 05, 07, 08, 09).", { field: "phone" });
+      }
+      const oldVals: Record<string, any> = {};
+      const newVals: Record<string, any> = {};
+      const changes: string[] = [];
+      if (fullName !== user.fullName) {
+        changes.push(`họ tên: ${user.fullName} → ${fullName}`);
+        oldVals.fullName = user.fullName;
+        newVals.fullName = fullName;
+      }
+      if (phone !== user.phone) {
+        changes.push(`số điện thoại: ${user.phone || "—"} → ${phone || "—"}`);
+        oldVals.phone = user.phone || "—";
+        newVals.phone = phone || "—";
+      }
+      if (changes.length > 0) {
+        audit(db, user.fullName, "PROFILE_UPDATED", `${user.fullName}: ${changes.join(", ")}`, oldVals, newVals);
+      }
       user.fullName = fullName;
-      user.phone = String(body.phone ?? "").trim();
+      user.phone = phone;
       saveDb(db);
       return { user: toPublic(user) };
     },
