@@ -165,6 +165,7 @@ export default function LoginPage() {
           <Input
             type="email"
             icon="mail"
+            aria-label="Club email"
             placeholder={EMAIL_PLACEHOLDER}
             autoComplete="username"
             value={email}

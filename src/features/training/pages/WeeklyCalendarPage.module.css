@@ -200,3 +200,124 @@
   color: var(--warn);
   font-weight: 600;
 }
+
+/* ==========================================================================
+   Day Grid: Giờ × Mặt sân (FR-2.10)
+   ========================================================================== */
+.dayGridContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.daySummaryBanner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card, 12px);
+}
+
+.daySummaryDate {
+  font-weight: 700;
+  font-size: var(--fs-body-lg);
+  color: var(--text);
+}
+
+.dayTrackPills {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.dayTrackPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.dayGridCard {
+  border: 1px solid var(--border);
+  border-radius: var(--r-card, 12px);
+  background: var(--surface);
+  overflow-x: auto;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.dayMatrix {
+  display: grid;
+  min-width: 780px;
+  background: var(--border);
+  gap: 1px;
+}
+
+.matrixHeaderCell {
+  background: var(--surface-sunken);
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.825rem;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.matrixTimeHeader {
+  background: var(--surface-sunken);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.matrixTimeCell {
+  background: var(--surface-sunken);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  padding: 0.5rem 0.25rem;
+}
+
+.matrixSlotCell {
+  background: var(--surface);
+  padding: 0.4rem;
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  transition: background 0.15s ease;
+}
+
+.matrixSlotCell:hover {
+  background: color-mix(in srgb, var(--brand) 3%, var(--surface));
+}
+
+.conflictWarning {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: color-mix(in srgb, #f59e0b 12%, var(--surface));
+  color: #d97706;
+  border: 1px solid color-mix(in srgb, #f59e0b 35%, transparent);
+}

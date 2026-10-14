@@ -288,6 +288,7 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
     {
       label: "TRAINING",
       items: [
+        item("training", "Training Overview", "chart", { i18nKey: "trainingOverview" }),
         item("plans", "Training Plans", "clipboard", { i18nKey: "trainingPlans" }),
         item("calendar", "Weekly Calendar", "calendar"),
       ],
@@ -316,7 +317,7 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
 
 // Mục đã có trong thiết kế nhưng chưa có màn hình (route rơi vào trang "Coming soon").
 // Ẩn khỏi sidebar để không có mục chết; đường dẫn vẫn giữ nguyên trong router.
-const NOT_BUILT = new Set(["/races", "/health-report", "/tasks", "/rations", "/incidents", "/supplies", "/costs", "/race-record", "/health", "/catalog", "/performance"]);
+const NOT_BUILT = new Set(["/races", "/health-report", "/tasks", "/rations", "/incidents", "/supplies", "/costs", "/race-record", "/health", "/catalog", "/performance", "/monitor"]);
 
 // Sidebar chỉ hiện mục mà tài khoản được cấp quyền (xây từ danh sách quyền, không chỉ từ tên vai trò).
 export function navFor(role: Role, permissions: PermissionMap): NavGroup[] {
