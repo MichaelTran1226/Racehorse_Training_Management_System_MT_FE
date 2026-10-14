@@ -202,8 +202,8 @@ const routes: Route[] = [
     pattern: /^\/stalls\/allocations\/([^/]+)\/transfer$/,
     handler: ({ db, params, body }) => {
       const [allocId] = params;
-      const toStallId = String(body.toStallId ?? "");
-      const groomId = body.assignedGroomUserId ? String(body.assignedGroomUserId) : undefined;
+      const toStallId = String(body.newStallId ?? body.toStallId ?? "");
+      const groomId = body.newGroomId ? String(body.newGroomId) : body.assignedGroomUserId ? String(body.assignedGroomUserId) : undefined;
       const stalls = mockStallList(db);
       const toStall = stalls.find(
         (s) =>
@@ -215,7 +215,7 @@ const routes: Route[] = [
       if (!toStall) throw new ApiError(404, "TARGET_STALL_NOT_FOUND", "Target stall not found");
       const horses = getStoredHorses();
       const horse = horses.find(
-        (h) => h.id === allocId || `alloc-${h.id}` === allocId || allocId.includes(h.id),
+        (h) => h.id === allocId || `alloc-${h.id}` === allocId,
       );
       if (!horse) throw new ApiError(404, "ALLOCATION_NOT_FOUND", "Allocation not found");
       const fromStallCode = horse.stall || "";
@@ -234,7 +234,7 @@ const routes: Route[] = [
       const [allocId] = params;
       const horses = getStoredHorses();
       const horse = horses.find(
-        (h) => h.id === allocId || `alloc-${h.id}` === allocId || allocId.includes(h.id),
+        (h) => h.id === allocId || `alloc-${h.id}` === allocId,
       );
       if (!horse) throw new ApiError(404, "ALLOCATION_NOT_FOUND", "Allocation not found");
       const stallCode = horse.stall || "";

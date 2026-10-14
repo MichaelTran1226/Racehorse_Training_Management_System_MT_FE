@@ -66,8 +66,8 @@ export const en = {
 
     // Navigation Items
     dashboard: "Dashboard",
-    horses: "Horse Profiles",
-    stalls: "Barn & Stalls",
+    horses: "Horses",
+    stalls: "Stall Map",
     herd: "Herd Health",
     training: "Training Overview",
     medical: "Herd Health",
