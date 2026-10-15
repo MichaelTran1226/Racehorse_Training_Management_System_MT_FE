@@ -2541,6 +2541,4 @@ export const VI_TEXT: Record<string, string> = {
   "Between 10 and 2,000 characters (currently: {{n}})": "Từ 10 đến 2.000 ký tự (hiện có: {{n}})",
   "Reason for reopening must be between 10 and 500 characters.": "Lý do mở lại phải từ 10 đến 500 ký tự.",
   "Reason for reopening cannot exceed 500 characters.": "Lý do mở lại không được vượt quá 500 ký tự.",
-  "Confirm Reopen": "Xác nhận mở lại",
-  "Save Conclusion & Close Record": "Lưu kết luận & Kết thúc bệnh án",
 };
