@@ -18,7 +18,8 @@ import { TrainingLockModal } from "../components/TrainingLockModal";
 import type { TrainingLockHistoryItem } from "../types";
 import { getHorses } from "@/features/horses/api";
 import { HEALTH_STATUS } from "@/shared/lib/status";
-
+
+
 import { tr } from "@/shared/i18n/tr";
 export default function TrainingLockPage() {
   const { user } = useAuth();
@@ -35,7 +36,7 @@ export default function TrainingLockPage() {
   const [horses, setHorses] = useState<any[]>([]);
 
   useEffect(() => {
-    getHorses({ limit: 500 }).then((res) => setHorses(res.items || []));
+    getHorses({ limit: 100 }).then((res) => setHorses(res.items || []));
   }, []);
 
   const loadLocks = useCallback(async () => {
@@ -153,42 +154,42 @@ export default function TrainingLockPage() {
     },
     ...(isVet
       ? [
-          {
-            key: "actions",
-            header: "",
-            align: "right" as const,
-            render: (lock: TrainingLockHistoryItem) =>
-              lock.status === "ACTIVE" ? (
-                <div style={{ display: "inline-flex", gap: 8 }}>
-                  <Button
-                    tone="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedLock(lock);
-                      setModalMode("extend");
-                    }}
-                  >
-                    {tr("Extend")}
-                  </Button>
-                  <Button
-                    tone="secondary"
-                    size="sm"
-                    icon="unlock"
-                    onClick={() => {
-                      setSelectedLock(lock);
-                      setModalMode("lift");
-                    }}
-                  >
-                    {tr("Lift lock")}
-                  </Button>
-                </div>
-              ) : (
-                <span className="nowrap" style={{ fontSize: "var(--fs-caption)", color: "var(--muted)" }}>
-                  {tr("Released")}{" "}{lock.releasedAt ? formatDate(lock.releasedAt) : ""} · {lock.releaseReason || tr("Recovered")}
-                </span>
-              ),
-          },
-        ]
+        {
+          key: "actions",
+          header: "",
+          align: "right" as const,
+          render: (lock: TrainingLockHistoryItem) =>
+            lock.status === "ACTIVE" ? (
+              <div style={{ display: "inline-flex", gap: 8 }}>
+                <Button
+                  tone="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedLock(lock);
+                    setModalMode("extend");
+                  }}
+                >
+                  {tr("Extend")}
+                </Button>
+                <Button
+                  tone="secondary"
+                  size="sm"
+                  icon="unlock"
+                  onClick={() => {
+                    setSelectedLock(lock);
+                    setModalMode("lift");
+                  }}
+                >
+                  {tr("Lift lock")}
+                </Button>
+              </div>
+            ) : (
+              <span className="nowrap" style={{ fontSize: "var(--fs-caption)", color: "var(--muted)" }}>
+                {tr("Released")}{" "}{lock.releasedAt ? formatDate(lock.releasedAt) : ""} · {lock.releaseReason || tr("Recovered")}
+              </span>
+            ),
+        },
+      ]
       : []),
   ];
 
@@ -271,8 +272,8 @@ export default function TrainingLockPage() {
                   ? `${selectedLock.horseName} (${selectedLock.horseCode || selectedLock.horseId})`
                   : selectedLock.horseId
                 : eligibleHorsesForLock[0]
-                ? `${eligibleHorsesForLock[0].name} (${eligibleHorsesForLock[0].code})`
-                : "Horse"
+                  ? `${eligibleHorsesForLock[0].name} (${eligibleHorsesForLock[0].code})`
+                  : "Horse"
             }
             horseId={selectedLock?.horseId || (eligibleHorsesForLock[0]?.id ?? "")}
             horseOptions={eligibleHorsesForLock.map((h) => ({
@@ -305,36 +306,36 @@ export default function TrainingLockPage() {
               setSelectedLock(null);
               void loadLocks();
             }}
-          onLiftLock={async (dto) => {
-            if (!selectedLock) return;
-            await healthApi.releaseTrainingLock(selectedLock.id, {
-              targetStatus: dto.restoreStatus,
-              releaseReason: dto.reason,
-              horseId: selectedLock.horseId,
-            });
-            toast.show(
-              `Training lock lifted successfully. Horse status: ${HEALTH_STATUS[dto.restoreStatus as keyof typeof HEALTH_STATUS]?.label ?? dto.restoreStatus}`,
-              "ok",
-            );
-            setModalMode(null);
-            setSelectedLock(null);
-            void loadLocks();
-          }}
-          onExtendLock={async (dto) => {
-            if (!selectedLock) return;
-            await healthApi.extendTrainingLock(selectedLock.id, {
-              newReviewDate: dto.newReviewDate,
-              reason: dto.reason,
-              horseId: selectedLock.horseId,
-            });
-            toast.show(`Training lock review date extended to ${dto.newReviewDate}`, "ok");
-            setModalMode(null);
-            setSelectedLock(null);
-            void loadLocks();
-          }}
-        />
-      );
-    })()}
+            onLiftLock={async (dto) => {
+              if (!selectedLock) return;
+              await healthApi.releaseTrainingLock(selectedLock.id, {
+                targetStatus: dto.restoreStatus,
+                releaseReason: dto.reason,
+                horseId: selectedLock.horseId,
+              });
+              toast.show(
+                `Training lock lifted successfully. Horse status: ${HEALTH_STATUS[dto.restoreStatus as keyof typeof HEALTH_STATUS]?.label ?? dto.restoreStatus}`,
+                "ok",
+              );
+              setModalMode(null);
+              setSelectedLock(null);
+              void loadLocks();
+            }}
+            onExtendLock={async (dto) => {
+              if (!selectedLock) return;
+              await healthApi.extendTrainingLock(selectedLock.id, {
+                newReviewDate: dto.newReviewDate,
+                reason: dto.reason,
+                horseId: selectedLock.horseId,
+              });
+              toast.show(`Training lock review date extended to ${dto.newReviewDate}`, "ok");
+              setModalMode(null);
+              setSelectedLock(null);
+              void loadLocks();
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }

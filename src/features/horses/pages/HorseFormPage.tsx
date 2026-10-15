@@ -13,7 +13,7 @@ import { ApiError } from "@/shared/lib/api";
 import { getHorseById, createHorse, updateHorse, getHorseCatalog } from "../api";
 import type { Horse, CreateHorsePayload, UpdateHorsePayload, HorseCatalogItem } from "../types";
 
-
+
 import { tr } from "@/shared/i18n/tr";
 const GENDER_OPTIONS = [
   { value: "Stallion", label: "Stallion (male)" },

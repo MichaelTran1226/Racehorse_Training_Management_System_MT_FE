@@ -116,9 +116,11 @@ export default function AccountListPage() {
 
   // Chấm ở tab Pending: tính lại khi danh sách đổi hoặc thông báo đổi; mở tab Pending => coi như đã xem.
   useEffect(() => {
-    if (!accounts) return;
     if (tab === "PENDING") markPendingRequestsSeen(accounts);
-    const update = () => setPendingNews(hasNewPendingRequests(accounts));
+    const update = () => {
+      if (tab === "PENDING") markPendingRequestsSeen(accounts);
+      if (accounts) setPendingNews(hasNewPendingRequests(accounts));
+    };
     update();
     return subscribePendingSeen(update);
   }, [accounts, tab]);
