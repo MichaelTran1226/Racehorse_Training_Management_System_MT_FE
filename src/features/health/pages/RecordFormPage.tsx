@@ -289,7 +289,7 @@ export default function RecordFormPage() {
 
       {error && (
         <div style={{ color: "var(--danger)", padding: "12px 16px", background: "var(--danger-bg)", borderRadius: "var(--r)", border: "1px solid var(--danger)" }}>
-          {error}
+          {tr(error)}
         </div>
       )}
 

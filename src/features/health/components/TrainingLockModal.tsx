@@ -243,13 +243,13 @@ export function TrainingLockModal({
 
             <Field
               label={tr(`Lock Reason * (${reason.trim().length}/500)`)}
-              hint={reason.trim().length > 0 && reason.trim().length < 10 ? "Min 10 characters required (currently " + reason.trim().length + ")" : tr("Min 10, max 500 characters")}
+              hint={reason.trim().length > 0 && reason.trim().length < 10 ? `${tr("Min 10 characters required (currently ")}${reason.trim().length})` : tr("Min 10, max 500 characters")}
             >
               <Textarea
                 rows={3}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="e.g., Superficial digital flexor tendon strain post-exercise, suspected micro-tear..."
+                placeholder={tr("e.g., Superficial digital flexor tendon strain post-exercise, suspected micro-tear...")}
                 required
               />
             </Field>
@@ -258,7 +258,7 @@ export function TrainingLockModal({
               <Input
                 value={unlockConditions}
                 onChange={(e) => setUnlockConditions(e.target.value)}
-                placeholder="e.g., Zero lameness upon palpation and flexion, ultrasound clearance..."
+                placeholder={tr("e.g., Zero lameness upon palpation and flexion, ultrasound clearance...")}
               />
             </Field>
           </>

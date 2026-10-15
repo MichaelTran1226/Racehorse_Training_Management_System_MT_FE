@@ -411,11 +411,11 @@ export default function RecordDetailPage() {
                     {record.prescriptions.map((rx) => (
                       <tr key={rx.id}>
                         <td><strong>{rx.medicationName}</strong></td>
-                        <td>{rx.dosage} {rx.unit}</td>
-                        <td>{rx.route}</td>
-                        <td>{rx.frequencyPerDay} times/day</td>
-                        <td>{rx.daysCount} days</td>
-                        <td>{rx.dosage * rx.frequencyPerDay * rx.daysCount} {rx.unit}</td>
+                        <td>{rx.dosage} {tr(rx.unit)}</td>
+                        <td>{tr(rx.route)}</td>
+                        <td>{rx.frequencyPerDay} {tr("times/day")}</td>
+                        <td>{rx.daysCount} {tr("days")}</td>
+                        <td>{rx.dosage * rx.frequencyPerDay * rx.daysCount} {tr(rx.unit)}</td>
                         <td>
                           {rx.withdrawalDays ? tr(`${rx.withdrawalDays} days`) : "—"}
                         </td>

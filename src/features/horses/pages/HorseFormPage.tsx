@@ -348,7 +348,7 @@ export default function HorseFormPage() {
 
             <Field label={tr("Horse Code (ID)")} hint={tr("System auto-generates code formatted as HR-XXXXXX upon save")}>
               <Input
-                value={isEdit ? horseCode : "Auto-generated on save"}
+                value={isEdit ? horseCode : tr("Auto-generated on save")}
                 disabled
                 readOnly
               />

@@ -387,7 +387,7 @@ export default function HorseListPage() {
                 </Button>
               }
             >
-              {error} Your search and filters are kept.
+              {tr(error)} {tr("Your search and filters are kept.")}
             </Alert>
           </div>
         ) : (
