@@ -4,7 +4,7 @@
 // Mở tab Pending => lưu các yêu cầu đó là đã xem và đánh dấu luôn thông báo đăng ký là đã đọc.
 
 import type { PublicAccount } from "@/shared/types/auth";
-import { getNotifications, markNotificationsRead, subscribeNotifications } from "./notifications";
+import { getNotifications, markNotificationsRead, refreshNotifications, subscribeNotifications } from "./notifications";
 import type { AppNotification } from "./notifications";
 
 const SEEN_KEY = "equiflow.accounts.pendingSeen.v1";
@@ -31,13 +31,26 @@ export function hasNewPendingRequests(accounts: PublicAccount[]): boolean {
   return unseen || unread;
 }
 
-export function markPendingRequestsSeen(accounts: PublicAccount[]): void {
-  try {
-    localStorage.setItem(SEEN_KEY, JSON.stringify(accounts.filter((a) => a.status === "PENDING_APPROVAL").map((a) => a.id)));
-  } catch {
-    // trình duyệt chặn localStorage: bỏ qua, chấm vẫn hiện
+export function markPendingRequestsSeen(accounts?: PublicAccount[] | null): void {
+  if (accounts) {
+    try {
+      localStorage.setItem(SEEN_KEY, JSON.stringify(accounts.filter((a) => a.status === "PENDING_APPROVAL").map((a) => a.id)));
+    } catch {
+      // trình duyệt chặn localStorage: bỏ qua, chấm vẫn hiện
+    }
   }
-  void markNotificationsRead(getNotifications().filter((n) => !n.read && isSignUpNotification(n)).map((n) => n.id));
+  const notifs = getNotifications();
+  const toMark = notifs.filter((n) => !n.read && isSignUpNotification(n)).map((n) => n.id);
+  if (toMark.length > 0) {
+    void markNotificationsRead(toMark);
+  } else if (notifs.length === 0) {
+    void refreshNotifications().then(() => {
+      const fresh = getNotifications().filter((n) => !n.read && isSignUpNotification(n)).map((n) => n.id);
+      if (fresh.length > 0) {
+        void markNotificationsRead(fresh);
+      }
+    });
+  }
   window.dispatchEvent(new CustomEvent(SEEN_EVENT));
 }
 
