@@ -28,7 +28,7 @@ import { VitalsDisplay } from "../components/VitalsDisplay";
 import type { MedicalRecord, PrescriptionItem } from "../types";
 import styles from "./MedicalRecordPage.module.css";
 import { formatDate, formatDateTime } from "@/shared/lib/format";
-
+
 import { tr } from "@/shared/i18n/tr";
 const RECORD_TABS = [
   { id: "diagnosis", label: "Exam & Diagnosis" },
@@ -353,13 +353,19 @@ export default function RecordDetailPage() {
                       {tr("Activity:")}{" "}<Badge tone="brand">{phase.allowedActivity}</Badge> · Objective: {phase.target}
                     </div>
 
-                    {phase.careInstructions.length > 0 && (
+                    {phase.careInstructions && phase.careInstructions.length > 0 && (
                       <div style={{ fontSize: "var(--fs-body)", marginTop: 4 }}>
                         <span style={{ color: "var(--muted)" }}>{tr("Care Directives:")}</span>
                         <ul style={{ margin: "4px 0 0 16px", padding: 0 }}>
-                          {phase.careInstructions.map((c, i) => (
+                          {phase.careInstructions.map((c: any, i: number) => (
                             <li key={i}>
-                              <strong>{c.activity}</strong> ({c.frequency})
+                              {typeof c === "string" ? (
+                                <strong>{c}</strong>
+                              ) : (
+                                <>
+                                  <strong>{c.activity}</strong> {c.frequency ? `(${c.frequency})` : ""}
+                                </>
+                              )}
                             </li>
                           ))}
                         </ul>
@@ -415,7 +421,7 @@ export default function RecordDetailPage() {
                         <td>{rx.route}</td>
                         <td>{rx.frequencyPerDay} times/day</td>
                         <td>{rx.daysCount} days</td>
-                        <td>{rx.dosage * rx.frequencyPerDay * rx.daysCount} {rx.unit}</td>
+                        <td>{Number(rx.dosage || 0) * (rx.frequencyPerDay || 0) * (rx.daysCount || 0)} {rx.unit}</td>
                         <td>
                           {rx.withdrawalDays ? tr(`${rx.withdrawalDays} days`) : "—"}
                         </td>

@@ -19,7 +19,7 @@ import { messageFor } from "@/shared/lib/messages";
 import type { HealthStatus, HorseStatus } from "@/shared/types/enums";
 import { getHorseCatalog, getHorses } from "../api";
 import type { Horse, HorseListFilter } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 const STATUS_FILTERS: Array<{ id: string; label: string }> = [
   { id: "ALL", label: "All" },

@@ -107,6 +107,7 @@ Flow 6: Đề xuất Huấn luyện & Phân tích Sức khỏe bằng AI (AI Tra
 - Các tính năng AI đóng vai trò công cụ hỗ trợ phân tích dữ liệu, gợi ý giáo án và cảnh báo nguy cơ sớm, không thay thế quyết định chuyên môn của Huấn luyện viên trưởng và Bác sĩ thú y.
 
 
+
 5. MỤC TIÊU CHÍNH
 
 - Tăng hiệu quả quản lý câu lạc bộ, số hóa toàn diện quy trình vận hành chuồng trại và giảm thiểu các thao tác thủ công, sai sót giấy tờ.
@@ -125,6 +126,7 @@ Flow 6: Đề xuất Huấn luyện & Phân tích Sức khỏe bằng AI (AI Tra
 - Hồ sơ lý lịch ngựa: Hỗ trợ lưu trữ thông tin dòng dõi, phả hệ (Pedigree: Sire, Dam) cơ bản của chiến mã.
 - Mô hình chấn thương y tế: Trong giai đoạn hiện tại (đồ án SWP391), hệ thống triển khai mô hình cơ/xương 2D tương tác trực quan để Bác sĩ thú y định vị vị trí tổn thương và theo dõi phục hồi; mô hình cơ/xương 3D sẽ được nghiên cứu và phát triển ở giai đoạn sau.
 - Các tiện ích AI dựa trên tập dữ liệu lịch sử huấn luyện, hồ sơ bệnh án, thể trạng sinh học và kết quả thi đấu thực tế để đưa ra gợi ý và dự báo chính xác.
+
 
 
 7. KẾT LUẬN

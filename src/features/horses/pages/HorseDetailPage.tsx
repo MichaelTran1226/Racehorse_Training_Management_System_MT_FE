@@ -24,7 +24,7 @@ import { Icon } from "@/shared/components/ui/Icon";
 import { useToast } from "@/shared/components/ui/Toast";
 import { AssignStallDialog, ReturnStallDialog, TransferStallDialog } from "@/features/stable/components/StallDialogs";
 import { formatDate, formatDateTime } from "@/shared/lib/format";
-
+
 import { tr } from "@/shared/i18n/tr";
 /** Nguồn đổi trạng thái (Tab 4). */
 const STATUS_SOURCE_LABEL: Record<string, string> = {
