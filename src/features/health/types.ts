@@ -42,11 +42,12 @@ export interface TreatmentPhase {
 export interface PrescriptionItem {
   id?: string;
   medicationName: string;
-  dosage: number;
+  dosage: number | string;
   unit: string;
   route: string;
   frequencyPerDay: number;
   startDate: string;
+  endDate?: string;
   daysCount: number;
   withdrawalDays?: number;
   withdrawalUntil?: string;
@@ -231,11 +232,12 @@ export interface TreatmentPhaseInput {
 
 export interface PrescriptionInput {
   medicationName: string;
-  dosage: number;
+  dosage: number | string;
   unit: string;
   route: string;
   frequencyPerDay: number;
   startDate: string;
+  endDate?: string;
   daysCount: number;
   withdrawalDays?: number;
   notes?: string;
@@ -243,6 +245,7 @@ export interface PrescriptionInput {
 
 export interface StopPrescriptionInput {
   stoppedReason: string;
+  reason?: string;
   stopNotes?: string;
   stoppedDate?: string;
 }
@@ -262,5 +265,6 @@ export interface CloseRecordInput {
 }
 
 export interface ReopenRecordInput {
-  reopenReason: string;
+  reopenReason?: string;
+  reason?: string;
 }

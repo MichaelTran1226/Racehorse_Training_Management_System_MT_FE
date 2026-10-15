@@ -20,7 +20,7 @@ import { messageFor } from "@/shared/lib/messages";
 import type { HealthStatus } from "@/shared/types/enums";
 import { getDeletedHorses, restoreHorse } from "../api";
 import type { DeletedHorse } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 const PAGE_SIZE = 20;
 
