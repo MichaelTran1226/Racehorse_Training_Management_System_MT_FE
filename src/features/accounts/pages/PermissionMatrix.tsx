@@ -20,7 +20,7 @@ import { ACCOUNT_STATUS } from "@/shared/lib/status";
 import type { PermissionKey, PermissionMap, PublicAccount } from "@/shared/types/auth";
 import { getAccount, savePermissions } from "../api";
 import styles from "./PermissionMatrix.module.css";
-
+
 import { tr } from "@/shared/i18n/tr";
 const GENERIC_EFFECT = "The matching sidebar items disappear at the next page load, and opening their URLs returns 403 Access Denied.";
 

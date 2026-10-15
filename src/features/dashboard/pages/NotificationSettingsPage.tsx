@@ -15,7 +15,7 @@ import {
   type UserNotificationSettings,
 } from "@/shared/lib/notifications";
 import styles from "./NotificationSettingsPage.module.css";
-
+
 import { tr } from "@/shared/i18n/tr";
 export default function NotificationSettingsPage() {
   const { user } = useAuth();

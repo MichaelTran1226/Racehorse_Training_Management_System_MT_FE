@@ -29,7 +29,7 @@ import type {
   TrainingPlan,
 } from "../types";
 import { hasCode } from "./PlanDialogs";
-
+
 import { tr } from "@/shared/i18n/tr";
 const WEEKDAYS = [
   { n: 1, label: "Mon" },

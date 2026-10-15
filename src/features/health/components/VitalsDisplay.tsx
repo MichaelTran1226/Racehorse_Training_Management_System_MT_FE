@@ -4,7 +4,7 @@ import { cx } from "@/shared/lib/cx";
 import type { VitalSigns } from "../types";
 import styles from "./VitalsDisplay.module.css";
 import { formatDate, formatDateTime } from "@/shared/lib/format";
-
+
 import { tr } from "@/shared/i18n/tr";
 interface VitalsDisplayProps {
   vitals?: VitalSigns;

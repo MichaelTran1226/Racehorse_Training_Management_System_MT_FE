@@ -26,7 +26,7 @@ import {
   TRACK_LABEL,
 } from "../types";
 import type { AbnormalSign, CompletionLevel, ExerciseSession, TrackCondition, TrackType } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 /** "mm:ss.s" <-> giây. */
 function parseTime(text: string): number | null {

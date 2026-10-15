@@ -11,7 +11,7 @@ import { subscribeNotifications } from "@/shared/lib/notifications";
 import type { AuthUser } from "@/shared/types/auth";
 import type { SidebarNote } from "./useSidebarInfo";
 import styles from "./Sidebar.module.css";
-
+
 import { tr } from "@/shared/i18n/tr";
 interface SidebarProps {
   user: AuthUser;

@@ -9,7 +9,7 @@ import { useToast } from "@/shared/components/ui/Toast";
 import { messageFor } from "@/shared/lib/messages";
 import { trainingApi } from "../api";
 import type { TrainingPlan } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 /** Lịch sử giáo án: các giáo án Hoàn thành / Đã hủy (dữ liệu thật, không còn danh sách viết cứng). */
 export default function PlanHistoryPage() {

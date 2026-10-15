@@ -12,7 +12,7 @@ import type { ScreenAccess } from "@/shared/lib/permissions";
 import { logForbidden, requestPermission } from "../api";
 import type { ForbiddenInfo } from "../types";
 import styles from "./Forbidden403Page.module.css";
-
+
 import { tr } from "@/shared/i18n/tr";
 interface Forbidden403PageProps {
   // Có `access` khi RoleGuard chặn một route; không có khi vào thẳng /forbidden (API trả 403).

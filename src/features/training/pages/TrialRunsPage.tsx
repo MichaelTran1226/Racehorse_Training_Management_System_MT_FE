@@ -13,7 +13,7 @@ import { messageFor } from "@/shared/lib/messages";
 import { todayClub, trainingApi } from "../api";
 import { SESSION_STATUS_LABEL, TRACK_LABEL } from "../types";
 import type { ExerciseSession } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 function plusDays(date: string, days: number): string {
   const d = new Date(`${date}T00:00:00Z`);

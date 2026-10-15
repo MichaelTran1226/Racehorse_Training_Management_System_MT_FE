@@ -15,7 +15,7 @@ import { ClonePlanDialog } from "../components/PlanDialogs";
 import { ProgressBar } from "../components/ProgressBar";
 import { PLAN_STATUS_LABEL, PLAN_STATUS_TONE } from "../types";
 import type { PlanStatus, TrainingPlan } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 const PAGE_SIZE = 20;
 

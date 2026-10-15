@@ -9,7 +9,7 @@ import type { Role } from "@/shared/types/auth";
 import { signupFlow } from "../flow";
 import type { RegistrationResult } from "../types";
 import styles from "./AuthPages.module.css";
-
+
 import { tr } from "@/shared/i18n/tr";
 // Design 1.3: yêu cầu đã tới Club Manager, chưa đăng nhập được cho tới khi được duyệt.
 export default function PendingApprovalPage() {

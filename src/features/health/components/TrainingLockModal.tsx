@@ -8,7 +8,7 @@ import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
 import { messageFor } from "@/shared/lib/messages";
 import { formatDate } from "@/shared/lib/format";
-
+
 import { tr } from "@/shared/i18n/tr";
 const APPLIED_STATUS_OPTIONS = [
   { value: "INJURED", label: "Injured" },

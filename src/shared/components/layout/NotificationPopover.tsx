@@ -8,7 +8,7 @@ import {
   markAllNotificationsAsRead,
   markNotificationAsRead,
 } from "@/shared/lib/notifications";
-
+
 import { tr } from "@/shared/i18n/tr";
 interface NotificationPopoverProps {
   notifications: AppNotification[];

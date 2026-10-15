@@ -18,7 +18,7 @@ import { useAuth } from "@/shared/components/layout/AuthProvider";
 import { useToast } from "@/shared/components/ui/Toast";
 import { healthApi } from "../api";
 import type { PreventiveCareItem, PreventiveStatus } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 const CATEGORY_LABELS: Record<string, string> = {
   ALL: "All Categories",

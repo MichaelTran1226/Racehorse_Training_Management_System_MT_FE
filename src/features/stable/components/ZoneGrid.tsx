@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Icon } from "@/shared/components/ui/Icon";
 import type { Stall, Zone } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 const BASE: CSSProperties = {
   width: "100%",

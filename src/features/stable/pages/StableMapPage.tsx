@@ -18,7 +18,7 @@ import { GridCell, ZoneGrid, type CellLook } from "../components/ZoneGrid";
 import { AssignStallDialog, ReturnStallDialog, TransferStallDialog } from "../components/StallDialogs";
 import { HEALTH_STATUS } from "@/shared/lib/status";
 import { HORSE_STATUS_COLOR, allocationOf, useStallCounts } from "../stallUtils";
-
+
 import { tr } from "@/shared/i18n/tr";
 const REFRESH_MS = 60_000;
 

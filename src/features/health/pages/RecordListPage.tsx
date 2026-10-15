@@ -10,7 +10,7 @@ import { listRecords } from "../api";
 import type { MedicalRecord } from "../types";
 import styles from "./MedicalRecordPage.module.css";
 import { capitalize, formatDate } from "@/shared/lib/format";
-
+
 import { tr } from "@/shared/i18n/tr";
 const STATUS_OPTIONS = [
   { value: "", label: "All Statuses" },

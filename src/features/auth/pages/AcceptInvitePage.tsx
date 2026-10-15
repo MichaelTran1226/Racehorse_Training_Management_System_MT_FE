@@ -11,7 +11,7 @@ import { verifyInviteOtp } from "../api";
 import { resetFlow } from "../flow";
 import { OtpVerifyForm } from "../components/OtpVerifyForm";
 import styles from "./AuthPages.module.css";
-
+
 import { tr } from "@/shared/i18n/tr";
 const EMAIL_RE = /^[^\s@]+@gmail\.com$/i;
 

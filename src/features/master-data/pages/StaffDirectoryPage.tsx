@@ -13,7 +13,7 @@ import { ROLE_LABEL } from "@/shared/lib/permissions";
 import { ACCOUNT_STATUS } from "@/shared/lib/status";
 import { initials } from "@/shared/lib/format";
 import { Icon } from "@/shared/components/ui/Icon";
-
+
 import { tr } from "@/shared/i18n/tr";
 const STAFF_ROLES: Role[] = ["CLUB_MANAGER", "HEAD_TRAINER", "VETERINARIAN", "GROOM"];
 

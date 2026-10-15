@@ -11,7 +11,7 @@ import { getHorses } from "@/features/horses/api";
 import type { Horse } from "@/features/horses/types";
 import { assignHorse, getGrooms, getStalls, getZones, returnStall, transferHorse, type GroomOption } from "../api";
 import type { Stall, Zone } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 const NOTE_MAX = 500;
 

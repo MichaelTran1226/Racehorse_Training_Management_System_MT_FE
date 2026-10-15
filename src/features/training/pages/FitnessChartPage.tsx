@@ -14,7 +14,7 @@ import { FitnessChart, SERIES_COLOR, SERIES_LABEL } from "../components/FitnessC
 import type { FitnessSeries } from "../components/FitnessChart";
 import { EXERCISE_TYPE_LABEL } from "../types";
 import type { FitnessData } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 const RANGES = [4, 12, 26];
 const PAGE_SIZE = 20;
@@ -74,7 +74,7 @@ export default function FitnessChartPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
-          <h1 style={{ margin: 0, fontSize: "var(--fs-kpi)" }}>Fitness – {data.horse.name}</h1>
+          <h1 style={{ margin: 0, fontSize: "var(--fs-kpi)" }}>{tr("Fitness")} – {data.horse.name}</h1>
           <Badge tone={statusCfg.tone as never}>{statusCfg.label}</Badge>
           {data.horse.isMedicalLocked && <Badge tone="danger" icon="lock">{tr("Training Lock")}</Badge>}
         </div>
@@ -86,7 +86,7 @@ export default function FitnessChartPage() {
           <div style={{ display: "flex", gap: "0.35rem" }}>
             {RANGES.map((w) => (
               <Button key={w} size="sm" tone={weeks === w ? "primary" : "secondary"} onClick={() => setWeeks(w)}>
-                {w} weeks
+                {w} {tr("weeks")}
               </Button>
             ))}
           </div>
@@ -94,7 +94,7 @@ export default function FitnessChartPage() {
             {(Object.keys(SERIES_LABEL) as FitnessSeries[]).map((k) => (
               <Button key={k} size="sm" tone={series.includes(k) ? "primary" : "ghost"} onClick={() => toggle(k)}>
                 <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 4, background: SERIES_COLOR[k], marginRight: 6 }} />
-                {SERIES_LABEL[k]}
+                {tr(SERIES_LABEL[k])}
               </Button>
             ))}
           </div>
@@ -120,7 +120,7 @@ export default function FitnessChartPage() {
           <div style={{ fontSize: "var(--fs-kpi)", fontWeight: 700 }}>{s.load7d}</div>
           {s.loadChangePct != null && (
             <div style={{ fontSize: "var(--fs-caption)", color: s.loadChangePct > 30 ? "var(--warn)" : "var(--text-muted)" }}>
-              {s.loadChangePct >= 0 ? "+" : ""}{s.loadChangePct}% vs 4-week average
+              {s.loadChangePct >= 0 ? "+" : ""}{s.loadChangePct}% {tr("vs 4-week average")}
             </div>
           )}
         </Card>
@@ -147,7 +147,7 @@ export default function FitnessChartPage() {
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-sunken)" }}>
                   {["Date", "Type", "Distance", "Time", "Avg speed", "Peak HR", "HR 10 min", "Performance", "Load"].map((h) => (
-                    <th key={h} style={{ padding: "0.6rem 0.75rem" }}>{h}</th>
+                    <th key={h} style={{ padding: "0.6rem 0.75rem" }}>{tr(h)}</th>
                   ))}
                 </tr>
               </thead>
@@ -158,7 +158,7 @@ export default function FitnessChartPage() {
                       <Link to={`/training/sessions/${p.workoutId}/result`}>{clubParts(p.date).date}</Link>
                       {p.hasAlert && <Badge tone="danger">!</Badge>}
                     </td>
-                    <td style={{ padding: "0.6rem 0.75rem" }}>{EXERCISE_TYPE_LABEL[p.workoutType] ?? p.workoutType}</td>
+                    <td style={{ padding: "0.6rem 0.75rem" }}>{EXERCISE_TYPE_LABEL[p.workoutType] ? tr(EXERCISE_TYPE_LABEL[p.workoutType]) : p.workoutType}</td>
                     <td style={{ padding: "0.6rem 0.75rem" }}>{p.distanceMeters} m</td>
                     <td style={{ padding: "0.6rem 0.75rem" }}>{formatTime(p.timeSeconds)}</td>
                     <td style={{ padding: "0.6rem 0.75rem" }}>{p.avgSpeedKmh ?? "—"}</td>

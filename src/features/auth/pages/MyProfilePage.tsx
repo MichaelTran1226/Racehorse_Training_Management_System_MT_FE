@@ -19,7 +19,7 @@ import { ACCOUNT_STATUS } from "@/shared/lib/status";
 import { updateNotification, updateProfile } from "../api";
 import styles from "./ProfilePages.module.css";
 import { fullNameError } from "@/shared/lib/name";
-
+
 import { tr } from "@/shared/i18n/tr";
 // Design 1.15: hồ sơ cá nhân — dùng chung cho cả 5 vai trò, mỗi người chỉ thấy hồ sơ của mình.
 export default function MyProfilePage() {
@@ -125,13 +125,13 @@ export default function MyProfilePage() {
                 return (
                   <div key={n.key} className={styles.notify}>
                     <div>
-                      <strong>{n.name}</strong>
-                      <span>{n.note}</span>
+                      <strong>{tr(n.name)}</strong>
+                      <span>{tr(n.note)}</span>
                     </div>
                     <Switch
-                      label={n.name}
+                      label={tr(n.name)}
                       checked={lock.locked ? Boolean(lock.value) : user.notify[n.key]}
-                      blockedReason={lock.locked ? lock.reason : undefined}
+                      blockedReason={lock.locked && lock.reason ? tr(lock.reason) : undefined}
                       onChange={(v) => void onNotify(n.key, v)}
                     />
                   </div>

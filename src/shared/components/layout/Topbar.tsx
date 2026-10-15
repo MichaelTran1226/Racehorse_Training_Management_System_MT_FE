@@ -20,7 +20,7 @@ import { useAuth } from "./AuthProvider";
 import { NotificationPopover } from "./NotificationPopover";
 import { SearchSuggestionsPopover } from "./SearchSuggestionsPopover";
 import styles from "./Topbar.module.css";
-
+
 import { tr } from "@/shared/i18n/tr";
 interface TopbarProps {
   breadcrumb: (string | BreadcrumbSegment)[]; // đoạn cuối in đậm, các đoạn trước có link điều hướng

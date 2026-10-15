@@ -157,7 +157,7 @@ export default function RecordDetailPage() {
                 </Link>
               </span>
               <span className={styles.metaItem}>
-                <Icon name="calendar" size={14} /> Exam Date:{" "}
+                <Icon name="calendar" size={14} /> {tr("Exam Date:")}{" "}
                 <strong>{formatDate(record.examinationDate)}</strong>
               </span>
               <span className={styles.metaItem}>
@@ -350,7 +350,7 @@ export default function RecordDetailPage() {
                     </div>
 
                     <div style={{ fontSize: "var(--fs-body)" }}>
-                      {tr("Activity:")}{" "}<Badge tone="brand">{phase.allowedActivity}</Badge> · Objective: {phase.target}
+                      {tr("Activity:")}{" "}<Badge tone="brand">{phase.allowedActivity}</Badge> · {tr("Objective:")} {phase.target}
                     </div>
 
                     {phase.careInstructions && phase.careInstructions.length > 0 && (

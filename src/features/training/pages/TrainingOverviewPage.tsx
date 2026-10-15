@@ -17,7 +17,7 @@ import { ProgressBar } from "../components/ProgressBar";
 import { EXERCISE_TYPE_LABEL } from "../types";
 import type { OverviewRow, TrainingOverview } from "../types";
 import { Icon } from "@/shared/components/ui/Icon";
-
+
 import { tr } from "@/shared/i18n/tr";
 type SortKey = "name" | "progress" | "score" | "load" | "next";
 
@@ -101,7 +101,7 @@ export default function TrainingOverviewPage() {
           <Card pad={16}>
             <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>{tr("Workouts today")}</div>
             <div style={{ fontSize: "var(--fs-h1)", fontWeight: 700 }}>{k.todayCompleted}/{k.todayTotal}</div>
-            <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>completed</div>
+            <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>{tr("completed")}</div>
           </Card>
         </Link>
         <Link to="/training/calendar?status=BLOCKED" style={{ color: "inherit", textDecoration: "none" }}>
@@ -128,9 +128,9 @@ export default function TrainingOverviewPage() {
               value={planFilter}
               onChange={(e) => setPlanFilter(e.target.value)}
               options={[
-                { value: "ALL", label: "All horses" },
-                { value: "WITH", label: "With an active plan" },
-                { value: "WITHOUT", label: "Without an active plan" },
+                { value: "ALL", label: tr("All horses") },
+                { value: "WITH", label: tr("With an active plan") },
+                { value: "WITHOUT", label: tr("Without an active plan") },
               ]}
             />
           </div>
@@ -139,11 +139,11 @@ export default function TrainingOverviewPage() {
               value={sort}
               onChange={(e) => setSort(e.target.value as SortKey)}
               options={[
-                { value: "name", label: "Sort: horse" },
-                { value: "progress", label: "Sort: progress" },
-                { value: "score", label: "Sort: latest score" },
-                { value: "load", label: "Sort: 7-day load" },
-                { value: "next", label: "Sort: next workout" },
+                { value: "name", label: tr("Sort: horse") },
+                { value: "progress", label: tr("Sort: progress") },
+                { value: "score", label: tr("Sort: latest score") },
+                { value: "load", label: tr("Sort: 7-day load") },
+                { value: "next", label: tr("Sort: next workout") },
               ]}
             />
           </div>
@@ -162,7 +162,7 @@ export default function TrainingOverviewPage() {
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-sunken)" }}>
                   {["Horse", "Current plan", "Current phase", "Progress", "Latest score", "7-day load", "Next workout", ""].map((h) => (
-                    <th key={h} style={{ padding: "0.6rem 0.75rem" }}>{h}</th>
+                    <th key={h} style={{ padding: "0.6rem 0.75rem" }}>{h ? tr(h) : ""}</th>
                   ))}
                 </tr>
               </thead>
@@ -213,7 +213,7 @@ export default function TrainingOverviewPage() {
                       </td>
                       <td style={{ padding: "0.6rem 0.75rem" }}>
                         {r.nextWorkout
-                          ? `${clubParts(r.nextWorkout.date).date.slice(5)} ${clubParts(r.nextWorkout.date).time} – ${EXERCISE_TYPE_LABEL[r.nextWorkout.workoutType] ?? r.nextWorkout.workoutType}`
+                          ? `${clubParts(r.nextWorkout.date).date.slice(5)} ${clubParts(r.nextWorkout.date).time} – ${EXERCISE_TYPE_LABEL[r.nextWorkout.workoutType] ? tr(EXERCISE_TYPE_LABEL[r.nextWorkout.workoutType]) : r.nextWorkout.workoutType}`
                           : "—"}
                       </td>
                       <td style={{ padding: "0.6rem 0.75rem", whiteSpace: "nowrap" }}>

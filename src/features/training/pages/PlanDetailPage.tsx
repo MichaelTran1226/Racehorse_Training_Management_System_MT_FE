@@ -28,7 +28,7 @@ import {
   TRACK_LABEL,
 } from "../types";
 import type { ExerciseSession, SessionStatus, TrainingPhase, TrainingPlan } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 type PlanWithSessions = TrainingPlan & { sessions: ExerciseSession[] };
 type Dialog =
@@ -120,7 +120,7 @@ export default function PlanDetailPage() {
               {tr("Horse:")}{" "}<Link to={`/horses/${plan.horseId}`}>{plan.horseName}</Link> · {plan.startDate} → {plan.endDate} {tr("· Trainer:")}{" "}
               {plan.headTrainerName}
             </div>
-            {plan.objective && <div style={{ fontSize: "var(--fs-body)", marginTop: "0.25rem" }}>Objective: {plan.objective}</div>}
+            {plan.objective && <div style={{ fontSize: "var(--fs-body)", marginTop: "0.25rem" }}>{tr("Objective:")} {plan.objective}</div>}
             <div style={{ maxWidth: 320, marginTop: "0.5rem" }}>
               <ProgressBar done={plan.progress.completed} total={plan.progress.due} />
             </div>
@@ -178,14 +178,13 @@ export default function PlanDetailPage() {
 
       {plan.isLockedByMedical && (
         <Alert tone="danger" title={tr("Training Lock")}>
-          The horse has been under a veterinary Training Lock
-          {plan.lockedSince ? tr(` since ${formatDateTime(plan.lockedSince)}`) : ""}. Heavy workouts are blocked and cannot be
-          added until the Veterinarian lifts the lock.
+          {tr("The horse has been under a veterinary Training Lock")}
+          {plan.lockedSince ? ` ${tr("since")} ${formatDateTime(plan.lockedSince)}` : ""}. {tr("Heavy workouts are blocked and cannot be added until the Veterinarian lifts the lock.")}
         </Alert>
       )}
       {!plan.isLockedByMedical && MEDICAL.includes(plan.horseStatus ?? "") && (
         <Alert tone="warn" title={tr("Medical status")}>
-          The horse is in status {plan.horseStatus}. Think carefully before scheduling heavy workouts.
+          {tr("The horse is in status")} {plan.horseStatus}. {tr("Think carefully before scheduling heavy workouts.")}
         </Alert>
       )}
       {plan.status === "CANCELLED" && plan.cancelledReason && (
@@ -195,9 +194,9 @@ export default function PlanDetailPage() {
       <Card pad={16}>
         <Tabs
           items={[
-            { id: "phases", label: `Phases (${plan.phases.length})` },
-            { id: "workouts", label: `Workouts (${sessions.length})` },
-            { id: "comments", label: `Comments (${completed.length})` },
+            { id: "phases", label: `${tr("Phases")} (${plan.phases.length})` },
+            { id: "workouts", label: `${tr("Workouts")} (${sessions.length})` },
+            { id: "comments", label: `${tr("Comments")} (${completed.length})` },
           ]}
           active={tab}
           onChange={setTab}
@@ -220,7 +219,7 @@ export default function PlanDetailPage() {
               <Select
                 value={phaseFilter}
                 onChange={(e) => setPhaseFilter(e.target.value)}
-                options={[{ value: "ALL", label: "All phases" }, ...plan.phases.map((p) => ({ value: p.id, label: p.name }))]}
+                options={[{ value: "ALL", label: tr("All phases") }, ...plan.phases.map((p) => ({ value: p.id, label: p.name }))]}
               />
             </div>
             <div style={{ width: 200 }}>
@@ -228,8 +227,8 @@ export default function PlanDetailPage() {
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 options={[
-                  { value: "ALL", label: "All statuses" },
-                  ...(Object.keys(SESSION_STATUS_LABEL) as SessionStatus[]).map((s) => ({ value: s, label: SESSION_STATUS_LABEL[s] })),
+                  { value: "ALL", label: tr("All statuses") },
+                  ...(Object.keys(SESSION_STATUS_LABEL) as SessionStatus[]).map((s) => ({ value: s, label: tr(SESSION_STATUS_LABEL[s]) })),
                 ]}
               />
             </div>
@@ -244,7 +243,7 @@ export default function PlanDetailPage() {
                 <thead>
                   <tr style={{ borderBottom: "1px solid var(--border)", background: "var(--surface-sunken)" }}>
                     {["Date", "Phase", "Type", "Intensity", "Distance × reps", "Target speed", "Surface", "Jockey", "Groom", "Status", "Result", ""].map((h) => (
-                      <th key={h} style={{ padding: "0.6rem 0.75rem", whiteSpace: "nowrap" }}>{h}</th>
+                      <th key={h} style={{ padding: "0.6rem 0.75rem", whiteSpace: "nowrap" }}>{h ? tr(h) : ""}</th>
                     ))}
                   </tr>
                 </thead>
@@ -256,16 +255,16 @@ export default function PlanDetailPage() {
                         <td style={{ padding: "0.6rem 0.75rem", whiteSpace: "nowrap" }}>{s.sessionDate} {s.startTime}</td>
                         <td style={{ padding: "0.6rem 0.75rem" }}>{s.phaseName ?? "—"}</td>
                         <td style={{ padding: "0.6rem 0.75rem" }}>
-                          {EXERCISE_TYPE_LABEL[s.sessionType]} {isHeavy(s.sessionType, s.intensity) && <Badge tone="danger">{tr("Heavy")}</Badge>}
+                          {EXERCISE_TYPE_LABEL[s.sessionType] ? tr(EXERCISE_TYPE_LABEL[s.sessionType]) : s.sessionType} {isHeavy(s.sessionType, s.intensity) && <Badge tone="danger">{tr("Heavy")}</Badge>}
                         </td>
-                        <td style={{ padding: "0.6rem 0.75rem" }}>{INTENSITY_LABEL[s.intensity]}</td>
+                        <td style={{ padding: "0.6rem 0.75rem" }}>{INTENSITY_LABEL[s.intensity] ? tr(INTENSITY_LABEL[s.intensity]) : s.intensity}</td>
                         <td style={{ padding: "0.6rem 0.75rem" }}>{s.targetDistanceMeters} m × {s.repetitions}</td>
                         <td style={{ padding: "0.6rem 0.75rem" }}>{s.targetSpeedKmh ? tr(`${s.targetSpeedKmh} km/h`) : "—"}</td>
-                        <td style={{ padding: "0.6rem 0.75rem" }}>{TRACK_LABEL[s.trackType]}</td>
+                        <td style={{ padding: "0.6rem 0.75rem" }}>{TRACK_LABEL[s.trackType] ? tr(TRACK_LABEL[s.trackType]) : s.trackType}</td>
                         <td style={{ padding: "0.6rem 0.75rem" }}>{s.jockeyName || "—"}</td>
                         <td style={{ padding: "0.6rem 0.75rem" }}>{s.groomName || "—"}</td>
                         <td style={{ padding: "0.6rem 0.75rem" }}>
-                          <Badge tone={SESSION_STATUS_TONE[s.status]}>{SESSION_STATUS_LABEL[s.status]}</Badge>
+                          <Badge tone={SESSION_STATUS_TONE[s.status]}>{SESSION_STATUS_LABEL[s.status] ? tr(SESSION_STATUS_LABEL[s.status]) : s.status}</Badge>
                         </td>
                         <td style={{ padding: "0.6rem 0.75rem" }}>
                           {s.result ? tr(`${s.result.performanceScore ?? "—"}/10 · ${s.result.avgSpeedKmh ?? "—"} km/h`) : "—"}
@@ -392,15 +391,15 @@ function PhaseCard({ phase, sessions, current }: { phase: TrainingPhase; session
         </div>
         {phase.goal && <div style={{ fontSize: "var(--fs-body)", marginTop: "0.35rem" }}>{phase.goal}</div>}
         <div style={{ fontSize: "var(--fs-body)", marginTop: "0.5rem" }}>
-          Quota: {phase.sessionsPerWeek}{tr("/week · max")}{" "}{phase.maxWeeklyDistance} {tr("m/week ·")}{" "}{TRACK_LABEL[phase.surface] ?? phase.surface}
+          {tr("Quota:")} {phase.sessionsPerWeek}{tr("/week · max")}{" "}{phase.maxWeeklyDistance} {tr("m/week ·")}{" "}{TRACK_LABEL[phase.surface] ? tr(TRACK_LABEL[phase.surface]) : phase.surface}
           {phase.targetSpeedKmh ? tr(` · ${phase.targetSpeedKmh} km/h`) : ""}
         </div>
         <div style={{ fontSize: "var(--fs-body)" }}>
-          Actual: {done.length} workout(s) completed · {run} m run
+          {tr("Actual:")} {done.length} {tr("workout(s) completed ·")} {run} {tr("m run")}
         </div>
         {overWeeks.map((w) => (
           <div key={w} style={{ marginTop: "0.25rem" }}>
-            <Badge tone="warn">Over quota – week of {w}</Badge>
+            <Badge tone="warn">{tr("Over quota – week of {{week}}", { week: w })}</Badge>
           </div>
         ))}
       </div>

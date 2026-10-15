@@ -7,7 +7,7 @@ import { Textarea } from "@/shared/components/form/Textarea";
 import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
 import type { FinalizeRecordInput } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 interface FinalizeRecordModalProps {
   recordNumber: string;

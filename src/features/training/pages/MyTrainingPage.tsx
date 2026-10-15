@@ -10,7 +10,7 @@ import { messageFor } from "@/shared/lib/messages";
 import { todayClub, trainingApi } from "../api";
 import { EXERCISE_TYPE_LABEL, isHeavy, SESSION_STATUS_LABEL, SESSION_STATUS_TONE, TRACK_LABEL } from "../types";
 import type { ExerciseSession } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 const REFRESH_MS = 5 * 60 * 1000;
 

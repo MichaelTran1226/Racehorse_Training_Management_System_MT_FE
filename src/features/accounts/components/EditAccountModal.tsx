@@ -15,7 +15,7 @@ import type { AccountStatus, PublicAccount } from "@/shared/types/auth";
 import { updateAccount } from "../api";
 import styles from "./EditAccountModal.module.css";
 import { fullNameError } from "@/shared/lib/name";
-
+
 import { tr } from "@/shared/i18n/tr";
 // Chỉ xóa hẳn được tài khoản chưa từng hoạt động (khớp backend); tài khoản đã dùng thì vô hiệu hóa.
 const DELETABLE: AccountStatus[] = ["INVITED", "PENDING_EMAIL", "REJECTED"];

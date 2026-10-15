@@ -12,7 +12,7 @@ import { ROLE_LABEL } from "@/shared/lib/permissions";
 import type { PublicAccount, Role } from "@/shared/types/auth";
 import { createAccount } from "../api";
 import { fullNameError } from "@/shared/lib/name";
-
+
 import { tr } from "@/shared/i18n/tr";
 const EMAIL_RE = /^[^\s@]+@gmail\.com$/i;
 

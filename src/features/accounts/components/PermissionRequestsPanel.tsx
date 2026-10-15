@@ -10,7 +10,7 @@ import { ROLE_LABEL } from "@/shared/lib/permissions";
 import { listPermissionRequests, resolvePermissionRequest } from "../api";
 import type { PermissionRequest } from "../types";
 import styles from "./PermissionRequestsPanel.module.css";
-
+
 import { tr } from "@/shared/i18n/tr";
 // WorkFlow 1 §7.4: yêu cầu "Request the permission" gửi từ màn 403 hiện ở đây cho Club Manager.
 // Mở màn Permissions của người gửi để bật quyền, rồi đánh dấu Granted — hoặc Dismiss nếu không cấp.

@@ -21,7 +21,7 @@ import {
   updateHorseCatalogItem,
 } from "../api";
 import type { HorseCatalogItem, HorseCatalogType } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 const TYPE_LABEL: Record<HorseCatalogType, string> = { BREED: "Breeds", COLOR: "Coat colours" };
 

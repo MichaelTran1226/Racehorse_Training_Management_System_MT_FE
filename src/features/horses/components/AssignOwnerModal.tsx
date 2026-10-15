@@ -10,7 +10,7 @@ import { messageFor } from "@/shared/lib/messages";
 import type { PublicAccount } from "@/shared/types/auth";
 import { transferHorseOwner } from "../api";
 import type { Horse } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 interface AssignOwnerModalProps {
   horse: Horse;

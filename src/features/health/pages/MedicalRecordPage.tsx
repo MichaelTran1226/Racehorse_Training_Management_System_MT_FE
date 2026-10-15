@@ -21,7 +21,7 @@ import { HorseAnatomyGraphic } from "../components/HorseAnatomyGraphic";
 import type { HorseMedicalProfile, ObservationNote } from "../types";
 import styles from "./MedicalRecordPage.module.css";
 import { formatDate, formatDateTime } from "@/shared/lib/format";
-
+
 import { tr } from "@/shared/i18n/tr";
 const TABS = [
   { id: "overview", label: "Overview" },

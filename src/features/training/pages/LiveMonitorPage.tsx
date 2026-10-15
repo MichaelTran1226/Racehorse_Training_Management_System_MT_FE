@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
-
+
 import { tr } from "@/shared/i18n/tr";
 interface SessionTelemetrySnapshot {
   id: string;

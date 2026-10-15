@@ -11,7 +11,7 @@ import { messageFor } from "@/shared/lib/messages";
 import { changeHorseStatus } from "../api";
 import { RETIRE_REASON_LABEL } from "../types";
 import type { Horse, RetireReason } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 interface RetireHorseModalProps {
   horse: Horse;

@@ -16,7 +16,7 @@ import type { Stall, Zone } from "@/features/stable/types";
 import { GridCell, ZoneGrid } from "@/features/stable/components/ZoneGrid";
 import { getHealthBoard, type HealthBoardHorse, type HealthBoardResponse } from "../api";
 import { Icon } from "@/shared/components/ui/Icon";
-
+
 import { tr } from "@/shared/i18n/tr";
 type Group = HealthBoardHorse["healthGroup"];
 

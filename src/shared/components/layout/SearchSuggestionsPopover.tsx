@@ -4,7 +4,7 @@ import { Badge } from "@/shared/components/ui/Badge";
 import { Icon } from "@/shared/components/ui/Icon";
 import type { HerdHorse } from "@/shared/mock/horsesData";
 import type { AuthUser } from "@/shared/types/auth";
-
+
 import { tr } from "@/shared/i18n/tr";
 export interface ClinicalProtocolSuggestion {
   id: string;

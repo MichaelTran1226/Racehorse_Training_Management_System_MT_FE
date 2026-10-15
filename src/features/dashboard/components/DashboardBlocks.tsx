@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Card } from "@/shared/components/ui/Card";
 import { Button } from "@/shared/components/ui/Button";
 import { messageFor } from "@/shared/lib/messages";
-
+
 import { tr } from "@/shared/i18n/tr";
 export interface Loaded<T> {
   data: T | null;

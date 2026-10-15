@@ -15,7 +15,7 @@ import type { Horse } from "@/features/horses/types";
 import { todayClub, trainingApi } from "../api";
 import { PHASE_TYPE_LABEL } from "../types";
 import type { PhaseSurface, PhaseType, TrainingPhase, TrainingPlan } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 const SURFACE_LABEL: Record<PhaseSurface, string> = { TURF: "Turf", DIRT: "Dirt", SYNTHETIC: "Mixed / synthetic" };
 const MEDICAL = ["UNDER_OBSERVATION", "INJURED", "ISOLATED"];

@@ -12,6 +12,7 @@ import { Textarea } from "@/shared/components/form/Textarea";
 import { useAuth } from "@/shared/components/layout/AuthProvider";
 import { useToast } from "@/shared/components/ui/Toast";
 import { cx } from "@/shared/lib/cx";
+import { isVietnamese } from "@/shared/lib/language";
 import { HorseAnatomyGraphic } from "../components/HorseAnatomyGraphic";
 import type { InjuryItem, InjuryStage, SeverityLevel } from "../types";
 
@@ -72,7 +73,7 @@ import { getHorseInjuries, createInjury, updateInjury, deleteInjury } from "../a
 import { getHorseById, getHorses } from "@/features/horses/api";
 import type { Horse } from "@/features/horses/types";
 import { formatDate } from "@/shared/lib/format";
-
+
 import { tr } from "@/shared/i18n/tr";
 export default function InjuryMapPage() {
   const { id = "horse-1" } = useParams();
@@ -120,10 +121,13 @@ export default function InjuryMapPage() {
             const rawY = item.coordinateY ?? item.y ?? 0.5;
             const x = rawX <= 1 ? Math.round(rawX * 100) : Math.round(rawX);
             const y = rawY <= 1 ? Math.round(rawY * 100) : Math.round(rawY);
+            const rawLayer = item.layer || "MUSCLE";
+            const mappedLayer = rawLayer === "BONE" || rawLayer === "TENDON_LIGAMENT" ? "SKELETON" : rawLayer;
             return {
               ...item,
               x,
               y,
+              layer: mappedLayer,
               region: item.anatomicalZone || item.region || "Anatomical Zone",
               view: item.viewSide || item.view || "LEFT",
             };
@@ -229,7 +233,7 @@ export default function InjuryMapPage() {
         coordinateX: normX,
         coordinateY: normY,
         viewSide: view,
-        layer,
+        layer: layer === "SKELETON" ? "BONE" : "MUSCLE",
         anatomicalZone: formRegion,
         bodySide: view,
         injuryType: formType.trim(),
@@ -526,13 +530,15 @@ export default function InjuryMapPage() {
           <div className={styles.panelCard}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <strong style={{ fontSize: "var(--fs-body)" }}>
-                Injury Points ({visibleInjuries.length}) · {layer === "MUSCLE" ? tr("Muscular") : tr("Skeletal")}
+                {tr("Injury Points")} ({visibleInjuries.length}) · {layer === "MUSCLE" ? tr("Muscular") : tr("Skeletal")}
               </strong>
             </div>
 
             {visibleInjuries.length === 0 ? (
               <div style={{ color: "var(--muted)", fontSize: "var(--fs-body)" }}>
-                No injury points recorded on the {layer === "MUSCLE" ? tr("Muscular") : tr("Skeletal")} layer ({view === "LEFT" ? tr("Left View") : tr("Right View")}).
+                {isVietnamese()
+                  ? `Chưa có điểm chấn thương nào trên ${layer === "MUSCLE" ? "lớp cơ" : "lớp xương"} (${view === "LEFT" ? "mặt trái" : "mặt phải"}).`
+                  : `No injury points recorded on the ${layer === "MUSCLE" ? "muscular" : "skeletal"} layer (${view === "LEFT" ? "left view" : "right view"}).`}
               </div>
             ) : (
               <div className={styles.injuryList}>
@@ -551,7 +557,7 @@ export default function InjuryMapPage() {
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <Badge tone={inj.stage === "ACUTE" ? "danger" : inj.stage === "HEALED" ? "ok" : "warn"} dot>
-                        {STAGE_LABELS[inj.stage]}
+                        {tr(STAGE_LABELS[inj.stage])}
                       </Badge>
                       {isVet && (
                         <button
@@ -628,7 +634,7 @@ export default function InjuryMapPage() {
                   {tr("Severity:")}{" "}<Badge tone={selectedInjury.severity === "CRITICAL" ? "danger" : "warn"}>{selectedInjury.severity}</Badge>
                 </div>
                 <div>
-                  {tr("Stage:")}{" "}<Badge tone={selectedInjury.stage === "ACUTE" ? "danger" : "ok"} dot>{STAGE_LABELS[selectedInjury.stage]}</Badge>
+                  {tr("Stage:")}{" "}<Badge tone={selectedInjury.stage === "ACUTE" ? "danger" : "ok"} dot>{tr(STAGE_LABELS[selectedInjury.stage])}</Badge>
                 </div>
                 <div>{tr("Detected Date:")}{" "}<strong>{formatDate(selectedInjury.detectedDate)}</strong></div>
 
@@ -648,7 +654,7 @@ export default function InjuryMapPage() {
                   {selectedInjury.updatedDate && (
                     <div className={styles.timelineNode}>
                       <div className={styles.timelineDot} />
-                      <strong>Phase Update: {STAGE_LABELS[selectedInjury.stage]}</strong>
+                      <strong>{tr("Phase Update:")} {tr(STAGE_LABELS[selectedInjury.stage])}</strong>
                       <span style={{ fontSize: "var(--fs-caption)", color: "var(--muted)" }}>{selectedInjury.updatedDate}</span>
                     </div>
                   )}
@@ -668,8 +674,8 @@ export default function InjuryMapPage() {
           onClose={() => setAddModalPoint(null)}
           foot={
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, width: "100%" }}>
-              <Button tone="ghost" onClick={() => setAddModalPoint(null)}>Cancel</Button>
-              <Button tone="primary" onClick={handleSaveNewInjury}>Save Injury Point</Button>
+              <Button tone="ghost" onClick={() => setAddModalPoint(null)}>{tr("Cancel")}</Button>
+              <Button tone="primary" onClick={handleSaveNewInjury}>{tr("Save Injury Point")}</Button>
             </div>
           }
         >
