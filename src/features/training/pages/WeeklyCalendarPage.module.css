@@ -68,8 +68,8 @@
 
 .todayCircle {
   background: var(--brand);
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+  color: var(--text-on-brand);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--brand) 35%, transparent);
 }
 
 .workoutCountPill {
@@ -139,13 +139,13 @@
 }
 
 .heavyCard {
-  border-left-color: #ea580c;
-  background: color-mix(in srgb, #ea580c 4%, var(--surface));
+  border-left-color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 6%, var(--surface));
 }
 
 .trialRunCard {
-  border-left-color: #dc2626;
-  background: color-mix(in srgb, #dc2626 5%, var(--surface));
+  border-left-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 6%, var(--surface));
 }
 
 .completedCard {
@@ -317,7 +317,7 @@
   border-radius: 4px;
   font-size: 0.7rem;
   font-weight: 700;
-  background: color-mix(in srgb, #f59e0b 12%, var(--surface));
-  color: #d97706;
-  border: 1px solid color-mix(in srgb, #f59e0b 35%, transparent);
+  background: var(--warn-bg);
+  color: var(--warn);
+  border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent);
 }
