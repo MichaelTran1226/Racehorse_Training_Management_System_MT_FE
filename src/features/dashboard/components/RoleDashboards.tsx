@@ -13,7 +13,7 @@ import { getZones } from "@/features/stable/api";
 import { getHorses } from "@/features/horses/api";
 import { listAccounts } from "@/features/accounts/api";
 import { Block, Line, Stat, StatRow, TwoCols, useLoaded } from "./DashboardBlocks";
-
+
 import { tr } from "@/shared/i18n/tr";
 const COLOR = { ok: "var(--ok)", warn: "var(--warn)", danger: "var(--danger)", violet: "var(--violet)" };
 

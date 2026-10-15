@@ -13,7 +13,7 @@ import { todayClub, trainingApi } from "../api";
 import { sessionButtons } from "../components/sessionRules";
 import { EXERCISE_TYPE_LABEL, SESSION_STATUS_LABEL, SESSION_STATUS_TONE } from "../types";
 import type { ExerciseSession } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 function minusDays(date: string, days: number): string {
   const d = new Date(`${date}T00:00:00Z`);

@@ -10,14 +10,17 @@ import { clearTokens, getTokens, saveTokens } from "@/shared/lib/tokens";
 export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
 export class ApiError extends Error {
+  public details: string[];
   constructor(
     public status: number,
     public code: string,
     message?: string,
     public data: Record<string, unknown> = {},
+    details: string[] = [],
   ) {
     super(message ?? code);
     this.name = "ApiError";
+    this.details = details.length > 0 ? details : (message ? [message] : []);
   }
 }
 
@@ -83,8 +86,13 @@ async function request<T>(method: HttpMethod, path: string, body?: unknown): Pro
   const payload = await res.json().catch(() => null);
   if (!res.ok) {
     // Lỗi từ backend: { success: false, code, message, data }
-    const message = Array.isArray(payload?.message) ? payload.message.join(" ") : payload?.message;
-    throw new ApiError(res.status, payload?.code ?? "UNKNOWN", message, payload?.data ?? {});
+    const rawMessages: string[] = Array.isArray(payload?.message)
+      ? payload.message
+      : payload?.message
+        ? [payload.message]
+        : [];
+    const message = rawMessages.length > 1 ? rawMessages.join("\n") : (rawMessages[0] ?? payload?.code ?? "UNKNOWN");
+    throw new ApiError(res.status, payload?.code ?? "UNKNOWN", message, payload?.data ?? {}, rawMessages);
   }
   return (payload && typeof payload === "object" && "success" in payload && "data" in payload ? payload.data : payload) as T;
 }
