@@ -25,7 +25,7 @@ import { useToast } from "@/shared/components/ui/Toast";
 import { AssignStallDialog, ReturnStallDialog, TransferStallDialog } from "@/features/stable/components/StallDialogs";
 import { formatDate, formatDateTime } from "@/shared/lib/format";
 
-import { tr } from "@/shared/i18n/tr";
+import { tr, isVietnamese } from "@/shared/i18n/tr";
 /** Nguồn đổi trạng thái (Tab 4). */
 const STATUS_SOURCE_LABEL: Record<string, string> = {
   MANUAL: "Manual",
@@ -139,7 +139,7 @@ export default function HorseDetailPage() {
     if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
-    ageText = `${age >= 0 ? age : 0} y/o`;
+    ageText = isVietnamese() ? `${age >= 0 ? age : 0} tuổi` : `${age >= 0 ? age : 0} y/o`;
   }
 
   // Microchip display masking for grooms
@@ -169,7 +169,7 @@ export default function HorseDetailPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
         title={horse.name}
-        description={[horse.horseCode, horse.breed, horse.gender, horse.color, ageText].filter(Boolean).join(" · ")}
+        description={[horse.horseCode, horse.breed ? tr(horse.breed) : "", horse.gender ? tr(horse.gender) : "", horse.color ? tr(horse.color) : "", ageText].filter(Boolean).join(" · ")}
         action={
           <>
             <ChangeStatusDialog
@@ -251,7 +251,7 @@ export default function HorseDetailPage() {
       {horse.status === "RETIRED" && (
         <Alert tone="info" title={tr("No longer managed")}>
           {horse.retireReason ? tr(`Reason: ${RETIRE_REASON_LABEL[horse.retireReason]}. `) : ""}
-          Identity, stall and health history stay available for reference.
+          {tr("Identity, stall and health history stay available for reference.")}
         </Alert>
       )}
 
@@ -306,11 +306,11 @@ export default function HorseDetailPage() {
             </div>
 
             <div style={{ fontSize: "var(--fs-body)", color: "var(--ink-secondary)" }}>
-              <span><strong>{horse.breed}</strong></span>
+              <span><strong>{horse.breed ? tr(horse.breed) : ""}</strong></span>
               <span style={{ margin: "0 0.5rem", opacity: 0.5 }}>•</span>
-              <span>{horse.gender}</span>
+              <span>{horse.gender ? tr(horse.gender) : ""}</span>
               <span style={{ margin: "0 0.5rem", opacity: 0.5 }}>•</span>
-              <span>{horse.color}</span>
+              <span>{horse.color ? tr(horse.color) : ""}</span>
               <span style={{ margin: "0 0.5rem", opacity: 0.5 }}>•</span>
               <span>{ageText}</span>
             </div>
@@ -475,7 +475,7 @@ export default function HorseDetailPage() {
 
             <div>
               <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>{tr("Breed")}</div>
-              <div style={{ fontWeight: 600 }}>{horse.breed}</div>
+              <div style={{ fontWeight: 600 }}>{horse.breed ? tr(horse.breed) : "—"}</div>
             </div>
 
             <div>
@@ -487,12 +487,12 @@ export default function HorseDetailPage() {
 
             <div>
               <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>{tr("Gender")}</div>
-              <div style={{ fontWeight: 600 }}>{horse.gender}</div>
+              <div style={{ fontWeight: 600 }}>{horse.gender ? tr(horse.gender) : "—"}</div>
             </div>
 
             <div>
               <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>{tr("Coat Color")}</div>
-              <div style={{ fontWeight: 600 }}>{horse.color}</div>
+              <div style={{ fontWeight: 600 }}>{horse.color ? tr(horse.color) : "—"}</div>
             </div>
 
             <div>

@@ -229,7 +229,7 @@ export default function StableMapPage() {
               <input
                 type="search"
                 aria-label="Find a horse on the map"
-                placeholder="Horse name or code"
+                placeholder={tr("Horse name or code")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 style={{ height: 38, width: 220, padding: "0 12px", borderRadius: "var(--r)", border: "1px solid var(--border)" }}
@@ -249,7 +249,7 @@ export default function StableMapPage() {
                   }}
                 >
                   {matches.length === 0 ? (
-                    <div style={{ padding: 12, fontSize: "var(--fs-body)" }}>No horse found on the map.</div>
+                    <div style={{ padding: 12, fontSize: "var(--fs-body)" }}>{tr("No horse found on the map.")}</div>
                   ) : (
                     matches.map((s) => (
                       <button

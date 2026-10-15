@@ -456,11 +456,11 @@ export default function RecordFormPage() {
           {errorDetails.length > 0 ? (
             <ul style={{ margin: "6px 0 0 0", paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "4px" }}>
               {errorDetails.map((msg, i) => (
-                <li key={i}>{msg}</li>
+                <li key={i}>{tr(msg)}</li>
               ))}
             </ul>
           ) : (
-            <div>{error}</div>
+            <div>{tr(error)}</div>
           )}
         </Alert>
       )}

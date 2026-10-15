@@ -180,7 +180,7 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
           }}
         >
           <span>
-            {tr("Total medication required:")}{" "}<strong>{totalAmount} {unit}</strong>
+            {tr("Total medication required:")}{" "}<strong>{totalAmount} {tr(unit)}</strong>
           </span>
           <span>
             {tr("Through:")}{" "}<strong>{formatDate(endD)}</strong>
