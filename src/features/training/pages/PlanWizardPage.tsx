@@ -226,7 +226,7 @@ export default function PlanWizardPage() {
         )}
         {horse && !horse.isMedicalLocked && MEDICAL.includes(horse.status) && (
           <div style={{ marginTop: "1rem" }}>
-            <Alert tone="warn" title={tr("Medical status")}>The horse is in status {horse.status}.</Alert>
+            <Alert tone="warn" title={tr("Medical status")}>{tr("The horse is in status {{status}}.", { status: horse.status })}</Alert>
           </div>
         )}
         <div style={{ display: "grid", gap: "1rem", marginTop: "1rem" }}>
@@ -240,14 +240,14 @@ export default function PlanWizardPage() {
       </Card>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h2 style={{ margin: 0, fontSize: "var(--fs-section)" }}>Phases ({phases.length}/12)</h2>
+        <h2 style={{ margin: 0, fontSize: "var(--fs-section)" }}>{tr("Phases ({{count}}/12)", { count: phases.length })}</h2>
         <Button tone="secondary" onClick={addPhase} disabled={phases.length >= 12}>{tr("+ Add phase")}</Button>
       </div>
 
       {phases.map((ph, i) => (
         <Card key={ph.id} pad={20}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-            <strong>Phase #{i + 1}</strong>
+            <strong>{tr("Phase #{{number}}", { number: i + 1 })}</strong>
             {phases.length > 1 && (
               <Button tone="ghost" size="sm" onClick={() => removePhase(i)}>{tr("Remove phase")}</Button>
             )}
@@ -260,7 +260,7 @@ export default function PlanWizardPage() {
               <Select
                 value={ph.type}
                 onChange={(e) => updatePhase(i, { type: e.target.value as PhaseType })}
-                options={(Object.keys(PHASE_TYPE_LABEL) as PhaseType[]).map((t) => ({ value: t, label: PHASE_TYPE_LABEL[t] }))}
+                options={(Object.keys(PHASE_TYPE_LABEL) as PhaseType[]).map((t) => ({ value: t, label: tr(PHASE_TYPE_LABEL[t]) }))}
               />
             </Field>
             <Field label={tr("From")} required>
@@ -269,10 +269,10 @@ export default function PlanWizardPage() {
             <Field label={tr("To")} required>
               <Input type="date" min={ph.startDate} max={endDate} value={ph.endDate} onChange={(e) => updatePhase(i, { endDate: e.target.value })} />
             </Field>
-            <Field label={tr("Sessions per week")} required hint="1 – 14">
+            <Field label={tr("Sessions per week")} required hint={tr("1 – 14")}>
               <Input type="number" min={1} max={14} value={ph.sessionsPerWeek} onChange={(e) => updatePhase(i, { sessionsPerWeek: Number(e.target.value) })} />
             </Field>
-            <Field label={tr("Max distance per week (m)")} required hint="500 – 60 000">
+            <Field label={tr("Max distance per week (m)")} required hint={tr("500 – 60 000")}>
               <Input
                 type="number"
                 min={500}
@@ -286,7 +286,7 @@ export default function PlanWizardPage() {
               <Select
                 value={ph.surface}
                 onChange={(e) => updatePhase(i, { surface: e.target.value as PhaseSurface })}
-                options={(Object.keys(SURFACE_LABEL) as PhaseSurface[]).map((s) => ({ value: s, label: SURFACE_LABEL[s] }))}
+                options={(Object.keys(SURFACE_LABEL) as PhaseSurface[]).map((s) => ({ value: s, label: tr(SURFACE_LABEL[s]) }))}
               />
             </Field>
             <Field label={tr("Target speed (km/h)")} hint={tr("10 – 70, optional")}>

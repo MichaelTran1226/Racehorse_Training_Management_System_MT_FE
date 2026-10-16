@@ -171,7 +171,7 @@ export default function MyProfilePage() {
                 </div>
                 <div>
                   <span>{tr("Permissions")}</span>
-                  <b className={styles.num}>{padCount(granted)} granted</b>
+                  <b className={styles.num}>{tr("{{count}} granted", { count: padCount(granted) })}</b>
                 </div>
                 <div>
                   <span>{tr("Last sign-in")}</span>

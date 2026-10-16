@@ -44,13 +44,16 @@ export default function Forbidden403Page({ access }: Forbidden403PageProps) {
     };
   }, [screen]);
 
-  const manager = info?.managerName ?? "the Club Manager";
+  const manager = info?.managerName ?? tr("the Club Manager");
 
-  let reason = "An action was refused because it is not part of your permissions.";
+  let reason = tr("An action was refused because it is not part of your permissions.");
   if (access?.label) {
     reason = access.inOwnRole
-      ? `${access.label} needs a permission that is not granted to this account.`
-      : `${access.label} belongs to the ${access.ownerRoles.map((r) => ROLE_LABEL[r]).join(" and ")}.`;
+      ? tr("{{label}} needs a permission that is not granted to this account.", { label: tr(access.label) })
+      : tr("{{label}} belongs to the {{roles}}.", {
+          label: tr(access.label),
+          roles: access.ownerRoles.map((r) => tr(ROLE_LABEL[r])).join(tr(" and ")),
+        });
   }
 
   async function onRequest() {
@@ -58,7 +61,7 @@ export default function Forbidden403Page({ access }: Forbidden403PageProps) {
     try {
       await requestPermission(screen, info.reference);
       setRequested(true);
-      toast.show(`Permission request sent to ${manager}.`, "ok");
+      toast.show(tr("Permission request sent to {{manager}}.", { manager }), "ok");
     } catch (err) {
       toast.show(messageFor(err), "danger");
     }
@@ -74,7 +77,8 @@ export default function Forbidden403Page({ access }: Forbidden403PageProps) {
           <p className={styles.eyebrow}>{tr("403 · ACCESS DENIED")}</p>
           <h1 className={styles.title}>{tr("This screen is not part of your permissions.")}</h1>
           <p className={styles.text}>
-            {reason} Ask {manager} to grant the permission if the work requires it.
+            {reason}{" "}
+            {tr("Ask {{manager}} to grant the permission if the work requires it.", { manager })}
           </p>
         </div>
         <div className={styles.actions}>

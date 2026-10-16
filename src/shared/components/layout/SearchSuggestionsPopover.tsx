@@ -287,7 +287,7 @@ export function SearchSuggestionsPopover({
                     background: "var(--surface-2)",
                   }}
                 >
-                  Horses ({horses.length})
+                  {tr("Horses ({{count}})", { count: horses.length })}
                 </div>
                 {horses.map((horse) => (
                   <div
@@ -381,7 +381,7 @@ export function SearchSuggestionsPopover({
                     marginTop: showHorses && horses.length > 0 ? 4 : 0,
                   }}
                 >
-                  Protocols & care schedules ({filteredProtocols.length})
+                  {tr("Protocols & care schedules ({{count}})", { count: filteredProtocols.length })}
                 </div>
                 {filteredProtocols.map((proto) => (
                   <div

@@ -433,7 +433,12 @@ export default function InjuryMapPage() {
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ display: "inline-flex" }}><Icon name="pin" size={18} /></span>
                 <span>
-                  <strong>{tr("Repositioning Mode:")}</strong> Click any spot on the {layer === "MUSCLE" ? tr("Muscular") : tr("Skeletal")} {tr("model to relocate pin #")}{visibleInjuries.findIndex((i) => i.id === repositioningId) + 1} ({injuries.find((i) => i.id === repositioningId)?.region}).
+                  <strong>{tr("Repositioning Mode:")}</strong>{" "}
+                  {tr("Click any spot on the {{layer}} model to relocate pin #{{pin}} ({{region}}).", {
+                    layer: layer === "MUSCLE" ? tr("Muscular") : tr("Skeletal"),
+                    pin: visibleInjuries.findIndex((i) => i.id === repositioningId) + 1,
+                    region: injuries.find((i) => i.id === repositioningId)?.region ?? "",
+                  })}
                 </span>
               </div>
               <Button size="sm" tone="ghost" onClick={() => setRepositioningId(null)}>
@@ -461,7 +466,10 @@ export default function InjuryMapPage() {
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ display: "inline-flex" }}><Icon name="flag" size={18} /></span>
                 <span>
-                  <strong>{tr("Marking Mode Active:")}</strong> Click anywhere on the {layer === "MUSCLE" ? tr("Muscular") : tr("Skeletal")} model to place a new injury point.
+                  <strong>{tr("Marking Mode Active:")}</strong>{" "}
+                  {tr("Click anywhere on the {{layer}} model to place a new injury point.", {
+                    layer: layer === "MUSCLE" ? tr("Muscular") : tr("Skeletal"),
+                  })}
                 </span>
               </div>
               <Button size="sm" tone="ghost" onClick={() => setMarkingMode(false)}>
@@ -628,7 +636,7 @@ export default function InjuryMapPage() {
               </div>
 
               <div style={{ fontSize: "var(--fs-body)", display: "flex", flexDirection: "column", gap: 8 }}>
-                <div>{tr("Region:")}{" "}<strong>{selectedInjury.region}</strong> ({selectedInjury.view === "LEFT" ? tr("Left View") : tr("Right View")} · {selectedInjury.layer === "MUSCLE" ? tr("Muscular") : tr("Skeletal")} Layer)</div>
+                <div>{tr("Region:")}{" "}<strong>{selectedInjury.region}</strong> ({selectedInjury.view === "LEFT" ? tr("Left View") : tr("Right View")} · {selectedInjury.layer === "MUSCLE" ? tr("Muscular Layer") : tr("Skeletal Layer")})</div>
                 <div>{tr("Condition:")}{" "}<strong>{selectedInjury.injuryType}</strong></div>
                 <div>
                   {tr("Severity:")}{" "}<Badge tone={selectedInjury.severity === "CRITICAL" ? "danger" : "warn"}>{selectedInjury.severity}</Badge>
@@ -781,7 +789,7 @@ export default function InjuryMapPage() {
                   <>
                     <div><strong>{tr("Region:")}</strong> {target.region}</div>
                     <div><strong>{tr("Condition:")}</strong> {target.injuryType}</div>
-                    <div><strong>{tr("Layer:")}</strong> {target.layer === "MUSCLE" ? tr("Muscular") : tr("Skeletal")} Layer</div>
+                    <div><strong>{tr("Layer:")}</strong> {target.layer === "MUSCLE" ? tr("Muscular Layer") : tr("Skeletal Layer")}</div>
                   </>
                 );
               })()}

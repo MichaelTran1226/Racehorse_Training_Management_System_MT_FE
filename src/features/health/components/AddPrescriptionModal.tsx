@@ -189,7 +189,7 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
 
         <Field
           label={tr("Pre-Race Withdrawal Period (days)")}
-          hint="Anti-doping clearance protocol; triggers alerts upon race registration if violated."
+          hint={tr("Anti-doping clearance protocol; triggers alerts upon race registration if violated.")}
         >
           <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 10, alignItems: "center" }}>
             <Input

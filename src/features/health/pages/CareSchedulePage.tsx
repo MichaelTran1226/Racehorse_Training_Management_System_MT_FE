@@ -378,7 +378,7 @@ export default function CareSchedulePage() {
             <Field
               label={tr("Next Due Date")}
               required
-              hint="Auto-calculated from protocol interval; can be manually adjusted"
+              hint={tr("Auto-calculated from protocol interval; can be manually adjusted")}
             >
               <Input
                 type="date"

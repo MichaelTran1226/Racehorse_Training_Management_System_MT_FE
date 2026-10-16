@@ -109,7 +109,7 @@ export default function RecordListPage() {
       <div className={styles.sectionCard}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: "var(--fs-body)", fontWeight: 600, color: "var(--muted)" }}>
-            Showing {records.length} of {total} records
+            {tr("Showing {{count}} of {{total}} records", { count: records.length, total })}
           </span>
         </div>
 

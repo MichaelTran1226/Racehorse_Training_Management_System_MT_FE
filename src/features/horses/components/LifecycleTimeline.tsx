@@ -143,7 +143,7 @@ export function LifecycleTimeline({ events, isManager }: { events: TimelineEvent
           ))}
           {shown < filtered.length && (
             <Button tone="secondary" onClick={() => setShown((n) => n + PAGE)}>
-              Load more ({filtered.length - shown} left)
+              {tr("Load more ({{count}} left)", { count: filtered.length - shown })}
             </Button>
           )}
         </div>

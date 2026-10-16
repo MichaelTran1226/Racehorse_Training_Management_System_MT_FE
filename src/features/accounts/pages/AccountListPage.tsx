@@ -360,12 +360,14 @@ export default function AccountListPage() {
           title={tr("The account list could not be loaded")}
           action={
             <Button tone="secondary" size="sm" icon="refresh" onClick={load}>
-              Try again
+              {tr("Try again")}
             </Button>
           }
         >
-          The account service did not answer at {loadError} · {formatDate(new Date())}. Nothing was changed. Try again, and report it to the club
-          administrator if it keeps failing.
+          {tr("The account service did not answer at {{time}} · {{date}}. Nothing was changed. Try again, and report it to the club administrator if it keeps failing.", {
+            time: loadError,
+            date: formatDate(new Date()),
+          })}
         </Alert>
       )}
 

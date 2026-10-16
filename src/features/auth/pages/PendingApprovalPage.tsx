@@ -30,7 +30,10 @@ export default function PendingApprovalPage() {
       {data ? (
         <>
           <Alert tone="warn" icon="clock" title={tr("Pending Approval")}>
-            Sent to {data.reviewer} {tr("· Club Manager at")}{" "}{formatDateTime(data.requestedAt)}. Requests are usually reviewed within one working day.
+            {tr("Sent to {{reviewer}} · Club Manager at {{time}}. Requests are usually reviewed within one working day.", {
+              reviewer: data.reviewer,
+              time: formatDateTime(data.requestedAt),
+            })}
           </Alert>
           <dl className={styles.summary}>
             <div>
@@ -43,7 +46,7 @@ export default function PendingApprovalPage() {
             </div>
             <div>
               <dt>{tr("Role requested")}</dt>
-              <dd>{ROLE_LABEL[data.role as Role] ?? data.role}</dd>
+              <dd>{tr(ROLE_LABEL[data.role as Role] ?? data.role)}</dd>
             </div>
             <div>
               <dt>{tr("Request code")}</dt>
@@ -51,7 +54,9 @@ export default function PendingApprovalPage() {
             </div>
           </dl>
           <p className={styles.paragraph}>
-            An email goes to {data.email} once the decision is made. Signing in before then shows the pending notice instead of the workspace.
+            {tr("An email goes to {{email}} once the decision is made. Signing in before then shows the pending notice instead of the workspace.", {
+              email: data.email,
+            })}
           </p>
         </>
       ) : (
@@ -63,7 +68,7 @@ export default function PendingApprovalPage() {
         {tr("Back to sign in")}
       </Button>
       <p className={styles.foot}>
-        Wrong details?{" "}
+        {tr("Wrong details?")}{" "}
         <Link
           to="/sign-up"
           onClick={() => {

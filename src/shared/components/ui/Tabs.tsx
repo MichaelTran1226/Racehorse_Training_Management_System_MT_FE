@@ -1,6 +1,6 @@
 import { cx } from "@/shared/lib/cx";
 import styles from "./Tabs.module.css";
-import { trNode } from "@/shared/i18n/tr";
+import { tr, trNode } from "@/shared/i18n/tr";
 
 export interface TabItem<T extends string> {
   id: T;
@@ -42,7 +42,7 @@ export function Tabs<T extends string>({ items, active, onChange, label = "Filte
           >
             {trNode(t.label)}
             {t.count != null && <span className={styles.count}>{t.count}</span>}
-            {t.dot && <span className={styles.dot} aria-label="New" />}
+            {t.dot && <span className={styles.dot} aria-label={tr("New")} />}
           </button>
         );
       })}

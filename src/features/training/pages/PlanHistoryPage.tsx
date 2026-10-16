@@ -70,7 +70,7 @@ export default function PlanHistoryPage() {
               <Badge tone={p.status === "COMPLETED" ? "ok" : "danger"}>{p.status === "COMPLETED" ? tr("Completed") : tr("Cancelled")}</Badge>
             </div>
             <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-              {tr("Horse:")}{" "}<strong>{p.horseName}</strong> · {p.startDate} → {p.endDate} · {p.workoutCount} workout(s)
+              {tr("Horse:")}{" "}<strong>{p.horseName}</strong> · {p.startDate} → {p.endDate} · {p.workoutCount} {tr("workout(s)")}
             </div>
             {(p.completionSummary || p.cancelledReason) && (
               <div style={{ fontSize: "var(--fs-body)", marginTop: "0.75rem", background: "var(--surface-sunken)", padding: "0.75rem", borderRadius: "var(--r-sm)" }}>

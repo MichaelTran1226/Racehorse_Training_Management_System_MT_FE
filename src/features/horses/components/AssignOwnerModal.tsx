@@ -85,14 +85,14 @@ export function AssignOwnerModal({ horse, isOpen, onClose, onSuccess }: AssignOw
   const currentOwnerDisplay = horse.owner?.fullName || horse.ownerName || "Unassigned";
 
   return (
-    <Modal onClose={onClose} title={tr(`Transfer owner: ${horse.name}`)}>
+    <Modal onClose={onClose} title={tr("Transfer owner: {{name}}", { name: horse.name })}>
       <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
         <div style={{ background: "var(--surface-sunken)", padding: "0.875rem", borderRadius: "var(--r)", fontSize: "var(--fs-body)" }}>
           <div>
             <strong>{tr("Current Owner:")}</strong> {currentOwnerDisplay}
           </div>
           <div style={{ color: "var(--ink-muted)", marginTop: 4 }}>
-            {tr("Horse Code:")}{" "}<strong>{horse.horseCode || horse.id}</strong> · Breed: {horse.breed}
+            {tr("Horse Code:")}{" "}<strong>{horse.horseCode || horse.id}</strong> {tr("· Breed:")} {horse.breed}
           </div>
         </div>
 
@@ -101,7 +101,7 @@ export function AssignOwnerModal({ horse, isOpen, onClose, onSuccess }: AssignOw
             <div style={{ fontSize: "var(--fs-body)", color: "var(--muted)" }}>{tr("Loading active horse owners…")}</div>
           ) : loadError ? (
             <div role="alert" style={{ fontSize: "var(--fs-body)", color: "var(--danger)" }}>
-              Couldn’t load horse owners. {loadError}
+              {tr("Couldn’t load horse owners.")} {loadError}
             </div>
           ) : owners.length === 0 ? (
             <div style={{ fontSize: "var(--fs-body)", color: "var(--text-2)" }}>

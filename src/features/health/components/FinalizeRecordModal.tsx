@@ -114,7 +114,7 @@ export function FinalizeRecordModal({
               />
             </Field>
 
-            <Field label={tr("Expected Rest Duration (days)")} hint="System calculates review date = today + specified days">
+            <Field label={tr("Expected Rest Duration (days)")} hint={tr("System calculates review date = today + specified days")}>
               <Input
                 type="number"
                 min={1}

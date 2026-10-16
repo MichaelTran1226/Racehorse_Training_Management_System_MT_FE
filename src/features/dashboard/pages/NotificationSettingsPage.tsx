@@ -14,6 +14,7 @@ import {
   subscribeNotificationSettings,
   type UserNotificationSettings,
 } from "@/shared/lib/notifications";
+import { ROLE_LABEL } from "@/shared/lib/permissions";
 import styles from "./NotificationSettingsPage.module.css";
 
 import { tr } from "@/shared/i18n/tr";
@@ -92,12 +93,12 @@ export default function NotificationSettingsPage() {
 
   const getCategorySummary = (catId: string) => {
     const catState = settings.categories[catId];
-    if (!catState || !catState.enabled) return "Off";
+    if (!catState || !catState.enabled) return tr("Off");
     const channels: string[] = [];
-    if (catState.push) channels.push("Push");
-    if (catState.email) channels.push("Email");
-    if (catState.sms) channels.push("SMS");
-    return channels.length > 0 ? channels.join(", ") : "None";
+    if (catState.push) channels.push(tr("Push"));
+    if (catState.email) channels.push(tr("Email"));
+    if (catState.sms) channels.push(tr("SMS"));
+    return channels.length > 0 ? channels.join(", ") : tr("None");
   };
 
   return (
@@ -155,10 +156,10 @@ export default function NotificationSettingsPage() {
                   </div>
                   <div className={styles.itemContent}>
                     <div className={styles.itemTitle}>
-                      <span>{cat.name}</span>
+                      <span>{tr(cat.name)}</span>
                       {isAlwaysOn && (
                         <Badge tone="info">
-                          Required for {user?.role}
+                          {tr("Required for {{role}}", { role: tr(ROLE_LABEL[user?.role ?? "GROOM"]) })}
                         </Badge>
                       )}
                     </div>
@@ -171,7 +172,7 @@ export default function NotificationSettingsPage() {
 
                 {isOpen && (
                   <div className={styles.itemAccordion}>
-                    <p className={styles.itemDesc}>{cat.description}</p>
+                    <p className={styles.itemDesc}>{tr(cat.description)}</p>
 
                     <div className={styles.channelOptions}>
                       {/* Master Switch for Category */}
@@ -180,15 +181,15 @@ export default function NotificationSettingsPage() {
                           <span className={styles.channelLabel}>{tr("Allow notifications for this category")}</span>
                           <span className={styles.channelDesc}>
                             {isAlwaysOn
-                              ? (cat.alwaysOnReason ?? tr("Always required for your current role."))
+                              ? (cat.alwaysOnReason ? tr(cat.alwaysOnReason) : tr("Always required for your current role."))
                               : tr("Toggle all delivery channels for this category on or off")}
                           </span>
                         </div>
                         <Switch
-                          label={tr(`Allow notifications for ${cat.name}`)}
+                          label={tr("Allow notifications for {{name}}", { name: tr(cat.name) })}
                           checked={catState.enabled}
                           disabled={Boolean(isAlwaysOn)}
-                          blockedReason={isAlwaysOn ? cat.alwaysOnReason : undefined}
+                          blockedReason={isAlwaysOn ? (cat.alwaysOnReason ? tr(cat.alwaysOnReason) : undefined) : undefined}
                           onChange={(v) => updateCategory(cat.id, "enabled", v)}
                         />
                       </div>
@@ -208,10 +209,10 @@ export default function NotificationSettingsPage() {
                           </span>
                         </div>
                         <Switch
-                          label={tr(`Browser push for ${cat.name}`)}
+                          label={tr("Browser push for {{name}}", { name: tr(cat.name) })}
                           checked={catState.push && catState.enabled}
                           disabled={!catState.enabled || Boolean(isAlwaysOn)}
-                          blockedReason={isAlwaysOn ? cat.alwaysOnReason : undefined}
+                          blockedReason={isAlwaysOn ? (cat.alwaysOnReason ? tr(cat.alwaysOnReason) : undefined) : undefined}
                           onChange={(v) => updateCategory(cat.id, "push", v)}
                         />
                       </div>
@@ -227,11 +228,11 @@ export default function NotificationSettingsPage() {
                             {tr("Email Alerts")}
                           </span>
                           <span className={styles.channelDesc}>
-                            Send notifications to your registered email address ({user?.email})
+                            {tr("Send notifications to your registered email address ({{email}})", { email: user?.email ?? "—" })}
                           </span>
                         </div>
                         <Switch
-                          label={tr(`Email for ${cat.name}`)}
+                          label={tr("Email for {{name}}", { name: tr(cat.name) })}
                           checked={catState.email && catState.enabled}
                           disabled={!catState.enabled}
                           onChange={(v) => updateCategory(cat.id, "email", v)}
@@ -253,7 +254,7 @@ export default function NotificationSettingsPage() {
                           </span>
                         </div>
                         <Switch
-                          label={tr(`SMS for ${cat.name}`)}
+                          label={tr("SMS for {{name}}", { name: tr(cat.name) })}
                           checked={catState.sms && catState.enabled}
                           disabled={!catState.enabled}
                           onChange={(v) => updateCategory(cat.id, "sms", v)}
@@ -361,7 +362,7 @@ export default function NotificationSettingsPage() {
                 <Icon name="mail" size={22} />
               </div>
               <div className={styles.itemContent}>
-                <div className={styles.itemTitle}>Email</div>
+                <div className={styles.itemTitle}>{tr("Email")}</div>
                 <p className={styles.itemSummary}>
                   {settings.channels.emailEnabled
                     ? tr(`Active (${settings.channels.emailFrequency.toLowerCase().replace("_", " ")}) · ${user?.email}`)
@@ -384,7 +385,7 @@ export default function NotificationSettingsPage() {
                     <div>
                       <span className={styles.channelLabel}>{tr("Allow Email Delivery")}</span>
                       <span className={styles.channelDesc}>
-                        Send email copies of notifications to {user?.email}
+                        {tr("Send email copies of notifications to {{email}}", { email: user?.email ?? "—" })}
                       </span>
                     </div>
                     <Switch
@@ -442,7 +443,7 @@ export default function NotificationSettingsPage() {
                 <Icon name="zap" size={22} />
               </div>
               <div className={styles.itemContent}>
-                <div className={styles.itemTitle}>SMS</div>
+                <div className={styles.itemTitle}>{tr("SMS")}</div>
                 <p className={styles.itemSummary}>
                   {settings.channels.smsEnabled
                     ? tr(`Enabled for ${user?.phone || "registered mobile"}`)
@@ -465,7 +466,7 @@ export default function NotificationSettingsPage() {
                     <div>
                       <span className={styles.channelLabel}>{tr("SMS Message Alerts")}</span>
                       <span className={styles.channelDesc}>
-                        Receive SMS text messages to {user?.phone || tr("your mobile phone")}
+                        {tr("Receive SMS text messages to {{phone}}", { phone: user?.phone || tr("your mobile phone") })}
                       </span>
                     </div>
                     <Switch

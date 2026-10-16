@@ -81,7 +81,7 @@ export default function StaffDirectoryPage() {
               tone={roleFilter === "ALL" ? "primary" : "secondary"}
               onClick={() => setRoleFilter("ALL")}
             >
-              All Staff ({accounts.filter((a) => STAFF_ROLES.includes(a.role)).length})
+              {tr("All Staff ({{count}})", { count: accounts.filter((a) => STAFF_ROLES.includes(a.role)).length })}
             </Button>
             {STAFF_ROLES.map((r) => (
               <Button
@@ -90,7 +90,7 @@ export default function StaffDirectoryPage() {
                 tone={roleFilter === r ? "primary" : "secondary"}
                 onClick={() => setRoleFilter(r)}
               >
-                {ROLE_LABEL[r]} ({accounts.filter((a) => a.role === r).length})
+                {tr("{{role}} ({{count}})", { role: tr(ROLE_LABEL[r]), count: accounts.filter((a) => a.role === r).length })}
               </Button>
             ))}
           </div>
@@ -145,12 +145,12 @@ export default function StaffDirectoryPage() {
                       {staff.fullName}
                     </h3>
                     <Badge tone={ACCOUNT_STATUS[staff.status]?.tone || "neutral"}>
-                      {ACCOUNT_STATUS[staff.status]?.label || staff.status}
+                      {ACCOUNT_STATUS[staff.status]?.label ? tr(ACCOUNT_STATUS[staff.status].label) : staff.status}
                     </Badge>
                   </div>
 
                   <p style={{ margin: "0.25rem 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
-                    {ROLE_LABEL[staff.role]}
+                    {tr(ROLE_LABEL[staff.role])}
                   </p>
 
                   <div style={{ marginTop: "0.75rem", fontSize: "var(--fs-body)", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
