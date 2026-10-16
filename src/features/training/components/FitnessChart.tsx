@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { clubParts } from "../api";
 import type { FitnessData } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 export type FitnessSeries = "speed" | "score" | "peakHr" | "recoveryHr" | "load";
 

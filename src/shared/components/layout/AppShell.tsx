@@ -14,7 +14,7 @@ import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { useSidebarInfo } from "./useSidebarInfo";
 import styles from "./AppShell.module.css";
-
+
 import { tr } from "@/shared/i18n/tr";
 // Khung chung của mọi trang sau đăng nhập: Sidebar 224px + Topbar 64px + vùng nội dung (DESIGN.md §5).
 // Chưa đăng nhập => chuyển về /login (kèm ?next= để quay lại sau khi đăng nhập).

@@ -10,7 +10,7 @@ import { useToast } from "@/shared/components/ui/Toast";
 import { messageFor } from "@/shared/lib/messages";
 import { deleteHorse, restoreHorse } from "../api";
 import type { Horse } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 interface DeleteHorseModalProps {
   horse: Horse;

@@ -7,7 +7,7 @@ import { Textarea } from "@/shared/components/form/Textarea";
 import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
 import type { FinalizeRecordInput } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 interface FinalizeRecordModalProps {
   recordNumber: string;
@@ -114,7 +114,7 @@ export function FinalizeRecordModal({
               />
             </Field>
 
-            <Field label={tr("Expected Rest Duration (days)")} hint="System calculates review date = today + specified days">
+            <Field label={tr("Expected Rest Duration (days)")} hint={tr("System calculates review date = today + specified days")}>
               <Input
                 type="number"
                 min={1}

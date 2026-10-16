@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Field } from "@/shared/components/form/Field";
 import { Textarea } from "@/shared/components/form/Textarea";
 import { ConfirmModal } from "@/shared/components/ui/ConfirmModal";
-
+
 import { tr } from "@/shared/i18n/tr";
 interface ReasonConfirmModalProps {
   title: string;

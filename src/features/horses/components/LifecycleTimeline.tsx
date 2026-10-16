@@ -6,7 +6,7 @@ import { Input } from "@/shared/components/form/Input";
 import { Icon } from "@/shared/components/ui/Icon";
 import { formatDateTime } from "@/shared/lib/format";
 import type { TimelineCategory, TimelineEvent } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 const PAGE = 30;
 
@@ -143,7 +143,7 @@ export function LifecycleTimeline({ events, isManager }: { events: TimelineEvent
           ))}
           {shown < filtered.length && (
             <Button tone="secondary" onClick={() => setShown((n) => n + PAGE)}>
-              Load more ({filtered.length - shown} left)
+              {tr("Load more ({{count}} left)", { count: filtered.length - shown })}
             </Button>
           )}
         </div>

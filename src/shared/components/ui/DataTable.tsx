@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { cx } from "@/shared/lib/cx";
 import { EmptyState } from "./EmptyState";
 import styles from "./DataTable.module.css";
-import { trNode } from "@/shared/i18n/tr";
+import { tr, trNode } from "@/shared/i18n/tr";
 
 export interface Column<T> {
   key: string;
@@ -29,7 +29,7 @@ const SKELETON_ROWS = 5;
 // (Trạng thái lỗi do trang quyết định vì cần nút "Try again" riêng.)
 export function DataTable<T>({ columns, rows, rowKey, loading, empty, caption }: DataTableProps<T>) {
   if (!loading && rows.length === 0) {
-    return <>{empty ?? <EmptyState title="Nothing to show yet." description="New records appear here as soon as they exist." />}</>;
+    return <>{empty ?? <EmptyState title={tr("Nothing to show yet.")} description={tr("New records appear here as soon as they exist.")} />}</>;
   }
 
   return (

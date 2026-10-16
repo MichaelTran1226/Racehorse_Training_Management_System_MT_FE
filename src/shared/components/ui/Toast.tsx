@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { cx } from "@/shared/lib/cx";
 import { Icon } from "./Icon";
 import styles from "./Toast.module.css";
-import { trNode } from "@/shared/i18n/tr";
+import { tr, trNode } from "@/shared/i18n/tr";
 
 export type ToastTone = "ok" | "warn" | "danger" | "info";
 
@@ -80,7 +80,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 {t.action.label}
               </button>
             )}
-            <button type="button" className={styles.close} onClick={() => dismiss(t.id)} aria-label="Dismiss">
+            <button type="button" className={styles.close} onClick={() => dismiss(t.id)} aria-label={tr("Dismiss")}>
               <Icon name="x" size={14} />
             </button>
           </div>

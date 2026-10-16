@@ -22,3 +22,5 @@ export function useAppLanguage() {
     t,
   };
 }
+
+export { isVietnamese } from "@/shared/i18n/tr";

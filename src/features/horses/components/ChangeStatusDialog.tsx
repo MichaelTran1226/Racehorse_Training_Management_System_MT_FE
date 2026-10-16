@@ -9,7 +9,7 @@ import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
 import { Badge } from "@/shared/components/ui/Badge";
 import type { HealthStatus, HorseStatus } from "@/shared/types/enums";
 import type { Horse } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 interface ChangeStatusDialogProps {
   horse: Horse;

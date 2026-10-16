@@ -16,7 +16,7 @@ import type { Stall, Zone } from "@/features/stable/types";
 import { GridCell, ZoneGrid } from "@/features/stable/components/ZoneGrid";
 import { getHealthBoard, type HealthBoardHorse, type HealthBoardResponse } from "../api";
 import { Icon } from "@/shared/components/ui/Icon";
-
+
 import { tr } from "@/shared/i18n/tr";
 type Group = HealthBoardHorse["healthGroup"];
 
@@ -187,7 +187,7 @@ export default function HerdHealthPage() {
           {g.label}
         </span>
         <span style={{ fontSize: "var(--fs-caption)" }}>
-          Open injuries: {h.openInjuries.length} {tr("· Last exam:")}{" "}{h.latestRecord ? formatDate(h.latestRecord.examinationDate) : "—"}
+          {tr("Open injuries:")} {h.openInjuries.length} {tr("· Last exam:")}{" "}{h.latestRecord ? formatDate(h.latestRecord.examinationDate) : "—"}
         </span>
       </button>
     );
@@ -225,9 +225,9 @@ export default function HerdHealthPage() {
           <strong>{tr("Training Lock")}</strong>
           {h.lock ? (
             <div style={{ fontSize: "var(--fs-body)" }}>
-              Placed {formatDateTime(h.lock.lockedAt)} by {h.lock.veterinarianName ?? "—"}
+              {tr("Placed {{date}} by {{vet}}", { date: formatDateTime(h.lock.lockedAt), vet: h.lock.veterinarianName ?? "—" })}
               <br />
-              Review date: {h.lock.recheckDate ? formatDate(h.lock.recheckDate) : "—"}
+              {tr("Review date:")} {h.lock.recheckDate ? formatDate(h.lock.recheckDate) : "—"}
             </div>
           ) : (
             <div style={{ fontSize: "var(--fs-body)" }}>{tr("None")}</div>
@@ -253,7 +253,7 @@ export default function HerdHealthPage() {
               : h.preventiveDue.map((p) => (
                   <span key={`${p.name}-${p.dueDate}`} style={{ color: p.overdue ? "var(--danger)" : undefined }}>
                     {p.name}: {formatDate(p.dueDate)}
-                    {p.overdue ? " (overdue)" : ""}
+                    {p.overdue ? ` (${tr("overdue")})` : ""}
                   </span>
                 ))}
           </div>
@@ -285,21 +285,21 @@ export default function HerdHealthPage() {
     <div style={{ display: "grid", gap: 16 }}>
       <PageHeader
         title={tr("Herd health")}
-        description={updatedAt ? tr(`Updated at ${formatTime(updatedAt)}`) : undefined}
+        description={updatedAt ? tr("Updated at {{time}}", { time: formatTime(updatedAt) }) : undefined}
         action={
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <Segmented
-              label="View"
+              label={tr("View")}
               items={[
-                { id: "cards", label: "Cards" },
-                { id: "stalls", label: "By stall" },
+                { id: "cards", label: tr("Cards") },
+                { id: "stalls", label: tr("By stall") },
               ]}
               active={view}
               onChange={setView}
             />
             {isVet && (
               <Link to="/medical/locks">
-                <Button tone="secondary">Training Locks</Button>
+                <Button tone="secondary">{tr("Training Locks")}</Button>
               </Link>
             )}
           </div>
@@ -307,7 +307,7 @@ export default function HerdHealthPage() {
       />
 
       {error && (
-        <Alert tone="danger" title={tr("Could not load data.")} action={<Button size="sm" onClick={() => void load()}>Try again</Button>}>
+        <Alert tone="danger" title={tr("Could not load data.")} action={<Button size="sm" onClick={() => void load()}>{tr("Try again")}</Button>}>
           {error}
         </Alert>
       )}
@@ -347,9 +347,9 @@ export default function HerdHealthPage() {
             value={lockFilter}
             onChange={(e) => setLockFilter(e.target.value)}
             options={[
-              { value: "ALL", label: "Lock: all" },
-              { value: "LOCKED", label: "Locked" },
-              { value: "UNLOCKED", label: "Not locked" },
+              { value: "ALL", label: tr("Lock: all") },
+              { value: "LOCKED", label: tr("Locked") },
+              { value: "UNLOCKED", label: tr("Not locked") },
             ]}
           />
         </div>
@@ -411,7 +411,7 @@ export default function HerdHealthPage() {
                       return (
                         <GridCell
                           code={st.code}
-                          look={st.status === "MAINTENANCE" ? { title: "Maintenance", striped: true } : { title: "Empty", dashed: true }}
+                          look={st.status === "MAINTENANCE" ? { title: tr("Maintenance"), striped: true } : { title: tr("Empty"), dashed: true }}
                         />
                       );
                     }

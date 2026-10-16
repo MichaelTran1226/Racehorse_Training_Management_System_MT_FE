@@ -27,13 +27,13 @@ export function Pagination({ page, pageSize, total, noun, onPage }: PaginationPr
   return (
     <div className={styles.bar}>
       <span className={styles.summary}>{summary}</span>
-      <nav className={styles.buttons} aria-label="Pagination">
+      <nav className={styles.buttons} aria-label={tr("Pagination")}>
         <Button
           tone="secondary"
           size="sm"
           icon="chevronLeft"
-          aria-label="Previous page"
-          blockedReason={page <= 1 ? "This is the first page." : undefined}
+          aria-label={tr("Previous page")}
+          blockedReason={page <= 1 ? tr("This is the first page.") : undefined}
           onClick={() => onPage(page - 1)}
         />
         {Array.from({ length: pageCount }, (_, i) => i + 1).map((p) => (
@@ -51,8 +51,8 @@ export function Pagination({ page, pageSize, total, noun, onPage }: PaginationPr
           tone="secondary"
           size="sm"
           icon="chevronRight"
-          aria-label="Next page"
-          blockedReason={page >= pageCount ? "This is the last page." : undefined}
+          aria-label={tr("Next page")}
+          blockedReason={page >= pageCount ? tr("This is the last page.") : undefined}
           onClick={() => onPage(page + 1)}
         />
       </nav>

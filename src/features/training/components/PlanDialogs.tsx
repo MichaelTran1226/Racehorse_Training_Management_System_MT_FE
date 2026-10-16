@@ -16,7 +16,7 @@ import type { Horse } from "@/features/horses/types";
 import { todayClub, trainingApi } from "../api";
 import type { TrainingPlan } from "../types";
 import { Icon } from "@/shared/components/ui/Icon";
-
+
 import { tr } from "@/shared/i18n/tr";
 interface DialogProps {
   plan: TrainingPlan;
@@ -160,14 +160,14 @@ export function ClosePlanDialog({ kind, plan, onClose, onDone }: DialogProps & {
 
   return (
     <Modal
-      title={`${kind === "complete" ? "Complete" : "Cancel"} ${plan.name}`}
+      title={kind === "complete" ? tr("Complete {{name}}", { name: plan.name }) : tr("Cancel {{name}}", { name: plan.name })}
       tone={kind === "cancel" ? "danger" : undefined}
       onClose={onClose}
       foot={
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
-          <Button tone="ghost" onClick={onClose}>Close</Button>
+          <Button tone="ghost" onClick={onClose}>{tr("Close")}</Button>
           <Button tone={kind === "cancel" ? "danger" : "primary"} onClick={() => void submit()} disabled={submitting || len < 10 || len > max}>
-            {kind === "complete" ? "Complete plan" : "Cancel plan"}
+            {kind === "complete" ? tr("Complete plan") : tr("Cancel plan")}
           </Button>
         </div>
       }
@@ -175,7 +175,7 @@ export function ClosePlanDialog({ kind, plan, onClose, onDone }: DialogProps & {
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
         {kind === "complete" && (
           <p style={{ margin: 0, fontSize: "var(--fs-body)" }}>
-            {plan.progress.completed}/{plan.progress.due} due workouts completed.
+            {plan.progress.completed}/{plan.progress.due} {tr("due workouts completed.")}
           </p>
         )}
         <p style={{ margin: 0, fontSize: "var(--fs-body)" }}>

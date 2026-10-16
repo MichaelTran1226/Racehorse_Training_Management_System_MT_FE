@@ -5,7 +5,7 @@ import { Button } from "@/shared/components/ui/Button";
 import { Card } from "@/shared/components/ui/Card";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { ROLE_NAV } from "@/shared/lib/permissions";
-
+
 import { tr } from "@/shared/i18n/tr";
 // Chỗ giữ cho các màn hình của Priority 2–7 (ngựa, huấn luyện, y tế...). Menu đã trỏ tới đây;
 // khi làm xong màn nào thì thêm route riêng vào src/app/router.tsx để thay thế.

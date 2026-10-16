@@ -29,7 +29,7 @@ import type {
   TrainingPlan,
 } from "../types";
 import { hasCode } from "./PlanDialogs";
-
+
 import { tr } from "@/shared/i18n/tr";
 const WEEKDAYS = [
   { n: 1, label: "Mon" },
@@ -292,13 +292,13 @@ export function WorkoutDialog({ plans, plan: fixedPlan, session, defaultDate, on
                   {WEEKDAYS.map((d) => (
                     <Checkbox
                       key={d.n}
-                      label={d.label}
+                      label={tr(d.label)}
                       checked={weekdays.includes(d.n)}
                       onChange={(on) => setWeekdays((cur) => (on ? [...cur, d.n] : cur.filter((x) => x !== d.n)))}
                     />
                   ))}
                 </div>
-                <Field label={tr("Repeat until")} required hint="Up to the end of the phase; at most 60 workouts at once">
+                <Field label={tr("Repeat until")} required hint={tr("Up to the end of the phase; at most 60 workouts at once")}>
                   <Input type="date" min={date} max={phase?.endDate} value={until} onChange={(e) => setUntil(e.target.value)} />
                 </Field>
               </>

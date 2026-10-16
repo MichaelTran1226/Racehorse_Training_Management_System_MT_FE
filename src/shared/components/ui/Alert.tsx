@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { cx } from "@/shared/lib/cx";
 import { Icon } from "./Icon";
 import styles from "./Alert.module.css";
-import { trNode } from "@/shared/i18n/tr";
+import { tr, trNode } from "@/shared/i18n/tr";
 
 export type AlertTone = "ok" | "warn" | "danger" | "info";
 
@@ -37,7 +37,7 @@ export function Alert({ tone = "info", icon, title, action, onDismiss, className
       </div>
       {action}
       {onDismiss && (
-        <button type="button" className={styles.close} onClick={onDismiss} aria-label="Dismiss">
+        <button type="button" className={styles.close} onClick={onDismiss} aria-label={tr("Dismiss")}>
           <Icon name="x" size={15} />
         </button>
       )}

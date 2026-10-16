@@ -238,8 +238,7 @@ export default function HorseDetailPage() {
               </div>
               {horse.medicalLocks && horse.medicalLocks[0] && (
                 <div style={{ marginTop: "0.5rem", fontSize: "var(--fs-body)", opacity: 0.9 }}>
-                  <strong>{tr("Reason:")}</strong> {horse.medicalLocks[0].lockReason} (placed{" "}
-                  {formatDateTime(horse.medicalLocks[0].lockedAt)})
+                  <strong>{tr("Reason:")}</strong> {horse.medicalLocks[0].lockReason} ({tr("placed on {{date}}", { date: formatDateTime(horse.medicalLocks[0].lockedAt) })})
                 </div>
               )}
             </div>
@@ -250,7 +249,7 @@ export default function HorseDetailPage() {
       {/* Banner Retired */}
       {horse.status === "RETIRED" && (
         <Alert tone="info" title={tr("No longer managed")}>
-          {horse.retireReason ? tr(`Reason: ${RETIRE_REASON_LABEL[horse.retireReason]}. `) : ""}
+          {horse.retireReason ? tr("Reason: {{reason}}. ", { reason: tr(RETIRE_REASON_LABEL[horse.retireReason]) }) : ""}
           {tr("Identity, stall and health history stay available for reference.")}
         </Alert>
       )}
@@ -318,7 +317,7 @@ export default function HorseDetailPage() {
             {/* Microchip & RFID quick-copy pills */}
             <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginTop: "0.25rem", flexWrap: "wrap" }}>
               <div style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", fontSize: "var(--fs-body)" }}>
-                <span style={{ color: "var(--ink-muted)", fontSize: "var(--fs-caption)", fontWeight: 700 }}>Chip:</span>
+                <span style={{ color: "var(--ink-muted)", fontSize: "var(--fs-caption)", fontWeight: 700 }}>{tr("Chip:")}</span>
                 <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, background: "var(--surface-subtle)", padding: "1px 6px", borderRadius: 4 }}>
                   {displayMicrochip}
                 </span>
@@ -343,7 +342,7 @@ export default function HorseDetailPage() {
 
               {horse.rfid && (
                 <div style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", fontSize: "var(--fs-body)" }}>
-                  <span style={{ color: "var(--ink-muted)", fontSize: "var(--fs-caption)", fontWeight: 700 }}>RFID:</span>
+                  <span style={{ color: "var(--ink-muted)", fontSize: "var(--fs-caption)", fontWeight: 700 }}>{tr("RFID:")}</span>
                   <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, background: "var(--surface-subtle)", padding: "1px 6px", borderRadius: 4 }}>
                     {horse.rfid}
                   </span>
@@ -384,7 +383,7 @@ export default function HorseDetailPage() {
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontWeight: 600, color: "var(--brand)" }}>
               <Icon name="home" size={13} />
-              <span>{horse.stallCode ? tr(`Stall ${horse.stallCode}`) : tr("Unassigned Stall")}</span>
+              <span>{horse.stallCode ? tr("Stall {{stall}}", { stall: horse.stallCode }) : tr("Unassigned Stall")}</span>
             </div>
             <div style={{ color: "var(--ink-secondary)", display: "flex", alignItems: "center", gap: "0.35rem" }}>
               <Icon name="user" size={13} />

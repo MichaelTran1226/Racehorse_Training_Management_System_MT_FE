@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
-
+
 import { tr } from "@/shared/i18n/tr";
 interface SessionTelemetrySnapshot {
   id: string;
@@ -141,7 +141,7 @@ export default function LiveMonitorPage() {
                     {tr("Jockey:")}{" "}<strong>{session.jockey}</strong> · {session.track}
                   </div>
                   <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)", marginTop: "0.15rem" }}>
-                    Completed: {session.sessionDate}
+                    {tr("Completed:")} {session.sessionDate}
                   </div>
                 </div>
 
@@ -158,7 +158,7 @@ export default function LiveMonitorPage() {
                     {session.maxSpeedKmh} <span style={{ fontSize: "var(--fs-body)", fontWeight: 400 }}>km/h</span>
                   </div>
                   <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)", marginTop: "0.15rem" }}>
-                    Avg: {session.avgSpeedKmh} km/h
+                    {tr("Avg:")} {session.avgSpeedKmh} km/h
                   </div>
                 </div>
 
@@ -179,10 +179,10 @@ export default function LiveMonitorPage() {
                       marginTop: "0.25rem",
                     }}
                   >
-                    {session.peakHeartRate} <span style={{ fontSize: "var(--fs-body)", fontWeight: 400 }}>bpm</span>
+                    {session.peakHeartRate} <span style={{ fontSize: "var(--fs-body)", fontWeight: 400 }}>{tr("bpm")}</span>
                   </div>
                   <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)", marginTop: "0.15rem" }}>
-                    5m Recovery: {session.recoveryHeartRate5Min} bpm
+                    {tr("5m Recovery:")} {session.recoveryHeartRate5Min} {tr("bpm")}
                   </div>
                 </div>
               </div>
@@ -190,7 +190,7 @@ export default function LiveMonitorPage() {
               {/* Distance progress */}
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--fs-body)", marginBottom: "0.25rem" }}>
-                  <span>Completed Distance: {session.distanceCoveredMeters}m / {session.targetMeters}m</span>
+                  <span>{tr("Completed Distance:")} {session.distanceCoveredMeters}m / {session.targetMeters}m</span>
                   <strong>{progressPercent}%</strong>
                 </div>
                 <div style={{ height: 8, width: "100%", background: "var(--surface-sunken)", borderRadius: 4 }}>

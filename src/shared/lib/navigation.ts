@@ -3,6 +3,7 @@
 import { ROLE_WORKSPACE, screenAccess } from "@/shared/lib/permissions";
 import type { AuthUser } from "@/shared/types/auth";
 import i18n from "@/shared/i18n";
+import { tr } from "@/shared/i18n/tr";
 
 export interface BreadcrumbSegment {
   label: string;
@@ -63,29 +64,29 @@ export function breadcrumbFor(user: AuthUser, pathname: string, accountName?: st
   if (pathname.startsWith("/medical/horses/") || pathname.startsWith("/records/horse/")) {
     return [
       homeSegment,
-      { label: "Herd Health", href: "/herd" },
-      { label: accountName ?? "Horse Profile" },
+      { label: tr("Herd Health"), href: "/herd" },
+      { label: accountName ?? tr("Horse Profile") },
     ];
   }
   if (pathname === "/medical/records/new") {
     return [
       homeSegment,
-      { label: "Medical Records", href: "/records" },
-      { label: "New Clinical Record" },
+      { label: tr("Medical Records"), href: "/records" },
+      { label: tr("New Clinical Record") },
     ];
   }
   if (/^\/medical\/records\/[^/]+\/edit/.test(pathname)) {
     return [
       homeSegment,
-      { label: "Medical Records", href: "/records" },
-      { label: "Edit Clinical Record" },
+      { label: tr("Medical Records"), href: "/records" },
+      { label: tr("Edit Clinical Record") },
     ];
   }
   if (/^\/medical\/records\/[^/]+/.test(pathname)) {
     return [
       homeSegment,
-      { label: "Medical Records", href: "/records" },
-      { label: "Record Details" },
+      { label: tr("Medical Records"), href: "/records" },
+      { label: tr("Record Details") },
     ];
   }
 
@@ -93,39 +94,39 @@ export function breadcrumbFor(user: AuthUser, pathname: string, accountName?: st
   if (pathname === "/plans/new" || pathname === "/training/plans/new") {
     return [
       homeSegment,
-      { label: "Training Plans", href: "/plans" },
-      { label: "Create Plan" },
+      { label: tr("Training Plans"), href: "/plans" },
+      { label: tr("Create Plan") },
     ];
   }
   if (/^\/training\/plans\/[^/]+\/edit$/.test(pathname)) {
-    return [homeSegment, { label: "Training Plans", href: "/plans" }, { label: "Edit Plan" }];
+    return [homeSegment, { label: tr("Training Plans"), href: "/plans" }, { label: tr("Edit Plan") }];
   }
   if (/^\/training\/plans\/[^/]+$/.test(pathname) && pathname !== "/training/plans/history") {
-    return [homeSegment, { label: "Training Plans", href: "/plans" }, { label: "Plan Details" }];
+    return [homeSegment, { label: tr("Training Plans"), href: "/plans" }, { label: tr("Plan Details") }];
   }
   if (/^\/training\/sessions\/[^/]+\/result$/.test(pathname)) {
-    return [homeSegment, { label: "Training Schedule", href: "/calendar" }, { label: "Workout Result" }];
+    return [homeSegment, { label: tr("Training Schedule"), href: "/calendar" }, { label: tr("Workout Result") }];
   }
   if (/^\/horses\/(?!new$|deleted$)[^/]+$/.test(pathname)) {
-    return [homeSegment, { label: "Horses", href: "/horses" }, { label: accountName ?? "Horse profile" }];
+    return [homeSegment, { label: tr("Horses"), href: "/horses" }, { label: accountName ?? tr("Horse profile") }];
   }
   if (/^\/horses\/[^/]+\/edit$/.test(pathname)) {
-    return [homeSegment, { label: "Horses", href: "/horses" }, { label: "Edit profile" }];
+    return [homeSegment, { label: tr("Horses"), href: "/horses" }, { label: tr("Edit profile") }];
   }
   if (pathname === "/horses/new") {
-    return [homeSegment, { label: "Horses", href: "/horses" }, { label: "Register horse" }];
+    return [homeSegment, { label: tr("Horses"), href: "/horses" }, { label: tr("Register horse") }];
   }
   if (pathname === "/horses/deleted") {
-    return [homeSegment, { label: "Horses", href: "/horses" }, { label: "Deleted horses" }];
+    return [homeSegment, { label: tr("Horses"), href: "/horses" }, { label: tr("Deleted horses") }];
   }
   if (/^\/horses\/[^/]+\/fitness$/.test(pathname)) {
-    return [homeSegment, { label: "Horses", href: "/horses" }, { label: "Fitness Chart" }];
+    return [homeSegment, { label: tr("Horses"), href: "/horses" }, { label: tr("Fitness Chart") }];
   }
   if (pathname === "/training/plans/history") {
     return [
       homeSegment,
-      { label: "Training Plans", href: "/plans" },
-      { label: "Plan History" },
+      { label: tr("Training Plans"), href: "/plans" },
+      { label: tr("Plan History") },
     ];
   }
 

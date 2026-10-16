@@ -11,7 +11,7 @@ import { getHorses } from "@/features/horses/api";
 import type { Horse } from "@/features/horses/types";
 import { assignHorse, getGrooms, getStalls, getZones, returnStall, transferHorse, type GroomOption } from "../api";
 import type { Stall, Zone } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 const NOTE_MAX = 500;
 
@@ -158,7 +158,7 @@ export function AssignStallDialog({ stall, horse, onClose, onDone }: AssignProps
         assignedGroomUserId: groomId || undefined,
         notes: note.trim() || undefined,
       });
-      toast.show(`Assigned ${res.horseName} to stall ${res.stallCode}.`, "ok");
+      toast.show(tr("Assigned {{horse}} to stall {{stall}}.", { horse: res.horseName, stall: res.stallCode }), "ok");
       onDone();
     } catch (err) {
       setError(messageFor(err));
@@ -171,13 +171,13 @@ export function AssignStallDialog({ stall, horse, onClose, onDone }: AssignProps
   const close = () => confirmDiscard(dirty) && onClose();
   return (
     <Modal
-      title={stall ? tr(`Assign a horse to stall ${stall.code}`) : tr(`Assign a stall to ${horse?.name}`)}
+      title={stall ? tr("Assign a horse to stall {{stall}}", { stall: stall.code }) : tr("Assign a stall to {{horse}}", { horse: horse?.name ?? "" })}
       width={560}
       onClose={close}
       foot={
         <>
-          <Button tone="secondary" onClick={close}>Cancel</Button>
-          <Button disabled={!valid || busy} onClick={submit}>{busy ? "Assigning…" : "Assign stall"}</Button>
+          <Button tone="secondary" onClick={close}>{tr("Cancel")}</Button>
+          <Button disabled={!valid || busy} onClick={submit}>{busy ? tr("Assigning…") : tr("Assign stall")}</Button>
         </>
       }
     >
@@ -189,7 +189,7 @@ export function AssignStallDialog({ stall, horse, onClose, onDone }: AssignProps
               value={horseId}
               onChange={(e) => setHorseId(e.target.value)}
               options={[
-                { value: "", label: "— Choose a horse —" },
+                { value: "", label: tr("— Choose a horse —") },
                 ...horses.map((h) => ({ value: h.id, label: `${h.name} (${h.horseCode ?? "—"})` })),
               ]}
             />
@@ -230,7 +230,7 @@ export function TransferStallDialog({ allocation, onClose, onDone }: { allocatio
         assignedGroomUserId: groomId || undefined,
         notes: note.trim() || undefined,
       });
-      toast.show(`Moved ${res.horseName} from stall ${res.fromStallCode} to stall ${res.stallCode}.`, "ok");
+      toast.show(tr("Moved {{horse}} from stall {{from}} to stall {{to}}.", { horse: res.horseName, from: res.fromStallCode, to: res.stallCode }), "ok");
       onDone();
     } catch (err) {
       setError(messageFor(err));
@@ -243,14 +243,14 @@ export function TransferStallDialog({ allocation, onClose, onDone }: { allocatio
   const close = () => confirmDiscard(dirty) && onClose();
   return (
     <Modal
-      title={tr(`Move ${allocation.horseName} to another stall`)}
-      subtitle={tr(`Current stall: ${allocation.stallCode}`)}
+      title={tr("Move {{horse}} to another stall", { horse: allocation.horseName })}
+      subtitle={tr("Current stall: {{stall}}", { stall: allocation.stallCode })}
       width={560}
       onClose={close}
       foot={
         <>
-          <Button tone="secondary" onClick={close}>Cancel</Button>
-          <Button disabled={!valid || busy} onClick={submit}>{busy ? "Moving…" : "Move stall"}</Button>
+          <Button tone="secondary" onClick={close}>{tr("Cancel")}</Button>
+          <Button disabled={!valid || busy} onClick={submit}>{busy ? tr("Moving…") : tr("Move stall")}</Button>
         </>
       }
     >
@@ -276,7 +276,7 @@ export function ReturnStallDialog({ allocation, onClose, onDone }: { allocation:
     setError("");
     try {
       const res = await returnStall(allocation.allocationId, { notes: note.trim() || undefined });
-      toast.show(`Stall ${res.stallCode} released.`, "ok");
+      toast.show(tr("Stall {{stall}} released.", { stall: res.stallCode }), "ok");
       onDone();
     } catch (err) {
       setError(messageFor(err));
@@ -288,15 +288,15 @@ export function ReturnStallDialog({ allocation, onClose, onDone }: { allocation:
   const close = () => confirmDiscard(!!note) && onClose();
   return (
     <Modal
-      title={tr(`Release stall ${allocation.stallCode}?`)}
+      title={tr("Release stall {{stall}}?", { stall: allocation.stallCode })}
       tone="warn"
       width={520}
       onClose={close}
       foot={
         <>
-          <Button tone="secondary" onClick={close}>Cancel</Button>
+          <Button tone="secondary" onClick={close}>{tr("Cancel")}</Button>
           <Button tone="danger" disabled={busy || note.length > NOTE_MAX} onClick={submit}>
-            {busy ? "Releasing…" : "Release stall"}
+            {busy ? tr("Releasing…") : tr("Release stall")}
           </Button>
         </>
       }
@@ -304,7 +304,7 @@ export function ReturnStallDialog({ allocation, onClose, onDone }: { allocation:
       <div style={{ display: "grid", gap: "0.9rem" }}>
         {error && <Alert tone="danger" title={error} />}
         <p style={{ margin: 0 }}>
-          {allocation.horseName} will no longer have a place on the stable map until a new stall is assigned.
+          {tr("{{horse}} will no longer have a place on the stable map until a new stall is assigned.", { horse: allocation.horseName })}
         </p>
         <NoteField value={note} onChange={setNote} />
       </div>

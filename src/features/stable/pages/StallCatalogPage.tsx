@@ -25,7 +25,7 @@ import {
   updateZone,
 } from "../api";
 import type { SettableStallStatus, Stall, Zone } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 const STATUS_BADGE: Record<string, { label: string; tone: "ok" | "warn" | "neutral" }> = {
   AVAILABLE: { label: "Active", tone: "ok" },

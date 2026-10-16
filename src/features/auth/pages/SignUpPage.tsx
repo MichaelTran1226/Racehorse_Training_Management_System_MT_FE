@@ -14,7 +14,7 @@ import { register } from "../api";
 import { EMAIL_PLACEHOLDER } from "@/shared/lib/brand";
 import styles from "./AuthPages.module.css";
 import { fullNameError } from "@/shared/lib/name";
-
+
 import { tr } from "@/shared/i18n/tr";
 const EMAIL_RE = /^[^\s@]+@gmail\.com$/i;
 

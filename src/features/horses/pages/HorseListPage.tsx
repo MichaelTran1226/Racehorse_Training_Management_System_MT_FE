@@ -21,6 +21,7 @@ import { getHorseCatalog, getHorses } from "../api";
 import type { Horse, HorseListFilter } from "../types";
 
 import { tr } from "@/shared/i18n/tr";
+import { isVietnamese } from "@/shared/lib/language";
 const STATUS_FILTERS: Array<{ id: string; label: string }> = [
   { id: "ALL", label: "All" },
   { id: "ACTIVE", label: "Ready to Race" },
@@ -62,7 +63,8 @@ function ageOf(dob?: string): string {
   const now = new Date();
   let age = now.getFullYear() - d.getFullYear();
   if (now.getMonth() < d.getMonth() || (now.getMonth() === d.getMonth() && now.getDate() < d.getDate())) age -= 1;
-  return `${Math.max(age, 0)} y`;
+  const num = Math.max(age, 0);
+  return `${num} ${isVietnamese() ? "tuổi" : "y"}`;
 }
 
 /** Mã 15 số tách nhóm 3 cho dễ đọc: 985 141 002 341 001. */
@@ -198,7 +200,7 @@ export default function HorseListPage() {
       header: "Sex · Age",
       render: (h) => (
         <span className="num nowrap">
-          {h.gender || "—"} · {ageOf(h.dob)}
+          {h.gender ? tr(h.gender) : "—"} · {ageOf(h.dob)}
         </span>
       ),
     },
@@ -277,10 +279,10 @@ export default function HorseListPage() {
         <Menu
           label={tr(`Actions for ${h.name}`)}
           items={[
-            { label: "View profile", icon: "eye", to: `/horses/${h.id}` },
-            { label: "Medical records", icon: "file", to: `/medical/horses/${h.id}`, hidden: !canSeeMedical },
-            { label: "Fitness chart", icon: "chart", to: `/horses/${h.id}/fitness`, hidden: isOwner },
-            { label: "Edit profile", icon: "edit", to: `/horses/${h.id}/edit`, hidden: !canEdit || h.status === "RETIRED" },
+            { label: tr("View profile"), icon: "eye", to: `/horses/${h.id}` },
+            { label: tr("Medical records"), icon: "file", to: `/medical/horses/${h.id}`, hidden: !canSeeMedical },
+            { label: tr("Fitness chart"), icon: "chart", to: `/horses/${h.id}/fitness`, hidden: isOwner },
+            { label: tr("Edit profile"), icon: "edit", to: `/horses/${h.id}/edit`, hidden: !canEdit || h.status === "RETIRED" },
           ]}
         />
       ),
@@ -288,17 +290,17 @@ export default function HorseListPage() {
   ];
 
   const emptyTitle = filtered
-    ? "No horses match these filters"
+    ? tr("No horses match these filters")
     : isOwner
-      ? "No horses are registered under your name yet"
+      ? tr("No horses are registered under your name yet")
       : isGroom
-        ? "No horses are assigned to you yet"
-        : "No horses registered yet";
+        ? tr("No horses are assigned to you yet")
+        : tr("No horses registered yet");
   const emptyText = filtered
-    ? "Remove a filter or clear them all."
+    ? tr("Remove a filter or clear them all.")
     : canEdit
-      ? "Register a horse with its microchip number to start assigning stalls, training plans and vet care."
-      : "The Club Manager registers new horses and assigns them.";
+      ? tr("Register a horse with its microchip number to start assigning stalls, training plans and vet care.")
+      : tr("The Club Manager registers new horses and assigns them.");
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
@@ -307,18 +309,20 @@ export default function HorseListPage() {
         description={
           loading || error
             ? tr("Identity, stall, status and Training Lock of every managed horse.")
-            : `${total} ${total === 1 ? "horse" : "horses"}${filtered ? " match the current filters" : " managed"}.`
+            : isVietnamese()
+              ? `${total} ngựa ${filtered ? "khớp bộ lọc" : "được quản lý"}.`
+              : `${total} ${total === 1 ? "horse" : "horses"}${filtered ? " match the current filters" : " managed"}.`
         }
         action={
           <>
             {currentUser.role === "CLUB_MANAGER" && (
               <LinkButton to="/horses/deleted" icon="trash">
-                Deleted horses
+                {tr("Deleted horses")}
               </LinkButton>
             )}
             {canEdit && (
               <LinkButton to="/horses/new" tone="primary" icon="plus">
-                Register horse
+                {tr("Register horse")}
               </LinkButton>
             )}
           </>

@@ -227,7 +227,7 @@ export default function NotificationsPage() {
                 color: activeTab === "all" ? "var(--nav-item-active-text)" : "var(--text-muted)",
               }}
             >
-              All ({notifications.length})
+              {tr("All ({{count}})", { count: notifications.length })}
             </button>
 
             <button

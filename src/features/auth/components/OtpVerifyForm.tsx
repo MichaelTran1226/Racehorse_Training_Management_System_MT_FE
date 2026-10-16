@@ -12,7 +12,7 @@ import { otpMessage } from "@/shared/lib/messages";
 import { otpStatus, resendOtp } from "../api";
 import type { OtpPurpose, OtpTimes } from "../types";
 import styles from "./OtpVerifyForm.module.css";
-
+
 import { tr } from "@/shared/i18n/tr";
 const CODE_LENGTH = 6;
 
@@ -114,7 +114,7 @@ export function OtpVerifyForm({ email, purpose, sentTitle, sentBody, submitLabel
       )}
       {expired && (
         <Alert tone="warn" icon="clock" title={tr("The code has expired")}>
-          It was valid until {formatDateTime(times.expiresAt)}. Request a new one below.
+          {tr("It was valid until {{time}}. Request a new one below.", { time: formatDateTime(times.expiresAt) })}
         </Alert>
       )}
 

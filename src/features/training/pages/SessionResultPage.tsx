@@ -26,7 +26,7 @@ import {
   TRACK_LABEL,
 } from "../types";
 import type { AbnormalSign, CompletionLevel, ExerciseSession, TrackCondition, TrackType } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 /** "mm:ss.s" <-> giây. */
 function parseTime(text: string): number | null {
@@ -250,22 +250,22 @@ export default function SessionResultPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.5rem", fontSize: "var(--fs-body)" }}>
             <div>{tr("Actual distance:")}{" "}<strong>{r.actualDistanceMeters ?? "—"} m</strong></div>
             <div>{tr("Time:")}{" "}<strong>{formatTime(r.actualDurationSeconds) || "—"}</strong></div>
-            <div>{tr("Average speed:")}{" "}<strong>{r.avgSpeedKmh != null ? tr(`${r.avgSpeedKmh} km/h`) : "—"}</strong></div>
-            <div>{tr("Surface:")}{" "}<strong>{r.actualSurface ? TRACK_LABEL[r.actualSurface] : "—"}</strong>{r.trackCondition ? ` (${TRACK_CONDITION_LABEL[r.trackCondition]})` : ""}</div>
-            <div>{tr("Peak HR:")}{" "}<strong>{r.maxHeartRate ?? "—"} bpm</strong></div>
-            <div>{tr("HR after 10 min:")}{" "}<strong>{r.recoveryHeartRate ?? "—"} bpm</strong></div>
+            <div>{tr("Average speed:")}{" "}<strong>{r.avgSpeedKmh != null ? `${r.avgSpeedKmh} km/h` : "—"}</strong></div>
+            <div>{tr("Surface:")}{" "}<strong>{r.actualSurface ? tr(TRACK_LABEL[r.actualSurface]) : "—"}</strong>{r.trackCondition ? ` (${tr(TRACK_CONDITION_LABEL[r.trackCondition])})` : ""}</div>
+            <div>{tr("Peak HR:")}{" "}<strong>{r.maxHeartRate ?? "—"} {tr("bpm")}</strong></div>
+            <div>{tr("HR after 10 min:")}{" "}<strong>{r.recoveryHeartRate ?? "—"} {tr("bpm")}</strong></div>
             {user.role !== "GROOM" && <div>{tr("Performance:")}{" "}<strong>{r.performanceScore ?? "—"}/10</strong></div>}
-            <div>{tr("Completion:")}{" "}<strong>{r.completionLevel ? COMPLETION_LABEL[r.completionLevel] : "—"}</strong></div>
+            <div>{tr("Completion:")}{" "}<strong>{r.completionLevel ? tr(COMPLETION_LABEL[r.completionLevel]) : "—"}</strong></div>
           </div>
           <div style={{ marginTop: "0.75rem" }}><strong>{tr("Comment:")}</strong> {r.headTrainerFeedback || "—"}</div>
           {r.hasAbnormalSigns && (
             <Alert tone="danger" title={tr("Abnormal signs")}>
-              {r.abnormalSignTypes.map((x) => ABNORMAL_SIGN_LABEL[x]).join(", ")}: {r.abnormalSignsDescription}
+              {r.abnormalSignTypes.map((x) => tr(ABNORMAL_SIGN_LABEL[x])).join(", ")}: {r.abnormalSignsDescription}
             </Alert>
           )}
           <div style={{ marginTop: "0.75rem", fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>
-            Recorded by {r.recordedBy ?? "—"}{r.recordedAt ? tr(` at ${formatDateTime(r.recordedAt)}`) : ""}
-            {r.updatedBy ? tr(` · last edited by ${r.updatedBy}${r.updatedAt ? ` at ${formatDateTime(r.updatedAt)}` : ""}`) : ""}
+            {tr("Recorded by {{name}}", { name: r.recordedBy ?? "—" })}{r.recordedAt ? tr(" at {{time}}", { time: formatDateTime(r.recordedAt) }) : ""}
+            {r.updatedBy ? tr(" · last edited by {{name}}", { name: r.updatedBy }) : ""}{r.updatedAt ? tr(" at {{time}}", { time: formatDateTime(r.updatedAt) }) : ""}
           </div>
         </Card>
       )}
