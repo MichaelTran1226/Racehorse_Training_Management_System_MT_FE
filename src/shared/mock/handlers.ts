@@ -42,6 +42,26 @@ import {
   type MockPlan,
   type MockWorkout,
 } from "@/shared/mock/trainingData";
+import {
+  getStoredSupplies,
+  saveStoredSupplies,
+  getStoredShifts,
+  saveStoredShifts,
+  getStoredRosters,
+  saveStoredRosters,
+  getStoredNutritionPlans,
+  saveStoredNutritionPlans,
+  getStoredDailyTasks,
+  saveStoredDailyTasks,
+  getStoredIncidents,
+  saveStoredIncidents,
+  getStoredStocks,
+  saveStoredStocks,
+  getStoredRestockRequests,
+  saveStoredRestockRequests,
+} from "@/shared/mock/stableData";
+import type { SupplyCatalogItem, ShiftCatalogItem } from "@/features/master-data/types/supplies";
+import type { ShiftRosterItem } from "@/features/stable/types/shiftRoster";
 import { mockNotificationsFor, updateMockNotifications } from "./notificationsData";
 import { getStoredTournaments, saveStoredTournaments } from "@/shared/mock/racingData";
 import type { Tournament, TournamentRegistration } from "@/features/racing/types";
@@ -3521,6 +3541,1321 @@ const routes: Route[] = [
       w.vetNotes = String(body.vetNotes ?? "");
       saveStoredWorkouts(rows);
       return decorateWorkout(w);
+    },
+  },
+
+  // ===== FLOW 4 PHASE 1: SUPPLIES CATALOG (SC-4.10, DL-4.15) =====
+  {
+    method: "GET",
+    pattern: /^\/supplies$/,
+    handler({ db, url }) {
+      const user = currentUser(db);
+      const search = (url.searchParams.get("search") ?? "").toLowerCase();
+      const category = url.searchParams.get("category");
+      const isActiveParam = url.searchParams.get("isActive");
+
+      let items = getStoredSupplies();
+      if (search) {
+        items = items.filter(
+          (s) => s.name.toLowerCase().includes(search) || s.code.toLowerCase().includes(search) || (s.description ?? "").toLowerCase().includes(search),
+        );
+      }
+      if (category) {
+        items = items.filter((s) => s.category === category);
+      }
+      if (isActiveParam !== null && isActiveParam !== undefined && isActiveParam !== "") {
+        const active = isActiveParam === "true";
+        items = items.filter((s) => s.isActive === active);
+      }
+
+      // Rule Q-4.11 / DL-4.15: Data masking for unitPrice
+      if (user.role !== "CLUB_MANAGER") {
+        items = items.map((s) => ({ ...s, unitPrice: null }));
+      }
+      return items;
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/supplies\/([^/]+)$/,
+    handler({ db, params }) {
+      const user = currentUser(db);
+      const [id] = params;
+      const item = getStoredSupplies().find((s) => s.id === id);
+      if (!item) throw new ApiError(404, "SUPPLY_NOT_FOUND", "Vật tư không tồn tại.");
+      if (user.role !== "CLUB_MANAGER") {
+        return { ...item, unitPrice: null };
+      }
+      return item;
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/supplies$/,
+    handler({ db, body }) {
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Chỉ Quản lý CLB mới có quyền tạo vật tư.");
+      const items = getStoredSupplies();
+      const code = String(body.code ?? "").trim().toUpperCase();
+      if (items.some((s) => s.code === code)) {
+        throw new ApiError(409, "SUPPLY_CODE_EXISTS", `Mã vật tư '${code}' đã tồn tại.`);
+      }
+      const newItem: SupplyCatalogItem = {
+        id: `sup-${Date.now()}`,
+        code,
+        name: String(body.name ?? "").trim(),
+        category: body.category as SupplyCatalogItem["category"],
+        unit: body.unit as SupplyCatalogItem["unit"],
+        unitPrice: body.unitPrice != null ? Number(body.unitPrice) : null,
+        withdrawalDays: body.withdrawalDays != null ? Number(body.withdrawalDays) : null,
+        description: body.description ? String(body.description) : null,
+        isActive: body.isActive !== undefined ? Boolean(body.isActive) : true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      items.push(newItem);
+      saveStoredSupplies(items);
+      return newItem;
+    },
+  },
+  {
+    method: "PUT",
+    pattern: /^\/supplies\/([^/]+)$/,
+    handler({ db, params, body }) {
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Chỉ Quản lý CLB mới có quyền sửa vật tư.");
+      const [id] = params;
+      const items = getStoredSupplies();
+      const idx = items.findIndex((s) => s.id === id);
+      if (idx === -1) throw new ApiError(404, "SUPPLY_NOT_FOUND", "Vật tư không tồn tại.");
+      if (body.code) {
+        const code = String(body.code).trim().toUpperCase();
+        if (items.some((s) => s.code === code && s.id !== id)) {
+          throw new ApiError(409, "SUPPLY_CODE_EXISTS", `Mã vật tư '${code}' đã tồn tại.`);
+        }
+        items[idx].code = code;
+      }
+      if (body.name) items[idx].name = String(body.name).trim();
+      if (body.category) items[idx].category = body.category as SupplyCatalogItem["category"];
+      if (body.unit) items[idx].unit = body.unit as SupplyCatalogItem["unit"];
+      if (body.unitPrice !== undefined) items[idx].unitPrice = body.unitPrice != null ? Number(body.unitPrice) : null;
+      if (body.withdrawalDays !== undefined) items[idx].withdrawalDays = body.withdrawalDays != null ? Number(body.withdrawalDays) : null;
+      if (body.description !== undefined) items[idx].description = body.description ? String(body.description) : null;
+      if (body.isActive !== undefined) items[idx].isActive = Boolean(body.isActive);
+      items[idx].updatedAt = new Date().toISOString();
+      saveStoredSupplies(items);
+      return items[idx];
+    },
+  },
+  {
+    method: "PATCH",
+    pattern: /^\/supplies\/([^/]+)\/status$/,
+    handler({ db, params, body }) {
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Chỉ Quản lý CLB mới có quyền đổi trạng thái vật tư.");
+      const [id] = params;
+      const items = getStoredSupplies();
+      const item = items.find((s) => s.id === id);
+      if (!item) throw new ApiError(404, "SUPPLY_NOT_FOUND", "Vật tư không tồn tại.");
+      item.isActive = Boolean(body.isActive);
+      item.updatedAt = new Date().toISOString();
+      saveStoredSupplies(items);
+      return item;
+    },
+  },
+
+  // ===== FLOW 4 PHASE 1: SHIFT CATALOG (SC-4.11, DL-4.16) =====
+  {
+    method: "GET",
+    pattern: /^\/shifts$/,
+    handler({ url }) {
+      const search = (url.searchParams.get("search") ?? "").toLowerCase();
+      const isActiveParam = url.searchParams.get("isActive");
+
+      let items = getStoredShifts();
+      if (search) {
+        items = items.filter(
+          (s) => s.name.toLowerCase().includes(search) || s.code.toLowerCase().includes(search) || (s.description ?? "").toLowerCase().includes(search),
+        );
+      }
+      if (isActiveParam !== null && isActiveParam !== undefined && isActiveParam !== "") {
+        const active = isActiveParam === "true";
+        items = items.filter((s) => s.isActive === active);
+      }
+      return items;
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/shifts\/([^/]+)$/,
+    handler({ params }) {
+      const [id] = params;
+      const item = getStoredShifts().find((s) => s.id === id);
+      if (!item) throw new ApiError(404, "SHIFT_NOT_FOUND", "Ca làm việc không tồn tại.");
+      return item;
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/shifts$/,
+    handler({ db, body }) {
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Chỉ Quản lý CLB mới có quyền tạo ca làm việc.");
+      const items = getStoredShifts();
+      const code = String(body.code ?? "").trim().toUpperCase();
+      if (items.some((s) => s.code === code)) {
+        throw new ApiError(409, "SHIFT_CODE_EXISTS", `Mã ca '${code}' đã tồn tại.`);
+      }
+      const newItem: ShiftCatalogItem = {
+        id: `shift-${Date.now()}`,
+        code,
+        name: String(body.name ?? "").trim(),
+        startTime: String(body.startTime ?? "").trim(),
+        endTime: String(body.endTime ?? "").trim(),
+        isOvernight: Boolean(body.isOvernight),
+        sortOrder: Number(body.sortOrder ?? items.length + 1),
+        description: body.description ? String(body.description) : null,
+        isActive: body.isActive !== undefined ? Boolean(body.isActive) : true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      items.push(newItem);
+      saveStoredShifts(items);
+      return newItem;
+    },
+  },
+  {
+    method: "PUT",
+    pattern: /^\/shifts\/([^/]+)$/,
+    handler({ db, params, body }) {
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Chỉ Quản lý CLB mới có quyền sửa ca làm việc.");
+      const [id] = params;
+      const items = getStoredShifts();
+      const idx = items.findIndex((s) => s.id === id);
+      if (idx === -1) throw new ApiError(404, "SHIFT_NOT_FOUND", "Ca làm việc không tồn tại.");
+      if (body.code) {
+        const code = String(body.code).trim().toUpperCase();
+        if (items.some((s) => s.code === code && s.id !== id)) {
+          throw new ApiError(409, "SHIFT_CODE_EXISTS", `Mã ca '${code}' đã tồn tại.`);
+        }
+        items[idx].code = code;
+      }
+      if (body.name) items[idx].name = String(body.name).trim();
+      if (body.startTime) items[idx].startTime = String(body.startTime).trim();
+      if (body.endTime) items[idx].endTime = String(body.endTime).trim();
+      if (body.isOvernight !== undefined) items[idx].isOvernight = Boolean(body.isOvernight);
+      if (body.sortOrder !== undefined) items[idx].sortOrder = Number(body.sortOrder);
+      if (body.description !== undefined) items[idx].description = body.description ? String(body.description) : null;
+      if (body.isActive !== undefined) items[idx].isActive = Boolean(body.isActive);
+      items[idx].updatedAt = new Date().toISOString();
+      saveStoredShifts(items);
+      return items[idx];
+    },
+  },
+  {
+    method: "PATCH",
+    pattern: /^\/shifts\/([^/]+)\/status$/,
+    handler({ db, params, body }) {
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Chỉ Quản lý CLB mới có quyền đổi trạng thái ca.");
+      const [id] = params;
+      const items = getStoredShifts();
+      const item = items.find((s) => s.id === id);
+      if (!item) throw new ApiError(404, "SHIFT_NOT_FOUND", "Ca làm việc không tồn tại.");
+      item.isActive = Boolean(body.isActive);
+      item.updatedAt = new Date().toISOString();
+      saveStoredShifts(items);
+      return item;
+    },
+  },
+
+  // ===== FLOW 4 PHASE 1: SHIFT ROSTER (SC-4.01, DL-4.01, DL-4.02) =====
+  {
+    method: "GET",
+    pattern: /^\/shift-rosters\/my$/,
+    handler({ db, url }) {
+      const user = currentUser(db);
+      const startDate = url.searchParams.get("startDate")?.slice(0, 10);
+      const endDate = url.searchParams.get("endDate")?.slice(0, 10);
+      const zoneId = url.searchParams.get("zoneId");
+      const rosters = getStoredRosters();
+      const shifts = getStoredShifts();
+      let userRosters = rosters.filter((r) => r.groomUserId === user.id);
+      if (zoneId) {
+        userRosters = userRosters.filter((r) => r.zoneId === zoneId);
+      }
+      if (startDate) {
+        userRosters = userRosters.filter((r) => r.date.slice(0, 10) >= startDate);
+      }
+      if (endDate) {
+        userRosters = userRosters.filter((r) => r.date.slice(0, 10) <= endDate);
+      }
+
+      return userRosters.map((r) => {
+        const shift = shifts.find((s) => s.id === r.shiftId) ?? r.shift;
+        const zone = MOCK_ZONES.find((z) => z.id === r.zoneId) ?? r.zone;
+        return {
+          ...r,
+          shift,
+          zone: { id: zone.id, code: zone.code, name: zone.name, rows: zone.rows, cols: zone.cols, sortOrder: zone.sortOrder, isActive: true },
+        };
+      });
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/shift-rosters$/,
+    handler({ db, url }) {
+      const weekStart = url.searchParams.get("weekStart");
+      const zoneId = url.searchParams.get("zoneId");
+      const groomUserId = url.searchParams.get("groomUserId");
+
+      let rosters = getStoredRosters();
+      const shifts = getStoredShifts();
+
+      if (weekStart) {
+        const start = weekStart.slice(0, 10);
+        const startDate = new Date(weekStart);
+        const endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + 7);
+        const end = endDate.toISOString().slice(0, 10);
+        rosters = rosters.filter((r) => {
+          const d = r.date.slice(0, 10);
+          return d >= start && d < end;
+        });
+      }
+      if (zoneId) {
+        rosters = rosters.filter((r) => r.zoneId === zoneId);
+      }
+      if (groomUserId) {
+        rosters = rosters.filter((r) => r.groomUserId === groomUserId);
+      }
+
+      return rosters.map((r) => {
+        const shift = shifts.find((s) => s.id === r.shiftId) ?? r.shift;
+        const zone = MOCK_ZONES.find((z) => z.id === r.zoneId) ?? r.zone;
+        const groom = db.accounts.find((a) => a.id === r.groomUserId);
+        return {
+          ...r,
+          shift,
+          zone: { id: zone.id, code: zone.code, name: zone.name, rows: zone.rows, cols: zone.cols, sortOrder: zone.sortOrder, isActive: true },
+          groom: groom
+            ? { id: groom.id, fullName: groom.fullName, email: groom.email, status: groom.status, role: groom.role }
+            : r.groom,
+        };
+      });
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/shift-rosters$/,
+    handler({ db, body }) {
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Chỉ Quản lý CLB mới có quyền phân ca trực.");
+      const shiftId = String(body.shiftId);
+      const zoneId = String(body.zoneId);
+      const groomUserId = String(body.groomUserId ?? (Array.isArray(body.groomUserIds) ? body.groomUserIds[0] : ""));
+      const date = String(body.date ?? body.workDate ?? "").slice(0, 10);
+      const notes = body.notes ? String(body.notes) : null;
+
+      const shifts = getStoredShifts();
+      const shift = shifts.find((s) => s.id === shiftId);
+      if (!shift || !shift.isActive) throw new ApiError(400, "INVALID_SHIFT", "Ca làm việc không tồn tại hoặc đã ngừng hoạt động.");
+
+      const zone = MOCK_ZONES.find((z) => z.id === zoneId);
+      if (!zone) throw new ApiError(400, "INVALID_ZONE", "Khu chuồng không tồn tại.");
+
+      const groom = db.accounts.find((a) => a.id === groomUserId && a.role === "GROOM" && a.status === "ACTIVE");
+      if (!groom) throw new ApiError(400, "INVALID_GROOM", "Nhân viên chăm sóc không tồn tại hoặc không còn hoạt động.");
+
+      const rosters = getStoredRosters();
+      const existingIdx = rosters.findIndex((r) => r.shiftId === shiftId && r.zoneId === zoneId && r.date.slice(0, 10) === date);
+
+      const zoneObj = { id: zone.id, code: zone.code, name: zone.name, rows: zone.rows, cols: zone.cols, sortOrder: zone.sortOrder, isActive: true };
+      const groomObj = { id: groom.id, fullName: groom.fullName, email: groom.email, status: groom.status, role: groom.role };
+
+      if (existingIdx >= 0) {
+        rosters[existingIdx].groomUserId = groomUserId;
+        rosters[existingIdx].notes = notes;
+        rosters[existingIdx].groom = groomObj;
+        saveStoredRosters(rosters);
+        return rosters[existingIdx];
+      }
+
+      const newRoster: ShiftRosterItem = {
+        id: `roster-${Date.now()}`,
+        shiftId,
+        zoneId,
+        groomUserId,
+        date,
+        notes,
+        shift,
+        zone: zoneObj,
+        groom: groomObj,
+      };
+      rosters.push(newRoster);
+      saveStoredRosters(rosters);
+      return newRoster;
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/shift-rosters\/copy-week$/,
+    handler({ db, body }) {
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Chỉ Quản lý CLB mới có quyền sao chép lịch trực.");
+      const sourceWeekStart = String(body.sourceWeekStart).slice(0, 10);
+      const targetWeekStart = String(body.targetWeekStart).slice(0, 10);
+
+      const sourceMonday = new Date(sourceWeekStart);
+      const targetMonday = new Date(targetWeekStart);
+
+      const diffMs = targetMonday.getTime() - sourceMonday.getTime();
+      const dayOffset = Math.round(diffMs / (24 * 60 * 60 * 1000));
+
+      const rosters = getStoredRosters();
+      const sourceEnd = new Date(sourceMonday);
+      sourceEnd.setDate(sourceEnd.getDate() + 7);
+      const sourceEndStr = sourceEnd.toISOString().slice(0, 10);
+
+      const targetEnd = new Date(targetMonday);
+      targetEnd.setDate(targetEnd.getDate() + 7);
+      const targetEndStr = targetEnd.toISOString().slice(0, 10);
+
+      const sourceItems = rosters.filter((r) => {
+        const d = r.date.slice(0, 10);
+        return d >= sourceWeekStart && d < sourceEndStr;
+      });
+
+      if (sourceItems.length === 0) {
+        throw new ApiError(400, "NO_SOURCE_ROSTER", "Tuần nguồn không có dữ liệu phân ca.");
+      }
+
+      // Xóa các ca ở tuần đích trước khi ghi đè
+      const remaining = rosters.filter((r) => {
+        const d = r.date.slice(0, 10);
+        return !(d >= targetWeekStart && d < targetEndStr);
+      });
+
+      const shifts = getStoredShifts();
+      let copiedCount = 0;
+
+      for (const item of sourceItems) {
+        const groom = db.accounts.find((a) => a.id === item.groomUserId && a.role === "GROOM" && a.status === "ACTIVE");
+        if (!groom) continue; // Bỏ qua groom bị khóa hoặc không còn hoạt động
+
+        const originalDate = new Date(item.date);
+        originalDate.setDate(originalDate.getDate() + dayOffset);
+        const newDateStr = originalDate.toISOString().slice(0, 10);
+
+        const shift = shifts.find((s) => s.id === item.shiftId) ?? item.shift;
+        const zone = MOCK_ZONES.find((z) => z.id === item.zoneId) ?? item.zone;
+
+        remaining.push({
+          id: `roster-${Date.now()}-${copiedCount}`,
+          shiftId: item.shiftId,
+          zoneId: item.zoneId,
+          groomUserId: item.groomUserId,
+          date: newDateStr,
+          notes: item.notes,
+          shift,
+          zone: { id: zone.id, code: zone.code, name: zone.name, rows: zone.rows, cols: zone.cols, sortOrder: zone.sortOrder, isActive: true },
+          groom: { id: groom.id, fullName: groom.fullName, email: groom.email, status: groom.status, role: groom.role },
+        });
+        copiedCount++;
+      }
+
+      saveStoredRosters(remaining);
+      return { copiedCount };
+    },
+  },
+  {
+    method: "DELETE",
+    pattern: /^\/shift-rosters\/([^/]+)$/,
+    handler({ db, params }) {
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Chỉ Quản lý CLB mới có quyền xóa ca trực.");
+      const [id] = params;
+      const rosters = getStoredRosters();
+      const idx = rosters.findIndex((r) => r.id === id);
+      if (idx === -1) throw new ApiError(404, "ROSTER_NOT_FOUND", "Ca trực không tồn tại.");
+      rosters.splice(idx, 1);
+      saveStoredRosters(rosters);
+      return { success: true };
+    },
+  },
+  // ---- Flow 4 Phase 2: Khẩu phần dinh dưỡng (Nutrition & Meal Rations)
+  {
+    method: "GET",
+    pattern: /^\/nutrition-plans$/,
+    handler({ db, url }) {
+      const user = currentUser(db);
+      let plans = getStoredNutritionPlans();
+      const horses = getStoredHorses();
+
+      // RBAC
+      if (user.role === "GROOM") {
+        plans = plans.filter((p) => p.status === "APPROVED");
+      } else if (user.role === "HORSE_OWNER") {
+        const myHorseIds = new Set(horses.filter((h) => h.ownerId === user.id).map((h) => h.id));
+        plans = plans.filter((p) => p.status === "APPROVED" && myHorseIds.has(p.horseId));
+      } else {
+        const st = url.searchParams.get("status");
+        if (st && st !== "ALL") {
+          plans = plans.filter((p) => p.status === st);
+        }
+      }
+
+      const horseId = url.searchParams.get("horseId");
+      if (horseId) {
+        plans = plans.filter((p) => p.horseId === horseId);
+      }
+
+      const zoneId = url.searchParams.get("zoneId");
+      if (zoneId && zoneId !== "ALL") {
+        plans = plans.filter((p) => {
+          const h = horses.find((x) => x.id === p.horseId);
+          if (!h || !h.stall) return false;
+          return h.stall.toUpperCase().includes(zoneId.toUpperCase());
+        });
+      }
+
+      const search = (url.searchParams.get("search") || "").trim().toLowerCase();
+      if (search) {
+        plans = plans.filter((p) => {
+          const h = horses.find((x) => x.id === p.horseId);
+          return (
+            p.planCode.toLowerCase().includes(search) ||
+            (h?.name && h.name.toLowerCase().includes(search)) ||
+            (h?.horseCode && h.horseCode.toLowerCase().includes(search))
+          );
+        });
+      }
+
+      const items = plans.map((p) => {
+        const h = horses.find((x) => x.id === p.horseId);
+        const stallCode = h?.stall || null;
+        let currentZone: { id: string; name: string; code: string } | null = null;
+        if (stallCode) {
+          const zChar = stallCode.replace("STALL-", "").charAt(0);
+          const z = MOCK_ZONES.find((zn) => zn.code === zChar);
+          if (z) currentZone = { id: z.id, name: z.name, code: z.code };
+        }
+        return {
+          ...p,
+          horse: h
+            ? {
+                id: h.id,
+                name: h.name,
+                horseCode: h.horseCode ?? h.code,
+                microchipRfid: h.microchipRfid ?? h.microchip,
+                avatarUrl: (h as any)?.avatarUrl,
+                status: horseStatusOf(h),
+                isMedicalLocked: Boolean(h.isLocked),
+              }
+            : undefined,
+          horseWeight: p.horseWeightSnapshot || 500,
+          currentZone,
+          currentStallCode: stallCode,
+          isWithinSafeRange: p.targetWeightRatioPct >= 1.5 && p.targetWeightRatioPct <= 3.0,
+        };
+      });
+
+      return {
+        items,
+        pagination: {
+          page: 1,
+          limit: items.length,
+          total: items.length,
+          totalPages: 1,
+        },
+      };
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/nutrition-plans\/horses\/([^/]+)\/active$/,
+    handler({ params }) {
+      const [horseId] = params;
+      const plans = getStoredNutritionPlans();
+      const active = plans.find((p) => p.horseId === horseId && p.status === "APPROVED");
+      return active || null;
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/nutrition-plans\/calculate-metrics$/,
+    handler({ body }) {
+      const { horseId, meals } = body as { horseId: string; meals: Array<{ items: Array<{ amount: number; unit: string }> }> };
+      const horses = getStoredHorses();
+      const h = horses.find((x) => x.id === horseId);
+      const horseWeightKg = 500;
+
+      let totalKg = 0;
+      for (const m of meals || []) {
+        for (const it of m.items || []) {
+          const u = (it.unit || "").toUpperCase();
+          if (u === "KG") totalKg += Number(it.amount);
+          else if (u === "G") totalKg += Number(it.amount) / 1000;
+          else if (u === "LITER") totalKg += Number(it.amount);
+          else if (u === "ML") totalKg += Number(it.amount) / 1000;
+        }
+      }
+
+      const dailyFeedWeightKg = Math.round(totalKg * 100) / 100;
+      const targetWeightRatioPct = Math.round((dailyFeedWeightKg / horseWeightKg) * 1000) / 10;
+      let evaluation: "OPTIMAL" | "UNDER_MINIMUM" | "EXCEEDS_MAXIMUM" = "OPTIMAL";
+      let warningMessage: string | undefined;
+
+      if (targetWeightRatioPct < 1.5) {
+        evaluation = "UNDER_MINIMUM";
+        warningMessage = `Khẩu phần ăn (${targetWeightRatioPct}%) dưới ngưỡng khuyến nghị 1.5% khối lượng cơ thể (nguy cơ thiếu hụt dinh dưỡng).`;
+      } else if (targetWeightRatioPct > 3.0) {
+        evaluation = "EXCEEDS_MAXIMUM";
+        warningMessage = `Khẩu phần ăn (${targetWeightRatioPct}%) vượt quá ngưỡng tối đa 3.0% khối lượng cơ thể (nguy cơ bội thực / đau bụng colic).`;
+      }
+
+      return {
+        dailyFeedWeightKg,
+        horseWeightKg,
+        targetWeightRatioPct,
+        isWithinSafeRange: evaluation === "OPTIMAL",
+        evaluation,
+        warningMessage,
+      };
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/nutrition-plans\/([^/]+)$/,
+    handler({ db, params }) {
+      const user = currentUser(db);
+      const [id] = params;
+      const plans = getStoredNutritionPlans();
+      const plan = plans.find((p) => p.id === id);
+      if (!plan) throw new ApiError(404, "NOT_FOUND", "Khẩu phần ăn không tồn tại.");
+
+      if (user.role === "GROOM" && plan.status !== "APPROVED") {
+        throw new ApiError(403, "FORBIDDEN", "Groom chỉ được xem khẩu phần đã duyệt.");
+      }
+
+      const horses = getStoredHorses();
+      const h = horses.find((x) => x.id === plan.horseId);
+      return {
+        ...plan,
+        horse: h
+          ? {
+              id: h.id,
+              name: h.name,
+              horseCode: h.horseCode ?? h.code,
+              avatarUrl: (h as any)?.avatarUrl,
+              status: horseStatusOf(h),
+              isMedicalLocked: Boolean(h.isLocked),
+            }
+          : undefined,
+        horseWeight: plan.horseWeightSnapshot || 500,
+        isWithinSafeRange: plan.targetWeightRatioPct >= 1.5 && plan.targetWeightRatioPct <= 3.0,
+      };
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/nutrition-plans$/,
+    handler({ db, body }) {
+      const user = currentUser(db);
+      if (user.role !== "HEAD_TRAINER" && user.role !== "CLUB_MANAGER") {
+        throw new ApiError(403, "FORBIDDEN", "Chỉ Huấn luyện viên trưởng hoặc Quản lý được tạo khẩu phần.");
+      }
+      const b = body as Record<string, unknown>;
+      const plans = getStoredNutritionPlans();
+      const planCode = `NP-2610-${String(plans.length + 1).padStart(3, "0")}`;
+      const meals = (b.meals ?? []) as Array<{ items: Array<{ amount: number; unit: string }> }>;
+
+      let totalKg = 0;
+      for (const m of meals) {
+        for (const it of m.items || []) {
+          const u = (it.unit || "").toUpperCase();
+          if (u === "KG") totalKg += Number(it.amount);
+          else if (u === "G") totalKg += Number(it.amount) / 1000;
+        }
+      }
+      const dailyFeedWeightKg = Math.round(totalKg * 100) / 100;
+      const targetWeightRatioPct = Math.round((dailyFeedWeightKg / 500) * 1000) / 10;
+      const status = b.submitImmediately ? "PENDING_APPROVAL" : "DRAFT";
+
+      const newPlan = {
+        id: `np-${Date.now()}`,
+        planCode,
+        horseId: String(b.horseId),
+        status,
+        dailyFeedWeightKg,
+        targetWeightRatioPct,
+        horseWeightSnapshot: 500,
+        horseWeight: 500,
+        isWithinSafeRange: targetWeightRatioPct >= 1.5 && targetWeightRatioPct <= 3.0,
+        mealsJson: meals as any,
+        specialInstructions: String(b.specialInstructions || ""),
+        createdById: user.id,
+        createdBy: { id: user.id, fullName: user.fullName, role: user.role },
+        validFrom: String(b.validFrom || new Date().toISOString()),
+        validTo: b.validTo ? String(b.validTo) : undefined,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      plans.unshift(newPlan as any);
+      saveStoredNutritionPlans(plans);
+      return newPlan;
+    },
+  },
+  {
+    method: "PUT",
+    pattern: /^\/nutrition-plans\/([^/]+)$/,
+    handler({ db, params, body }) {
+      const user = currentUser(db);
+      if (user.role !== "HEAD_TRAINER" && user.role !== "CLUB_MANAGER") {
+        throw new ApiError(403, "FORBIDDEN", "Chỉ Huấn luyện viên hoặc Quản lý được sửa khẩu phần.");
+      }
+      const [id] = params;
+      const plans = getStoredNutritionPlans();
+      const plan = plans.find((p) => p.id === id);
+      if (!plan) throw new ApiError(404, "NOT_FOUND", "Khẩu phần không tồn tại.");
+      if (plan.status !== "DRAFT" && plan.status !== "REJECTED") {
+        throw new ApiError(400, "CANNOT_EDIT", "Chỉ sửa được bản nháp hoặc bản bị từ chối.");
+      }
+
+      const b = body as Record<string, unknown>;
+      if (b.meals) plan.mealsJson = b.meals as any;
+      if (b.specialInstructions !== undefined) plan.specialInstructions = String(b.specialInstructions);
+      plan.updatedAt = new Date().toISOString();
+
+      saveStoredNutritionPlans(plans);
+      return plan;
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/nutrition-plans\/([^/]+)\/submit$/,
+    handler({ db, params }) {
+      const user = currentUser(db);
+      if (user.role !== "HEAD_TRAINER" && user.role !== "CLUB_MANAGER") {
+        throw new ApiError(403, "FORBIDDEN", "Chỉ Huấn luyện viên hoặc Quản lý được gửi duyệt.");
+      }
+      const [id] = params;
+      const plans = getStoredNutritionPlans();
+      const plan = plans.find((p) => p.id === id);
+      if (!plan) throw new ApiError(404, "NOT_FOUND", "Khẩu phần không tồn tại.");
+      plan.status = "PENDING_APPROVAL";
+      plan.rejectionReason = undefined;
+      plan.updatedAt = new Date().toISOString();
+      saveStoredNutritionPlans(plans);
+      return plan;
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/nutrition-plans\/([^/]+)\/review$/,
+    handler({ db, params, body }) {
+      const user = currentUser(db);
+      if (user.role !== "VETERINARIAN" && user.role !== "CLUB_MANAGER") {
+        throw new ApiError(403, "FORBIDDEN", "Chỉ Bác sĩ thú y hoặc Quản lý được duyệt khẩu phần.");
+      }
+      const [id] = params;
+      const { action, rejectionReason, vetNotes } = body as { action: "APPROVE" | "REJECT"; rejectionReason?: string; vetNotes?: string };
+      const plans = getStoredNutritionPlans();
+      const plan = plans.find((p) => p.id === id);
+      if (!plan) throw new ApiError(404, "NOT_FOUND", "Khẩu phần không tồn tại.");
+
+      if (action === "APPROVE") {
+        // Lưu trữ các bản approved cũ của ngựa này
+        for (const p of plans) {
+          if (p.horseId === plan.horseId && p.id !== id && p.status === "APPROVED") {
+            p.status = "ARCHIVED";
+          }
+        }
+        plan.status = "APPROVED";
+        plan.approvedById = user.id;
+        plan.approvedBy = { id: user.id, fullName: user.fullName, role: user.role };
+        plan.approvedAt = new Date().toISOString();
+        if (vetNotes) plan.vetNotes = vetNotes;
+      } else {
+        if (!rejectionReason?.trim()) {
+          throw new ApiError(400, "REJECTION_REASON_REQUIRED", "Vui lòng nhập lý do từ chối.");
+        }
+        plan.status = "REJECTED";
+        plan.rejectionReason = rejectionReason.trim();
+        plan.approvedById = user.id;
+        plan.approvedBy = { id: user.id, fullName: user.fullName, role: user.role };
+        if (vetNotes) plan.vetNotes = vetNotes;
+      }
+
+      plan.updatedAt = new Date().toISOString();
+      saveStoredNutritionPlans(plans);
+      return plan;
+    },
+  },
+  {
+    method: "DELETE",
+    pattern: /^\/nutrition-plans\/([^/]+)$/,
+    handler({ db, params }) {
+      const user = currentUser(db);
+      if (user.role !== "HEAD_TRAINER" && user.role !== "CLUB_MANAGER") {
+        throw new ApiError(403, "FORBIDDEN", "Chỉ Huấn luyện viên hoặc Quản lý được xóa khẩu phần.");
+      }
+      const [id] = params;
+      const plans = getStoredNutritionPlans();
+      const idx = plans.findIndex((p) => p.id === id);
+      if (idx === -1) throw new ApiError(404, "NOT_FOUND", "Khẩu phần không tồn tại.");
+      if (plans[idx].status !== "DRAFT" && plans[idx].status !== "REJECTED") {
+        throw new ApiError(400, "CANNOT_DELETE", "Chỉ xóa được bản nháp hoặc bản bị từ chối.");
+      }
+      plans.splice(idx, 1);
+      saveStoredNutritionPlans(plans);
+      return { success: true, message: "Đã xóa khẩu phần." };
+    },
+  },
+  // --- Phase 3: Daily Care Tasks & Incidents ---
+  {
+    method: "GET",
+    pattern: /^\/daily-tasks$/,
+    handler({ db, url }) {
+      const user = currentUser(db);
+      const date = url.searchParams.get("date") || new Date().toISOString().slice(0, 10);
+      const zoneId = url.searchParams.get("zoneId");
+      const horseId = url.searchParams.get("horseId");
+      const isCompletedStr = url.searchParams.get("isCompleted");
+      const onlyMyTasksParam = url.searchParams.get("onlyMyTasks") ?? url.searchParams.get("onlyMine");
+      const onlyMyTasks = onlyMyTasksParam !== null
+        ? (onlyMyTasksParam === "true")
+        : (user.role === "GROOM");
+
+      const rosters = getStoredRosters();
+      const myRosters = rosters.filter((r) => r.groomUserId === user.id && r.date.slice(0, 10) === date);
+      const myZoneIds = myRosters.map((r) => r.zoneId);
+
+      const allTasks = getStoredDailyTasks();
+      const items = allTasks.filter((t) => {
+        if (t.date !== date) return false;
+        if (zoneId && zoneId !== "ALL" && t.stallZoneId !== zoneId) return false;
+        if (horseId && t.horseId !== horseId) return false;
+        if (isCompletedStr !== null && isCompletedStr !== undefined && isCompletedStr !== "") {
+          const isComp = isCompletedStr === "true";
+          if (t.isCompleted !== isComp) return false;
+        }
+        if (onlyMyTasks) {
+          const isAssigned =
+            t.assignedGroomUserId === user.id ||
+            t.completedById === user.id ||
+            (user.role === "GROOM" && (t.assignedGroomUserId === "acc-groom" || t.assignedGroomUserId === "seed-groom"));
+          const isInMyZone = Boolean(t.stallZoneId && myZoneIds.includes(t.stallZoneId));
+          if (myZoneIds.length > 0) {
+            if (!isInMyZone && !isAssigned) return false;
+          } else {
+            if (!isAssigned) return false;
+          }
+        }
+        return true;
+      });
+
+      const total = items.length;
+      const completed = items.filter((t) => t.isCompleted).length;
+      const pending = total - completed;
+      const medicalLockedCount = items.filter((t) => t.isMedicalLocked).length;
+
+      return {
+        items,
+        summary: { total, completed, pending, medicalLockedCount },
+      };
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/daily-tasks\/generate$/,
+    handler({ db, body }) {
+      currentUser(db);
+      const b = body as { date?: string; zoneId?: string };
+      const targetDate = b.date || new Date().toISOString().slice(0, 10);
+      const allTasks = getStoredDailyTasks();
+      const existing = allTasks.filter((t) => t.date === targetDate);
+      return {
+        message: `Đã hoàn tất kiểm tra và khởi tạo danh sách việc cần làm cho ngày ${targetDate}.`,
+        tasksCount: existing.length,
+        createdCount: 0,
+        skippedCount: existing.length,
+      };
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/daily-tasks\/([^/]+)\/complete$/,
+    handler({ db, params, body }) {
+      const user = currentUser(db);
+      const [id] = params;
+      const b = body as { notes?: string };
+      const tasks = getStoredDailyTasks();
+      const task = tasks.find((t) => t.id === id);
+      if (!task) throw new ApiError(404, "NOT_FOUND", "Nhiệm vụ không tồn tại.");
+
+      const now = new Date();
+      const undoUntil = new Date(now.getTime() + 15 * 60 * 1000);
+
+      task.isCompleted = true;
+      task.completedById = user.id;
+      task.completedBy = { id: user.id, fullName: user.fullName, role: user.role };
+      task.completedAt = now.toISOString();
+      task.undoUntil = undoUntil.toISOString();
+      if (b.notes !== undefined) task.notes = b.notes;
+
+      saveStoredDailyTasks(tasks);
+      return task;
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/daily-tasks\/([^/]+)\/uncomplete$/,
+    handler({ db, params }) {
+      const user = currentUser(db);
+      const [id] = params;
+      const tasks = getStoredDailyTasks();
+      const task = tasks.find((t) => t.id === id);
+      if (!task) throw new ApiError(404, "NOT_FOUND", "Nhiệm vụ không tồn tại.");
+      if (!task.isCompleted) throw new ApiError(400, "NOT_COMPLETED", "Nhiệm vụ chưa được đánh dấu hoàn thành.");
+
+      const now = new Date();
+      const isWindowValid = task.undoUntil && new Date(task.undoUntil) > now;
+      if (!isWindowValid && user.role !== "CLUB_MANAGER") {
+        throw new ApiError(400, "UNDO_WINDOW_EXPIRED", "Thời hạn hoàn tác 15 phút đã kết thúc. Vui lòng liên hệ Quản lý chuồng.");
+      }
+
+      task.isCompleted = false;
+      task.completedById = undefined;
+      task.completedBy = undefined;
+      task.completedAt = undefined;
+      task.undoUntil = undefined;
+
+      saveStoredDailyTasks(tasks);
+      return task;
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/incidents$/,
+    handler({ db, url }) {
+      currentUser(db);
+      const horseId = url.searchParams.get("horseId");
+      const severity = url.searchParams.get("severity");
+      const status = url.searchParams.get("status");
+      const zoneId = url.searchParams.get("zoneId");
+      const search = (url.searchParams.get("search") || "").toLowerCase();
+      const page = parseInt(url.searchParams.get("page") || "1", 10);
+      const limit = parseInt(url.searchParams.get("limit") || "20", 10);
+
+      let incidents = getStoredIncidents();
+      if (horseId) incidents = incidents.filter((i) => i.horseId === horseId);
+      if (severity) incidents = incidents.filter((i) => i.severity === severity);
+      if (status) incidents = incidents.filter((i) => i.status === status);
+      if (zoneId) incidents = incidents.filter((i) => i.stallZoneId === zoneId);
+      if (search) {
+        incidents = incidents.filter(
+          (i) =>
+            (i.incidentNumber || '').toLowerCase().includes(search) ||
+            (i.description || '').toLowerCase().includes(search) ||
+            (i.horse?.name || '').toLowerCase().includes(search) ||
+            (i.horse?.horseCode || '').toLowerCase().includes(search),
+        );
+      }
+
+      const total = incidents.length;
+      const totalPages = Math.ceil(total / limit) || 1;
+      const paginated = incidents.slice((page - 1) * limit, page * limit);
+
+      return {
+        items: paginated,
+        pagination: { page, limit, total, totalPages },
+      };
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/incidents\/([^/]+)$/,
+    handler({ db, params }) {
+      currentUser(db);
+      const [id] = params;
+      const incidents = getStoredIncidents();
+      const inc = incidents.find((i) => i.id === id);
+      if (!inc) throw new ApiError(404, "NOT_FOUND", "Báo cáo sự cố không tồn tại.");
+      return inc;
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/incidents$/,
+    handler({ db, body }) {
+      const user = currentUser(db);
+      const b = body as {
+        horseId: string;
+        stallZoneId?: string;
+        severity: "MILD" | "MODERATE" | "CRITICAL";
+        symptoms?: string[];
+        symptomsJson?: string[];
+        description: string;
+      };
+
+      if (!b.horseId || !b.severity || !b.description) {
+        throw new ApiError(400, "MISSING_REQUIRED_FIELDS", "Vui lòng nhập đầy đủ thông tin sự cố.");
+      }
+
+      const horses = getStoredHorses();
+      const horse = horses.find((h) => h.id === b.horseId);
+      if (!horse) throw new ApiError(404, "HORSE_NOT_FOUND", "Ngựa không tồn tại.");
+
+      const incidents = getStoredIncidents();
+      const now = new Date();
+      const count = incidents.length + 1;
+      const incidentNumber = `INC-${now.getFullYear().toString().slice(-2)}${(now.getMonth() + 1).toString().padStart(2, "0")}-${count.toString().padStart(4, "0")}`;
+
+      const newInc: any = {
+        id: `inc-${Date.now()}`,
+        incidentNumber,
+        horseId: b.horseId,
+        horse: {
+          id: horse.id,
+          name: horse.name,
+          horseCode: horse.horseCode ?? horse.code,
+          avatarUrl: undefined,
+          status: horseStatusOf(horse),
+          isMedicalLocked: Boolean(horse.isLocked),
+          stallAllocations: [],
+        },
+        stallZoneId: b.stallZoneId,
+        reportedById: user.id,
+        reportedBy: { id: user.id, fullName: user.fullName, role: user.role },
+        severity: b.severity,
+        symptomsJson: b.symptoms || b.symptomsJson || ['OTHER'],
+        description: b.description,
+        status: "REPORTED",
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+      };
+
+      incidents.unshift(newInc);
+      saveStoredIncidents(incidents);
+      return newInc;
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/incidents\/([^/]+)\/review$/,
+    handler({ db, params, body }) {
+      const user = currentUser(db);
+      if (user.role !== "VETERINARIAN" && user.role !== "CLUB_MANAGER") {
+        throw new ApiError(403, "FORBIDDEN", "Chỉ Bác sĩ thú y hoặc Quản lý CLB được duyệt sự cố.");
+      }
+      const [id] = params;
+      const b = body as { status: "UNDER_REVIEW" | "RESOLVED" | "DISMISSED"; vetNotes?: string };
+      const incidents = getStoredIncidents();
+      const inc = incidents.find((i) => i.id === id);
+      if (!inc) throw new ApiError(404, "NOT_FOUND", "Báo cáo sự cố không tồn tại.");
+
+      const now = new Date();
+      inc.status = b.status;
+      if (b.vetNotes !== undefined) inc.vetNotes = b.vetNotes;
+      inc.reviewedById = user.id;
+      inc.reviewedBy = { id: user.id, fullName: user.fullName, role: user.role };
+      inc.reviewedAt = now.toISOString();
+      inc.updatedAt = now.toISOString();
+
+      saveStoredIncidents(incidents);
+      return inc;
+    },
+  },
+  // --- Phase 4: Inventory & Supply Restock Management ---
+  {
+    method: "GET",
+    pattern: /^\/inventory$/,
+    handler({ db, url }) {
+      currentUser(db);
+      const zoneId = url.searchParams.get("zoneId");
+      const category = url.searchParams.get("category");
+      const search = (url.searchParams.get("search") || "").toLowerCase();
+      const lowStockOnly = url.searchParams.get("lowStockOnly") === "true";
+
+      let items = getStoredStocks();
+      if (zoneId) items = items.filter((s) => s.zoneId === zoneId);
+      if (category) items = items.filter((s) => s.category === category);
+      if (search) {
+        items = items.filter(
+          (s) =>
+            s.supplyName.toLowerCase().includes(search) ||
+            s.supplyCode.toLowerCase().includes(search) ||
+            s.zoneName.toLowerCase().includes(search),
+        );
+      }
+
+      // Re-evaluate health statuses
+      items = items.map((it) => {
+        let status: "SUFFICIENT" | "LOW_STOCK" | "OUT_OF_STOCK" = "SUFFICIENT";
+        if (it.quantity <= 0) status = "OUT_OF_STOCK";
+        else if (it.quantity <= it.minThreshold) status = "LOW_STOCK";
+        return { ...it, status };
+      });
+
+      const total = items.length;
+      const lowStockCount = items.filter((i) => i.status === "LOW_STOCK").length;
+      const outOfStockCount = items.filter((i) => i.status === "OUT_OF_STOCK").length;
+
+      if (lowStockOnly) {
+        items = items.filter((i) => i.status === "LOW_STOCK" || i.status === "OUT_OF_STOCK");
+      }
+
+      return {
+        items,
+        total,
+        lowStockCount,
+        outOfStockCount,
+      };
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/inventory\/adjust$/,
+    handler({ db, body }) {
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") {
+        throw new ApiError(403, "FORBIDDEN", "Chỉ Quản lý chuồng mới có quyền kiểm kê và điều chỉnh kho.");
+      }
+      const b = body as { zoneId: string; supplyId: string; actualQuantity: number; reason: string; minThreshold?: number };
+      if (!b.zoneId || !b.supplyId || b.actualQuantity === undefined || !b.reason) {
+        throw new ApiError(400, "VALIDATION", "Vui lòng nhập đầy đủ Khu chuồng, Vật tư, Số lượng thực tế và Lý do điều chỉnh.");
+      }
+
+      const stocks = getStoredStocks();
+      let stock = stocks.find((s) => s.zoneId === b.zoneId && s.supplyId === b.supplyId);
+      const now = new Date().toISOString();
+
+      if (!stock) {
+        const supplies = getStoredSupplies();
+        const sup = supplies.find((s) => s.id === b.supplyId);
+        const zone = MOCK_ZONES.find((z) => z.id === b.zoneId);
+        stock = {
+          id: `${b.zoneId}_${b.supplyId}`,
+          zoneId: b.zoneId,
+          zoneCode: zone?.code || "ZN",
+          zoneName: zone?.name || b.zoneId,
+          supplyId: b.supplyId,
+          supplyCode: sup?.code || "SUP",
+          supplyName: sup?.name || b.supplyId,
+          category: (sup?.category?.startsWith("FEED") ? "FEED" : sup?.category?.startsWith("MED") ? "MEDICINE" : "CARE") as any,
+          unit: sup?.unit || "KG",
+          quantity: b.actualQuantity,
+          minThreshold: b.minThreshold ?? 10,
+          status: b.actualQuantity <= 0 ? "OUT_OF_STOCK" : b.actualQuantity <= (b.minThreshold ?? 10) ? "LOW_STOCK" : "SUFFICIENT",
+          lastInventoryDate: now,
+          lastAdjustedBy: { id: user.id, fullName: user.fullName, role: user.role },
+          notes: b.reason,
+        };
+        stocks.push(stock);
+      } else {
+        stock.quantity = Number(b.actualQuantity);
+        if (b.minThreshold !== undefined) stock.minThreshold = Number(b.minThreshold);
+        stock.notes = b.reason;
+        stock.lastInventoryDate = now;
+        stock.lastAdjustedBy = { id: user.id, fullName: user.fullName, role: user.role };
+        stock.status = stock.quantity <= 0 ? "OUT_OF_STOCK" : stock.quantity <= stock.minThreshold ? "LOW_STOCK" : "SUFFICIENT";
+      }
+
+      saveStoredStocks(stocks);
+      return stock;
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/inventory\/requests$/,
+    handler({ db, url }) {
+      currentUser(db);
+      const status = url.searchParams.get("status");
+      const zoneId = url.searchParams.get("zoneId");
+      const supplyId = url.searchParams.get("supplyId");
+      const search = (url.searchParams.get("search") || "").toLowerCase();
+      const page = parseInt(url.searchParams.get("page") || "1", 10);
+      const limit = parseInt(url.searchParams.get("limit") || "20", 10);
+
+      let requests = getStoredRestockRequests();
+      if (status) requests = requests.filter((r) => r.status === status);
+      if (zoneId) requests = requests.filter((r) => r.zoneId === zoneId);
+      if (supplyId) requests = requests.filter((r) => r.supplyId === supplyId);
+      if (search) {
+        requests = requests.filter(
+          (r) =>
+            r.requestNumber.toLowerCase().includes(search) ||
+            r.supply.name.toLowerCase().includes(search) ||
+            r.supply.code.toLowerCase().includes(search) ||
+            r.zone.name.toLowerCase().includes(search) ||
+            r.requestedBy.fullName.toLowerCase().includes(search) ||
+            r.urgencyReason.toLowerCase().includes(search),
+        );
+      }
+
+      const total = requests.length;
+      const totalPages = Math.ceil(total / limit) || 1;
+      const paginated = requests.slice((page - 1) * limit, page * limit);
+
+      return {
+        items: paginated,
+        pagination: { page, limit, total, totalPages },
+      };
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/inventory\/requests$/,
+    handler({ db, body }) {
+      const user = currentUser(db);
+      const b = body as { zoneId: string; supplyId: string; requestedQuantity: number; urgencyReason: string };
+      if (!b.zoneId || !b.supplyId || !b.requestedQuantity || !b.urgencyReason) {
+        throw new ApiError(400, "VALIDATION", "Vui lòng nhập đầy đủ Khu chuồng, Vật tư, Số lượng và Lý do cấp bách.");
+      }
+
+      const supplies = getStoredSupplies();
+      const sup = supplies.find((s) => s.id === b.supplyId);
+      const zone = MOCK_ZONES.find((z) => z.id === b.zoneId);
+      const requests = getStoredRestockRequests();
+      const now = new Date().toISOString();
+      const num = String(requests.length + 1).padStart(4, "0");
+      const requestNumber = `REQ-2610-${num}`;
+
+      const newReq = {
+        id: `req-${Date.now()}`,
+        requestNumber,
+        zoneId: b.zoneId,
+        zone: { id: b.zoneId, code: zone?.code || "ZN", name: zone?.name || b.zoneId },
+        supplyId: b.supplyId,
+        supply: {
+          id: b.supplyId,
+          code: sup?.code || "SUP",
+          name: sup?.name || b.supplyId,
+          category: (sup?.category?.startsWith("FEED") ? "FEED" : sup?.category?.startsWith("MED") ? "MEDICINE" : "CARE") as any,
+          unit: sup?.unit || "KG",
+        },
+        requestedQuantity: Number(b.requestedQuantity),
+        approvedQuantity: null,
+        status: "PENDING" as const,
+        urgencyReason: b.urgencyReason,
+        rejectionReason: null,
+        deliveryNotes: null,
+        requestedById: user.id,
+        requestedBy: { id: user.id, fullName: user.fullName, role: user.role },
+        reviewedById: null,
+        reviewedBy: null,
+        deliveredById: null,
+        deliveredBy: null,
+        createdAt: now,
+        updatedAt: now,
+        reviewedAt: null,
+        deliveredAt: null,
+      };
+
+      requests.unshift(newReq);
+      saveStoredRestockRequests(requests);
+      return newReq;
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/inventory\/requests\/([^/]+)\/review$/,
+    handler({ db, params, body }) {
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") {
+        throw new ApiError(403, "FORBIDDEN", "Chỉ Quản lý chuồng mới có quyền duyệt phiếu đề xuất.");
+      }
+      const [id] = params;
+      const b = body as { action: "APPROVE" | "REJECT"; approvedQuantity?: number; rejectionReason?: string };
+      const requests = getStoredRestockRequests();
+      const req = requests.find((r) => r.id === id);
+      if (!req) throw new ApiError(404, "NOT_FOUND", "Phiếu đề xuất không tồn tại.");
+      if (req.status !== "PENDING") {
+        throw new ApiError(400, "INVALID_STATE", `Chỉ có thể duyệt phiếu ở trạng thái PENDING. Trạng thái hiện tại: ${req.status}`);
+      }
+
+      const now = new Date().toISOString();
+      if (b.action === "APPROVE") {
+        req.status = "APPROVED";
+        req.approvedQuantity = b.approvedQuantity ? Number(b.approvedQuantity) : req.requestedQuantity;
+        req.rejectionReason = null;
+      } else {
+        req.status = "REJECTED";
+        req.approvedQuantity = null;
+        req.rejectionReason = b.rejectionReason || "Không phê duyệt";
+      }
+
+      req.reviewedById = user.id;
+      req.reviewedBy = { id: user.id, fullName: user.fullName, role: user.role };
+      req.reviewedAt = now;
+      req.updatedAt = now;
+
+      saveStoredRestockRequests(requests);
+      return req;
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/inventory\/requests\/([^/]+)\/deliver$/,
+    handler({ db, params, body }) {
+      const user = currentUser(db);
+      const [id] = params;
+      const b = body as { receivedQuantity?: number; deliveryNotes?: string };
+      const requests = getStoredRestockRequests();
+      const req = requests.find((r) => r.id === id);
+      if (!req) throw new ApiError(404, "NOT_FOUND", "Phiếu đề xuất không tồn tại.");
+      if (req.status !== "APPROVED") {
+        throw new ApiError(400, "INVALID_STATE", `Chỉ phiếu đã DUYỆT (APPROVED) mới có thể xác nhận nhập kho.`);
+      }
+
+      const amount = b.receivedQuantity ? Number(b.receivedQuantity) : (req.approvedQuantity ?? req.requestedQuantity);
+      const now = new Date().toISOString();
+
+      req.status = "DELIVERED";
+      req.deliveredById = user.id;
+      req.deliveredBy = { id: user.id, fullName: user.fullName, role: user.role };
+      req.deliveredAt = now;
+      req.deliveryNotes = b.deliveryNotes || `Xác nhận nhận đủ ${amount} ${req.supply.unit}`;
+      req.updatedAt = now;
+
+      saveStoredRestockRequests(requests);
+
+      // Tự động cộng tồn kho
+      const stocks = getStoredStocks();
+      let stock = stocks.find((s) => s.zoneId === req.zoneId && s.supplyId === req.supplyId);
+      if (!stock) {
+        stock = {
+          id: `${req.zoneId}_${req.supplyId}`,
+          zoneId: req.zoneId,
+          zoneCode: req.zone.code,
+          zoneName: req.zone.name,
+          supplyId: req.supplyId,
+          supplyCode: req.supply.code,
+          supplyName: req.supply.name,
+          category: req.supply.category,
+          unit: req.supply.unit,
+          quantity: amount,
+          minThreshold: 10,
+          status: "SUFFICIENT",
+          lastInventoryDate: now,
+          lastAdjustedBy: { id: user.id, fullName: user.fullName, role: user.role },
+          notes: `Nhập kho từ phiếu đề xuất ${req.requestNumber}`,
+        };
+        stocks.push(stock);
+      } else {
+        stock.quantity += amount;
+        stock.lastInventoryDate = now;
+        stock.lastAdjustedBy = { id: user.id, fullName: user.fullName, role: user.role };
+        stock.notes = `Nhập kho từ phiếu đề xuất ${req.requestNumber}`;
+        stock.status = stock.quantity <= 0 ? "OUT_OF_STOCK" : stock.quantity <= stock.minThreshold ? "LOW_STOCK" : "SUFFICIENT";
+      }
+      saveStoredStocks(stocks);
+
+      return req;
     },
   },
 ];
