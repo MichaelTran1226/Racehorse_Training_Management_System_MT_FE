@@ -11,6 +11,7 @@ import { tr } from '@/shared/i18n/tr';
 import { messageFor } from '@/shared/lib/messages';
 import { inventoryApi } from '../api/inventoryApi';
 import type { StockItemRow } from '../types/inventory';
+import { formatSupplyUnit } from '@/features/master-data/types/supplies';
 
 interface StockAdjustModalProps {
   stockItem?: StockItemRow | null;
@@ -52,7 +53,7 @@ export function StockAdjustModal({
   );
 
   const supplyOptions = useMemo(
-    () => supplies.map((s) => ({ value: s.id, label: `${s.code} - ${s.name} (${s.unit})` })),
+    () => supplies.map((s) => ({ value: s.id, label: `${s.code} - ${s.name} (${formatSupplyUnit(s.unit)})` })),
     [supplies],
   );
 
@@ -147,14 +148,14 @@ export function StockAdjustModal({
           >
             <span style={{ color: 'var(--muted)' }}>{tr('Current Recorded System Stock')}:</span>
             <strong style={{ fontSize: 'var(--fs-body)', color: 'var(--ink)' }}>
-              {stockItem.quantity} {stockItem.unit}
+              {stockItem.quantity} {formatSupplyUnit(stockItem.unit)}
             </strong>
           </div>
         )}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <Field
-            label={`${tr('Actual Physical Quantity')} (${selectedSupply?.unit || stockItem?.unit || 'unit'})`}
+            label={`${tr('Actual Physical Quantity')} (${formatSupplyUnit(selectedSupply?.unit || stockItem?.unit || 'unit')})`}
             required
             hint={tr('Physical count measured on-site.')}
           >
@@ -171,7 +172,7 @@ export function StockAdjustModal({
           </Field>
 
           <Field
-            label={`${tr('Minimum Alert Threshold')} (${selectedSupply?.unit || stockItem?.unit || 'unit'})`}
+            label={`${tr('Minimum Alert Threshold')} (${formatSupplyUnit(selectedSupply?.unit || stockItem?.unit || 'unit')})`}
             required
             hint={tr('Trigger warning when stock drops below this.')}
           >

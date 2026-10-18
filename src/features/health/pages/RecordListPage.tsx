@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
@@ -12,12 +12,6 @@ import styles from "./MedicalRecordPage.module.css";
 import { capitalize, formatDate } from "@/shared/lib/format";
 
 import { tr } from "@/shared/i18n/tr";
-const STATUS_OPTIONS = [
-  { value: "", label: "All Statuses" },
-  { value: "DRAFT", label: "Draft" },
-  { value: "OPEN", label: "In Treatment (Open)" },
-  { value: "CLOSED", label: "Closed" },
-];
 
 export default function RecordListPage() {
   const navigate = useNavigate();
@@ -26,17 +20,36 @@ export default function RecordListPage() {
   const [records, setRecords] = useState<MedicalRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState<string>("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
 
   const isVet = user?.role === "VETERINARIAN";
 
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  const statusOptions = useMemo(
+    () => [
+      { value: "", label: tr("All Statuses") },
+      { value: "DRAFT", label: tr("Draft") },
+      { value: "OPEN", label: tr("In Treatment (Open)") },
+      { value: "CLOSED", label: tr("Closed") },
+    ],
+    []
+  );
+
   const fetchRecords = useCallback(async () => {
     setLoading(true);
     try {
       const res = await listRecords({
-        search: search.trim() || undefined,
+        search: debouncedSearch.trim() || undefined,
         status: status || undefined,
         page,
         limit: 15,
@@ -48,7 +61,7 @@ export default function RecordListPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, status, page]);
+  }, [debouncedSearch, status, page]);
 
   useEffect(() => {
     void fetchRecords();
@@ -90,7 +103,7 @@ export default function RecordListPage() {
           <div style={{ width: "200px" }}>
             <Select
               aria-label={tr("Status")}
-              options={STATUS_OPTIONS}
+              options={statusOptions}
               value={status}
               onChange={(e) => {
                 setStatus(e.target.value);

@@ -37,6 +37,7 @@ export default function SuppliesCatalogPage() {
   // Modals
   const [editingItem, setEditingItem] = useState<SupplyCatalogItem | null | undefined>(undefined);
   const [statusToggleItem, setStatusToggleItem] = useState<SupplyCatalogItem | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const fetchSupplies = useCallback(async () => {
     setLoading(true);
@@ -162,6 +163,8 @@ export default function SuppliesCatalogPage() {
         loading={loading}
         rows={items}
         rowKey={(it) => it.id}
+        selectedKey={selectedId}
+        onRowClick={(it) => setSelectedId((prev) => (prev === it.id ? null : it.id))}
         caption={tr('Supplies and materials catalog')}
         columns={[
           {

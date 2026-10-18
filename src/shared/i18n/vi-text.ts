@@ -3133,4 +3133,21 @@ export const VI_TEXT: Record<string, string> = {
   "An email goes to {{manager}}": "Email thông báo được gửi tới {{manager}}",
   "Wrong details?": "Sai thông tin?",
   "Permission reason": "Lý do phân quyền",
+
+  // Supply units (uppercase enums & standard)
+  "PACKET": "gói",
+  "BOTTLE": "chai",
+  "VIAL": "lọ",
+  "PILL": "viên",
+  "PIECE": "cái",
+  "SET": "bộ",
+  "LITER": "lít",
+  "KG": "kg",
+  "G": "g",
+  "ML": "ml",
+  "unit": "đơn vị",
+
+  // Vet & Groom dashboard additions
+  "Review {{date}}": "Xem xét {{date}}",
+  "(overdue)": "(quá hạn)",
 };

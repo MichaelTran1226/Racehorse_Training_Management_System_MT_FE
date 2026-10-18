@@ -11,6 +11,7 @@ import { tr } from '@/shared/i18n/tr';
 import { messageFor } from '@/shared/lib/messages';
 import { inventoryApi } from '../api/inventoryApi';
 import type { RestockRequestItem } from '../types/inventory';
+import { formatSupplyUnit } from '@/features/master-data/types/supplies';
 
 interface RestockDeliverModalProps {
   request: RestockRequestItem;
@@ -45,7 +46,7 @@ export function RestockDeliverModal({ request, onClose, onSaved }: RestockDelive
       });
 
       toast.show(
-        `${tr('Delivery confirmed! Automatically added')} +${qty} ${request.supply.unit} ${tr('to')} ${request.zone.name}.`,
+        `${tr('Delivery confirmed! Automatically added')} +${qty} ${formatSupplyUnit(request.supply.unit)} ${tr('to')} ${request.zone.name}.`,
         'ok',
       );
       onSaved();
@@ -96,13 +97,13 @@ export function RestockDeliverModal({ request, onClose, onSaved }: RestockDelive
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ color: 'var(--muted)' }}>{tr('Approved Quantity')}:</span>
             <Badge tone="ok">
-              {defaultQty} {request.supply.unit}
+              {defaultQty} {formatSupplyUnit(request.supply.unit)}
             </Badge>
           </div>
         </div>
 
         <Field
-          label={`${tr('Actual Received Quantity')} (${request.supply.unit})`}
+          label={`${tr('Actual Received Quantity')} (${formatSupplyUnit(request.supply.unit)})`}
           required
           hint={tr('Verified count delivered to the stall zone warehouse.')}
         >
