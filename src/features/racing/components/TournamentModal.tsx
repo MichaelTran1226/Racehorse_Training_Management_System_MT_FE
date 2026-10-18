@@ -48,7 +48,7 @@ export function TournamentModal({
       const dl = new Date();
       dl.setDate(dl.getDate() + 20);
       setRegistrationDeadline(dl.toISOString().split("T")[0]);
-      setLocation("Trường đua Phú Thọ");
+      setLocation("");
       setDistanceMeters(1600);
       setTrackType("TURF");
       setPrizePool(100000000);
@@ -141,7 +141,7 @@ export function TournamentModal({
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Grand Autumn Cup 2026"
+            placeholder={tr("e.g. Grand Autumn Cup 2026")}
             style={{
               width: "100%",
               padding: "0.625rem 0.875rem",
@@ -207,7 +207,7 @@ export function TournamentModal({
             required
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            placeholder="e.g. Trường đua Phú Thọ, TP.HCM"
+            placeholder={tr("e.g. Saigon Racecourse - Track A")}
             style={{
               width: "100%",
               padding: "0.625rem 0.875rem",

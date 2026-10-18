@@ -60,7 +60,7 @@ export default function RaceResultsPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
-        title={tr("Official Race Results & Championship Hall of Fame (SC-5.03)")}
+        title={tr("Official Race Results & Championship Hall of Fame")}
         description={tr(
           "Verified tournament standings, sprint speeds, prize money distributions, and club career statistics.",
         )}
@@ -110,7 +110,7 @@ export default function RaceResultsPage() {
               {selectedTournament && (
                 <div style={{ display: "flex", gap: "1rem", fontSize: "var(--fs-xs)", color: "var(--muted)" }}>
                   <span>📍 {selectedTournament.location}</span>
-                  <span>📏 {selectedTournament.distanceMeters}m ({selectedTournament.trackType})</span>
+                  <span>📏 {selectedTournament.distanceMeters}m ({tr(selectedTournament.trackType)})</span>
                   <span>💰 {tr("Purse:")} {selectedTournament.prizePool.toLocaleString()} đ</span>
                 </div>
               )}
@@ -256,7 +256,7 @@ export default function RaceResultsPage() {
                           </span>
                         </td>
                         <td style={{ padding: "0.75rem 0.5rem", color: "var(--muted)" }}>
-                          {reg.horse.owner?.fullName || "Club Owned"}
+                          {reg.horse.owner?.fullName || tr("Club Owned")}
                         </td>
                         <td style={{ padding: "0.75rem 0.5rem", fontWeight: 600 }}>
                           {reg.result?.finishTimeSeconds}s

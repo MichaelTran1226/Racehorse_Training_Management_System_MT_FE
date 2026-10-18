@@ -124,8 +124,8 @@ export function RecordResultsModal({
 
   return (
     <Modal
-      title={tr("Record Race Execution & Official Results (SC-5.03)")}
-      subtitle={`${tournament.name} · ${tournament.distanceMeters}m (${tournament.trackType})`}
+      title={tr("Record Race Execution & Official Results")}
+      subtitle={`${tournament.name} · ${tournament.distanceMeters}m (${tr(tournament.trackType)})`}
       width={760}
       onClose={onClose}
       foot={

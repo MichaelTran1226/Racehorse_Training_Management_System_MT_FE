@@ -77,7 +77,7 @@ export default function OwnerFinancialReportsPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
-        title={tr("Owner Financial Reports & Ledger Settlement (SC-5.06)")}
+        title={tr("Owner Financial Reports & Ledger Settlement")}
         description={tr(
           "Transparent accounting ledger: monthly stall boarding, veterinary care, conditioning expenses, and 70% race prize deductions.",
         )}
@@ -128,7 +128,7 @@ export default function OwnerFinancialReportsPage() {
         <KpiTile
           label={tr("Net Settlement Balance")}
           value={`${(Math.abs(totalNet) / 1000000).toLocaleString()}M`}
-          unit={totalNet <= 0 ? "VND (Payout)" : "VND (Due)"}
+          unit={totalNet <= 0 ? tr("VND (Payout)") : tr("VND (Due)")}
           caption={
             totalNet <= 0
               ? tr("Club payout due to Owner (Surplus prize)")
@@ -240,7 +240,7 @@ export default function OwnerFinancialReportsPage() {
                         }}
                       >
                         {isCredit
-                          ? `Payout: ${Math.abs(inv.netAmount).toLocaleString()} đ`
+                          ? `${tr("Payout:")} ${Math.abs(inv.netAmount).toLocaleString()} đ`
                           : `${inv.netAmount.toLocaleString()} đ`}
                       </td>
                       <td style={{ padding: "0.75rem 0.5rem" }}>
@@ -255,7 +255,7 @@ export default function OwnerFinancialReportsPage() {
                               : "neutral"
                           }
                         >
-                          {inv.status}
+                          {tr(inv.status)}
                         </Badge>
                       </td>
                       {isClubManager && (

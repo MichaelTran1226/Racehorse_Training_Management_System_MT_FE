@@ -79,7 +79,7 @@ export const vi: TranslationResources = {
     metrics: "Chỉ số buổi tập",
     monitor: "Giám sát thời gian thực",
     alerts: "Cảnh báo chỉ số",
-    races: "Hồ sơ thi đấu",
+    races: "Giải đua & Lịch thi đấu",
     records: "Hồ sơ bệnh án",
     rx: "Kê đơn thuốc",
     locks: "Khóa huấn luyện",

@@ -97,7 +97,7 @@ export default function RaceEntryPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
-        title={tr("Tournament Registration & Race Entries (Flow 5)")}
+        title={tr("Tournament Registration & Race Entries")}
         description={tr(
           "Official championship management, horse eligibility screening, race execution, and prize money settlement.",
         )}
@@ -237,7 +237,7 @@ export default function RaceEntryPage() {
                             : "danger"
                         }
                       >
-                        {tourney.status}
+                        {tr(tourney.status)}
                       </Badge>
                     </div>
 
@@ -267,7 +267,7 @@ export default function RaceEntryPage() {
                           {tr("Distance & Surface")}
                         </span>
                         <strong style={{ fontSize: "var(--fs-sm)", color: "var(--ink)" }}>
-                          {tourney.distanceMeters}m · {tourney.trackType}
+                          {tourney.distanceMeters}m · {tr(tourney.trackType)}
                         </strong>
                       </div>
                       <div>

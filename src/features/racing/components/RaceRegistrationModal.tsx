@@ -73,8 +73,8 @@ export function RaceRegistrationModal({
 
   return (
     <Modal
-      title={tr("Register Horse for Tournament (SC-5.02)")}
-      subtitle={`${tournament.name} · ${tournament.distanceMeters}m (${tournament.trackType})`}
+      title={tr("Register Horse for Tournament")}
+      subtitle={`${tournament.name} · ${tournament.distanceMeters}m (${tr(tournament.trackType)})`}
       width={680}
       onClose={onClose}
       foot={
