@@ -5,7 +5,7 @@ import { ROLE_LABEL } from "@/shared/lib/permissions";
 import { ROLES } from "@/shared/types/auth";
 import type { Role } from "@/shared/types/auth";
 import styles from "./RoleFilter.module.css";
-
+
 import { tr } from "@/shared/i18n/tr";
 interface RoleFilterProps {
   value: Role | "ALL";

@@ -5,15 +5,18 @@ import { Field } from "@/shared/components/form/Field";
 import { Input } from "@/shared/components/form/Input";
 import { Select } from "@/shared/components/form/Select";
 import { Textarea } from "@/shared/components/form/Textarea";
+import { Alert } from "@/shared/components/ui/Alert";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
 import { Icon } from "@/shared/components/ui/Icon";
 import { useToast } from "@/shared/components/ui/Toast";
+import { getHorses } from "@/features/horses/api";
+import { tr } from "@/shared/i18n/tr";
 import { createRecord, getRecordDetail, updateRecord } from "../api";
 import { isHeartRateWarning, isRespiratoryWarning, isTempWarning } from "../components/VitalsDisplay";
+import { parseMedicalErrors } from "../lib/medical-errors";
 import type { LabTestItem, SeverityLevel } from "../types";
 import styles from "./MedicalRecordPage.module.css";
-
 
 const EXAM_TYPE_OPTIONS = [
   { value: "Routine Clinical", label: "Routine Clinical" },
@@ -46,10 +49,12 @@ const PROPOSED_STATUS_OPTIONS = [
   { value: "FIT", label: "Fit" },
 ];
 
-import { getHorses } from "@/features/horses/api";
+function getInitialExamDate(): string {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+}
 
-
-import { tr } from "@/shared/i18n/tr";
 export default function RecordFormPage() {
   const { id } = useParams(); // If id exists, it's edit mode
   const [searchParams] = useSearchParams();
@@ -86,7 +91,6 @@ export default function RecordFormPage() {
         }
       })
       .catch(() => {
-        // Fallback or error state
         if (active) setHorseOptions([{ value: "", label: "-- Error loading horses --" }]);
       })
       .finally(() => {
@@ -96,7 +100,8 @@ export default function RecordFormPage() {
       active = false;
     };
   }, [horseIdParam, isEdit]);
-  const [examinationDate, setExaminationDate] = useState(new Date().toISOString().slice(0, 16));
+
+  const [examinationDate, setExaminationDate] = useState(getInitialExamDate());
   const [examinationType, setExaminationType] = useState("Routine Clinical");
   const [examinationReason, setExaminationReason] = useState("");
   const [symptoms, setSymptoms] = useState("");
@@ -111,6 +116,7 @@ export default function RecordFormPage() {
 
   // Block 3: Diagnostics
   const [labTests, setLabTests] = useState<LabTestItem[]>([]);
+  const [labTestErrors, setLabTestErrors] = useState<Record<number, string>>({});
 
   // Block 4: Diagnosis
   const [diagnosis, setDiagnosis] = useState("");
@@ -120,7 +126,19 @@ export default function RecordFormPage() {
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorDetails, setErrorDetails] = useState<string[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [dirty, setDirty] = useState(false);
+
+  function clearFieldError(field: string) {
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  }
 
   // FR-3.20: đóng tab / tải lại khi có thay đổi chưa lưu -> trình duyệt hỏi lại.
   useEffect(() => {
@@ -160,7 +178,11 @@ export default function RecordFormPage() {
       void getRecordDetail(id).then((res) => {
         const r = res.record;
         setHorseId(r.horseId);
-        setExaminationDate(new Date(r.examinationDate).toISOString().slice(0, 16));
+        if (r.examinationDate) {
+          const d = new Date(r.examinationDate);
+          const pad = (n: number) => String(n).padStart(2, "0");
+          setExaminationDate(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`);
+        }
         setExaminationType(r.examinationType);
         setExaminationReason(r.examinationReason);
         setSymptoms(r.symptoms || "");
@@ -194,32 +216,158 @@ export default function RecordFormPage() {
 
   function removeLabTest(index: number) {
     setLabTests(labTests.filter((_, i) => i !== index));
+    setLabTestErrors((prev) => {
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
   }
 
   function updateLabTest(index: number, key: keyof LabTestItem, value: string) {
     const next = [...labTests];
     next[index] = { ...next[index], [key]: value };
     setLabTests(next);
+    if (key === "result" && labTestErrors[index]) {
+      setLabTestErrors((prev) => {
+        const nextErrs = { ...prev };
+        delete nextErrs[index];
+        return nextErrs;
+      });
+    }
+  }
+
+  function validateForm(saveAsDraft: boolean): boolean {
+    const errs: Record<string, string> = {};
+    const ltErrs: Record<number, string> = {};
+
+    if (!horseId) {
+      errs.horseId = tr("Please select a horse to examine.");
+    }
+
+    if (!examinationDate) {
+      errs.examinationDate = tr("Please enter an examination date.");
+    } else {
+      const examTime = new Date(examinationDate).getTime();
+      const nowTime = Date.now();
+      // Allow 5 minutes leeway for clock skew
+      if (examTime > nowTime + 5 * 60 * 1000) {
+        errs.examinationDate = tr("Examination date cannot be in the future.");
+      } else {
+        const thirtyDaysAgo = nowTime - 30 * 24 * 60 * 60 * 1000;
+        if (examTime < thirtyDaysAgo) {
+          errs.examinationDate = tr("Examination date cannot be more than 30 days ago.");
+        }
+      }
+    }
+
+    const trimmedReason = examinationReason.trim();
+    if (!saveAsDraft) {
+      if (!trimmedReason) {
+        errs.examinationReason = tr("Please enter the reason for examination.");
+      } else if (trimmedReason.length < 5) {
+        errs.examinationReason = tr("Reason for examination must be between 5 and 500 characters.");
+      } else if (trimmedReason.length > 500) {
+        errs.examinationReason = tr("Reason for examination cannot exceed 500 characters.");
+      }
+    } else {
+      if (trimmedReason.length > 0 && trimmedReason.length < 5) {
+        errs.examinationReason = tr("Reason for examination must be between 5 and 500 characters.");
+      } else if (trimmedReason.length > 500) {
+        errs.examinationReason = tr("Reason for examination cannot exceed 500 characters.");
+      }
+    }
+
+    const trimmedNotes = clinicalNotes.trim();
+    if (!saveAsDraft) {
+      if (!trimmedNotes || trimmedNotes.length < 10) {
+        errs.clinicalNotes = tr("Detailed clinical examination notes must be between 10 and 4,000 characters.");
+      } else if (trimmedNotes.length > 4000) {
+        errs.clinicalNotes = tr("Clinical examination notes cannot exceed 4,000 characters.");
+      }
+    } else {
+      if (trimmedNotes.length > 0 && trimmedNotes.length < 10) {
+        errs.clinicalNotes = tr("Detailed clinical examination notes must be between 10 and 4,000 characters.");
+      } else if (trimmedNotes.length > 4000) {
+        errs.clinicalNotes = tr("Clinical examination notes cannot exceed 4,000 characters.");
+      }
+    }
+
+    const trimmedDiagnosis = diagnosis.trim();
+    if (!saveAsDraft) {
+      if (!trimmedDiagnosis) {
+        errs.diagnosis = tr("Please enter a definitive diagnosis before finalizing.");
+      } else if (trimmedDiagnosis.length < 5) {
+        errs.diagnosis = tr("Definitive diagnosis must be between 5 and 1,000 characters.");
+      } else if (trimmedDiagnosis.length > 1000) {
+        errs.diagnosis = tr("Diagnosis cannot exceed 1,000 characters.");
+      }
+    } else {
+      if (trimmedDiagnosis.length > 0 && trimmedDiagnosis.length < 5) {
+        errs.diagnosis = tr("Definitive diagnosis must be between 5 and 1,000 characters.");
+      } else if (trimmedDiagnosis.length > 1000) {
+        errs.diagnosis = tr("Diagnosis cannot exceed 1,000 characters.");
+      }
+    }
+
+    if (temperature !== undefined && (temperature < 35.0 || temperature > 43.0)) {
+      errs.temperature = tr("Body temperature must be between 35.0°C and 43.0°C.");
+    }
+    if (restingHeartRate !== undefined && (restingHeartRate < 20 || restingHeartRate > 120)) {
+      errs.restingHeartRate = tr("Resting heart rate must be between 20 and 120 bpm.");
+    }
+    if (respiratoryRate !== undefined && (respiratoryRate < 4 || respiratoryRate > 60)) {
+      errs.respiratoryRate = tr("Respiratory rate must be between 4 and 60 breaths/min.");
+    }
+    if (weightKg !== undefined && (weightKg < 200 || weightKg > 800)) {
+      errs.weightKg = tr("Horse weight must be between 200 and 800 kg.");
+    }
+
+    if (symptoms.trim().length > 2000) {
+      errs.symptoms = tr("Observed symptoms cannot exceed 2,000 characters.");
+    }
+
+    labTests.forEach((t, idx) => {
+      const resTrim = t.result.trim();
+      if (!resTrim || resTrim.length < 5) {
+        const msg = tr("Diagnostic test result must be between 5 and 2,000 characters.");
+        ltErrs[idx] = msg;
+        errs[`labTest_${idx}`] = tr("Diagnostic test #{{index}} result must be at least 5 characters.", { index: idx + 1 });
+      } else if (resTrim.length > 2000) {
+        const msg = tr("Diagnostic test result cannot exceed 2,000 characters.");
+        ltErrs[idx] = msg;
+        errs[`labTest_${idx}`] = tr("Diagnostic test #{{index}} result cannot exceed 2,000 characters.", { index: idx + 1 });
+      }
+    });
+
+    setFieldErrors(errs);
+    setLabTestErrors(ltErrs);
+
+    const errorList = Object.values(errs);
+    if (errorList.length > 0) {
+      setErrorDetails(errorList);
+      setError(
+        errorList.length === 1
+          ? errorList[0]
+          : tr("Please check and correct the highlighted fields before submitting.")
+      );
+      toast.show(tr("Please correct the highlighted fields before submitting."), "danger");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return false;
+    }
+
+    setError(null);
+    setErrorDetails([]);
+    return true;
   }
 
   async function handleSave(saveAsDraft: boolean) {
-    if (!horseId) {
-      setError("Please select a horse.");
+    if (!validateForm(saveAsDraft)) {
       return;
-    }
-    if (!saveAsDraft) {
-      if (!examinationReason.trim()) {
-        setError("Please enter reason for examination.");
-        return;
-      }
-      if (!diagnosis.trim()) {
-        setError("Please enter a definitive diagnosis before finalizing.");
-        return;
-      }
     }
 
     setBusy(true);
     setError(null);
+    setErrorDetails([]);
 
     const payload = {
       horseId,
@@ -246,20 +394,27 @@ export default function RecordFormPage() {
     try {
       if (isEdit && id) {
         const updated = await updateRecord(id, payload);
-        toast.show("Medical record updated successfully.", "ok");
+        toast.show(tr("Medical record updated successfully."), "ok");
         setDirty(false);
         navigate(`/medical/records/${updated.record.id}`);
       } else {
         const created = await createRecord(payload);
         toast.show(
-          saveAsDraft ? "Draft medical record saved successfully." : "Medical record created and finalized.",
+          saveAsDraft
+            ? tr("Draft medical record saved successfully.")
+            : tr("Medical record created and finalized."),
           "ok",
         );
         setDirty(false);
         navigate(`/medical/records/${created.record.id}`);
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to save medical record.");
+      const parsed = parseMedicalErrors(err);
+      setError(parsed.summary);
+      setErrorDetails(parsed.details);
+      setFieldErrors((prev) => ({ ...prev, ...parsed.fieldErrors }));
+      toast.show(parsed.summary, "danger");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setBusy(false);
     }
@@ -289,9 +444,25 @@ export default function RecordFormPage() {
       </div>
 
       {error && (
-        <div style={{ color: "var(--danger)", padding: "12px 16px", background: "var(--danger-bg)", borderRadius: "var(--r)", border: "1px solid var(--danger)" }}>
-          {error}
-        </div>
+        <Alert
+          tone="danger"
+          icon="alert"
+          title={tr("Please check and correct the following information:")}
+          onDismiss={() => {
+            setError(null);
+            setErrorDetails([]);
+          }}
+        >
+          {errorDetails.length > 0 ? (
+            <ul style={{ margin: "6px 0 0 0", paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "4px" }}>
+              {errorDetails.map((msg, i) => (
+                <li key={i}>{tr(msg)}</li>
+              ))}
+            </ul>
+          ) : (
+            <div>{tr(error)}</div>
+          )}
+        </Alert>
       )}
 
       {/* Block 1: Examination Details */}
@@ -302,20 +473,34 @@ export default function RecordFormPage() {
         </h2>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
-          <Field label={tr("Horse *")} hint={tr("Select the horse to examine")}>
+          <Field
+            label={tr("Horse *")}
+            hint={tr("Select the horse to examine")}
+            error={fieldErrors.horseId}
+          >
             <Select
               options={horseOptions}
               value={horseId}
-              onChange={(e) => setHorseId(e.target.value)}
+              onChange={(e) => {
+                setHorseId(e.target.value);
+                clearFieldError("horseId");
+              }}
               disabled={isEdit || loadingHorses}
             />
           </Field>
 
-          <Field label={tr("Examination Date & Time *")}>
+          <Field
+            label={tr("Examination Date & Time *")}
+            hint={tr("Cannot be in the future or more than 30 days ago")}
+            error={fieldErrors.examinationDate}
+          >
             <Input
               type="datetime-local"
               value={examinationDate}
-              onChange={(e) => setExaminationDate(e.target.value)}
+              onChange={(e) => {
+                setExaminationDate(e.target.value);
+                clearFieldError("examinationDate");
+              }}
               required
             />
           </Field>
@@ -337,11 +522,18 @@ export default function RecordFormPage() {
           </Field>
 
           <div style={{ gridColumn: "1 / -1" }}>
-            <Field label={tr("Reason for Examination *")} hint={tr("Between 5 and 500 characters")}>
+            <Field
+              label={tr("Reason for Examination *")}
+              hint={tr("Between 5 and 500 characters")}
+              error={fieldErrors.examinationReason}
+            >
               <Textarea
                 rows={2}
                 value={examinationReason}
-                onChange={(e) => setExaminationReason(e.target.value)}
+                onChange={(e) => {
+                  setExaminationReason(e.target.value);
+                  clearFieldError("examinationReason");
+                }}
                 placeholder={tr("e.g., Horse exhibits front limb lameness following morning gallop workout...")}
                 required
               />
@@ -349,11 +541,18 @@ export default function RecordFormPage() {
           </div>
 
           <div style={{ gridColumn: "1 / -1" }}>
-            <Field label={tr("Observed Clinical Symptoms")} hint={tr("Max 2,000 characters")}>
+            <Field
+              label={tr("Observed Clinical Symptoms")}
+              hint={tr("Max 2,000 characters")}
+              error={fieldErrors.symptoms}
+            >
               <Textarea
                 rows={2}
                 value={symptoms}
-                onChange={(e) => setSymptoms(e.target.value)}
+                onChange={(e) => {
+                  setSymptoms(e.target.value);
+                  clearFieldError("symptoms");
+                }}
                 placeholder={tr("e.g., Mild swelling around the fetlock joint, tender on palpation...")}
               />
             </Field>
@@ -376,7 +575,8 @@ export default function RecordFormPage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
           <Field
             label={tr("Temperature (°C) *")}
-            hint={tempWarn ? tr("Outside reference range (37.2 – 38.6 °C)!") : tr("Normal: 37.2 – 38.6 °C")}
+            hint={tempWarn ? tr("Outside reference range (37.2 – 38.6 °C)!") : tr("Normal: 37.2 – 38.6 °C (Allowed: 35.0 – 43.0 °C)")}
+            error={fieldErrors.temperature}
           >
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <Input
@@ -385,7 +585,10 @@ export default function RecordFormPage() {
                 min={35}
                 max={43}
                 value={temperature ?? ""}
-                onChange={(e) => setTemperature(e.target.value ? Number(e.target.value) : undefined)}
+                onChange={(e) => {
+                  setTemperature(e.target.value ? Number(e.target.value) : undefined);
+                  clearFieldError("temperature");
+                }}
                 style={tempWarn ? { borderColor: "var(--danger)", color: "var(--danger)" } : undefined}
                 required
               />
@@ -395,7 +598,8 @@ export default function RecordFormPage() {
 
           <Field
             label={tr("Resting Heart Rate (bpm) *")}
-            hint={hrWarn ? tr("Outside reference range (28 – 44 bpm)!") : tr("Normal: 28 – 44 bpm")}
+            hint={hrWarn ? tr("Outside reference range (28 – 44 bpm)!") : tr("Normal: 28 – 44 bpm (Allowed: 20 – 120 bpm)")}
+            error={fieldErrors.restingHeartRate}
           >
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <Input
@@ -403,7 +607,10 @@ export default function RecordFormPage() {
                 min={20}
                 max={120}
                 value={restingHeartRate ?? ""}
-                onChange={(e) => setRestingHeartRate(e.target.value ? Number(e.target.value) : undefined)}
+                onChange={(e) => {
+                  setRestingHeartRate(e.target.value ? Number(e.target.value) : undefined);
+                  clearFieldError("restingHeartRate");
+                }}
                 style={hrWarn ? { borderColor: "var(--danger)", color: "var(--danger)" } : undefined}
                 required
               />
@@ -413,7 +620,8 @@ export default function RecordFormPage() {
 
           <Field
             label={tr("Respiratory Rate (breaths/min) *")}
-            hint={rrWarn ? tr("Outside reference range (8 – 16 breaths/min)!") : tr("Normal: 8 – 16 breaths/min")}
+            hint={rrWarn ? tr("Outside reference range (8 – 16 breaths/min)!") : tr("Normal: 8 – 16 breaths/min (Allowed: 4 – 60 breaths/min)")}
+            error={fieldErrors.respiratoryRate}
           >
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <Input
@@ -421,7 +629,10 @@ export default function RecordFormPage() {
                 min={4}
                 max={60}
                 value={respiratoryRate ?? ""}
-                onChange={(e) => setRespiratoryRate(e.target.value ? Number(e.target.value) : undefined)}
+                onChange={(e) => {
+                  setRespiratoryRate(e.target.value ? Number(e.target.value) : undefined);
+                  clearFieldError("respiratoryRate");
+                }}
                 style={rrWarn ? { borderColor: "var(--danger)", color: "var(--danger)" } : undefined}
                 required
               />
@@ -429,22 +640,36 @@ export default function RecordFormPage() {
             </div>
           </Field>
 
-          <Field label={tr("Weight (kg)")} hint={tr("Standard: 200 – 800 kg")}>
+          <Field
+            label={tr("Weight (kg)")}
+            hint={tr("Standard: 200 – 800 kg")}
+            error={fieldErrors.weightKg}
+          >
             <Input
               type="number"
               min={200}
               max={800}
               value={weightKg ?? ""}
-              onChange={(e) => setWeightKg(e.target.value ? Number(e.target.value) : undefined)}
+              onChange={(e) => {
+                setWeightKg(e.target.value ? Number(e.target.value) : undefined);
+                clearFieldError("weightKg");
+              }}
             />
           </Field>
 
           <div style={{ gridColumn: "1 / -1" }}>
-            <Field label={tr("Detailed Clinical Examination *")} hint={tr("10 to 4,000 characters")}>
+            <Field
+              label={tr("Detailed Clinical Examination *")}
+              hint={tr("10 to 4,000 characters")}
+              error={fieldErrors.clinicalNotes}
+            >
               <Textarea
                 rows={3}
                 value={clinicalNotes}
-                onChange={(e) => setClinicalNotes(e.target.value)}
+                onChange={(e) => {
+                  setClinicalNotes(e.target.value);
+                  clearFieldError("clinicalNotes");
+                }}
                 placeholder={tr("Note lung sounds, gut sounds, mucous membranes, skin turgor, gait...")}
               />
             </Field>
@@ -471,43 +696,52 @@ export default function RecordFormPage() {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {labTests.map((test, idx) => (
-              <div
-                key={idx}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1.5fr 1fr 3fr auto",
-                  gap: 10,
-                  alignItems: "center",
-                  padding: "10px",
-                  background: "var(--surface-2)",
-                  borderRadius: "var(--r-sm)",
-                }}
-              >
-                <Select
-                  options={LAB_TYPE_OPTIONS}
-                  value={test.testType}
-                  onChange={(e) => updateLabTest(idx, "testType", e.target.value)}
-                />
-
-                <Input
-                  type="date"
-                  value={test.testDate}
-                  onChange={(e) => updateLabTest(idx, "testDate", e.target.value)}
-                />
-
-                <Input
-                  value={test.result}
-                  onChange={(e) => updateLabTest(idx, "result", e.target.value)}
-                  placeholder={tr("Result description (e.g., Elevated WBC count, hairline fissure on lateral condyle...)")}
-                />
-
-                <button
-                  type="button"
-                  onClick={() => removeLabTest(idx)}
-                  style={{ border: "none", background: "transparent", color: "var(--danger)", cursor: "pointer" }}
+              <div key={idx} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1.5fr 1fr 3fr auto",
+                    gap: 10,
+                    alignItems: "center",
+                    padding: "10px",
+                    background: "var(--surface-2)",
+                    borderRadius: "var(--r-sm)",
+                    border: labTestErrors[idx] ? "1px solid var(--danger)" : undefined,
+                  }}
                 >
-                  <Icon name="trash" size={16} />
-                </button>
+                  <Select
+                    options={LAB_TYPE_OPTIONS}
+                    value={test.testType}
+                    onChange={(e) => updateLabTest(idx, "testType", e.target.value)}
+                  />
+
+                  <Input
+                    type="date"
+                    value={test.testDate}
+                    onChange={(e) => updateLabTest(idx, "testDate", e.target.value)}
+                  />
+
+                  <Input
+                    value={test.result}
+                    onChange={(e) => updateLabTest(idx, "result", e.target.value)}
+                    placeholder={tr("Result description (e.g., Elevated WBC count, hairline fissure on lateral condyle...)")}
+                    invalid={Boolean(labTestErrors[idx])}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => removeLabTest(idx)}
+                    style={{ border: "none", background: "transparent", color: "var(--danger)", cursor: "pointer" }}
+                  >
+                    <Icon name="trash" size={16} />
+                  </button>
+                </div>
+                {labTestErrors[idx] && (
+                  <span style={{ color: "var(--danger)", fontSize: "var(--fs-caption)", display: "flex", alignItems: "center", gap: 4, paddingLeft: 4 }}>
+                    <Icon name="alert" size={12} />
+                    {labTestErrors[idx]}
+                  </span>
+                )}
               </div>
             ))}
           </div>
@@ -522,12 +756,19 @@ export default function RecordFormPage() {
         </h2>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <Field label={tr("Definitive Diagnosis *")} hint={tr("Between 5 and 1,000 characters")}>
+          <Field
+            label={tr("Definitive Diagnosis *")}
+            hint={tr("Between 5 and 1,000 characters")}
+            error={fieldErrors.diagnosis}
+          >
             <Textarea
               rows={3}
               value={diagnosis}
-              onChange={(e) => setDiagnosis(e.target.value)}
-              placeholder="e.g., Acute tenosynovitis of the left forelimb digital flexor tendon sheath..."
+              onChange={(e) => {
+                setDiagnosis(e.target.value);
+                clearFieldError("diagnosis");
+              }}
+              placeholder={tr("e.g., Acute tenosynovitis of the left forelimb digital flexor tendon sheath...")}
               required
             />
           </Field>

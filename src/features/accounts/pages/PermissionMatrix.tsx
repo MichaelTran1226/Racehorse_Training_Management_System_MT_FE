@@ -20,7 +20,7 @@ import { ACCOUNT_STATUS } from "@/shared/lib/status";
 import type { PermissionKey, PermissionMap, PublicAccount } from "@/shared/types/auth";
 import { getAccount, savePermissions } from "../api";
 import styles from "./PermissionMatrix.module.css";
-
+
 import { tr } from "@/shared/i18n/tr";
 const GENERIC_EFFECT = "The matching sidebar items disappear at the next page load, and opening their URLs returns 403 Access Denied.";
 
@@ -166,7 +166,7 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
         <Alert tone="warn" icon="alert" title={tr("Unsaved permission changes")}>
           {changes.granted > 0 && tr(`${changes.granted} to grant`)}
           {changes.granted > 0 && changes.revoked > 0 && " · "}
-          {changes.revoked > 0 && tr(`${changes.revoked} to revoke`)}. Save to apply them, or discard to keep the saved list.
+          {changes.revoked > 0 && tr(`${changes.revoked} to revoke`)}. {tr("Save to apply them, or discard to keep the saved list.")}
         </Alert>
       )}
 

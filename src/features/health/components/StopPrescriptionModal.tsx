@@ -7,7 +7,7 @@ import { Textarea } from "@/shared/components/form/Textarea";
 import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
 import type { StopPrescriptionInput } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 const STOP_REASON_OPTIONS = [
   { value: "Resolved", label: "Condition resolved / Symptoms cleared" },

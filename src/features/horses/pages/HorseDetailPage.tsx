@@ -24,8 +24,8 @@ import { Icon } from "@/shared/components/ui/Icon";
 import { useToast } from "@/shared/components/ui/Toast";
 import { AssignStallDialog, ReturnStallDialog, TransferStallDialog } from "@/features/stable/components/StallDialogs";
 import { formatDate, formatDateTime } from "@/shared/lib/format";
-
-import { tr } from "@/shared/i18n/tr";
+
+import { tr, isVietnamese } from "@/shared/i18n/tr";
 /** Nguồn đổi trạng thái (Tab 4). */
 const STATUS_SOURCE_LABEL: Record<string, string> = {
   MANUAL: "Manual",
@@ -139,7 +139,7 @@ export default function HorseDetailPage() {
     if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
-    ageText = `${age >= 0 ? age : 0} y/o`;
+    ageText = isVietnamese() ? `${age >= 0 ? age : 0} tuổi` : `${age >= 0 ? age : 0} y/o`;
   }
 
   // Microchip display masking for grooms
@@ -169,7 +169,7 @@ export default function HorseDetailPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
         title={horse.name}
-        description={[horse.horseCode, horse.breed, horse.gender, horse.color, ageText].filter(Boolean).join(" · ")}
+        description={[horse.horseCode, horse.breed ? tr(horse.breed) : "", horse.gender ? tr(horse.gender) : "", horse.color ? tr(horse.color) : "", ageText].filter(Boolean).join(" · ")}
         action={
           <>
             <ChangeStatusDialog
@@ -238,8 +238,7 @@ export default function HorseDetailPage() {
               </div>
               {horse.medicalLocks && horse.medicalLocks[0] && (
                 <div style={{ marginTop: "0.5rem", fontSize: "var(--fs-body)", opacity: 0.9 }}>
-                  <strong>{tr("Reason:")}</strong> {horse.medicalLocks[0].lockReason} (placed{" "}
-                  {formatDateTime(horse.medicalLocks[0].lockedAt)})
+                  <strong>{tr("Reason:")}</strong> {horse.medicalLocks[0].lockReason} ({tr("placed on {{date}}", { date: formatDateTime(horse.medicalLocks[0].lockedAt) })})
                 </div>
               )}
             </div>
@@ -250,8 +249,8 @@ export default function HorseDetailPage() {
       {/* Banner Retired */}
       {horse.status === "RETIRED" && (
         <Alert tone="info" title={tr("No longer managed")}>
-          {horse.retireReason ? tr(`Reason: ${RETIRE_REASON_LABEL[horse.retireReason]}. `) : ""}
-          Identity, stall and health history stay available for reference.
+          {horse.retireReason ? tr("Reason: {{reason}}. ", { reason: tr(RETIRE_REASON_LABEL[horse.retireReason]) }) : ""}
+          {tr("Identity, stall and health history stay available for reference.")}
         </Alert>
       )}
 
@@ -306,11 +305,11 @@ export default function HorseDetailPage() {
             </div>
 
             <div style={{ fontSize: "var(--fs-body)", color: "var(--ink-secondary)" }}>
-              <span><strong>{horse.breed}</strong></span>
+              <span><strong>{horse.breed ? tr(horse.breed) : ""}</strong></span>
               <span style={{ margin: "0 0.5rem", opacity: 0.5 }}>•</span>
-              <span>{horse.gender}</span>
+              <span>{horse.gender ? tr(horse.gender) : ""}</span>
               <span style={{ margin: "0 0.5rem", opacity: 0.5 }}>•</span>
-              <span>{horse.color}</span>
+              <span>{horse.color ? tr(horse.color) : ""}</span>
               <span style={{ margin: "0 0.5rem", opacity: 0.5 }}>•</span>
               <span>{ageText}</span>
             </div>
@@ -318,7 +317,7 @@ export default function HorseDetailPage() {
             {/* Microchip & RFID quick-copy pills */}
             <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginTop: "0.25rem", flexWrap: "wrap" }}>
               <div style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", fontSize: "var(--fs-body)" }}>
-                <span style={{ color: "var(--ink-muted)", fontSize: "var(--fs-caption)", fontWeight: 700 }}>Chip:</span>
+                <span style={{ color: "var(--ink-muted)", fontSize: "var(--fs-caption)", fontWeight: 700 }}>{tr("Chip:")}</span>
                 <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, background: "var(--surface-subtle)", padding: "1px 6px", borderRadius: 4 }}>
                   {displayMicrochip}
                 </span>
@@ -343,7 +342,7 @@ export default function HorseDetailPage() {
 
               {horse.rfid && (
                 <div style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", fontSize: "var(--fs-body)" }}>
-                  <span style={{ color: "var(--ink-muted)", fontSize: "var(--fs-caption)", fontWeight: 700 }}>RFID:</span>
+                  <span style={{ color: "var(--ink-muted)", fontSize: "var(--fs-caption)", fontWeight: 700 }}>{tr("RFID:")}</span>
                   <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, background: "var(--surface-subtle)", padding: "1px 6px", borderRadius: 4 }}>
                     {horse.rfid}
                   </span>
@@ -384,7 +383,7 @@ export default function HorseDetailPage() {
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontWeight: 600, color: "var(--brand)" }}>
               <Icon name="home" size={13} />
-              <span>{horse.stallCode ? tr(`Stall ${horse.stallCode}`) : tr("Unassigned Stall")}</span>
+              <span>{horse.stallCode ? tr("Stall {{stall}}", { stall: horse.stallCode }) : tr("Unassigned Stall")}</span>
             </div>
             <div style={{ color: "var(--ink-secondary)", display: "flex", alignItems: "center", gap: "0.35rem" }}>
               <Icon name="user" size={13} />
@@ -475,7 +474,7 @@ export default function HorseDetailPage() {
 
             <div>
               <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>{tr("Breed")}</div>
-              <div style={{ fontWeight: 600 }}>{horse.breed}</div>
+              <div style={{ fontWeight: 600 }}>{horse.breed ? tr(horse.breed) : "—"}</div>
             </div>
 
             <div>
@@ -487,12 +486,12 @@ export default function HorseDetailPage() {
 
             <div>
               <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>{tr("Gender")}</div>
-              <div style={{ fontWeight: 600 }}>{horse.gender}</div>
+              <div style={{ fontWeight: 600 }}>{horse.gender ? tr(horse.gender) : "—"}</div>
             </div>
 
             <div>
               <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>{tr("Coat Color")}</div>
-              <div style={{ fontWeight: 600 }}>{horse.color}</div>
+              <div style={{ fontWeight: 600 }}>{horse.color ? tr(horse.color) : "—"}</div>
             </div>
 
             <div>

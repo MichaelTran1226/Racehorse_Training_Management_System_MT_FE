@@ -6,7 +6,7 @@ import { Textarea } from "@/shared/components/form/Textarea";
 import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
 import type { FollowUpInput } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 interface AddFollowUpModalProps {
   onClose: () => void;

@@ -15,7 +15,7 @@ import { resetPassword } from "../api";
 import { resetFlow } from "../flow";
 import type { ResetFlow } from "../flow";
 import styles from "./AuthPages.module.css";
-
+
 import { tr } from "@/shared/i18n/tr";
 // Bước 3 quên mật khẩu (design 1.6): đặt mật khẩu mới sau khi OTP đã đúng.
 // Cũng là bước cuối của Accept Invite (flow.kind = "invite"): nhân viên đặt mật khẩu lần đầu.

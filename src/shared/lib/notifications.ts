@@ -1,5 +1,7 @@
 import type { Role } from "@/shared/types/enums";
 import { api } from "@/shared/lib/api";
+import { isVietnamese } from "@/shared/i18n/tr";
+import { formatShortDate } from "./format";
 
 // Thông báo trong ứng dụng (C-01): dữ liệu từ BE GET /notifications, giữ trong bộ nhớ và hỏi lại mỗi 30 giây.
 // Các màn hình đọc bản sao trong bộ nhớ (getNotifications) và đăng ký nghe thay đổi (subscribeNotifications).
@@ -101,17 +103,18 @@ export function formatTimeAgo(isoString: string): string {
   try {
     const diffMs = Date.now() - new Date(isoString).getTime();
     const diffSec = Math.floor(diffMs / 1000);
-    if (diffSec < 60) return "Just now";
+    const vi = isVietnamese();
+    if (diffSec < 60) return vi ? "Vừa xong" : "Just now";
     const diffMin = Math.floor(diffSec / 60);
-    if (diffMin < 60) return `${diffMin}m ago`;
+    if (diffMin < 60) return vi ? `${diffMin} phút trước` : `${diffMin}m ago`;
     const diffHour = Math.floor(diffMin / 60);
-    if (diffHour < 24) return `${diffHour}h ago`;
+    if (diffHour < 24) return vi ? `${diffHour} giờ trước` : `${diffHour}h ago`;
     const diffDay = Math.floor(diffHour / 24);
-    if (diffDay === 1) return "Yesterday";
-    if (diffDay < 7) return `${diffDay}d ago`;
-    return new Date(isoString).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    if (diffDay === 1) return vi ? "Hôm qua" : "Yesterday";
+    if (diffDay < 7) return vi ? `${diffDay} ngày trước` : `${diffDay}d ago`;
+    return formatShortDate(isoString);
   } catch {
-    return "Recently";
+    return isVietnamese() ? "Gần đây" : "Recently";
   }
 }
 

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { cx } from "@/shared/lib/cx";
 import { Icon } from "./Icon";
 import styles from "./Modal.module.css";
-import { trNode } from "@/shared/i18n/tr";
+import { tr, trNode } from "@/shared/i18n/tr";
 
 interface ModalProps {
   title: string;
@@ -91,7 +91,7 @@ export function Modal({ title, subtitle, tone, width = 480, foot, onClose, child
             {subtitle && <p className={styles.subtitle}>{trNode(subtitle)}</p>}
           </div>
           {onClose && (
-            <button type="button" className={styles.close} onClick={onClose} aria-label="Close">
+            <button type="button" className={styles.close} onClick={onClose} aria-label={tr("Close")}>
               <Icon name="x" size={16} />
             </button>
           )}

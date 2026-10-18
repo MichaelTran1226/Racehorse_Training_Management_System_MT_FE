@@ -164,33 +164,57 @@ export const getRecordDetail = async (recordId: string): Promise<{ record: Medic
 
 // P2-02: Tạo mới bệnh án (FR-3.04)
 export const createRecord = async (input: CreateMedicalRecordInput): Promise<{ record: MedicalRecord }> => {
+  const trimmedReason = input.examinationReason?.trim();
+  const reason = trimmedReason && trimmedReason.length >= 5
+    ? trimmedReason
+    : (input.saveAsDraft ? "Routine Clinical Examination" : (trimmedReason || "Routine Clinical Examination"));
+
+  const trimmedDiagnosis = input.diagnosis?.trim();
+  const diagnosis = trimmedDiagnosis && trimmedDiagnosis.length >= 5 ? trimmedDiagnosis : undefined;
+
   const bePayload: Record<string, unknown> = {
     horseId: input.horseId,
     examinationDate: input.examinationDate || new Date().toISOString(),
-    examinationType: input.examinationType || "ROUTINE_CHECKUP",
-    reason: input.examinationReason || "General Examination",
-    symptoms: input.symptoms,
+    examinationType: input.examinationType || "Routine Clinical",
+    reason,
+    symptoms: input.symptoms?.trim() || undefined,
     discoverySource: input.discoverySource,
-    diagnosis: input.diagnosis,
+    diagnosis,
     severity: input.severity,
     recommendedHorseStatus: input.proposedStatus,
     isDraft: Boolean(input.saveAsDraft),
   };
+
   if (input.vitals) {
+    const notes = input.vitals.clinicalNotes?.trim();
+    const symptoms = input.symptoms?.trim();
+    let clinicalExamination = "Normal clinical examination findings";
+    if (notes && notes.length >= 10) {
+      clinicalExamination = notes;
+    } else if (symptoms && symptoms.length >= 10) {
+      clinicalExamination = symptoms;
+    }
+
     bePayload.vitals = {
       temperature: Number(input.vitals.temperature ?? 38.0),
       restingHeartRate: Number(input.vitals.restingHeartRate ?? 36),
       respiratoryRate: Number(input.vitals.respiratoryRate ?? 12),
       weightKg: input.vitals.weightKg ? Number(input.vitals.weightKg) : undefined,
-      clinicalExamination: input.vitals.clinicalNotes || input.symptoms || "Normal findings",
+      clinicalExamination,
     };
   }
+
   if (input.labTests && input.labTests.length > 0) {
-    bePayload.labTests = input.labTests.map((t) => ({
-      testType: t.testType || "Standard",
-      datePerformed: t.testDate || new Date().toISOString().split("T")[0],
-      result: t.result || "Normal",
-    }));
+    const validLabTests = input.labTests
+      .filter((t) => t.result && t.result.trim().length >= 5)
+      .map((t) => ({
+        testType: t.testType || "Blood Test",
+        datePerformed: t.testDate || new Date().toISOString().split("T")[0],
+        result: t.result.trim(),
+      }));
+    if (validLabTests.length > 0) {
+      bePayload.labTests = validLabTests;
+    }
   }
 
   const res = await api<any>("POST", "/medical/records", bePayload);
@@ -201,23 +225,39 @@ export const createRecord = async (input: CreateMedicalRecordInput): Promise<{ r
 
 // P2-02: Sửa bệnh án Nháp (FR-3.04)
 export const updateRecord = async (recordId: string, input: UpdateMedicalRecordInput): Promise<{ record: MedicalRecord }> => {
+  const trimmedReason = input.examinationReason?.trim();
+  const reason = trimmedReason && trimmedReason.length >= 5 ? trimmedReason : undefined;
+
+  const trimmedDiagnosis = input.diagnosis?.trim();
+  const diagnosis = trimmedDiagnosis && trimmedDiagnosis.length >= 5 ? trimmedDiagnosis : undefined;
+
   const bePayload: Record<string, unknown> = {
     examinationDate: input.examinationDate,
     examinationType: input.examinationType,
-    reason: input.examinationReason,
-    symptoms: input.symptoms,
+    reason,
+    symptoms: input.symptoms?.trim() || undefined,
     discoverySource: input.discoverySource,
-    diagnosis: input.diagnosis,
+    diagnosis,
     severity: input.severity,
     recommendedHorseStatus: input.proposedStatus,
   };
+
   if (input.vitals) {
+    const notes = input.vitals.clinicalNotes?.trim();
+    const symptoms = input.symptoms?.trim();
+    let clinicalExamination = "Normal clinical examination findings";
+    if (notes && notes.length >= 10) {
+      clinicalExamination = notes;
+    } else if (symptoms && symptoms.length >= 10) {
+      clinicalExamination = symptoms;
+    }
+
     bePayload.vitals = {
       temperature: Number(input.vitals.temperature ?? 38.0),
       restingHeartRate: Number(input.vitals.restingHeartRate ?? 36),
       respiratoryRate: Number(input.vitals.respiratoryRate ?? 12),
       weightKg: input.vitals.weightKg ? Number(input.vitals.weightKg) : undefined,
-      clinicalExamination: input.vitals.clinicalNotes || input.symptoms || "Normal findings",
+      clinicalExamination,
     };
   }
 
@@ -265,7 +305,27 @@ export const updateTreatmentPhase = async (
 
 // P2-02: Kê đơn thuốc (FR-3.07)
 export const addPrescription = async (recordId: string, input: PrescriptionInput): Promise<{ prescription: PrescriptionItem; record?: MedicalRecord }> => {
-  const res = await api<any>("POST", `/medical/records/${recordId}/prescriptions`, input);
+  const startD = new Date(input.startDate || Date.now());
+  const days = Number(input.daysCount) > 0 ? Number(input.daysCount) : 1;
+  const calculatedEndDate =
+    input.endDate ||
+    (!isNaN(startD.getTime())
+      ? new Date(startD.getTime() + (days - 1) * 86400000).toISOString().split("T")[0]
+      : input.startDate);
+
+  const payload = {
+    ...input,
+    dosage: String(input.dosage ?? 1),
+    endDate: calculatedEndDate,
+    route: input.route,
+    administrationRoute: input.route,
+    frequencyPerDay: Number(input.frequencyPerDay || 1),
+    frequency: `${Number(input.frequencyPerDay || 1)} lần/ngày`,
+    daysCount: Number(input.daysCount || 1),
+    withdrawalDays: Number(input.withdrawalDays || 0),
+  };
+
+  const res = await api<any>("POST", `/medical/records/${recordId}/prescriptions`, payload);
   const prescription: PrescriptionItem = res?.prescription || {
     id: `rx-${Date.now()}`,
     medicationName: input.medicationName,
@@ -274,6 +334,7 @@ export const addPrescription = async (recordId: string, input: PrescriptionInput
     route: input.route,
     frequencyPerDay: input.frequencyPerDay,
     startDate: input.startDate,
+    endDate: calculatedEndDate,
     daysCount: input.daysCount,
     withdrawalDays: input.withdrawalDays || 0,
     status: "ACTIVE",
@@ -288,10 +349,17 @@ export const stopPrescription = async (
   prescriptionId: string,
   input: StopPrescriptionInput,
 ): Promise<{ prescription: PrescriptionItem }> => {
+  const payload = {
+    ...input,
+    reason: input.stoppedReason || input.reason || "Bác sĩ yêu cầu dừng thuốc",
+    stoppedReason: input.stoppedReason,
+    stopNotes: input.stopNotes,
+    stoppedDate: input.stoppedDate,
+  };
   const res = await api<any>(
     "POST",
     `/medical/records/${recordId}/prescriptions/${prescriptionId}/stop`,
-    input,
+    payload,
   );
   return { prescription: res?.prescription || res };
 };
@@ -323,7 +391,8 @@ export const closeRecord = async (recordId: string, input: CloseRecordInput): Pr
 
 // P2-02: Mở lại bệnh án (FR-3.05)
 export const reopenRecord = async (recordId: string, input: ReopenRecordInput): Promise<{ record: MedicalRecord }> => {
-  const res = await api<any>("POST", `/medical/records/${recordId}/reopen`, input);
+  const reason = (input.reason || input.reopenReason || "").trim();
+  const res = await api<any>("POST", `/medical/records/${recordId}/reopen`, { reason, reopenReason: reason });
   if (res && res.record) return res as { record: MedicalRecord };
   if (res && res.id) return { record: res as MedicalRecord };
   return { record: res };

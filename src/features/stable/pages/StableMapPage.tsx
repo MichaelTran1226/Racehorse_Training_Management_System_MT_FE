@@ -18,7 +18,7 @@ import { GridCell, ZoneGrid, type CellLook } from "../components/ZoneGrid";
 import { AssignStallDialog, ReturnStallDialog, TransferStallDialog } from "../components/StallDialogs";
 import { HEALTH_STATUS } from "@/shared/lib/status";
 import { HORSE_STATUS_COLOR, allocationOf, useStallCounts } from "../stallUtils";
-
+
 import { tr } from "@/shared/i18n/tr";
 const REFRESH_MS = 60_000;
 
@@ -164,8 +164,8 @@ export default function StableMapPage() {
           <Button tone="ghost" size="sm" icon="x" onClick={() => setSelectedId(null)} aria-label={tr("Close panel")} />
         </div>
         <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>
-          Zone {s.zone}
-          {s.row && s.col ? tr(` · Row ${s.row}, Col ${s.col}`) : ""}
+          {tr("Zone {{zone}}", { zone: s.zone })}
+          {s.row && s.col ? tr(" · Row {{row}}, Col {{col}}", { row: s.row, col: s.col }) : ""}
         </div>
         {a ? (
           <>
@@ -177,7 +177,7 @@ export default function StableMapPage() {
               {a.horse.isMedicalLocked && <Badge tone="danger" icon="lock">{tr("Training Lock")}</Badge>}
             </div>
             <div style={{ fontSize: "var(--fs-body)" }}>{tr("Groom:")}{" "}{a.assignedGroom?.fullName ?? "—"}</div>
-            <div style={{ fontSize: "var(--fs-body)" }}>In this stall since {formatDate(a.startDate)}</div>
+            <div style={{ fontSize: "var(--fs-body)" }}>{tr("In this stall since {{date}}", { date: formatDate(a.startDate) })}</div>
             {canOpenProfile && (
               <Link to={`/horses/${a.horse.id}`}>
                 <Button tone="secondary" block>{tr("View horse profile")}</Button>
@@ -209,13 +209,13 @@ export default function StableMapPage() {
     <div style={{ display: "grid", gap: 16 }}>
       <PageHeader
         title={tr("Stable map")}
-        description={updatedAt ? tr(`Updated at ${formatTime(updatedAt)}`) : undefined}
+        description={updatedAt ? tr("Updated at {{time}}", { time: formatTime(updatedAt) }) : undefined}
         action={
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             {zones && zones.length > 0 && (
               <div style={{ width: 200 }}>
                 <Select
-                  aria-label="Barn zone"
+                  aria-label={tr("Barn zone")}
                   value={zoneId}
                   onChange={(e) => {
                     setZoneId(e.target.value);
@@ -228,8 +228,8 @@ export default function StableMapPage() {
             <div style={{ position: "relative" }}>
               <input
                 type="search"
-                aria-label="Find a horse on the map"
-                placeholder="Horse name or code"
+                aria-label={tr("Find a horse on the map")}
+                placeholder={tr("Horse name or code")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 style={{ height: 38, width: 220, padding: "0 12px", borderRadius: "var(--r)", border: "1px solid var(--border)" }}
@@ -249,7 +249,7 @@ export default function StableMapPage() {
                   }}
                 >
                   {matches.length === 0 ? (
-                    <div style={{ padding: 12, fontSize: "var(--fs-body)" }}>No horse found on the map.</div>
+                    <div style={{ padding: 12, fontSize: "var(--fs-body)" }}>{tr("No horse found on the map.")}</div>
                   ) : (
                     matches.map((s) => (
                       <button
@@ -266,10 +266,10 @@ export default function StableMapPage() {
               )}
             </div>
             <Segmented
-              label="View"
+              label={tr("View")}
               items={[
-                { id: "grid", label: "Map" },
-                { id: "list", label: "List" },
+                { id: "grid", label: tr("Map") },
+                { id: "list", label: tr("List") },
               ]}
               active={view}
               onChange={setView}
@@ -279,7 +279,7 @@ export default function StableMapPage() {
       />
 
       {error && (
-        <Alert tone="danger" title={tr("Could not load the stable map.")} action={<Button size="sm" onClick={loadStalls}>Try again</Button>}>
+        <Alert tone="danger" title={tr("Could not load the stable map.")} action={<Button size="sm" onClick={loadStalls}>{tr("Try again")}</Button>}>
           {error}
         </Alert>
       )}
@@ -308,7 +308,7 @@ export default function StableMapPage() {
             {Object.entries(HORSE_STATUS_COLOR).map(([status, c]) => (
               <li key={status} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                 <span aria-hidden="true" style={{ width: 12, height: 12, borderRadius: "var(--r-xs)", background: c.bg, boxShadow: `inset 0 0 0 1px ${c.fg}` }} />
-                {HEALTH_STATUS[status as HealthStatus]?.label ?? status}
+                {HEALTH_STATUS[status as HealthStatus]?.label ? tr(HEALTH_STATUS[status as HealthStatus].label) : status}
               </li>
             ))}
             <li style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>

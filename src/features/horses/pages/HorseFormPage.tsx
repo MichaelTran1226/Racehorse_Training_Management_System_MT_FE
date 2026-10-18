@@ -13,7 +13,7 @@ import { ApiError } from "@/shared/lib/api";
 import { getHorseById, createHorse, updateHorse, getHorseCatalog } from "../api";
 import type { Horse, CreateHorsePayload, UpdateHorsePayload, HorseCatalogItem } from "../types";
 
-
+
 import { tr } from "@/shared/i18n/tr";
 const GENDER_OPTIONS = [
   { value: "Stallion", label: "Stallion (male)" },
@@ -348,7 +348,7 @@ export default function HorseFormPage() {
 
             <Field label={tr("Horse Code (ID)")} hint={tr("System auto-generates code formatted as HR-XXXXXX upon save")}>
               <Input
-                value={isEdit ? horseCode : "Auto-generated on save"}
+                value={isEdit ? horseCode : tr("Auto-generated on save")}
                 disabled
                 readOnly
               />

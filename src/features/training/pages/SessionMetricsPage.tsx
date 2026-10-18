@@ -13,7 +13,7 @@ import { todayClub, trainingApi } from "../api";
 import { sessionButtons } from "../components/sessionRules";
 import { EXERCISE_TYPE_LABEL, SESSION_STATUS_LABEL, SESSION_STATUS_TONE } from "../types";
 import type { ExerciseSession } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 function minusDays(date: string, days: number): string {
   const d = new Date(`${date}T00:00:00Z`);
@@ -52,11 +52,11 @@ export default function SessionMetricsPage() {
     <tr style={{ borderBottom: "1px solid var(--border)" }}>
       <td style={{ padding: "0.6rem 0.75rem" }}>{s.sessionDate} {s.startTime}</td>
       <td style={{ padding: "0.6rem 0.75rem" }}>{s.horseName}</td>
-      <td style={{ padding: "0.6rem 0.75rem" }}>{EXERCISE_TYPE_LABEL[s.sessionType]} · {s.targetDistanceMeters} m × {s.repetitions}</td>
-      <td style={{ padding: "0.6rem 0.75rem" }}><Badge tone={SESSION_STATUS_TONE[s.status]}>{SESSION_STATUS_LABEL[s.status]}</Badge></td>
+      <td style={{ padding: "0.6rem 0.75rem" }}>{tr(EXERCISE_TYPE_LABEL[s.sessionType])} · {s.targetDistanceMeters} m × {s.repetitions}</td>
+      <td style={{ padding: "0.6rem 0.75rem" }}><Badge tone={SESSION_STATUS_TONE[s.status]}>{tr(SESSION_STATUS_LABEL[s.status])}</Badge></td>
       <td style={{ padding: "0.6rem 0.75rem" }}>{s.result?.performanceScore != null ? `${s.result.performanceScore}/10` : "—"}</td>
       <td style={{ padding: "0.6rem 0.75rem", textAlign: "right" }}>
-        <Link to={`/training/sessions/${s.id}/result`}><Button size="sm" tone="secondary">{action}</Button></Link>
+        <Link to={`/training/sessions/${s.id}/result`}><Button size="sm" tone="secondary">{tr(action)}</Button></Link>
       </td>
     </tr>
   );
@@ -89,7 +89,7 @@ export default function SessionMetricsPage() {
 
       {user.role === "HEAD_TRAINER" && (
         <Card pad={16}>
-          <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>Waiting for a result ({pending.length})</h2>
+          <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>{tr("Waiting for a result ({{count}})", { count: pending.length })}</h2>
           {loading ? null : pending.length === 0 ? (
             <EmptyState title={tr("Nothing to record right now.")} />
           ) : (
@@ -101,7 +101,7 @@ export default function SessionMetricsPage() {
       )}
 
       <Card pad={16}>
-        <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>Results – last 14 days ({recent.length})</h2>
+        <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>{tr("Results – last 14 days ({{count}})", { count: recent.length })}</h2>
         {loading ? (
           <div style={{ color: "var(--text-muted)" }}>{tr("Loading...")}</div>
         ) : recent.length === 0 ? (

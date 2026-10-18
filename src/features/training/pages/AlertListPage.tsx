@@ -13,7 +13,7 @@ import { messageFor } from "@/shared/lib/messages";
 import { trainingApi } from "../api";
 import { EXERCISE_TYPE_LABEL } from "../types";
 import type { TrainingAlert } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 /** FR-2.14: buổi tập có dấu hiệu bất thường. HT và VET xem; chỉ VET ghi nhận. */
 export default function AlertListPage() {

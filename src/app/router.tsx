@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { createBrowserRouter, Navigate, Outlet, useParams, useRouteError } from "react-router-dom";
+import { tr } from "@/shared/i18n/tr";
 import AuditLogPage from "@/features/dashboard/pages/AuditLogPage";
 import AccountListPage from "@/features/accounts/pages/AccountListPage";
 import StaffDirectoryPage from "@/features/master-data/pages/StaffDirectoryPage";
@@ -73,10 +74,10 @@ function RouteErrorBoundary() {
   return (
     <div style={{ padding: "4rem 1.5rem", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
       <h2 style={{ fontSize: "var(--fs-kpi)", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
-        Unexpected Display Conflict
+        {tr("Unexpected Display Conflict")}
       </h2>
       <p style={{ color: "var(--muted)", maxWidth: 520, margin: 0, fontSize: "var(--fs-body)", lineHeight: 1.6 }}>
-        The browser encountered a DOM reconciliation conflict (often caused by auto-translation extensions). Please reload or navigate back to the dashboard.
+        {tr("The browser encountered a DOM reconciliation conflict (often caused by auto-translation extensions). Please reload or navigate back to the dashboard.")}
       </p>
       <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.5rem" }}>
         <button
@@ -92,7 +93,7 @@ function RouteErrorBoundary() {
             fontWeight: 600,
           }}
         >
-          Reload Page
+          {tr("Reload Page")}
         </button>
         <a
           href="/herd"
@@ -106,7 +107,7 @@ function RouteErrorBoundary() {
             fontWeight: 600,
           }}
         >
-          Back to Herd Health
+          {tr("Back to Herd Health")}
         </a>
       </div>
     </div>

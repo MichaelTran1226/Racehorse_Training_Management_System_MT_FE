@@ -15,7 +15,7 @@ import { messageFor } from "@/shared/lib/messages";
 import { passwordError } from "@/shared/lib/password";
 import { changePassword } from "../api";
 import styles from "./ProfilePages.module.css";
-
+
 import { tr } from "@/shared/i18n/tr";
 type Errors = Partial<Record<"current" | "next" | "confirm", string>>;
 

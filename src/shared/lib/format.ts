@@ -1,12 +1,22 @@
+import { isVietnamese } from "@/shared/i18n/tr";
+
 // Một kiểu ngày giờ cho toàn app: "13 Oct 2026", "16:02", "13 Oct 2026, 16:02".
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const MONTHS = [
+const DAYS_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const DAYS_VI = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+
+const MONTHS_SHORT_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTHS_SHORT_VI = ["Thg 1", "Thg 2", "Thg 3", "Thg 4", "Thg 5", "Thg 6", "Thg 7", "Thg 8", "Thg 9", "Thg 10", "Thg 11", "Thg 12"];
+
+const MONTHS_EN = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
+];
+const MONTHS_VI = [
+  "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
+  "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12",
 ];
 
 function toDate(value: string | number | Date): Date {
@@ -16,14 +26,20 @@ function toDate(value: string | number | Date): Date {
 export function formatDate(value: string | number | Date): string {
   const d = toDate(value);
   if (Number.isNaN(d.getTime())) return "—";
-  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+  if (isVietnamese()) {
+    return `${d.getDate()} ${MONTHS_SHORT_VI[d.getMonth()]} ${d.getFullYear()}`;
+  }
+  return `${d.getDate()} ${MONTHS_SHORT_EN[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 // "13 Oct" — ngày trong năm hiện tại, dùng ở chỗ hẹp.
 export function formatShortDate(value: string | number | Date): string {
   const d = toDate(value);
   if (Number.isNaN(d.getTime())) return "—";
-  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`;
+  if (isVietnamese()) {
+    return `${d.getDate()} ${MONTHS_SHORT_VI[d.getMonth()]}`;
+  }
+  return `${d.getDate()} ${MONTHS_SHORT_EN[d.getMonth()]}`;
 }
 
 export function formatTime(value: string | number | Date): string {
@@ -35,10 +51,13 @@ export function formatDateTime(value: string | number | Date): string {
   return `${formatDate(value)}, ${formatTime(value)}`;
 }
 
-// "Saturday, 19 September 2026"
+// "Saturday, 19 September 2026" / "Thứ Bảy, 19 Tháng 9, 2026"
 export function formatLongDate(value: string | number | Date): string {
   const d = toDate(value);
-  return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  if (isVietnamese()) {
+    return `${DAYS_VI[d.getDay()]}, ${d.getDate()} ${MONTHS_VI[d.getMonth()]}, ${d.getFullYear()}`;
+  }
+  return `${DAYS_EN[d.getDay()]}, ${d.getDate()} ${MONTHS_EN[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 // 47000 => "00:47"

@@ -21,7 +21,7 @@ import { HorseAnatomyGraphic } from "../components/HorseAnatomyGraphic";
 import type { HorseMedicalProfile, ObservationNote } from "../types";
 import styles from "./MedicalRecordPage.module.css";
 import { formatDate, formatDateTime } from "@/shared/lib/format";
-
+
 import { tr } from "@/shared/i18n/tr";
 const TABS = [
   { id: "overview", label: "Overview" },
@@ -135,7 +135,7 @@ export default function MedicalRecordPage() {
             </div>
             <div className={styles.horseMeta}>
               <span className={styles.metaItem}>
-                <Icon name="pin" size={14} /> Microchip RFID: <strong>{horse.microchipRfid}</strong>
+                <Icon name="pin" size={14} /> {tr("Microchip RFID:")} <strong>{horse.microchipRfid}</strong>
               </span>
               <span className={styles.metaItem}>
                 <Icon name="horse" size={14} /> {tr("Breed:")}{" "}<strong>{horse.breed}</strong>
@@ -182,7 +182,7 @@ export default function MedicalRecordPage() {
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <Icon name="alert" size={20} />
               <div>
-                <strong>Training Lock in effect ({horse.activeLock.lockCode})</strong>
+                <strong>{tr("Training Lock in effect ({{code}})", { code: horse.activeLock.lockCode })}</strong>
                 <div>
                   {tr("Reason:")}{" "}{horse.activeLock.lockReason} {tr("· Placed by:")}{" "}{horse.activeLock.lockedBy} (
                   {formatDate(horse.activeLock.lockedAt)})
@@ -211,13 +211,13 @@ export default function MedicalRecordPage() {
               </h2>
               <div style={{ fontSize: "var(--fs-body)", display: "flex", flexDirection: "column", gap: 10 }}>
                 <div>
-                  Allowed activity level:{" "}
+                  {tr("Allowed activity level:")}{" "}
                   <Badge tone="brand">
                     {overview.allowedActivity || tr("Normal")}
                   </Badge>
                 </div>
                 <div>
-                  Special care instructions:
+                  {tr("Special care instructions:")}
                   {overview.careInstructions.length === 0 ? (
                     <div style={{ color: "var(--muted)", marginTop: 4 }}>{tr("No special directives.")}</div>
                   ) : (
@@ -260,8 +260,8 @@ export default function MedicalRecordPage() {
                             <td><strong>{m.medicationName}</strong></td>
                             <td>{m.dosage} {m.unit}</td>
                             <td>{m.route}</td>
-                            <td>{m.frequencyPerDay} times/day</td>
-                            <td>{m.daysCount} days</td>
+                            <td>{m.frequencyPerDay} {tr("times/day")}</td>
+                            <td>{m.daysCount} {tr("days")}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -447,7 +447,7 @@ export default function MedicalRecordPage() {
                 action={
                   isVet ? (
                     <Button tone="primary" onClick={() => navigate(`/medical/horses/${horse.id}/injuries`)}>
-                      Open 2D Canvas to Pin Lesion
+                      {tr("Open 2D Canvas to Pin Lesion")}
                     </Button>
                   ) : undefined
                 }
@@ -676,7 +676,7 @@ export default function MedicalRecordPage() {
               reviewDate: dto.reviewDate,
               unlockConditions: dto.unlockConditions,
             });
-            toast.show("Training lock placed successfully", "ok");
+            toast.show(tr("Training lock placed successfully"), "ok");
             await loadData();
           }}
           onLiftLock={async (dto) => {
@@ -687,7 +687,9 @@ export default function MedicalRecordPage() {
               horseId: horse.id,
             });
             toast.show(
-              `Training lock lifted successfully. Status restored to ${dto.restoreStatus === "FIT" ? "Fit for Training" : "Under Observation"}`,
+              tr("Training lock lifted successfully. Status restored to {{status}}", {
+                status: dto.restoreStatus === "FIT" ? tr("Fit for Training") : tr("Under Observation"),
+              }),
               "ok",
             );
             await loadData();
@@ -699,7 +701,7 @@ export default function MedicalRecordPage() {
               reason: dto.reason,
               horseId: horse.id,
             });
-            toast.show(`Training lock review date extended to ${dto.newReviewDate}`, "ok");
+            toast.show(tr("Training lock review date extended to {{date}}", { date: dto.newReviewDate }), "ok");
             await loadData();
           }}
         />

@@ -6,7 +6,7 @@ import { useQueryParams } from "@/shared/lib/hooks";
 import { verifyEmail } from "../api";
 import { signupFlow } from "../flow";
 import { OtpVerifyForm } from "../components/OtpVerifyForm";
-
+
 import { tr } from "@/shared/i18n/tr";
 // Bước 2 của đăng ký: nhập mã OTP gửi về email. Đúng mã => yêu cầu chuyển tới Club Manager.
 export default function VerifyEmailPage() {

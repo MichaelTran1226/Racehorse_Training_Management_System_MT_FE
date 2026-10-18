@@ -8,7 +8,7 @@ import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
 import { messageFor } from "@/shared/lib/messages";
 import { formatDate } from "@/shared/lib/format";
-
+
 import { tr } from "@/shared/i18n/tr";
 const APPLIED_STATUS_OPTIONS = [
   { value: "INJURED", label: "Injured" },
@@ -205,7 +205,7 @@ export function TrainingLockModal({
                 <span>{tr("⚠️ Clinical Order Impact Assessment")}</span>
               </div>
               <div style={{ color: "var(--text)", lineHeight: 1.5 }}>
-                • <strong>{tr("Health Status:")}</strong> {tr("Transitions horse to")}{" "}<strong>{appliedStatus}</strong> immediately.<br/>
+                • <strong>{tr("Health Status:")}</strong> {tr("Transitions horse to")}{" "}<strong>{appliedStatus}</strong> {tr("immediately.")}<br/>
                 • <strong>{tr("Training Impact:")}</strong> {tr("Automatically")}{" "}<strong>{tr("BLOCKS")}</strong> {tr("all upcoming high-intensity workouts.")}<br/>
                 • <strong>{tr("Racing:")}</strong> {tr("Suspends pending race nominations during the medical hold.")}<br/>
                 • <strong>{tr("Notifications:")}</strong> {tr("Urgent alerts dispatched to Head Trainer, Club Manager, Groom & Owner.")}
@@ -242,14 +242,14 @@ export function TrainingLockModal({
             </Field>
 
             <Field
-              label={tr(`Lock Reason * (${reason.trim().length}/500)`)}
-              hint={reason.trim().length > 0 && reason.trim().length < 10 ? "Min 10 characters required (currently " + reason.trim().length + ")" : tr("Min 10, max 500 characters")}
+              label={tr("Lock Reason * ({{count}}/500)", { count: reason.trim().length })}
+              hint={reason.trim().length > 0 && reason.trim().length < 10 ? tr("Min 10 characters required (currently {{count}})", { count: reason.trim().length }) : tr("Min 10, max 500 characters")}
             >
               <Textarea
                 rows={3}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="e.g., Superficial digital flexor tendon strain post-exercise, suspected micro-tear..."
+                placeholder={tr("e.g., Superficial digital flexor tendon strain post-exercise, suspected micro-tear...")}
                 required
               />
             </Field>
@@ -258,7 +258,7 @@ export function TrainingLockModal({
               <Input
                 value={unlockConditions}
                 onChange={(e) => setUnlockConditions(e.target.value)}
-                placeholder="e.g., Zero lameness upon palpation and flexion, ultrasound clearance..."
+                placeholder={tr("e.g., Zero lameness upon palpation and flexion, ultrasound clearance...")}
               />
             </Field>
           </>
@@ -275,7 +275,7 @@ export function TrainingLockModal({
             </Field>
 
             <Field
-              label={tr(`Reason for Lifting Lock * (${reason.trim().length}/500)`)}
+              label={tr("Reason for Lifting Lock * ({{count}}/500)", { count: reason.trim().length })}
               hint={reason.trim().length > 0 && reason.trim().length < 10 ? tr("Min 10 characters required") : tr("Veterinary evaluation notes prior to releasing horse")}
             >
               <Textarea
@@ -309,7 +309,7 @@ export function TrainingLockModal({
             </Field>
 
             <Field
-              label={tr(`Reason for Extension * (${reason.trim().length}/500)`)}
+              label={tr("Reason for Extension * ({{count}}/500)", { count: reason.trim().length })}
               hint={reason.trim().length > 0 && reason.trim().length < 10 ? tr("Min 10 characters required") : tr("State clinical reasons for extending rehabilitation")}
             >
               <Textarea

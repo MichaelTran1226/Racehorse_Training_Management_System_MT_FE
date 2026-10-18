@@ -7,7 +7,7 @@ import {
   TrainerDashboard,
   VetDashboard,
 } from "../components/RoleDashboards";
-
+
 import { tr } from "@/shared/i18n/tr";
 const DESCRIPTION: Record<string, string> = {
   CLUB_MANAGER: "Club overview: horses, training, medical safety and stall capacity.",

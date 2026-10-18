@@ -4,7 +4,7 @@ import { cx } from "@/shared/lib/cx";
 import type { VitalSigns } from "../types";
 import styles from "./VitalsDisplay.module.css";
 import { formatDate, formatDateTime } from "@/shared/lib/format";
-
+
 import { tr } from "@/shared/i18n/tr";
 interface VitalsDisplayProps {
   vitals?: VitalSigns;
@@ -41,7 +41,7 @@ export function VitalsDisplay({ vitals, history, recordedAt }: VitalsDisplayProp
       {recordedAt && (
         <div style={{ fontSize: "var(--fs-caption)", color: "var(--muted)", display: "flex", alignItems: "center", gap: 6 }}>
           <Icon name="clock" size={14} />
-          Recorded at: {formatDateTime(recordedAt)}
+          {tr("Recorded at:")} {formatDateTime(recordedAt)}
         </div>
       )}
 
@@ -71,7 +71,7 @@ export function VitalsDisplay({ vitals, history, recordedAt }: VitalsDisplayProp
           </div>
           <div className={styles.valueRow}>
             <span className={styles.value}>{vitals.restingHeartRate ?? "—"}</span>
-            <span className={styles.unit}>bpm</span>
+            <span className={styles.unit}>{tr("bpm")}</span>
           </div>
           <span className={styles.reference}>{tr("Reference: 28 – 44 bpm")}</span>
         </div>
@@ -86,7 +86,7 @@ export function VitalsDisplay({ vitals, history, recordedAt }: VitalsDisplayProp
           </div>
           <div className={styles.valueRow}>
             <span className={styles.value}>{vitals.respiratoryRate ?? "—"}</span>
-            <span className={styles.unit}>breaths/min</span>
+            <span className={styles.unit}>{tr("breaths/min")}</span>
           </div>
           <span className={styles.reference}>{tr("Reference: 8 – 16 breaths/min")}</span>
         </div>

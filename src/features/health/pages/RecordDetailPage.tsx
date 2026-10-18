@@ -28,7 +28,7 @@ import { VitalsDisplay } from "../components/VitalsDisplay";
 import type { MedicalRecord, PrescriptionItem } from "../types";
 import styles from "./MedicalRecordPage.module.css";
 import { formatDate, formatDateTime } from "@/shared/lib/format";
-
+
 import { tr } from "@/shared/i18n/tr";
 const RECORD_TABS = [
   { id: "diagnosis", label: "Exam & Diagnosis" },
@@ -157,7 +157,7 @@ export default function RecordDetailPage() {
                 </Link>
               </span>
               <span className={styles.metaItem}>
-                <Icon name="calendar" size={14} /> Exam Date:{" "}
+                <Icon name="calendar" size={14} /> {tr("Exam Date:")}{" "}
                 <strong>{formatDate(record.examinationDate)}</strong>
               </span>
               <span className={styles.metaItem}>
@@ -350,16 +350,22 @@ export default function RecordDetailPage() {
                     </div>
 
                     <div style={{ fontSize: "var(--fs-body)" }}>
-                      {tr("Activity:")}{" "}<Badge tone="brand">{phase.allowedActivity}</Badge> · Objective: {phase.target}
+                      {tr("Activity:")}{" "}<Badge tone="brand">{phase.allowedActivity}</Badge> · {tr("Objective:")} {phase.target}
                     </div>
 
-                    {phase.careInstructions.length > 0 && (
+                    {phase.careInstructions && phase.careInstructions.length > 0 && (
                       <div style={{ fontSize: "var(--fs-body)", marginTop: 4 }}>
                         <span style={{ color: "var(--muted)" }}>{tr("Care Directives:")}</span>
                         <ul style={{ margin: "4px 0 0 16px", padding: 0 }}>
-                          {phase.careInstructions.map((c, i) => (
+                          {phase.careInstructions.map((c: any, i: number) => (
                             <li key={i}>
-                              <strong>{c.activity}</strong> ({c.frequency})
+                              {typeof c === "string" ? (
+                                <strong>{c}</strong>
+                              ) : (
+                                <>
+                                  <strong>{c.activity}</strong> {c.frequency ? `(${c.frequency})` : ""}
+                                </>
+                              )}
                             </li>
                           ))}
                         </ul>
@@ -411,11 +417,11 @@ export default function RecordDetailPage() {
                     {record.prescriptions.map((rx) => (
                       <tr key={rx.id}>
                         <td><strong>{rx.medicationName}</strong></td>
-                        <td>{rx.dosage} {rx.unit}</td>
-                        <td>{rx.route}</td>
-                        <td>{rx.frequencyPerDay} times/day</td>
-                        <td>{rx.daysCount} days</td>
-                        <td>{rx.dosage * rx.frequencyPerDay * rx.daysCount} {rx.unit}</td>
+                        <td>{rx.dosage} {tr(rx.unit)}</td>
+                        <td>{tr(rx.route)}</td>
+                        <td>{rx.frequencyPerDay} {tr("times/day")}</td>
+                        <td>{rx.daysCount} {tr("days")}</td>
+                        <td>{Number(rx.dosage || 0) * (rx.frequencyPerDay || 0) * (rx.daysCount || 0)} {tr(rx.unit)}</td>
                         <td>
                           {rx.withdrawalDays ? tr(`${rx.withdrawalDays} days`) : "—"}
                         </td>
@@ -484,14 +490,14 @@ export default function RecordDetailPage() {
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontWeight: 600 }}>Follow-up Exam #{idx + 1}</span>
+                      <span style={{ fontWeight: 600 }}>{tr("Follow-up Exam #{{num}}", { num: idx + 1 })}</span>
                       <span style={{ fontSize: "var(--fs-caption)", color: "var(--muted)" }}>
                         {formatDateTime(fu.followUpDate)}
                       </span>
                     </div>
 
                     <div style={{ fontSize: "var(--fs-body)", color: "var(--text-2)" }}>
-                      {tr("Temperature:")}{" "}<strong>{fu.temperature}°C</strong> {tr("· Heart Rate:")}{" "}<strong>{fu.restingHeartRate} bpm</strong> {tr("· Respiratory Rate:")}{" "}<strong>{fu.respiratoryRate} breaths/min</strong>
+                      {tr("Temperature:")}{" "}<strong>{fu.temperature}°C</strong> {tr("· Heart Rate:")}{" "}<strong>{fu.restingHeartRate} {tr("bpm")}</strong> {tr("· Respiratory Rate:")}{" "}<strong>{fu.respiratoryRate} {tr("breaths/min")}</strong>
                     </div>
 
                     <div style={{ fontSize: "var(--fs-body)" }}>
@@ -520,7 +526,7 @@ export default function RecordDetailPage() {
           onClose={() => setShowFinalizeModal(false)}
           onFinalize={async (input) => {
             await finalizeRecord(record.id, input);
-            toast.show("Medical record finalized and transitioned to In Treatment status.", "ok");
+            toast.show(tr("Medical record finalized and transitioned to In Treatment status."), "ok");
             await fetchDetail();
           }}
         />
@@ -531,7 +537,7 @@ export default function RecordDetailPage() {
           onClose={() => setShowPhaseModal(false)}
           onSubmit={async (input) => {
             await addTreatmentPhase(record.id, input);
-            toast.show("Treatment phase added successfully.", "ok");
+            toast.show(tr("Treatment phase added successfully."), "ok");
             await fetchDetail();
           }}
         />
@@ -542,7 +548,7 @@ export default function RecordDetailPage() {
           onClose={() => setShowPrescriptionModal(false)}
           onSubmit={async (input) => {
             await addPrescription(record.id, input);
-            toast.show("Prescription added successfully.", "ok");
+            toast.show(tr("Prescription added successfully."), "ok");
             await fetchDetail();
           }}
         />
@@ -554,7 +560,7 @@ export default function RecordDetailPage() {
           onClose={() => setStoppingPrescription(null)}
           onSubmit={async (input) => {
             await stopPrescription(record.id, stoppingPrescription.id!, input);
-            toast.show("Medication discontinued successfully.", "ok");
+            toast.show(tr("Medication discontinued successfully."), "ok");
             await fetchDetail();
           }}
         />
@@ -565,7 +571,7 @@ export default function RecordDetailPage() {
           onClose={() => setShowFollowUpModal(false)}
           onSubmit={async (input) => {
             await addFollowUp(record.id, input);
-            toast.show("Follow-up examination recorded successfully.", "ok");
+            toast.show(tr("Follow-up examination recorded successfully."), "ok");
             await fetchDetail();
           }}
         />
@@ -578,12 +584,12 @@ export default function RecordDetailPage() {
           onClose={() => setShowCloseModal(false)}
           onConfirmClose={async (conclusion, treatmentResult) => {
             await closeRecord(record.id, { conclusion, treatmentResult });
-            toast.show("Treatment concluded and record closed successfully.", "ok");
+            toast.show(tr("Treatment concluded and record closed successfully."), "ok");
             await fetchDetail();
           }}
           onConfirmReopen={async (reopenReason) => {
             await reopenRecord(record.id, { reopenReason });
-            toast.show("Medical record reopened successfully.", "ok");
+            toast.show(tr("Medical record reopened successfully."), "ok");
             await fetchDetail();
           }}
         />

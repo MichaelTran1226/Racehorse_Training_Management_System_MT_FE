@@ -8,7 +8,7 @@ import { Button } from "@/shared/components/ui/Button";
 import { Icon } from "@/shared/components/ui/Icon";
 import { Modal } from "@/shared/components/ui/Modal";
 import type { CareInstructionItem, TreatmentPhaseInput } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 const ACTIVITY_OPTIONS = [
   { value: "Strict stall rest", label: "Strict stall rest" },
@@ -53,11 +53,11 @@ export function AddTreatmentPhaseModal({ onClose, onSubmit }: AddTreatmentPhaseM
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!phaseName.trim()) {
-      setError("Please enter treatment phase name.");
+      setError(tr("Please enter treatment phase name."));
       return;
     }
     if (!target.trim()) {
-      setError("Please enter phase objective.");
+      setError(tr("Please enter phase objective."));
       return;
     }
 
@@ -70,11 +70,13 @@ export function AddTreatmentPhaseModal({ onClose, onSubmit }: AddTreatmentPhaseM
         endDate,
         target: target.trim(),
         allowedActivity,
-        careInstructions: instructions.filter((i) => i.activity.trim() !== ""),
+        careInstructions: instructions
+          .filter((i) => i.activity.trim() !== "")
+          .map((i) => (i.frequency && i.frequency.trim() ? `${i.activity.trim()} (${i.frequency.trim()})` : i.activity.trim())) as any,
       });
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to save treatment phase.");
+      setError(err instanceof Error ? err.message : tr("Failed to save treatment phase."));
     } finally {
       setBusy(false);
     }
@@ -89,10 +91,10 @@ export function AddTreatmentPhaseModal({ onClose, onSubmit }: AddTreatmentPhaseM
       foot={
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, width: "100%" }}>
           <Button tone="ghost" onClick={onClose} disabled={busy}>
-            Cancel
+            {tr("Cancel")}
           </Button>
           <Button tone="primary" onClick={handleSubmit} disabled={busy}>
-            Save Phase
+            {tr("Save Phase")}
           </Button>
         </div>
       }
@@ -124,7 +126,7 @@ export function AddTreatmentPhaseModal({ onClose, onSubmit }: AddTreatmentPhaseM
 
         <Field label={tr("Allowed Activity Level *")}>
           <Select
-            options={ACTIVITY_OPTIONS}
+            options={ACTIVITY_OPTIONS.map((opt) => ({ value: opt.value, label: tr(opt.label) }))}
             value={allowedActivity}
             onChange={(e) => setAllowedActivity(e.target.value)}
           />
@@ -135,7 +137,7 @@ export function AddTreatmentPhaseModal({ onClose, onSubmit }: AddTreatmentPhaseM
             rows={2}
             value={target}
             onChange={(e) => setTarget(e.target.value)}
-            placeholder="Reduce fetlock heat, zero lameness upon walking, normal flexion..."
+            placeholder={tr("Reduce fetlock heat, zero lameness upon walking, normal flexion...")}
             required
           />
         </Field>

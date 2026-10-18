@@ -8,7 +8,7 @@ import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
 import type { PrescriptionInput } from "../types";
 import { formatDate } from "@/shared/lib/format";
-
+
 import { tr } from "@/shared/i18n/tr";
 const UNIT_OPTIONS = [
   { value: "g", label: "g" },
@@ -66,6 +66,9 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
     setBusy(true);
     setError(null);
     try {
+      const calculatedEndDate = !isNaN(endD.getTime())
+        ? endD.toISOString().split("T")[0]
+        : startDate;
       await onSubmit({
         medicationName: medicationName.trim(),
         dosage: Number(dosage),
@@ -73,6 +76,7 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
         route,
         frequencyPerDay: Number(frequencyPerDay),
         startDate,
+        endDate: calculatedEndDate,
         daysCount: Number(daysCount),
         withdrawalDays: Number(withdrawalDays),
         notes: notes.trim() || undefined,
@@ -176,7 +180,7 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
           }}
         >
           <span>
-            {tr("Total medication required:")}{" "}<strong>{totalAmount} {unit}</strong>
+            {tr("Total medication required:")}{" "}<strong>{totalAmount} {tr(unit)}</strong>
           </span>
           <span>
             {tr("Through:")}{" "}<strong>{formatDate(endD)}</strong>
@@ -185,7 +189,7 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
 
         <Field
           label={tr("Pre-Race Withdrawal Period (days)")}
-          hint="Anti-doping clearance protocol; triggers alerts upon race registration if violated."
+          hint={tr("Anti-doping clearance protocol; triggers alerts upon race registration if violated.")}
         >
           <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 10, alignItems: "center" }}>
             <Input

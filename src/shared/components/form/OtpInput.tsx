@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import type { ClipboardEvent, KeyboardEvent } from "react";
 import { cx } from "@/shared/lib/cx";
 import { useFieldControl } from "./Field";
+import { tr } from "@/shared/i18n/tr";
 import styles from "./OtpInput.module.css";
 
 interface OtpInputProps {
@@ -77,7 +78,7 @@ export function OtpInput({ value, onChange, length = 6, invalid, disabled, autoF
   }
 
   return (
-    <div role="group" aria-label="6-digit code" className={styles.row} aria-describedby={field?.describedBy}>
+    <div role="group" aria-label={tr("6-digit code")} className={styles.row} aria-describedby={field?.describedBy}>
       {digits.map((digit, i) => (
         <input
           key={i}

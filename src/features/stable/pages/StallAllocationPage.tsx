@@ -1,7 +1,7 @@
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { Card } from "@/shared/components/ui/Card";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
-
+
 import { tr } from "@/shared/i18n/tr";
 export default function StallAllocationPage() {
   return (

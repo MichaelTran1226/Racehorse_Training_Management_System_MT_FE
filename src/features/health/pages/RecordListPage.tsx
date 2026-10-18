@@ -10,7 +10,7 @@ import { listRecords } from "../api";
 import type { MedicalRecord } from "../types";
 import styles from "./MedicalRecordPage.module.css";
 import { capitalize, formatDate } from "@/shared/lib/format";
-
+
 import { tr } from "@/shared/i18n/tr";
 const STATUS_OPTIONS = [
   { value: "", label: "All Statuses" },
@@ -109,7 +109,7 @@ export default function RecordListPage() {
       <div className={styles.sectionCard}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: "var(--fs-body)", fontWeight: 600, color: "var(--muted)" }}>
-            Showing {records.length} of {total} records
+            {tr("Showing {{count}} of {{total}} records", { count: records.length, total })}
           </span>
         </div>
 

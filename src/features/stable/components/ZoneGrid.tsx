@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Icon } from "@/shared/components/ui/Icon";
 import type { Stall, Zone } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 const BASE: CSSProperties = {
   width: "100%",
@@ -122,7 +122,7 @@ export function ZoneGrid({
       {unplaced.length > 0 && (
         <>
           <p style={{ margin: "16px 0 8px", fontSize: "var(--fs-body)", color: "var(--text-muted)" }}>
-            Stalls without a grid position (set Row / Column in the stall catalogue):
+            {tr("Stalls without a grid position (set Row / Column in the stall catalogue):")}
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 10 }}>
             {unplaced.map((s) => (

@@ -18,7 +18,7 @@ import { useAuth } from "@/shared/components/layout/AuthProvider";
 import { useToast } from "@/shared/components/ui/Toast";
 import { healthApi } from "../api";
 import type { PreventiveCareItem, PreventiveStatus } from "../types";
-
+
 import { tr } from "@/shared/i18n/tr";
 const CATEGORY_LABELS: Record<string, string> = {
   ALL: "All Categories",
@@ -378,7 +378,7 @@ export default function CareSchedulePage() {
             <Field
               label={tr("Next Due Date")}
               required
-              hint="Auto-calculated from protocol interval; can be manually adjusted"
+              hint={tr("Auto-calculated from protocol interval; can be manually adjusted")}
             >
               <Input
                 type="date"

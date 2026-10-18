@@ -6,7 +6,7 @@ import { useQueryParams } from "@/shared/lib/hooks";
 import { verifyResetOtp } from "../api";
 import { resetFlow } from "../flow";
 import { OtpVerifyForm } from "../components/OtpVerifyForm";
-
+
 import { tr } from "@/shared/i18n/tr";
 // Bước 2 quên mật khẩu (design 1.5, đã đổi từ "link" sang "mã OTP"): nhập mã nhận được qua email.
 export default function ResetOtpPage() {
