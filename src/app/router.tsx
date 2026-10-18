@@ -50,6 +50,8 @@ import {
   SessionResultPage,
   FitnessChartPage,
   MyTrainingPage,
+  RaceEntryPage,
+  RaceResultsPage,
 } from "./lazyPages";
 import { AppShell } from "@/shared/components/layout/AppShell";
 import { Providers } from "@/shared/components/layout/Providers";
@@ -240,6 +242,11 @@ export const router = createBrowserRouter([
           { path: "/stalls", element: <StableMapPage /> },
           { path: "/catalogs/stalls", element: <StallCatalogPage /> },
           { path: "/catalogs/breeds", element: <HorseCatalogPage /> },
+
+          // ---- Phân hệ Thi đấu & Giải đua (Flow 5: SC-5.01 -> SC-5.04)
+          { path: "/races", element: <RaceEntryPage /> },
+          { path: "/races/results", element: <RaceResultsPage /> },
+          { path: "/racing", element: <RaceEntryPage /> },
 
           { path: "*", element: <ComingSoonRoute /> },
         ],
