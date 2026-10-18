@@ -21,13 +21,15 @@ interface DataTableProps<T> {
   loading?: boolean;
   empty?: ReactNode;
   caption: string; // mô tả bảng cho trình đọc màn hình
+  selectedKey?: string | null;
+  onRowClick?: (row: T) => void;
 }
 
 const SKELETON_ROWS = 5;
 
 // Bảng dữ liệu dùng chung. Tự lo 3 trạng thái: đang tải (skeleton) · rỗng · có dữ liệu.
 // (Trạng thái lỗi do trang quyết định vì cần nút "Try again" riêng.)
-export function DataTable<T>({ columns, rows, rowKey, loading, empty, caption }: DataTableProps<T>) {
+export function DataTable<T>({ columns, rows, rowKey, loading, empty, caption, selectedKey, onRowClick }: DataTableProps<T>) {
   if (!loading && rows.length === 0) {
     return <>{empty ?? <EmptyState title={tr("Nothing to show yet.")} description={tr("New records appear here as soon as they exist.")} />}</>;
   }
@@ -61,15 +63,22 @@ export function DataTable<T>({ columns, rows, rowKey, loading, empty, caption }:
                   ))}
                 </tr>
               ))
-            : rows.map((row) => (
-                <tr key={rowKey(row)} className={styles.row}>
-                  {columns.map((c) => (
-                    <td key={c.key} className={cx(styles.td, c.align === "right" && styles.right, c.hideOnNarrow && styles.narrow)}>
-                      {c.render(row)}
-                    </td>
-                  ))}
-                </tr>
-              ))}
+            : rows.map((row) => {
+                const isSelected = selectedKey !== undefined && selectedKey !== null && rowKey(row) === selectedKey;
+                return (
+                  <tr
+                    key={rowKey(row)}
+                    className={cx(styles.row, onRowClick && styles.clickable, isSelected && styles.selected)}
+                    onClick={() => onRowClick?.(row)}
+                  >
+                    {columns.map((c) => (
+                      <td key={c.key} className={cx(styles.td, c.align === "right" && styles.right, c.hideOnNarrow && styles.narrow)}>
+                        {c.render(row)}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
         </tbody>
       </table>
     </div>

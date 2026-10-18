@@ -49,6 +49,7 @@ export default function DailyChecklistPage() {
   // Incident Modal
   const [incidentModalOpen, setIncidentModalOpen] = useState(false);
   const [incidentTargetHorseId, setIncidentTargetHorseId] = useState<string | undefined>(undefined);
+  const [shiftsLoaded, setShiftsLoaded] = useState(!isGroom);
 
   // Auto-detect and preselect Groom's assigned Zone from shift roster
   useEffect(() => {
@@ -59,7 +60,12 @@ export default function DailyChecklistPage() {
             setSelectedZoneId(shifts[0].zone.id);
           }
         })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => {
+          setShiftsLoaded(true);
+        });
+    } else {
+      setShiftsLoaded(true);
     }
   }, [isGroom, selectedDate]);
 
@@ -72,9 +78,13 @@ export default function DailyChecklistPage() {
           date: selectedDate,
           zoneId: selectedZoneId !== 'ALL' ? selectedZoneId : undefined,
           isCompleted:
-            statusFilter === 'ALL' ? undefined : statusFilter === 'COMPLETED',
-          onlyMyTasks: onlyMyTasks ? true : undefined,
-          onlyMine: onlyMyTasks ? true : undefined,
+            statusFilter === 'ALL'
+              ? undefined
+              : statusFilter === 'COMPLETED'
+              ? true
+              : false,
+          onlyMyTasks: onlyMyTasks ? true : false,
+          onlyMine: onlyMyTasks ? true : false,
         }),
         getZones().catch(() => []),
       ]);
@@ -89,8 +99,9 @@ export default function DailyChecklistPage() {
   }
 
   useEffect(() => {
+    if (!shiftsLoaded) return;
     loadData();
-  }, [selectedDate, selectedZoneId, statusFilter, onlyMyTasks]);
+  }, [selectedDate, selectedZoneId, statusFilter, onlyMyTasks, shiftsLoaded]);
 
   const handleGenerate = async () => {
     if (generating) return;

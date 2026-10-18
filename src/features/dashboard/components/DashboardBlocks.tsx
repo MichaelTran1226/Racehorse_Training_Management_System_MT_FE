@@ -3,7 +3,7 @@ import { Card } from "@/shared/components/ui/Card";
 import { Button } from "@/shared/components/ui/Button";
 import { messageFor } from "@/shared/lib/messages";
 
-import { tr } from "@/shared/i18n/tr";
+import { tr, trNode } from "@/shared/i18n/tr";
 export interface Loaded<T> {
   data: T | null;
   error: string;
@@ -75,7 +75,7 @@ export function Block<T>({
     );
   else {
     const emptyText = empty?.(state.data);
-    body = emptyText ? <p style={{ margin: 0, color: "var(--text-muted)" }}>{emptyText}</p> : children(state.data);
+    body = emptyText ? <p style={{ margin: 0, color: "var(--text-muted)" }}>{trNode(emptyText)}</p> : children(state.data);
   }
   return (
     <Card title={title} subtitle={subtitle} action={action}>

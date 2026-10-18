@@ -11,6 +11,7 @@ import { tr } from '@/shared/i18n/tr';
 import { messageFor } from '@/shared/lib/messages';
 import { inventoryApi } from '../api/inventoryApi';
 import type { RestockRequestItem } from '../types/inventory';
+import { formatSupplyUnit } from '@/features/master-data/types/supplies';
 
 interface RestockReviewModalProps {
   request: RestockRequestItem;
@@ -104,7 +105,7 @@ export function RestockReviewModal({ request, onClose, onSaved }: RestockReviewM
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ color: 'var(--muted)' }}>{tr('Requested Quantity')}:</span>
             <Badge tone="info">
-              {request.requestedQuantity} {request.supply.unit}
+              {request.requestedQuantity} {formatSupplyUnit(request.supply.unit)}
             </Badge>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -178,7 +179,7 @@ export function RestockReviewModal({ request, onClose, onSaved }: RestockReviewM
 
         {action === 'APPROVE' ? (
           <Field
-            label={`${tr('Approved Quantity')} (${request.supply.unit})`}
+            label={`${tr('Approved Quantity')} (${formatSupplyUnit(request.supply.unit)})`}
             required
             hint={tr('You can modify the approved quantity based on club budget or warehouse supply.')}
           >

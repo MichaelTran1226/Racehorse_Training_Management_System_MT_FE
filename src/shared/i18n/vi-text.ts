@@ -3287,4 +3287,21 @@ export const VI_TEXT: Record<string, string> = {
   "OVERDUE": "Quá hạn",
   "e.g. Grand Autumn Cup 2026": "Ví dụ: Cúp Mùa Thu 2026",
   "e.g. Saigon Racecourse - Track A": "Ví dụ: Trường đua Sài Gòn - Đường chạy A",
+
+  // Supply units (uppercase enums & standard)
+  "PACKET": "gói",
+  "BOTTLE": "chai",
+  "VIAL": "lọ",
+  "PILL": "viên",
+  "PIECE": "cái",
+  "SET": "bộ",
+  "LITER": "lít",
+  "KG": "kg",
+  "G": "g",
+  "ML": "ml",
+  "unit": "đơn vị",
+
+  // Vet & Groom dashboard additions
+  "Review {{date}}": "Xem xét {{date}}",
+  "(overdue)": "(quá hạn)",
 };

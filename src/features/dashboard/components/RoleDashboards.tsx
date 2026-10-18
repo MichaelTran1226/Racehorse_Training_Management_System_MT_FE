@@ -316,8 +316,8 @@ export function VetDashboard() {
         <Block
           title={tr("Abnormal signs to review")}
           state={alerts}
-          action={<Link to="/alerts">All alerts →</Link>}
-          empty={() => (openAlerts.length === 0 ? "No alert is waiting for you." : null)}
+          action={<Link to="/alerts">{tr("All alerts →")}</Link>}
+          empty={() => (openAlerts.length === 0 ? tr("No alert is waiting for you.") : null)}
         >
           {() => (
             <div>
@@ -328,7 +328,7 @@ export function VetDashboard() {
                   sub={a.message}
                   right={
                     <Link to="/alerts">
-                      <Button size="sm">Review</Button>
+                      <Button size="sm">{tr("Review")}</Button>
                     </Link>
                   }
                 />
@@ -340,8 +340,8 @@ export function VetDashboard() {
           title={tr("Lock reviews due")}
           subtitle={tr("Review date within 3 days or passed")}
           state={board}
-          action={<Link to="/medical/locks">Training Locks →</Link>}
-          empty={() => (reviews.length === 0 ? "No lock review is due." : null)}
+          action={<Link to="/medical/locks">{tr("Training Locks →")}</Link>}
+          empty={() => (reviews.length === 0 ? tr("No lock review is due.") : null)}
         >
           {() => (
             <div>
@@ -349,10 +349,10 @@ export function VetDashboard() {
                 <Line
                   key={h.id}
                   main={h.name}
-                  sub={`Review ${formatDate(h.lock!.recheckDate!)}${new Date(h.lock!.recheckDate!) < new Date() ? " (overdue)" : ""}`}
+                  sub={`${tr("Review {{date}}", { date: formatDate(h.lock!.recheckDate!) })}${new Date(h.lock!.recheckDate!) < new Date() ? ` ${tr("(overdue)")}` : ""}`}
                   right={
                     <Link to={`/medical/horses/${h.id}`}>
-                      <Button size="sm" tone="secondary">Open</Button>
+                      <Button size="sm" tone="secondary">{tr("Open")}</Button>
                     </Link>
                   }
                 />
@@ -364,8 +364,8 @@ export function VetDashboard() {
       <Block
         title={tr("Preventive care overdue")}
         state={board}
-        action={<Link to="/vaccine">Preventive care →</Link>}
-        empty={(b) => (b.data.some((h) => h.hasOverduePreventive) ? null : "Nothing overdue.")}
+        action={<Link to="/vaccine">{tr("Preventive care →")}</Link>}
+        empty={(b) => (b.data.some((h) => h.hasOverduePreventive) ? null : tr("Nothing overdue."))}
       >
         {(b) => (
           <div>
@@ -398,8 +398,8 @@ export function GroomDashboard() {
       <Block
         title={tr("My horses")}
         state={horses}
-        action={<Link to="/stables/map">Stable map →</Link>}
-        empty={(r) => (r.items.length ? null : "You have not been assigned any horse yet.")}
+        action={<Link to="/stables/map">{tr("Stable map →")}</Link>}
+        empty={(r) => (r.items.length ? null : tr("You have not been assigned any horse yet."))}
       >
         {(r) => (
           <div>
@@ -411,7 +411,7 @@ export function GroomDashboard() {
                 right={
                   <span style={{ display: "flex", gap: 6 }}>
                     <HealthBadge status={h.status as HealthStatus} />
-                    {h.isMedicalLocked && <Badge tone="danger" icon="lock">Training Lock</Badge>}
+                    {h.isMedicalLocked && <Badge tone="danger" icon="lock">{tr("Training Lock")}</Badge>}
                   </span>
                 }
               />
