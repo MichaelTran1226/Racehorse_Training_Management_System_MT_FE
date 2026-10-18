@@ -120,6 +120,7 @@ export const vi: TranslationResources = {
     supplyTracking: "Theo dõi vật tư",
     costReport: "Báo cáo chi phí",
     operatingCosts: "Chi phí vận hành",
+    financialReports: "Báo cáo tài chính",
 
     // Roles
     role_HEAD_TRAINER: "Huấn luyện viên trưởng",

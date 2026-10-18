@@ -118,6 +118,7 @@ export const en = {
     supplyTracking: "Supply Tracking",
     costReport: "Cost Report",
     operatingCosts: "Operating Costs",
+    financialReports: "Financial Reports",
 
     // Roles
     role_HEAD_TRAINER: "Head Trainer",

@@ -45,6 +45,8 @@ import {
 import { mockNotificationsFor, updateMockNotifications } from "./notificationsData";
 import { getStoredTournaments, saveStoredTournaments } from "@/shared/mock/racingData";
 import type { Tournament, TournamentRegistration } from "@/features/racing/types";
+import { getStoredInvoices, saveStoredInvoices } from "@/shared/mock/financialData";
+import type { FinancialInvoice } from "@/features/financial/types";
 
 const OTP_CODE = "123456";
 const OTP_TTL = 10 * 60 * 1000;
@@ -445,6 +447,143 @@ const routes: Route[] = [
       tourney.updatedAt = new Date().toISOString();
       saveStoredTournaments(list);
       return tourney;
+    },
+  },
+  // ---- Flow 5: Sổ tài chính & Báo cáo Chủ ngựa (SC-5.05 & SC-5.06)
+  {
+    method: "GET",
+    pattern: /^\/invoices\/owner-summary$/,
+    handler: ({ url, db }) => {
+      const user = currentUser(db);
+      const targetOwnerId = user.role === "HORSE_OWNER" ? user.id : (url.searchParams.get("ownerId") || user.id);
+      const invoices = getStoredInvoices().filter((inv) => inv.ownerId === targetOwnerId);
+
+      let totalBoarding = 0;
+      let totalMedical = 0;
+      let totalTraining = 0;
+      let totalPrizeCredit = 0;
+      let totalNet = 0;
+
+      for (const inv of invoices) {
+        totalBoarding += Number(inv.boardingFee);
+        totalMedical += Number(inv.medicalFee);
+        totalTraining += Number(inv.trainingFee);
+        totalPrizeCredit += Number(inv.prizeCredit);
+        totalNet += Number(inv.netAmount);
+      }
+
+      return {
+        totalBoarding,
+        totalMedical,
+        totalTraining,
+        totalExpense: totalBoarding + totalMedical + totalTraining,
+        totalPrizeCredit,
+        totalNet,
+        invoiceCount: invoices.length,
+        invoices,
+      };
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/invoices$/,
+    handler: ({ url, db }) => {
+      const user = currentUser(db);
+      const ownerParam = url.searchParams.get("ownerId");
+      const targetOwnerId = user.role === "HORSE_OWNER" ? user.id : ownerParam;
+      const billingPeriod = url.searchParams.get("billingPeriod");
+      const status = url.searchParams.get("status");
+      const page = Number(url.searchParams.get("page") ?? 1);
+      const limit = Number(url.searchParams.get("limit") ?? 20);
+
+      let list = getStoredInvoices();
+      if (targetOwnerId) {
+        list = list.filter((inv) => inv.ownerId === targetOwnerId);
+      }
+      if (billingPeriod && billingPeriod !== "ALL") {
+        list = list.filter((inv) => inv.billingPeriod === billingPeriod);
+      }
+      if (status && status !== "ALL") {
+        list = list.filter((inv) => inv.status === status);
+      }
+
+      const total = list.length;
+      const skip = (page - 1) * limit;
+      const items = list.slice(skip, skip + limit);
+      return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/invoices\/([^/]+)$/,
+    handler: ({ params, db }) => {
+      const [id] = params;
+      const user = currentUser(db);
+      const inv = getStoredInvoices().find((i) => i.id === id);
+      if (!inv) throw new ApiError(404, "NOT_FOUND", "Invoice not found");
+      if (user.role === "HORSE_OWNER" && inv.ownerId !== user.id) {
+        throw new ApiError(403, "FORBIDDEN", "You can only view your own invoices");
+      }
+      return inv;
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/invoices$/,
+    handler: ({ body, db }) => {
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Only Club Manager can create invoices");
+      const list = getStoredInvoices();
+      const boardingFee = Number(body.boardingFee ?? 0);
+      const medicalFee = Number(body.medicalFee ?? 0);
+      const trainingFee = Number(body.trainingFee ?? 0);
+      const prizeCredit = Number(body.prizeCredit ?? 0);
+      const netAmount = boardingFee + medicalFee + trainingFee - prizeCredit;
+
+      const newInv: FinancialInvoice = {
+        id: `inv-${Date.now()}`,
+        horseId: String(body.horseId),
+        horse: {
+          id: String(body.horseId),
+          name: "Thunder Bolt",
+          horseCode: "HRS-001",
+          breed: "Thoroughbred",
+        },
+        ownerId: String(body.ownerId),
+        owner: {
+          id: String(body.ownerId),
+          fullName: "Ha Ly",
+          email: "ha.ly@gmail.com",
+        },
+        billingPeriod: String(body.billingPeriod ?? "2026-10"),
+        boardingFee,
+        medicalFee,
+        trainingFee,
+        prizeCredit,
+        netAmount,
+        status: (body.status as any) ?? "DRAFT",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      list.unshift(newInv);
+      saveStoredInvoices(list);
+      return newInv;
+    },
+  },
+  {
+    method: "PATCH",
+    pattern: /^\/invoices\/([^/]+)\/status$/,
+    handler: ({ params, body, db }) => {
+      const [id] = params;
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Only Club Manager can update status");
+      const list = getStoredInvoices();
+      const inv = list.find((i) => i.id === id);
+      if (!inv) throw new ApiError(404, "NOT_FOUND", "Invoice not found");
+      inv.status = body.status as any;
+      inv.updatedAt = new Date().toISOString();
+      saveStoredInvoices(list);
+      return inv;
     },
   },
   {

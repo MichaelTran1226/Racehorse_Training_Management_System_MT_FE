@@ -52,6 +52,7 @@ import {
   MyTrainingPage,
   RaceEntryPage,
   RaceResultsPage,
+  OwnerFinancialReportsPage,
 } from "./lazyPages";
 import { AppShell } from "@/shared/components/layout/AppShell";
 import { Providers } from "@/shared/components/layout/Providers";
@@ -247,6 +248,11 @@ export const router = createBrowserRouter([
           { path: "/races", element: <RaceEntryPage /> },
           { path: "/races/results", element: <RaceResultsPage /> },
           { path: "/racing", element: <RaceEntryPage /> },
+
+          // ---- Phân hệ Tài chính & Quyết toán (Flow 5: SC-5.05 -> SC-5.06)
+          { path: "/financial-reports", element: <OwnerFinancialReportsPage /> },
+          { path: "/owner/financial-reports", element: <OwnerFinancialReportsPage /> },
+          { path: "/invoices", element: <OwnerFinancialReportsPage /> },
 
           { path: "*", element: <ComingSoonRoute /> },
         ],
