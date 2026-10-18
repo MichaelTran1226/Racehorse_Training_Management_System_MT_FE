@@ -19,7 +19,7 @@ import { RestockReviewModal } from '../components/RestockReviewModal';
 import { RestockDeliverModal } from '../components/RestockDeliverModal';
 import type { RestockRequestItem, RestockStatus } from '../types/inventory';
 import type { Zone } from '../types';
-import type { SupplyCatalogItem } from '@/features/master-data/types/supplies';
+import { type SupplyCatalogItem, formatSupplyUnit } from '@/features/master-data/types/supplies';
 
 export default function RestockRequestsPage() {
   const currentUser = useCurrentUser();
@@ -148,11 +148,11 @@ export default function RestockRequestsPage() {
         render: (row) => (
           <div>
             <div style={{ fontWeight: 600 }}>
-              {row.requestedQuantity} {row.supply.unit} {tr('requested')}
+              {row.requestedQuantity} {formatSupplyUnit(row.supply.unit)} {tr('requested')}
             </div>
             {row.approvedQuantity !== null && (
               <div style={{ fontSize: '0.75rem', color: 'var(--color-ok)', fontWeight: 600 }}>
-                ✓ {row.approvedQuantity} {row.supply.unit} {tr('approved')}
+                ✓ {row.approvedQuantity} {formatSupplyUnit(row.supply.unit)} {tr('approved')}
               </div>
             )}
           </div>

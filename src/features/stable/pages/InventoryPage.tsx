@@ -18,7 +18,7 @@ import { StockAdjustModal } from '../components/StockAdjustModal';
 import { RestockRequestModal } from '../components/RestockRequestModal';
 import type { StockHealthStatus, StockItemRow, SupplyCategory } from '../types/inventory';
 import type { Zone } from '../types';
-import type { SupplyCatalogItem } from '@/features/master-data/types/supplies';
+import { type SupplyCatalogItem, formatSupplyUnit } from '@/features/master-data/types/supplies';
 
 const CATEGORY_NAMES: Record<SupplyCategory, string> = {
   FEED: 'Feed & Forage',
@@ -116,23 +116,24 @@ export default function InventoryPage() {
   );
 
   const getStatusBadge = (status: StockHealthStatus, qty: number, unit: string) => {
+    const formattedUnit = formatSupplyUnit(unit);
     switch (status) {
       case 'SUFFICIENT':
         return (
           <Badge tone="ok">
-            {tr('Sufficient')} ({qty} {unit})
+            {tr('Sufficient')} ({qty} {formattedUnit})
           </Badge>
         );
       case 'LOW_STOCK':
         return (
           <Badge tone="warn">
-            {tr('Low Stock')} ({qty} {unit})
+            {tr('Low Stock')} ({qty} {formattedUnit})
           </Badge>
         );
       case 'OUT_OF_STOCK':
         return (
           <Badge tone="danger">
-            {tr('Out of Stock')} ({qty} {unit})
+            {tr('Out of Stock')} ({qty} {formattedUnit})
           </Badge>
         );
       default:
@@ -183,7 +184,7 @@ export default function InventoryPage() {
         align: 'right',
         render: (row) => (
           <span>
-            {row.minThreshold} {row.unit}
+            {row.minThreshold} {formatSupplyUnit(row.unit)}
           </span>
         ),
       },

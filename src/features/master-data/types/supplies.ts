@@ -37,6 +37,8 @@ export const SUPPLY_CATEGORY_LABELS: Record<SupplyCategory, string> = {
   CLEANING_SUPPLY: 'Cleaning Supplies',
 };
 
+import { tr } from '@/shared/i18n/tr';
+
 export const SUPPLY_UNIT_LABELS: Record<SupplyUnit, string> = {
   KG: 'kg',
   G: 'g',
@@ -49,6 +51,13 @@ export const SUPPLY_UNIT_LABELS: Record<SupplyUnit, string> = {
   PIECE: 'piece',
   SET: 'set',
 };
+
+export function formatSupplyUnit(unit?: string): string {
+  if (!unit) return '';
+  const key = unit.toUpperCase() as SupplyUnit;
+  const label = SUPPLY_UNIT_LABELS[key] || unit;
+  return tr(label);
+}
 
 export interface SupplyCatalogItem {
   id: string;

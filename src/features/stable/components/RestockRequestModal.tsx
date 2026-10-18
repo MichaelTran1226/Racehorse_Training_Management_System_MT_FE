@@ -10,6 +10,7 @@ import { useToast } from '@/shared/components/ui/Toast';
 import { tr } from '@/shared/i18n/tr';
 import { messageFor } from '@/shared/lib/messages';
 import { inventoryApi } from '../api/inventoryApi';
+import { formatSupplyUnit } from '@/features/master-data/types/supplies';
 
 interface RestockRequestModalProps {
   zones: Array<{ id: string; name: string; code: string }>;
@@ -48,7 +49,7 @@ export function RestockRequestModal({
   );
 
   const supplyOptions = useMemo(
-    () => supplies.map((s) => ({ value: s.id, label: `${s.code} - ${s.name} (${s.unit})` })),
+    () => supplies.map((s) => ({ value: s.id, label: `${s.code} - ${s.name} (${formatSupplyUnit(s.unit)})` })),
     [supplies],
   );
 
@@ -118,7 +119,7 @@ export function RestockRequestModal({
         </div>
 
         <Field
-          label={`${tr('Requested Quantity')} (${selectedSupply?.unit || 'unit'})`}
+          label={`${tr('Requested Quantity')} (${formatSupplyUnit(selectedSupply?.unit || 'unit')})`}
           required
           hint={tr('Number of units required for this stall zone.')}
         >
