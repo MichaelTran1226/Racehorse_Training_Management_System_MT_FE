@@ -100,6 +100,8 @@ export const en = {
     accounts: "Accounts",
     staff: "Staff Directory",
     catalog: "Supplies Catalog",
+    shiftRoster: "Shift Roster",
+    shiftCatalog: "Shift Catalog",
     performance: "Performance",
     audit: "Audit Log",
     injuries: "2D Musculoskeletal Map",
@@ -116,6 +118,8 @@ export const en = {
     biomechanicalAlerts: "Biomechanical Alerts",
     vaccinationSchedule: "Vaccination Schedule",
     supplyTracking: "Supply Tracking",
+    zoneInventory: "Zone Inventory",
+    restockRequests: "Restock Requests",
     costReport: "Cost Report",
     operatingCosts: "Operating Costs",
 

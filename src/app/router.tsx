@@ -27,6 +27,14 @@ import NotificationSettingsPage from "@/features/dashboard/pages/NotificationSet
 import HorseCatalogPage from "@/features/horses/pages/HorseCatalogPage";
 import StableMapPage from "@/features/stable/pages/StableMapPage";
 import StallCatalogPage from "@/features/stable/pages/StallCatalogPage";
+import SuppliesCatalogPage from "@/features/master-data/pages/SuppliesCatalogPage";
+import ShiftCatalogPage from "@/features/master-data/pages/ShiftCatalogPage";
+import ShiftRosterPage from "@/features/stable/pages/ShiftRosterPage";
+import MealRationsPage from "@/features/stable/pages/MealRationsPage";
+import DailyChecklistPage from "@/features/stable/pages/DailyChecklistPage";
+import IncidentListPage from "@/features/stable/pages/IncidentListPage";
+import InventoryPage from "@/features/stable/pages/InventoryPage";
+import RestockRequestsPage from "@/features/stable/pages/RestockRequestsPage";
 import {
   MedicalRecordPage,
   RecordListPage,
@@ -239,6 +247,26 @@ export const router = createBrowserRouter([
           { path: "/stalls", element: <StableMapPage /> },
           { path: "/catalogs/stalls", element: <StallCatalogPage /> },
           { path: "/catalogs/breeds", element: <HorseCatalogPage /> },
+          { path: "/catalogs/supplies", element: <SuppliesCatalogPage /> },
+          { path: "/catalog", element: <Navigate to="/catalogs/supplies" replace /> },
+          { path: "/catalogs/shifts", element: <ShiftCatalogPage /> },
+          { path: "/stable/shifts", element: <ShiftRosterPage /> },
+          { path: "/shifts", element: <Navigate to="/stable/shifts" replace /> },
+          { path: "/rations", element: <MealRationsPage /> },
+          { path: "/stable/rations", element: <Navigate to="/rations" replace /> },
+          { path: "/stable/meals", element: <Navigate to="/rations" replace /> },
+          { path: "/tasks", element: <DailyChecklistPage /> },
+          { path: "/checklist", element: <Navigate to="/tasks" replace /> },
+          { path: "/stable/tasks", element: <Navigate to="/tasks" replace /> },
+          { path: "/incidents", element: <IncidentListPage /> },
+          { path: "/stable/incidents", element: <Navigate to="/incidents" replace /> },
+
+          // ---- Phân hệ Vật tư & Tồn kho khu chuồng (Flow 4: Phase 4)
+          { path: "/supplies/inventory", element: <InventoryPage /> },
+          { path: "/inventory", element: <Navigate to="/supplies/inventory" replace /> },
+          { path: "/supplies", element: <Navigate to="/supplies/inventory" replace /> },
+          { path: "/supplies/requests", element: <RestockRequestsPage /> },
+          { path: "/restock-requests", element: <Navigate to="/supplies/requests" replace /> },
 
           { path: "*", element: <ComingSoonRoute /> },
         ],

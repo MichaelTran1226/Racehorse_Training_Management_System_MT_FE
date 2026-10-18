@@ -201,6 +201,9 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
         item("dashboard", "Dashboard", "home"),
         item("horses", "Horses", "horse", { requires: "viewHorses" }),
         item("stalls", "Stall Map", "grid"),
+        item("stable/shifts", "Shift Roster", "calendar", { i18nKey: "shiftRoster" }),
+        item("rations", "Meal Rations", "wheat", { i18nKey: "rations" }),
+        item("catalog", "Supplies Catalog", "package"),
         item("herd", "Herd Health", "stethoscope", { requires: "viewMedical" }),
       ],
     },
@@ -229,13 +232,30 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
         item("vaccine", "Preventive Care", "syringe", { requires: "viewMedical" }),
       ],
     },
+    {
+      label: "SUPPLIES",
+      items: [
+        item("supplies/inventory", "Zone Inventory", "layers", { i18nKey: "zoneInventory" }),
+        item("supplies/requests", "Restock Requests", "clipboard", { i18nKey: "restockRequests" }),
+        item("catalog", "Supplies Catalog", "package"),
+      ],
+    },
     { label: "REPORTS", items: [item("progress", "Training Progress", "chart")] },
     { label: "OTHER", items: [item("profile", "My Profile", "user")] },
   ],
   VETERINARIAN: [
     {
       label: "WORKSPACE",
-      items: [item("dashboard", "Dashboard", "home"), item("horses", "Horses", "horse", { requires: "viewHorses" }), item("stalls", "Stall Map", "grid")],
+      items: [
+        item("dashboard", "Dashboard", "home"),
+        item("horses", "Horses", "horse", { requires: "viewHorses" }),
+        item("stalls", "Stall Map", "grid"),
+        item("stable/shifts", "Shift Roster", "calendar", { i18nKey: "shiftRoster" }),
+        item("rations", "Meal Rations", "wheat", { i18nKey: "rations" }),
+        item("supplies/inventory", "Zone Inventory", "layers", { i18nKey: "zoneInventory" }),
+        item("supplies/requests", "Restock Requests", "clipboard", { i18nKey: "restockRequests" }),
+        item("catalog", "Supplies Catalog", "package"),
+      ],
     },
     {
       label: "MEDICAL",
@@ -247,6 +267,7 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
         item("locks", "Training Locks", "lock", { requires: "viewMedical" }),
         item("alerts", "Biomechanical Alerts", "alert", { i18nKey: "biomechanicalAlerts", alert: true }),
         item("vaccine", "Vaccination Schedule", "syringe", { i18nKey: "vaccinationSchedule", requires: "viewMedical" }),
+        item("incidents", "Incident Reports", "camera", { requires: "viewMedical" }),
       ],
     },
     { label: "REPORTS", items: [item("health-report", "Health Reports", "chart", { requires: "viewMedical" })] },
@@ -258,13 +279,21 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
       label: "DAILY",
       items: [
         item("tasks", "Today's Tasks", "check", { alert: true }),
+        item("stable/shifts", "Shift Roster", "calendar", { i18nKey: "shiftRoster" }),
         item("my-training", "My Training", "calendar"),
         item("stalls", "Stall Map", "grid"),
-        item("rations", "Meal Rations", "wheat"),
+        item("rations", "Meal Rations", "wheat", { i18nKey: "rations" }),
         item("incidents", "Incident Reports", "camera"),
       ],
     },
-    { label: "SUPPLIES", items: [item("supplies", "Supply Tracking", "package", { i18nKey: "supplyTracking" })] },
+    {
+      label: "SUPPLIES",
+      items: [
+        item("supplies/inventory", "Zone Inventory", "layers", { i18nKey: "zoneInventory" }),
+        item("supplies/requests", "Restock Requests", "clipboard", { i18nKey: "restockRequests" }),
+        item("catalog", "Supplies Catalog", "package"),
+      ],
+    },
     { label: "OTHER", items: [item("profile", "My Profile", "user")] },
   ],
   HORSE_OWNER: [
@@ -281,10 +310,27 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
         // Chấm đỏ của Accounts tính lúc chạy (yêu cầu đăng ký mới), xem useSidebarInfo.
         item("accounts", "Accounts", "users", { requires: "manageAccounts" }),
         item("staff", "Staff Directory", "user", { requires: "manageAccounts" }),
+        item("catalogs/shifts", "Shift Catalog", "calendar", { i18nKey: "shiftCatalog", requires: "manageAccounts" }),
+      ],
+    },
+    {
+      label: "SUPPLIES",
+      items: [
+        item("supplies/inventory", "Zone Inventory", "layers", { i18nKey: "zoneInventory" }),
+        item("supplies/requests", "Restock Requests", "clipboard", { i18nKey: "restockRequests" }),
         item("catalog", "Supplies Catalog", "package", { requires: "manageAccounts" }),
       ],
     },
-    { label: "MASTER DATA", items: [item("horses", "Horses", "horse", { requires: "viewHorses" }), item("stalls", "Stall Map", "grid")] },
+    {
+      label: "MASTER DATA",
+      items: [
+        item("horses", "Horses", "horse", { requires: "viewHorses" }),
+        item("stalls", "Stall Map", "grid"),
+        item("tasks", "Today's Tasks", "check"),
+        item("stable/shifts", "Shift Roster", "calendar", { i18nKey: "shiftRoster" }),
+        item("rations", "Meal Rations", "wheat", { i18nKey: "rations" }),
+      ],
+    },
     {
       label: "TRAINING",
       items: [
@@ -301,6 +347,7 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
         item("records", "Medical Records", "file", { requires: "viewMedical" }),
         item("locks", "Training Locks", "lock", { requires: "viewMedical" }),
         item("vaccine", "Preventive Care", "syringe", { requires: "viewMedical" }),
+        item("incidents", "Incident Reports", "camera", { requires: "viewMedical" }),
       ],
     },
     {
@@ -317,7 +364,7 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
 
 // Mục đã có trong thiết kế nhưng chưa có màn hình (route rơi vào trang "Coming soon").
 // Ẩn khỏi sidebar để không có mục chết; đường dẫn vẫn giữ nguyên trong router.
-const NOT_BUILT = new Set(["/races", "/health-report", "/tasks", "/rations", "/incidents", "/supplies", "/costs", "/race-record", "/health", "/catalog", "/performance", "/monitor"]);
+const NOT_BUILT = new Set(["/races", "/health-report", "/costs", "/race-record", "/health", "/performance", "/monitor"]);
 
 // Sidebar chỉ hiện mục mà tài khoản được cấp quyền (xây từ danh sách quyền, không chỉ từ tên vai trò).
 export function navFor(role: Role, permissions: PermissionMap): NavGroup[] {
@@ -343,7 +390,21 @@ export interface ScreenAccess {
   inOwnRole: boolean; // màn hình có trong sidebar của vai trò hiện tại (nhưng chưa được cấp quyền)
 }
 
-const OPEN_PREFIXES = ["/dashboard", "/profile", "/notifications", "/forbidden", "/session-expired", "/alerts", "/training/alerts", "/injuries"];
+const OPEN_PREFIXES = [
+  "/dashboard",
+  "/profile",
+  "/notifications",
+  "/forbidden",
+  "/session-expired",
+  "/alerts",
+  "/training/alerts",
+  "/injuries",
+  "/tasks",
+  "/incidents",
+  "/supplies",
+  "/inventory",
+  "/restock-requests",
+];
 
 function findByHref(groups: NavGroup[], href: string): { group: string; item: NavItem } | undefined {
   for (const g of groups) {
@@ -407,9 +468,16 @@ export function screenAccess(role: Role, permissions: PermissionMap, pathname: s
   } else if (href === "/catalogs") {
     const seg2 = pathname.split("/")[2];
     if (seg2 === "preventive-types") href = "/vaccine";
-    if (seg2 === "stalls") href = "/stalls";
+    else if (seg2 === "stalls") href = "/stalls";
+    else if (seg2 === "shifts") href = "/catalogs/shifts";
+    else if (seg2 === "supplies") href = "/catalog";
   } else if (href === "/stables") {
     href = "/stalls";
+  } else if (href === "/stable") {
+    const seg2 = pathname.split("/")[2];
+    if (seg2 === "shifts") href = "/stable/shifts";
+  } else if (href === "/shifts") {
+    href = "/stable/shifts";
   } else if (href === "/records" && pathname.startsWith("/records/horse")) {
     href = "/records"; // keep it as records
   }

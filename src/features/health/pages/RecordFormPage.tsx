@@ -47,7 +47,8 @@ const PROPOSED_STATUS_OPTIONS = [
 ];
 
 import { getHorses } from "@/features/horses/api";
-
+
+
 import { tr } from "@/shared/i18n/tr";
 export default function RecordFormPage() {
   const { id } = useParams(); // If id exists, it's edit mode
@@ -66,7 +67,7 @@ export default function RecordFormPage() {
 
   useEffect(() => {
     let active = true;
-    getHorses({ limit: 1000 })
+    getHorses({ limit: 100 })
       .then((res: any) => {
         if (!active) return;
         const data = res.items || res.data || [];
