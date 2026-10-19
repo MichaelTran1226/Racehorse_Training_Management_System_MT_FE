@@ -122,6 +122,7 @@ export const en = {
     restockRequests: "Restock Requests",
     costReport: "Cost Report",
     operatingCosts: "Operating Costs",
+    financialReports: "Financial Reports",
 
     // Roles
     role_HEAD_TRAINER: "Head Trainer",

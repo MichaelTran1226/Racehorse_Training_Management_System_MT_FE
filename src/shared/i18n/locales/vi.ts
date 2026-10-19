@@ -79,7 +79,7 @@ export const vi: TranslationResources = {
     metrics: "Chỉ số buổi tập",
     monitor: "Giám sát thời gian thực",
     alerts: "Cảnh báo chỉ số",
-    races: "Hồ sơ thi đấu",
+    races: "Giải đua & Lịch thi đấu",
     records: "Hồ sơ bệnh án",
     rx: "Kê đơn thuốc",
     locks: "Khóa huấn luyện",
@@ -124,6 +124,7 @@ export const vi: TranslationResources = {
     restockRequests: "Đề xuất vật tư",
     costReport: "Báo cáo chi phí",
     operatingCosts: "Chi phí vận hành",
+    financialReports: "Báo cáo tài chính",
 
     // Roles
     role_HEAD_TRAINER: "Huấn luyện viên trưởng",

@@ -63,6 +63,10 @@ import {
 import type { SupplyCatalogItem, ShiftCatalogItem } from "@/features/master-data/types/supplies";
 import type { ShiftRosterItem } from "@/features/stable/types/shiftRoster";
 import { mockNotificationsFor, updateMockNotifications } from "./notificationsData";
+import { getStoredTournaments, saveStoredTournaments } from "@/shared/mock/racingData";
+import type { Tournament, TournamentRegistration } from "@/features/racing/types";
+import { getStoredInvoices, saveStoredInvoices } from "@/shared/mock/financialData";
+import type { FinancialInvoice } from "@/features/financial/types";
 
 const OTP_CODE = "123456";
 const OTP_TTL = 10 * 60 * 1000;
@@ -186,8 +190,422 @@ const DELETABLE: Account["status"][] = ["INVITED", "PENDING_EMAIL", "REJECTED"];
 // ------------------------------------------------------------------ các route
 
 const routes: Route[] = [
-  // ---- Chuồng trại (chỉ đọc): đủ để Sơ đồ chuồng và Dashboard chạy ở chế độ mock.
-  { method: "GET", pattern: /^\/stalls\/zones$/, handler: () => mockZones() },
+  // ---- Flow 5: Giải đua & Đăng ký thi đấu (SC-5.01 -> SC-5.04)
+  {
+    method: "GET",
+    pattern: /^\/tournaments$/,
+    handler: ({ url }) => {
+      const status = url.searchParams.get("status");
+      const search = (url.searchParams.get("search") ?? "").toLowerCase();
+      const page = Number(url.searchParams.get("page") ?? 1);
+      const limit = Number(url.searchParams.get("limit") ?? 20);
+
+      let list = getStoredTournaments();
+      if (status && status !== "ALL") {
+        list = list.filter((t) => t.status === status);
+      }
+      if (search) {
+        list = list.filter((t) => t.name.toLowerCase().includes(search) || t.location.toLowerCase().includes(search));
+      }
+      const total = list.length;
+      const skip = (page - 1) * limit;
+      const items = list.slice(skip, skip + limit).map((t) => ({
+        ...t,
+        registeredCount: t.registrations?.length ?? 0,
+      }));
+      return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/tournaments\/([^/]+)\/eligibility$/,
+    handler: ({ params }) => {
+      const [id] = params;
+      const tourney = getStoredTournaments().find((t) => t.id === id);
+      if (!tourney) throw new ApiError(404, "NOT_FOUND", "Tournament not found");
+      const horses = getStoredHorses();
+      const registeredIds = new Set((tourney.registrations ?? []).map((r) => r.horseId));
+
+      const eligible: any[] = [];
+      const ineligible: any[] = [];
+
+      for (const h of horses) {
+        const reasons: string[] = [];
+        if (h.isLocked) {
+          reasons.push("Horse is currently under Veterinary Medical Lock");
+        }
+        if (h.status === "SICK" || h.status === "INJURED") {
+          reasons.push(`Horse health status is ${h.status}`);
+        }
+        const item = {
+          id: h.id,
+          name: h.name,
+          horseCode: h.code,
+          breed: h.breed,
+          avatarUrl: (h as any).avatarUrl ?? null,
+          status: horseStatusOf(h),
+          isMedicalLocked: h.isLocked,
+          completedWorkouts: 6,
+          owner: { id: "u-owner", fullName: h.ownerName || "Club Owner" },
+          isRegistered: registeredIds.has(h.id),
+          registrationId: tourney.registrations?.find((r) => r.horseId === h.id)?.id,
+        };
+        if (reasons.length === 0) {
+          eligible.push(item);
+        } else {
+          ineligible.push({ ...item, ineligibleReasons: reasons });
+        }
+      }
+      return {
+        tournament: {
+          id: tourney.id,
+          name: tourney.name,
+          raceDate: tourney.raceDate,
+          distanceMeters: tourney.distanceMeters,
+          trackType: tourney.trackType,
+          status: tourney.status,
+          registrationDeadline: tourney.registrationDeadline,
+        },
+        eligible,
+        ineligible,
+        totalEligible: eligible.length,
+        totalIneligible: ineligible.length,
+      };
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/tournaments\/([^/]+)$/,
+    handler: ({ params }) => {
+      const [id] = params;
+      const tourney = getStoredTournaments().find((t) => t.id === id);
+      if (!tourney) throw new ApiError(404, "NOT_FOUND", "Tournament not found");
+      return tourney;
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/tournaments$/,
+    handler: ({ body, db }) => {
+      const actor = currentUser(db);
+      if (actor.role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Only Club Manager can create tournaments");
+      const list = getStoredTournaments();
+      const newTourney: Tournament = {
+        id: `tourney-${Date.now()}`,
+        name: String(body.name ?? "New Tournament"),
+        raceDate: String(body.raceDate),
+        location: String(body.location ?? "Racetrack"),
+        distanceMeters: Number(body.distanceMeters ?? 1600),
+        trackType: (body.trackType as any) ?? "TURF",
+        prizePool: Number(body.prizePool ?? 0),
+        registrationDeadline: String(body.registrationDeadline),
+        status: (body.status as any) ?? "UPCOMING",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        registeredCount: 0,
+        registrations: [],
+      };
+      list.unshift(newTourney);
+      saveStoredTournaments(list);
+      return newTourney;
+    },
+  },
+  {
+    method: "PATCH",
+    pattern: /^\/tournaments\/([^/]+)\/status$/,
+    handler: ({ params, body, db }) => {
+      const [id] = params;
+      const actor = currentUser(db);
+      if (actor.role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Only Club Manager can change status");
+      const list = getStoredTournaments();
+      const tourney = list.find((t) => t.id === id);
+      if (!tourney) throw new ApiError(404, "NOT_FOUND", "Tournament not found");
+      tourney.status = body.status as any;
+      tourney.updatedAt = new Date().toISOString();
+      saveStoredTournaments(list);
+      return tourney;
+    },
+  },
+  {
+    method: "PATCH",
+    pattern: /^\/tournaments\/([^/]+)$/,
+    handler: ({ params, body, db }) => {
+      const [id] = params;
+      const actor = currentUser(db);
+      if (actor.role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Only Club Manager can edit tournament");
+      const list = getStoredTournaments();
+      const tourney = list.find((t) => t.id === id);
+      if (!tourney) throw new ApiError(404, "NOT_FOUND", "Tournament not found");
+      Object.assign(tourney, body, { updatedAt: new Date().toISOString() });
+      saveStoredTournaments(list);
+      return tourney;
+    },
+  },
+  {
+    method: "DELETE",
+    pattern: /^\/tournaments\/([^/]+)$/,
+    handler: ({ params, db }) => {
+      const [id] = params;
+      const actor = currentUser(db);
+      if (actor.role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Only Club Manager can delete tournament");
+      let list = getStoredTournaments();
+      list = list.filter((t) => t.id !== id);
+      saveStoredTournaments(list);
+      return { success: true };
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/tournaments\/([^/]+)\/registrations$/,
+    handler: ({ params, body, db }) => {
+      const [id] = params;
+      const actor = currentUser(db);
+      const horseId = String(body.horseId);
+      const list = getStoredTournaments();
+      const tourney = list.find((t) => t.id === id);
+      if (!tourney) throw new ApiError(404, "NOT_FOUND", "Tournament not found");
+
+      const horse = getStoredHorses().find((h) => h.id === horseId);
+      if (!horse) throw new ApiError(404, "NOT_FOUND", "Horse not found");
+      if (horse.isLocked) {
+        throw new ApiError(400, "MEDICAL_LOCK_ACTIVE", "Ngựa đang chịu Khóa y tế bởi Bác sĩ");
+      }
+
+      tourney.registrations = tourney.registrations ?? [];
+      const newReg: TournamentRegistration = {
+        id: `reg-${Date.now()}`,
+        tournamentId: id,
+        horseId,
+        horse: {
+          id: horse.id,
+          name: horse.name ?? "Horse",
+          horseCode: horse.code,
+          breed: horse.breed ?? "Thoroughbred",
+          avatarUrl: (horse as any).avatarUrl ?? null,
+          status: horseStatusOf(horse),
+          isMedicalLocked: horse.isLocked,
+          owner: { id: "u-owner", fullName: horse.ownerName || "Owner", email: "owner@gmail.com" },
+        },
+        registeredByTrainerId: actor.id,
+        registeredByTrainer: { id: actor.id, fullName: actor.fullName, email: actor.email },
+        status: "REGISTERED",
+        registrationDate: new Date().toISOString(),
+        notes: body.notes ? String(body.notes) : null,
+      };
+      tourney.registrations.push(newReg);
+      tourney.registeredCount = tourney.registrations.length;
+      saveStoredTournaments(list);
+      return newReg;
+    },
+  },
+  {
+    method: "DELETE",
+    pattern: /^\/tournaments\/([^/]+)\/registrations\/([^/]+)$/,
+    handler: ({ params }) => {
+      const [id, regId] = params;
+      const list = getStoredTournaments();
+      const tourney = list.find((t) => t.id === id);
+      if (!tourney) throw new ApiError(404, "NOT_FOUND", "Tournament not found");
+      if (tourney.registrations) {
+        const reg = tourney.registrations.find((r) => r.id === regId);
+        if (reg) {
+          reg.status = "SCRATCHED_MEDICAL";
+        }
+      }
+      saveStoredTournaments(list);
+      return { success: true };
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/tournaments\/([^/]+)\/results$/,
+    handler: ({ params, body }) => {
+      const [id] = params;
+      const list = getStoredTournaments();
+      const tourney = list.find((t) => t.id === id);
+      if (!tourney) throw new ApiError(404, "NOT_FOUND", "Tournament not found");
+
+      const items = (body.results as any[]) ?? [];
+      for (const item of items) {
+        const reg = tourney.registrations?.find((r) => r.id === item.registrationId);
+        if (reg) {
+          const speed =
+            item.avgSpeedKmh ||
+            Math.round(((tourney.distanceMeters / item.finishTimeSeconds) * 3.6) * 100) / 100;
+          reg.result = {
+            id: `res-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+            registrationId: item.registrationId,
+            finalRank: item.finalRank,
+            finishTimeSeconds: item.finishTimeSeconds,
+            avgSpeedKmh: speed,
+            prizeMoneyWon: item.prizeMoneyWon ?? 0,
+            officialNotes: item.officialNotes,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+        }
+      }
+      if (body.lockResults) {
+        tourney.status = "COMPLETED";
+      }
+      saveStoredTournaments(list);
+      return { success: true };
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/tournaments\/([^/]+)\/lock-results$/,
+    handler: ({ params, db }) => {
+      const [id] = params;
+      const actor = currentUser(db);
+      if (actor.role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Only Club Manager can lock results");
+      const list = getStoredTournaments();
+      const tourney = list.find((t) => t.id === id);
+      if (!tourney) throw new ApiError(404, "NOT_FOUND", "Tournament not found");
+
+      tourney.status = "COMPLETED";
+      tourney.updatedAt = new Date().toISOString();
+      saveStoredTournaments(list);
+      return tourney;
+    },
+  },
+  // ---- Flow 5: Sổ tài chính & Báo cáo Chủ ngựa (SC-5.05 & SC-5.06)
+  {
+    method: "GET",
+    pattern: /^\/invoices\/owner-summary$/,
+    handler: ({ url, db }) => {
+      const user = currentUser(db);
+      const targetOwnerId = user.role === "HORSE_OWNER" ? user.id : (url.searchParams.get("ownerId") || user.id);
+      const invoices = getStoredInvoices().filter((inv) => inv.ownerId === targetOwnerId);
+
+      let totalBoarding = 0;
+      let totalMedical = 0;
+      let totalTraining = 0;
+      let totalPrizeCredit = 0;
+      let totalNet = 0;
+
+      for (const inv of invoices) {
+        totalBoarding += Number(inv.boardingFee);
+        totalMedical += Number(inv.medicalFee);
+        totalTraining += Number(inv.trainingFee);
+        totalPrizeCredit += Number(inv.prizeCredit);
+        totalNet += Number(inv.netAmount);
+      }
+
+      return {
+        totalBoarding,
+        totalMedical,
+        totalTraining,
+        totalExpense: totalBoarding + totalMedical + totalTraining,
+        totalPrizeCredit,
+        totalNet,
+        invoiceCount: invoices.length,
+        invoices,
+      };
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/invoices$/,
+    handler: ({ url, db }) => {
+      const user = currentUser(db);
+      const ownerParam = url.searchParams.get("ownerId");
+      const targetOwnerId = user.role === "HORSE_OWNER" ? user.id : ownerParam;
+      const billingPeriod = url.searchParams.get("billingPeriod");
+      const status = url.searchParams.get("status");
+      const page = Number(url.searchParams.get("page") ?? 1);
+      const limit = Number(url.searchParams.get("limit") ?? 20);
+
+      let list = getStoredInvoices();
+      if (targetOwnerId) {
+        list = list.filter((inv) => inv.ownerId === targetOwnerId);
+      }
+      if (billingPeriod && billingPeriod !== "ALL") {
+        list = list.filter((inv) => inv.billingPeriod === billingPeriod);
+      }
+      if (status && status !== "ALL") {
+        list = list.filter((inv) => inv.status === status);
+      }
+
+      const total = list.length;
+      const skip = (page - 1) * limit;
+      const items = list.slice(skip, skip + limit);
+      return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/invoices\/([^/]+)$/,
+    handler: ({ params, db }) => {
+      const [id] = params;
+      const user = currentUser(db);
+      const inv = getStoredInvoices().find((i) => i.id === id);
+      if (!inv) throw new ApiError(404, "NOT_FOUND", "Invoice not found");
+      if (user.role === "HORSE_OWNER" && inv.ownerId !== user.id) {
+        throw new ApiError(403, "FORBIDDEN", "You can only view your own invoices");
+      }
+      return inv;
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/invoices$/,
+    handler: ({ body, db }) => {
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Only Club Manager can create invoices");
+      const list = getStoredInvoices();
+      const boardingFee = Number(body.boardingFee ?? 0);
+      const medicalFee = Number(body.medicalFee ?? 0);
+      const trainingFee = Number(body.trainingFee ?? 0);
+      const prizeCredit = Number(body.prizeCredit ?? 0);
+      const netAmount = boardingFee + medicalFee + trainingFee - prizeCredit;
+
+      const newInv: FinancialInvoice = {
+        id: `inv-${Date.now()}`,
+        horseId: String(body.horseId),
+        horse: {
+          id: String(body.horseId),
+          name: "Thunder Bolt",
+          horseCode: "HRS-001",
+          breed: "Thoroughbred",
+        },
+        ownerId: String(body.ownerId),
+        owner: {
+          id: String(body.ownerId),
+          fullName: "Ha Ly",
+          email: "ha.ly@gmail.com",
+        },
+        billingPeriod: String(body.billingPeriod ?? "2026-10"),
+        boardingFee,
+        medicalFee,
+        trainingFee,
+        prizeCredit,
+        netAmount,
+        status: (body.status as any) ?? "DRAFT",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      list.unshift(newInv);
+      saveStoredInvoices(list);
+      return newInv;
+    },
+  },
+  {
+    method: "PATCH",
+    pattern: /^\/invoices\/([^/]+)\/status$/,
+    handler: ({ params, body, db }) => {
+      const [id] = params;
+      const user = currentUser(db);
+      if (user.role !== "CLUB_MANAGER") throw new ApiError(403, "FORBIDDEN", "Only Club Manager can update status");
+      const list = getStoredInvoices();
+      const inv = list.find((i) => i.id === id);
+      if (!inv) throw new ApiError(404, "NOT_FOUND", "Invoice not found");
+      inv.status = body.status as any;
+      inv.updatedAt = new Date().toISOString();
+      saveStoredInvoices(list);
+      return inv;
+    },
+  },
   {
     method: "GET",
     pattern: /^\/stalls\/grooms$/,

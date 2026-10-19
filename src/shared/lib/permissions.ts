@@ -299,7 +299,15 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
   HORSE_OWNER: [
     { label: "WORKSPACE", items: [item("dashboard", "Dashboard", "home"), item("my-horses", "My Horses", "horse", { requires: "viewHorses" })] },
     { label: "MONITORING", items: [item("progress", "Training Progress", "activity"), item("health", "Health Status", "stethoscope")] },
-    { label: "REPORTS", items: [item("costs", "Cost Report", "dollar", { i18nKey: "costReport" }), item("race-record", "Race Record", "trophy")] },
+    {
+      label: "REPORTS",
+      items: [
+        item("financial-reports", "Financial Reports", "dollar", { i18nKey: "financialReports" }),
+        item("costs", "Cost Report", "dollar", { i18nKey: "costReport" }),
+        item("race-record", "Race Record", "trophy"),
+      ],
+    },
+    { label: "RACING", items: [item("races", "Race Entries", "trophy")] },
     { label: "OTHER", items: [item("profile", "My Profile", "user")] },
   ],
   CLUB_MANAGER: [
@@ -354,17 +362,19 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
       label: "REPORTS",
       items: [
         item("performance", "Performance", "chart"),
+        item("financial-reports", "Financial Reports", "dollar", { i18nKey: "financialReports" }),
         item("costs", "Operating Costs", "dollar", { i18nKey: "operatingCosts" }),
         item("audit", "Audit Log", "history", { requires: "viewAudit" }),
       ],
     },
+    { label: "RACING", items: [item("races", "Race Entries", "trophy")] },
     { label: "OTHER", items: [item("profile", "My Profile", "user")] },
   ],
 };
 
 // Mục đã có trong thiết kế nhưng chưa có màn hình (route rơi vào trang "Coming soon").
 // Ẩn khỏi sidebar để không có mục chết; đường dẫn vẫn giữ nguyên trong router.
-const NOT_BUILT = new Set(["/races", "/health-report", "/costs", "/race-record", "/health", "/performance", "/monitor"]);
+const NOT_BUILT = new Set(["/health-report", "/costs", "/race-record", "/health", "/performance", "/monitor"]);
 
 // Sidebar chỉ hiện mục mà tài khoản được cấp quyền (xây từ danh sách quyền, không chỉ từ tên vai trò).
 export function navFor(role: Role, permissions: PermissionMap): NavGroup[] {
@@ -480,6 +490,10 @@ export function screenAccess(role: Role, permissions: PermissionMap, pathname: s
     href = "/stable/shifts";
   } else if (href === "/records" && pathname.startsWith("/records/horse")) {
     href = "/records"; // keep it as records
+  } else if (href === "/racing") {
+    href = "/races";
+  } else if (href === "/invoices" || pathname.startsWith("/owner/financial-reports")) {
+    href = "/financial-reports";
   }
 
   const own = findByHref(ROLE_NAV[role], href);

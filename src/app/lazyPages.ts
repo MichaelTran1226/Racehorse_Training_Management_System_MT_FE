@@ -22,3 +22,7 @@ export const PlanDetailPage = lazy(() => import("@/features/training/pages/PlanD
 export const SessionResultPage = lazy(() => import("@/features/training/pages/SessionResultPage"));
 export const FitnessChartPage = lazy(() => import("@/features/training/pages/FitnessChartPage"));
 export const MyTrainingPage = lazy(() => import("@/features/training/pages/MyTrainingPage"));
+export const RaceEntryPage = lazy(() => import("@/features/racing/pages/RaceEntryPage"));
+export const RaceResultsPage = lazy(() => import("@/features/racing/pages/RaceResultsPage"));
+export const OwnerFinancialReportsPage = lazy(() => import("@/features/financial/pages/OwnerFinancialReportsPage"));
+
