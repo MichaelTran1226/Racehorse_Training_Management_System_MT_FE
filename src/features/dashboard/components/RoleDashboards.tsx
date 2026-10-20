@@ -333,7 +333,7 @@ export function ManagerDashboard({ user }: { user: AuthUser }) {
           icon="horse"
           iconBg="#d1fae5"
           iconColor="#059669"
-          label={isVi ? "Ngựa đang quản lý" : tr("Horses managed")}
+          label={isVi ? "Ngựa đang quản lý" : "Horses under management"}
           value={s?.total ?? 8}
           trend={
             <span style={{ color: "#059669", fontWeight: 600 }}>
@@ -357,7 +357,7 @@ export function ManagerDashboard({ user }: { user: AuthUser }) {
           icon="heart"
           iconBg="#fee2e2"
           iconColor="#dc2626"
-          label={isVi ? "Cần chăm sóc y tế" : tr("Medical attention")}
+          label={isVi ? "Cần chăm sóc y tế" : "Medical safety"}
           value={s ? s.lockedCount + s.observationCount : 3}
           trend={
             <span style={{ color: "#dc2626", fontWeight: 600 }}>
@@ -780,7 +780,7 @@ export function TrainerDashboard() {
           icon="activity"
           iconBg="#d1fae5"
           iconColor="#059669"
-          label={isVi ? "Giáo án đang hoạt động" : tr("Active plans")}
+          label={isVi ? "Giáo án đang hoạt động" : "Active training plans"}
           value={k?.activePlans ?? 2}
           trend={<span>{isVi ? "Đang huấn luyện tích cực" : "Active coaching"}</span>}
           to="/training/plans"
@@ -850,7 +850,7 @@ export function VetDashboard() {
           icon="lock"
           iconBg="#fee2e2"
           iconColor="#dc2626"
-          label={isVi ? "Lệnh khóa y tế hiệu lực" : tr("Locks in force")}
+          label={isVi ? "Lệnh khóa y tế hiệu lực" : "Training Locks in force"}
           value={s?.lockedCount ?? 2}
           trend={<span style={{ color: "#dc2626" }}>{isVi ? "Cấm xuất chuồng / thi đấu" : "Prohibited"}</span>}
           to="/locks"
@@ -888,7 +888,7 @@ export function VetDashboard() {
         <Card pad={20}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
             <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 750 }}>
-              {isVi ? "Hồ sơ bệnh án cần xử lý" : tr("Medical records to review")}
+              {isVi ? "Dấu hiệu bất thường & Hồ sơ cần xử lý" : "Abnormal signs to review"}
             </h3>
             <Link to="/records" style={{ fontSize: "var(--fs-xs)", color: "var(--brand)" }}>
               {isVi ? "Hồ sơ bệnh án →" : tr("All records →")}
