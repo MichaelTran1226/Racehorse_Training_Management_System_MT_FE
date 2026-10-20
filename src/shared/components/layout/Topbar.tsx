@@ -70,18 +70,29 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
   }, [searchOpen, canSearch]);
 
   const filteredHorses = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
+    const rawQ = searchQuery.trim().toLowerCase();
+    const normQ = rawQ
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "D");
+
     let list = scopedHorses;
-    if (q) {
-      list = list.filter(
-        (h) =>
-          h.name.toLowerCase().includes(q) ||
-          h.code.toLowerCase().includes(q) ||
-          (h.stall && h.stall.toLowerCase().includes(q)) ||
-          (h.healthGroup && h.healthGroup.toLowerCase().includes(q)) ||
-          (h.statusText && h.statusText.toLowerCase().includes(q)) ||
-          (h.lockReason && h.lockReason.toLowerCase().includes(q)),
-      );
+    if (normQ) {
+      list = list.filter((h) => {
+        const normName = (h.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").toLowerCase();
+        const normCode = (h.code || "").toLowerCase();
+        const normStall = (h.stall || "").toLowerCase();
+        const normStatus = (h.statusText || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").toLowerCase();
+        const normLock = (h.lockReason || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").toLowerCase();
+        return (
+          normName.includes(normQ) ||
+          normCode.includes(normQ) ||
+          normStall.includes(normQ) ||
+          normStatus.includes(normQ) ||
+          normLock.includes(normQ)
+        );
+      });
     }
     return [...list].sort((a, b) => {
       if (a.isLocked && !b.isLocked) return -1;
@@ -163,10 +174,8 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
             onKeyDown={(e) => {
               if (e.key === "Escape") {
                 setSearchOpen(false);
-              } else if (e.key === "Enter" && filteredHorses.length > 0) {
-                navigate(`/medical/horses/${filteredHorses[0].id}`);
-                setSearchOpen(false);
-                setSearchQuery("");
+              } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                setSearchOpen(true);
               }
             }}
           />

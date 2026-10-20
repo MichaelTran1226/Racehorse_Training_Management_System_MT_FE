@@ -20,15 +20,26 @@ interface HeroSlide {
 
 const HERO_SLIDES: HeroSlide[] = [
   {
-    id: "racing",
-    image: "/images/hero/hero-racing.jpg",
+    id: "turf-race",
+    image: "/images/hero/hero-turf-race.png",
     tagVi: "Đua Ngựa Tốc Độ",
-    tagEn: "Championship Racing",
+    tagEn: "Turf Racing Sprint",
     iconName: "trophy",
-    badgeVi: "Đấu Trường & Thành Tích Đua Ngựa",
-    badgeEn: "Championship Thoroughbred Sprint",
-    // Focus on the lead racehorses and sprinting jockeys on the right
-    focusPosition: "right 40%",
+    badgeVi: "Đấu Trường & Thành Tích Tốc Độ",
+    badgeEn: "Premier Turf Championship Sprint",
+    // Lead horses and sprinting jockeys on turf
+    focusPosition: "center 38%",
+  },
+  {
+    id: "sky-jump",
+    image: "/images/hero/hero-sky-jump.png",
+    tagVi: "Vượt Rào Đỉnh Cao",
+    tagEn: "Grand Prix Jumping",
+    iconName: "flag",
+    badgeVi: "Huấn Luyện & Biểu Diễn Vượt Rào",
+    badgeEn: "Grand Prix Equestrian Show Jumping",
+    // Rider & horse jumping over black scrollwork barrier into blue sky
+    focusPosition: "55% 40%",
   },
   {
     id: "stables",
@@ -44,13 +55,24 @@ const HERO_SLIDES: HeroSlide[] = [
   {
     id: "jumping",
     image: "/images/hero/hero-jumping.jpg",
-    tagVi: "Huấn Luyện Vượt Rào",
-    tagEn: "Show Jumping",
+    tagVi: "Kỹ Thuật Vượt Rào",
+    tagEn: "Show Jumping Technique",
     iconName: "flag",
-    badgeVi: "Huấn Luyện Vượt Rào Thể Thao",
+    badgeVi: "Kỹ Thuật Vượt Rào Thể Thao",
     badgeEn: "Equestrian Show Jumping & Training",
     // Rider & horse jumping are in the upper-left/center-left of the photo
     focusPosition: "30% 12%",
+  },
+  {
+    id: "racing",
+    image: "/images/hero/hero-racing.jpg",
+    tagVi: "Bứt Phá Về Đích",
+    tagEn: "Thoroughbred Finish",
+    iconName: "trophy",
+    badgeVi: "Về Đích Đấu Trường Chuyên Nghiệp",
+    badgeEn: "Championship Sprint Finish",
+    // Focus on the lead racehorses and sprinting jockeys on the right
+    focusPosition: "right 40%",
   },
 ];
 
