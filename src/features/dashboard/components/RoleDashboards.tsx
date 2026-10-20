@@ -29,8 +29,19 @@ const TOURNAMENT_STATUS_LABEL: Record<string, string> = {
 // ------------------------------------------------------------------
 // Interactive KPI Tile (Matches Image 2 Top Row)
 // ------------------------------------------------------------------
+const KPI_CUSTOM_ICONS: Record<string, string> = {
+  horse: "/images/icons/kpi-horse.png",
+  activity: "/images/icons/kpi-activity.png",
+  pulse: "/images/icons/kpi-activity.png",
+  heart: "/images/icons/kpi-medical.png",
+  medical: "/images/icons/kpi-medical.png",
+  home: "/images/icons/kpi-barn.png",
+  barn: "/images/icons/kpi-barn.png",
+};
+
 export function InteractiveKpiCard({
   icon,
+  iconImg,
   iconBg,
   iconColor,
   label,
@@ -39,15 +50,18 @@ export function InteractiveKpiCard({
   progress,
   to,
 }: {
-  icon: string;
-  iconBg: string;
-  iconColor: string;
+  icon?: string;
+  iconImg?: string;
+  iconBg?: string;
+  iconColor?: string;
   label: string;
   value: ReactNode;
   trend?: ReactNode;
   progress?: number;
   to: string;
 }) {
+  const customImg = iconImg || (icon ? KPI_CUSTOM_ICONS[icon] : undefined);
+
   return (
     <Link
       to={to}
@@ -78,18 +92,33 @@ export function InteractiveKpiCard({
       <div style={{ display: "flex", alignItems: "center", gap: "16px", flex: 1, minWidth: 0 }}>
         <div
           style={{
-            width: 48,
-            height: 48,
-            borderRadius: "12px",
+            width: 52,
+            height: 52,
+            borderRadius: "14px",
             background: iconBg,
             color: iconColor,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
+            overflow: "hidden",
+            padding: customImg ? "6px" : undefined,
           }}
         >
-          <Icon name={icon} size={24} />
+          {customImg ? (
+            <img
+              src={customImg}
+              alt=""
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+                display: "block",
+              }}
+            />
+          ) : (
+            <Icon name={icon || "info"} size={26} />
+          )}
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -331,7 +360,7 @@ export function ManagerDashboard({ user }: { user: AuthUser }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px" }}>
         <InteractiveKpiCard
           icon="horse"
-          iconBg="#d1fae5"
+          iconBg="#EAF7EE"
           iconColor="#059669"
           label={isVi ? "Ngựa đang quản lý" : "Horses under management"}
           value={s?.total ?? 8}
@@ -345,7 +374,7 @@ export function ManagerDashboard({ user }: { user: AuthUser }) {
 
         <InteractiveKpiCard
           icon="activity"
-          iconBg="#dbeafe"
+          iconBg="#EBF2FE"
           iconColor="#2563eb"
           label={isVi ? "Buổi tập hôm nay" : tr("Today's workouts")}
           value={k ? `${k.todayCompleted}/${k.todayTotal}` : "0/0"}
@@ -355,7 +384,7 @@ export function ManagerDashboard({ user }: { user: AuthUser }) {
 
         <InteractiveKpiCard
           icon="heart"
-          iconBg="#fee2e2"
+          iconBg="#FDECEB"
           iconColor="#dc2626"
           label={isVi ? "Cần chăm sóc y tế" : "Medical safety"}
           value={s ? s.lockedCount + s.observationCount : 3}
@@ -369,7 +398,7 @@ export function ManagerDashboard({ user }: { user: AuthUser }) {
 
         <InteractiveKpiCard
           icon="home"
-          iconBg="#fef3c7"
+          iconBg="#FEF5E7"
           iconColor="#d97706"
           label={isVi ? "Tình trạng chuồng" : tr("Stall occupancy")}
           value={`${zoneUsed}/${zoneTotal}`}
