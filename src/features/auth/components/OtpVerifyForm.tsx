@@ -19,6 +19,7 @@ const CODE_LENGTH = 6;
 interface OtpVerifyFormProps {
   email: string;
   purpose: OtpPurpose;
+  initialCode?: string;
   // Nội dung Alert "đã gửi mã". Với quên mật khẩu phải TRUNG TÍNH (không khẳng định email có tồn tại).
   sentTitle: string;
   sentBody: (times: OtpTimes) => string;
@@ -30,11 +31,11 @@ interface OtpVerifyFormProps {
 
 // Form nhập mã OTP dùng cho cả xác minh email khi đăng ký và quên mật khẩu.
 // Lo: đếm ngược hết hạn, nút gửi lại có thời gian chờ, lỗi sai mã còn mấy lần thử.
-export function OtpVerifyForm({ email, purpose, sentTitle, sentBody, submitLabel, onVerify, footer }: OtpVerifyFormProps) {
+export function OtpVerifyForm({ email, purpose, initialCode, sentTitle, sentBody, submitLabel, onVerify, footer }: OtpVerifyFormProps) {
   const toast = useToast();
   const [times, setTimes] = useState<OtpTimes | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(initialCode || "");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [resending, setResending] = useState(false);

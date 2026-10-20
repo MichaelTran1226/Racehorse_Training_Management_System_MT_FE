@@ -23,6 +23,7 @@ export default function AcceptInvitePage() {
   // useSearchParams (không dùng useQueryParams): cập nhật khi URL đổi ?email= mà vẫn ở trang này.
   const [params] = useSearchParams();
   const email = (params.get("email") ?? "").trim().toLowerCase();
+  const codeParam = (params.get("code") ?? "").trim();
   const [typed, setTyped] = useState("");
   const [error, setError] = useState("");
 
@@ -66,8 +67,9 @@ export default function AcceptInvitePage() {
   return (
     <AuthLayout title={tr("Accept your invitation.")} description={tr(`Enter the 6-digit code from the invitation sent to ${email}. Then choose your password.`)}>
       <OtpVerifyForm
-        key={email}
+        key={`${email}_${codeParam}`}
         email={email}
+        initialCode={codeParam}
         purpose="invite"
         sentTitle="Invitation code sent"
         sentBody={(t) => `Sent at ${formatDateTime(t.sentAt)}. The code can be used once and stays valid until ${formatDateTime(t.expiresAt)}.`}
