@@ -3,6 +3,7 @@ import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { Card } from "@/shared/components/ui/Card";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
+import { Modal } from "@/shared/components/ui/Modal";
 import { KpiTile } from "@/shared/components/ui/KpiTile";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
@@ -18,6 +19,12 @@ export default function OwnerFinancialReportsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<string>("ALL");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  // Generate monthly invoices modal state
+  const [isGenerateOpen, setIsGenerateOpen] = useState(false);
+  const [billingPeriodInput, setBillingPeriodInput] = useState("2026-11");
+  const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -46,15 +53,30 @@ export default function OwnerFinancialReportsPage() {
     }
   }
 
-  async function handleGenerateMonthly() {
-    const period = prompt(tr("Enter billing period (YYYY-MM):"), "2026-11");
-    if (!period) return;
+  function handleOpenGenerate() {
+    setGenerateError(null);
+    setIsGenerateOpen(true);
+  }
+
+  async function handleConfirmGenerate() {
+    if (!billingPeriodInput.match(/^\d{4}-\d{2}$/)) {
+      setGenerateError(tr("Please enter a valid billing period in YYYY-MM format (e.g. 2026-11)"));
+      return;
+    }
+    setGenerating(true);
+    setGenerateError(null);
     try {
-      const res = await generateMonthlyInvoices(period);
-      alert(tr(`Generated ${res.createdCount} draft statements for period ${res.billingPeriod}`));
+      const res = await generateMonthlyInvoices(billingPeriodInput);
+      setStatusMessage(
+        tr(`Generated ${res.createdCount} draft statements for period ${res.billingPeriod}`),
+      );
+      setIsGenerateOpen(false);
       loadData();
+      setTimeout(() => setStatusMessage(null), 5000);
     } catch (err: any) {
-      alert(err?.message || tr("Failed to generate monthly invoices"));
+      setGenerateError(err?.message || tr("Failed to generate monthly invoices"));
+    } finally {
+      setGenerating(false);
     }
   }
 
@@ -87,7 +109,7 @@ export default function OwnerFinancialReportsPage() {
               📄 {tr("Export Snapshot PDF")}
             </Button>
             {isClubManager && (
-              <Button tone="primary" onClick={handleGenerateMonthly}>
+              <Button tone="primary" onClick={handleOpenGenerate}>
                 + {tr("Generate Monthly Invoices")}
               </Button>
             )}
@@ -289,6 +311,66 @@ export default function OwnerFinancialReportsPage() {
             </table>
           </div>
         </Card>
+      )}
+
+      {/* Generate Monthly Invoices Modal */}
+      {isGenerateOpen && (
+        <Modal
+          title={tr("Generate Monthly Invoices & Statements")}
+          subtitle={tr("Automatically compute Boarding, Medical, Training fees and deduct 70% race prizes")}
+          width={500}
+          onClose={() => !generating && setIsGenerateOpen(false)}
+          foot={
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", width: "100%" }}>
+              <Button tone="secondary" onClick={() => setIsGenerateOpen(false)} disabled={generating}>
+                {tr("Cancel")}
+              </Button>
+              <Button tone="primary" onClick={handleConfirmGenerate} disabled={generating}>
+                {generating ? tr("Generating...") : tr("Generate Draft Invoices")}
+              </Button>
+            </div>
+          }
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            {generateError && (
+              <div
+                style={{
+                  padding: "0.75rem 1rem",
+                  background: "var(--danger-bg, #fef2f2)",
+                  color: "var(--danger, #dc2626)",
+                  borderRadius: "var(--r-sm, 6px)",
+                  fontSize: "var(--fs-sm)",
+                  border: "1px solid var(--danger-border, #fecaca)",
+                }}
+              >
+                {generateError}
+              </div>
+            )}
+
+            <div>
+              <label style={{ display: "block", fontSize: "var(--fs-sm)", fontWeight: 600, marginBottom: "0.375rem" }}>
+                {tr("Billing Period (YYYY-MM)")} *
+              </label>
+              <input
+                type="month"
+                value={billingPeriodInput}
+                onChange={(e) => setBillingPeriodInput(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "0.625rem 0.875rem",
+                  borderRadius: "var(--r-sm, 6px)",
+                  border: "1px solid var(--border)",
+                  background: "var(--surface)",
+                  color: "var(--ink)",
+                  fontSize: "var(--fs-body)",
+                }}
+              />
+              <p style={{ margin: "0.375rem 0 0", fontSize: "var(--fs-xs)", color: "var(--muted)" }}>
+                {tr("Draft invoices will be created for all active horses in the club for this period.")}
+              </p>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );

@@ -3,7 +3,7 @@ import { Modal } from "@/shared/components/ui/Modal";
 import { Button } from "@/shared/components/ui/Button";
 import { Badge } from "@/shared/components/ui/Badge";
 import { tr } from "@/shared/i18n/tr";
-import { recordRaceResults, lockRaceResults, type SingleResultInput } from "../api";
+import { recordRaceResults, lockRaceResults, fetchTournamentDetail, type SingleResultInput } from "../api";
 import type { Tournament } from "../types";
 
 interface RecordResultsModalProps {
@@ -32,37 +32,62 @@ export function RecordResultsModal({
       officialNotes: string;
     }>
   >([]);
+  const [detailTournament, setDetailTournament] = useState<Tournament | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (tournament && tournament.registrations) {
-      const initial = tournament.registrations.map((reg, index) => {
-        const existing = reg.result;
-        const rank = existing?.finalRank ?? index + 1;
-        const time = existing?.finishTimeSeconds ?? 70 + index * 1.5;
-        const speed =
-          existing?.avgSpeedKmh ??
-          Math.round(((tournament.distanceMeters / time) * 3.6) * 100) / 100;
-        const prize =
-          existing?.prizeMoneyWon ??
-          (rank === 1 ? Math.round(tournament.prizePool * 0.5) : rank === 2 ? Math.round(tournament.prizePool * 0.25) : 0);
+    if (!isOpen || !tournament?.id) return;
+    setLoadingDetail(true);
+    setError(null);
+    fetchTournamentDetail(tournament.id)
+      .then((full) => {
+        setDetailTournament(full);
+        if (full.registrations && full.registrations.length > 0) {
+          const initial = full.registrations.map((reg, index) => {
+            const existing = reg.result;
+            const rank = existing?.finalRank ?? index + 1;
+            const time = existing?.finishTimeSeconds ?? 70 + index * 1.5;
+            const speed =
+              existing?.avgSpeedKmh ??
+              Math.round(((full.distanceMeters / time) * 3.6) * 100) / 100;
+            const prize =
+              existing?.prizeMoneyWon ??
+              (rank === 1
+                ? Math.round(full.prizePool * 0.5)
+                : rank === 2
+                ? Math.round(full.prizePool * 0.25)
+                : rank === 3
+                ? Math.round(full.prizePool * 0.15)
+                : rank === 4
+                ? Math.round(full.prizePool * 0.1)
+                : 0);
 
-        return {
-          registrationId: reg.id,
-          horseName: reg.horse.name,
-          finalRank: rank,
-          finishTimeSeconds: time,
-          avgSpeedKmh: speed,
-          prizeMoneyWon: prize,
-          officialNotes: existing?.officialNotes ?? "",
-        };
-      });
-      setRows(initial);
-    }
-  }, [tournament, isOpen]);
+            return {
+              registrationId: reg.id,
+              horseName: reg.horse.name,
+              finalRank: rank,
+              finishTimeSeconds: time,
+              avgSpeedKmh: speed,
+              prizeMoneyWon: prize,
+              officialNotes: existing?.officialNotes ?? "",
+            };
+          });
+          setRows(initial);
+        } else {
+          setRows([]);
+        }
+      })
+      .catch((err) => setError(err?.message || tr("Failed to load tournament registrations")))
+      .finally(() => setLoadingDetail(false));
+  }, [tournament?.id, isOpen]);
 
   if (!isOpen) return null;
+
+  const currentTourney = detailTournament ?? tournament;
+  const isCompleted = currentTourney.status === "COMPLETED";
+
 
   function handleFieldChange(index: number, field: string, val: any) {
     setRows((prev) => {
@@ -124,14 +149,16 @@ export function RecordResultsModal({
 
   return (
     <Modal
-      title={tr("Record Race Execution & Official Results")}
-      subtitle={`${tournament.name} · ${tournament.distanceMeters}m (${tr(tournament.trackType)})`}
-      width={760}
+      title={isCompleted ? tr("Official Race Results (Locked)") : tr("Record Race Execution & Official Results")}
+      subtitle={`${currentTourney.name} · ${currentTourney.distanceMeters}m (${tr(currentTourney.trackType)})`}
+      width={860}
       onClose={onClose}
       foot={
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
           <div>
-            {isClubManager ? (
+            {isCompleted ? (
+              <Badge tone="ok">🏆 {tr("Official Results Locked")}</Badge>
+            ) : isClubManager ? (
               <Badge tone="warn">{tr("Club Manager: Authorized to Lock")}</Badge>
             ) : (
               <span style={{ fontSize: "var(--fs-xs)", color: "var(--muted)" }}>
@@ -140,16 +167,24 @@ export function RecordResultsModal({
             )}
           </div>
           <div style={{ display: "flex", gap: "0.75rem" }}>
-            <Button tone="secondary" onClick={onClose} disabled={loading}>
-              {tr("Cancel")}
-            </Button>
-            <Button tone="quiet" onClick={() => handleSave(false)} disabled={loading}>
-              {loading ? tr("Saving...") : tr("Save Draft")}
-            </Button>
-            {isClubManager && (
-              <Button tone="primary" onClick={() => handleSave(true)} disabled={loading}>
-                🔒 {loading ? tr("Locking...") : tr("Lock Official Results")}
+            {isCompleted ? (
+              <Button tone="primary" onClick={onClose}>
+                {tr("Close")}
               </Button>
+            ) : (
+              <>
+                <Button tone="secondary" onClick={onClose} disabled={loading}>
+                  {tr("Cancel")}
+                </Button>
+                <Button tone="quiet" onClick={() => handleSave(false)} disabled={loading}>
+                  {loading ? tr("Saving...") : tr("Save Draft")}
+                </Button>
+                {isClubManager && (
+                  <Button tone="primary" onClick={() => handleSave(true)} disabled={loading}>
+                    🔒 {loading ? tr("Locking...") : tr("Lock Official Results")}
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -171,103 +206,139 @@ export function RecordResultsModal({
           </div>
         )}
 
-        <div style={{ maxHeight: "360px", overflowY: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "var(--fs-sm)" }}>
-            <thead>
-              <tr style={{ borderBottom: "2px solid var(--border)", textAlign: "left", color: "var(--muted)" }}>
-                <th style={{ padding: "0.5rem" }}>{tr("Horse")}</th>
-                <th style={{ padding: "0.5rem", width: "80px" }}>{tr("Rank")}</th>
-                <th style={{ padding: "0.5rem", width: "100px" }}>{tr("Time (s)")}</th>
-                <th style={{ padding: "0.5rem", width: "90px" }}>{tr("Speed (km/h)")}</th>
-                <th style={{ padding: "0.5rem", width: "130px" }}>{tr("Prize Won (VND)")}</th>
-                <th style={{ padding: "0.5rem" }}>{tr("Official Notes")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, idx) => (
-                <tr key={row.registrationId} style={{ borderBottom: "1px solid var(--border)" }}>
-                  <td style={{ padding: "0.625rem 0.5rem", fontWeight: 700, color: "var(--ink)" }}>
-                    {row.horseName}
-                  </td>
-                  <td style={{ padding: "0.5rem" }}>
-                    <input
-                      type="number"
-                      min={1}
-                      value={row.finalRank}
-                      onChange={(e) => handleFieldChange(idx, "finalRank", Number(e.target.value))}
-                      style={{
-                        width: "100%",
-                        padding: "0.375rem 0.5rem",
-                        borderRadius: "var(--r-sm, 4px)",
-                        border: "1px solid var(--border)",
-                        background: "var(--surface)",
-                        color: "var(--ink)",
-                      }}
-                    />
-                  </td>
-                  <td style={{ padding: "0.5rem" }}>
-                    <input
-                      type="number"
-                      step={0.01}
-                      min={1}
-                      value={row.finishTimeSeconds}
-                      onChange={(e) =>
-                        handleFieldChange(idx, "finishTimeSeconds", Number(e.target.value))
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "0.375rem 0.5rem",
-                        borderRadius: "var(--r-sm, 4px)",
-                        border: "1px solid var(--border)",
-                        background: "var(--surface)",
-                        color: "var(--ink)",
-                      }}
-                    />
-                  </td>
-                  <td style={{ padding: "0.5rem", fontWeight: 600, color: "var(--brand, #10b981)" }}>
-                    {row.avgSpeedKmh}
-                  </td>
-                  <td style={{ padding: "0.5rem" }}>
-                    <input
-                      type="number"
-                      step={1000000}
-                      min={0}
-                      value={row.prizeMoneyWon}
-                      onChange={(e) =>
-                        handleFieldChange(idx, "prizeMoneyWon", Number(e.target.value))
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "0.375rem 0.5rem",
-                        borderRadius: "var(--r-sm, 4px)",
-                        border: "1px solid var(--border)",
-                        background: "var(--surface)",
-                        color: "var(--ink)",
-                      }}
-                    />
-                  </td>
-                  <td style={{ padding: "0.5rem" }}>
-                    <input
-                      type="text"
-                      placeholder={tr("e.g. Broke out cleanly, strong stretch run")}
-                      value={row.officialNotes}
-                      onChange={(e) => handleFieldChange(idx, "officialNotes", e.target.value)}
-                      style={{
-                        width: "100%",
-                        padding: "0.375rem 0.5rem",
-                        borderRadius: "var(--r-sm, 4px)",
-                        border: "1px solid var(--border)",
-                        background: "var(--surface)",
-                        color: "var(--ink)",
-                      }}
-                    />
-                  </td>
+        {loadingDetail ? (
+          <div style={{ padding: "3rem", textAlign: "center", color: "var(--muted)" }}>
+            {tr("Loading race entries and results...")}
+          </div>
+        ) : rows.length === 0 ? (
+          <div style={{ padding: "3rem", textAlign: "center", color: "var(--muted)" }}>
+            {tr("No registered horses found for this tournament.")}
+          </div>
+        ) : (
+          <div style={{ maxHeight: "380px", overflowY: "auto", overflowX: "hidden", width: "100%" }}>
+            <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "collapse", fontSize: "var(--fs-sm)" }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid var(--border)", textAlign: "left", color: "var(--muted)" }}>
+                  <th style={{ padding: "0.5rem", width: "20%" }}>{tr("Horse")}</th>
+                  <th style={{ padding: "0.5rem", width: "11%" }}>{tr("Rank")}</th>
+                  <th style={{ padding: "0.5rem", width: "13%" }}>{tr("Time (s)")}</th>
+                  <th style={{ padding: "0.5rem", width: "13%" }}>{tr("Speed (km/h)")}</th>
+                  <th style={{ padding: "0.5rem", width: "18%" }}>{tr("Prize Won (VND)")}</th>
+                  <th style={{ padding: "0.5rem", width: "25%" }}>{tr("Official Notes")}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {rows.map((row, idx) => (
+                  <tr key={row.registrationId} style={{ borderBottom: "1px solid var(--border)" }}>
+                    <td style={{ padding: "0.625rem 0.5rem", fontWeight: 700, color: "var(--ink)", wordBreak: "break-word" }}>
+                      {row.horseName}
+                    </td>
+                    <td style={{ padding: "0.5rem" }}>
+                      {isCompleted ? (
+                        <strong style={{ color: row.finalRank === 1 ? "var(--brand)" : "inherit" }}>
+                          #{row.finalRank}
+                        </strong>
+                      ) : (
+                        <input
+                          type="number"
+                          min={1}
+                          value={row.finalRank}
+                          onChange={(e) => handleFieldChange(idx, "finalRank", Number(e.target.value))}
+                          style={{
+                            width: "100%",
+                            padding: "0.375rem 0.5rem",
+                            borderRadius: "var(--r-sm, 4px)",
+                            border: "1px solid var(--border)",
+                            background: "var(--surface)",
+                            color: "var(--ink)",
+                          }}
+                        />
+                      )}
+                    </td>
+                    <td style={{ padding: "0.5rem" }}>
+                      {isCompleted ? (
+                        <span>{row.finishTimeSeconds}s</span>
+                      ) : (
+                        <input
+                          type="number"
+                          step={0.01}
+                          min={1}
+                          value={row.finishTimeSeconds}
+                          onChange={(e) =>
+                            handleFieldChange(idx, "finishTimeSeconds", Number(e.target.value))
+                          }
+                          style={{
+                            width: "100%",
+                            padding: "0.375rem 0.5rem",
+                            borderRadius: "var(--r-sm, 4px)",
+                            border: "1px solid var(--border)",
+                            background: "var(--surface)",
+                            color: "var(--ink)",
+                          }}
+                        />
+                      )}
+                    </td>
+                    <td style={{ padding: "0.5rem", fontWeight: 600, color: "var(--brand, #10b981)" }}>
+                      {row.avgSpeedKmh}
+                    </td>
+                    <td style={{ padding: "0.5rem", wordBreak: "break-word" }}>
+                      {isCompleted ? (
+                        <span style={{ fontWeight: 600, color: row.prizeMoneyWon > 0 ? "var(--brand)" : "var(--muted)", whiteSpace: "nowrap" }}>
+                          {row.prizeMoneyWon.toLocaleString()} đ
+                        </span>
+                      ) : (
+                        <input
+                          type="number"
+                          step={1000000}
+                          min={0}
+                          value={row.prizeMoneyWon}
+                          onChange={(e) =>
+                            handleFieldChange(idx, "prizeMoneyWon", Number(e.target.value))
+                          }
+                          style={{
+                            width: "100%",
+                            boxSizing: "border-box",
+                            padding: "0.375rem 0.5rem",
+                            borderRadius: "var(--r-sm, 4px)",
+                            border: "1px solid var(--border)",
+                            background: "var(--surface)",
+                            color: "var(--ink)",
+                          }}
+                        />
+                      )}
+                    </td>
+                    <td style={{ padding: "0.5rem", wordBreak: "break-word" }}>
+                      {isCompleted ? (
+                        <span style={{ color: "var(--muted)", wordBreak: "break-word", whiteSpace: "normal", lineHeight: 1.4, fontSize: "var(--fs-xs)" }}>
+                          {row.officialNotes || "—"}
+                        </span>
+                      ) : (
+                        <input
+                          type="text"
+                          placeholder={tr("e.g. Broke out cleanly, strong stretch run")}
+                          value={row.officialNotes}
+                          onChange={(e) => handleFieldChange(idx, "officialNotes", e.target.value)}
+                          style={{
+                            width: "100%",
+                            boxSizing: "border-box",
+                            padding: "0.375rem 0.5rem",
+                            borderRadius: "var(--r-sm, 4px)",
+                            border: "1px solid var(--border)",
+                            background: "var(--surface)",
+                            color: "var(--ink)",
+                            fontSize: "var(--fs-xs)",
+                          }}
+                        />
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </Modal>
   );
 }
+

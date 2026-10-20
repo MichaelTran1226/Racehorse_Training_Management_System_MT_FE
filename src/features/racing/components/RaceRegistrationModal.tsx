@@ -2,9 +2,46 @@ import { useState, useEffect } from "react";
 import { Modal } from "@/shared/components/ui/Modal";
 import { Button } from "@/shared/components/ui/Button";
 import { Badge } from "@/shared/components/ui/Badge";
-import { tr } from "@/shared/i18n/tr";
+import { tr, isVietnamese } from "@/shared/i18n/tr";
 import { fetchEligibility, registerHorseForRace } from "../api";
 import type { EligibilityResponse, Tournament } from "../types";
+
+function formatIneligibleReason(reason: string, isVi: boolean): string {
+  if (!isVi) return reason;
+
+  // 1. Khóa y tế
+  if (/veterinary medical lock/i.test(reason)) {
+    return "Đang bị Khóa y tế thú y (Cấm xuất chuồng / Cấm thi đấu)";
+  }
+
+  // 2. Trạng thái sức khỏe
+  if (/Horse health status is (currently\s+)?(\w+)/i.test(reason)) {
+    const match = reason.match(/Horse health status is (currently\s+)?(\w+)/i);
+    const code = match ? match[2].toUpperCase() : "";
+    const map: Record<string, string> = {
+      ISOLATED: "Đang cách ly kiểm dịch y tế (ISOLATED)",
+      INJURED: "Đang điều trị chấn thương (INJURED)",
+      UNDER_OBSERVATION: "Đang theo dõi sức khỏe đặc biệt (UNDER_OBSERVATION)",
+      SICK: "Đang bị bệnh / trị liệu (SICK)",
+      RESTING: "Đang nghỉ dưỡng phục hồi (RESTING)",
+      RETIRED: "Đã giải nghệ (RETIRED)",
+    };
+    return `Tình trạng sức khỏe: ${map[code] || code}`;
+  }
+
+  // 3. Thiếu số buổi tập gần đây
+  const workoutMatch = reason.match(/Insufficient recent training sessions \((\d+)\/(\d+) required in past (\d+) days\)/i);
+  if (workoutMatch) {
+    const [, curr, req, days] = workoutMatch;
+    return `Chưa đủ thể lực thi đấu (Mới hoàn thành ${curr}/${req} buổi tập yêu cầu trong ${days} ngày qua)`;
+  }
+
+  if (/insufficient recent training/i.test(reason)) {
+    return "Chưa hoàn thành đủ các bài tập chuẩn bị thi đấu";
+  }
+
+  return reason;
+}
 
 interface RaceRegistrationModalProps {
   isOpen: boolean;
@@ -225,27 +262,36 @@ export function RaceRegistrationModal({
                   <Badge tone="neutral">{tr("Rule Enforced")}</Badge>
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", maxHeight: "140px", overflowY: "auto" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", maxHeight: "180px", overflowY: "auto" }}>
                   {data.ineligible.map((h) => (
                     <div
                       key={h.id}
                       style={{
                         display: "flex",
-                        alignItems: "center",
+                        alignItems: "flex-start",
                         justifyContent: "space-between",
-                        padding: "0.5rem 0.75rem",
+                        padding: "0.625rem 0.75rem",
                         borderRadius: "var(--r-sm, 6px)",
                         border: "1px dashed var(--danger-border, #fecaca)",
                         background: "var(--danger-bg, #fff5f5)",
-                        opacity: 0.85,
+                        gap: "0.75rem",
                       }}
                     >
-                      <div>
-                        <span style={{ fontWeight: 600, fontSize: "var(--fs-sm)", color: "var(--ink)" }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ fontWeight: 700, fontSize: "var(--fs-sm)", color: "var(--ink)" }}>
                           {h.name}
                         </span>
-                        <div style={{ fontSize: "var(--fs-xs)", color: "var(--danger, #dc2626)", marginTop: "2px" }}>
-                          ⚠️ {h.ineligibleReasons?.join(" | ")}
+                        <div style={{ fontSize: "var(--fs-xs)", color: "var(--danger, #dc2626)", marginTop: "3px", display: "flex", flexDirection: "column", gap: "2px" }}>
+                          {h.ineligibleReasons && h.ineligibleReasons.length > 0 ? (
+                            h.ineligibleReasons.map((r, rIdx) => (
+                              <div key={rIdx} style={{ display: "flex", alignItems: "flex-start", gap: "4px" }}>
+                                <span style={{ flexShrink: 0 }}>⚠️</span>
+                                <span>{formatIneligibleReason(r, isVietnamese())}</span>
+                              </div>
+                            ))
+                          ) : (
+                            <div>⚠️ {isVietnamese() ? "Không đáp ứng quy định thi đấu" : tr("Did not meet entry criteria")}</div>
+                          )}
                         </div>
                       </div>
                       <Badge tone="danger">{tr("Blocked")}</Badge>

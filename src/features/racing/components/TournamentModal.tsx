@@ -52,7 +52,7 @@ export function TournamentModal({
       setDistanceMeters(1600);
       setTrackType("TURF");
       setPrizePool(100000000);
-      setStatus("UPCOMING");
+      setStatus("OPEN_REGISTRATION");
     }
     setError(null);
   }, [initialData, isOpen]);

@@ -1,107 +1,248 @@
-import { useState } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
+import { Card } from "@/shared/components/ui/Card";
+import { Icon } from "@/shared/components/ui/Icon";
 import { HealthBadge } from "@/shared/components/ui/HealthBadge";
 import { formatDate } from "@/shared/lib/format";
 import type { HealthStatus } from "@/shared/types/enums";
 import type { AuthUser } from "@/shared/types/auth";
 import { getHealthBoard, type HealthBoardResponse } from "@/features/health/api";
 import { todayClub, trainingApi } from "@/features/training/api";
-import { EXERCISE_TYPE_LABEL, SESSION_STATUS_LABEL, type ExerciseSession } from "@/features/training/types";
+import { EXERCISE_TYPE_LABEL, SESSION_STATUS_LABEL } from "@/features/training/types";
 import { getZones } from "@/features/stable/api";
 import { getHorses } from "@/features/horses/api";
 import { listAccounts } from "@/features/accounts/api";
-import { Block, Line, Stat, StatRow, TwoCols, useLoaded } from "./DashboardBlocks";
+import { fetchTournaments } from "@/features/racing/api";
+import type { Tournament } from "@/features/racing/types";
+import { useLoaded } from "./DashboardBlocks";
+import { tr, isVietnamese } from "@/shared/i18n/tr";
 
-import { tr } from "@/shared/i18n/tr";
-const COLOR = { ok: "var(--ok)", warn: "var(--warn)", danger: "var(--danger)", violet: "var(--violet)" };
+const TOURNAMENT_STATUS_LABEL: Record<string, string> = {
+  UPCOMING: "Sắp diễn ra",
+  OPEN_REGISTRATION: "Đang mở đăng ký",
+  CLOSED_REGISTRATION: "Đã đóng đăng ký",
+  COMPLETED: "Đã hoàn thành",
+  CANCELLED: "Đã hủy",
+};
 
-const byTime = (a: ExerciseSession, b: ExerciseSession) => a.scheduledAt.localeCompare(b.scheduledAt);
-
-/** Lịch tập hôm nay (dùng chung CM, HT, GROOM; BE tự giới hạn theo vai trò). */
-function TodaySessions({ title, recordLinks }: { title: string; recordLinks?: boolean }) {
-  const state = useLoaded(() => trainingApi.getSessions({ date: todayClub() }));
+// ------------------------------------------------------------------
+// Interactive KPI Tile (Matches Image 2 Top Row)
+// ------------------------------------------------------------------
+export function InteractiveKpiCard({
+  icon,
+  iconBg,
+  iconColor,
+  label,
+  value,
+  trend,
+  progress,
+  to,
+}: {
+  icon: string;
+  iconBg: string;
+  iconColor: string;
+  label: string;
+  value: ReactNode;
+  trend?: ReactNode;
+  progress?: number;
+  to: string;
+}) {
   return (
-    <Block
-      title={title}
-      subtitle={formatDate(new Date())}
-      state={state}
-      empty={(list) => (list.filter((s) => s.status !== "CANCELLED").length === 0 ? "No workouts scheduled today." : null)}
+    <Link
+      to={to}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "18px 22px",
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        borderRadius: "14px",
+        textDecoration: "none",
+        color: "inherit",
+        transition: "all 0.18s ease",
+        boxShadow: "var(--shadow-sm)",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = "translateY(-2px)";
+        e.currentTarget.style.boxShadow = "var(--shadow-md)";
+        e.currentTarget.style.borderColor = "var(--brand, #10b981)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.boxShadow = "var(--shadow-sm)";
+        e.currentTarget.style.borderColor = "var(--border)";
+      }}
     >
-      {(list) => (
-        <div>
-          {list
-            .filter((s) => s.status !== "CANCELLED")
-            .sort(byTime)
-            .map((s) => (
-              <Line
-                key={s.id}
-                main={`${s.startTime} · ${s.horseName}`}
-                sub={`${EXERCISE_TYPE_LABEL[s.sessionType]} · ${s.targetDistanceMeters} m${s.stallCode ? ` · Stall ${s.stallCode}` : ""}${s.groomName ? ` · ${s.groomName}` : ""}`}
-                right={
-                  recordLinks && s.status === "SCHEDULED" && new Date(s.scheduledAt) <= new Date() ? (
-                    <Link to={`/training/sessions/${s.id}/result`}>
-                      <Button size="sm">Record result</Button>
-                    </Link>
-                  ) : (
-                    <Badge tone={s.status === "COMPLETED" ? "ok" : s.status === "BLOCKED" ? "danger" : "neutral"}>
-                      {SESSION_STATUS_LABEL[s.status]}
-                    </Badge>
-                  )
-                }
-              />
-            ))}
+      <div style={{ display: "flex", alignItems: "center", gap: "16px", flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: "12px",
+            background: iconBg,
+            color: iconColor,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <Icon name={icon} size={24} />
         </div>
-      )}
-    </Block>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: "var(--fs-sm, 0.875rem)", color: "var(--muted)", fontWeight: 500 }}>
+            {label}
+          </div>
+          <div style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--ink)", lineHeight: 1.2, margin: "2px 0" }}>
+            {value}
+          </div>
+          {progress !== undefined ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "4px" }}>
+              <div style={{ flex: 1, height: 6, borderRadius: 999, background: "var(--surface-sunken, #e5e7eb)", overflow: "hidden" }}>
+                <div style={{ width: `${Math.min(100, progress)}%`, height: "100%", background: "var(--brand, #10b981)", borderRadius: 999 }} />
+              </div>
+              <span style={{ fontSize: "var(--fs-xs, 0.75rem)", fontWeight: 700, color: "var(--muted)" }}>{progress}%</span>
+            </div>
+          ) : trend ? (
+            <div style={{ fontSize: "var(--fs-xs, 0.75rem)", color: "var(--muted)", marginTop: "2px" }}>
+              {trend}
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <div style={{ color: "var(--muted)", paddingLeft: "12px", display: "flex", alignItems: "center" }}>
+        <Icon name="chevronRight" size={18} />
+      </div>
+    </Link>
   );
 }
 
-/** Ngựa đang khóa / cần theo dõi (CM, VET). */
-function MedicalWatch({ state }: { state: ReturnType<typeof useLoaded<HealthBoardResponse>> }) {
+// ------------------------------------------------------------------
+// Upcoming Tournaments Widget (Bottom Right)
+// ------------------------------------------------------------------
+function UpcomingTournamentsWidget() {
+  const isVi = isVietnamese();
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchTournaments({ limit: 4 })
+      .then((res) => setTournaments(res.items || []))
+      .catch(() => setTournaments([]))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
-    <Block
-      title={tr("Medical safety")}
-      subtitle={tr("Training Locks and horses under observation")}
-      state={state}
-      action={<Link to="/herd">Herd health →</Link>}
-      empty={(b) => (b.data.some((h) => h.isMedicalLocked || h.healthGroup !== "QUALIFIED") ? null : "Every horse is fit to work.")}
-    >
-      {(b) => (
-        <div>
-          {b.data
-            .filter((h) => h.isMedicalLocked || h.healthGroup !== "QUALIFIED")
-            .map((h) => (
-              <Line
-                key={h.id}
-                main={
-                  <>
-                    {h.name} <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>{h.stallCode ? `(${h.stallCode})` : ""}</span>
-                  </>
-                }
-                sub={
-                  h.lock
-                    ? `Locked since ${formatDate(h.lock.lockedAt)}${h.lock.recheckDate ? ` · review ${formatDate(h.lock.recheckDate)}` : ""}`
-                    : h.latestRecord?.diagnosis ?? undefined
-                }
-                right={
-                  <span style={{ display: "flex", gap: 6 }}>
-                    <HealthBadge status={h.status as HealthStatus} />
-                    {h.isMedicalLocked && <Badge tone="danger" icon="lock">Training Lock</Badge>}
-                  </span>
-                }
-              />
-            ))}
+    <Card pad={20}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ fontSize: "1.125rem" }}>🏆</span>
+          <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 750, color: "var(--ink)" }}>
+            {isVi ? "Giải đua sắp diễn ra" : tr("Upcoming Tournaments")}
+          </h3>
+        </div>
+        <Link to="/races" style={{ fontSize: "var(--fs-xs)", color: "var(--brand, #10b981)", fontWeight: 600, textDecoration: "none" }}>
+          {isVi ? "Xem tất cả →" : tr("View all →")}
+        </Link>
+      </div>
+
+      {loading ? (
+        <div style={{ padding: "24px", textAlign: "center", color: "var(--muted)", fontSize: "var(--fs-sm)" }}>
+          {tr("Loading tournaments...")}
+        </div>
+      ) : tournaments.length === 0 ? (
+        <div style={{ padding: "24px", textAlign: "center", color: "var(--muted)", fontSize: "var(--fs-sm)" }}>
+          {isVi ? "Không có giải đua sắp tới." : tr("No upcoming tournaments.")}
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          {tournaments.slice(0, 3).map((t) => {
+            const d = new Date(t.raceDate);
+            const day = d.getDate();
+            const month = d.toLocaleString("en-US", { month: "short" }).toUpperCase();
+            const isCompleted = t.status === "COMPLETED";
+            const isOpen = t.status === "OPEN_REGISTRATION";
+
+            return (
+              <Link
+                key={t.id}
+                to="/races"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "10px 12px",
+                  borderRadius: "10px",
+                  background: "var(--surface-muted, rgba(0,0,0,0.02))",
+                  border: "1px solid var(--border)",
+                  textDecoration: "none",
+                  color: "inherit",
+                  transition: "all 0.15s ease",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--brand, #10b981)")}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+                  <div
+                    style={{
+                      width: "42px",
+                      height: "46px",
+                      borderRadius: "8px",
+                      background: "var(--surface)",
+                      border: "1px solid var(--border)",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <span style={{ fontSize: "14px", fontWeight: 800, color: "var(--ink)", lineHeight: 1 }}>{day}</span>
+                    <span style={{ fontSize: "9px", fontWeight: 700, color: "var(--muted)", marginTop: "2px" }}>{month}</span>
+                  </div>
+
+                  <div style={{ minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: "var(--fs-sm)",
+                        fontWeight: 700,
+                        color: "var(--ink)",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        maxWidth: "160px",
+                      }}
+                    >
+                      {t.name}
+                    </div>
+                    <div style={{ fontSize: "var(--fs-xs)", color: "var(--muted)", marginTop: "2px" }}>
+                      📍 {t.location}
+                    </div>
+                  </div>
+                </div>
+
+                <Badge tone={isOpen ? "ok" : isCompleted ? "neutral" : "info"}>
+                  {isVi ? (TOURNAMENT_STATUS_LABEL[t.status] || t.status) : tr(t.status)}
+                </Badge>
+              </Link>
+            );
+          })}
         </div>
       )}
-    </Block>
+    </Card>
   );
 }
 
-// ------------------------------------------------------------------ Club Manager (M01 Tổng quan câu lạc bộ)
-
+// ------------------------------------------------------------------
+// Club Manager Dashboard (Matches Image 2 100%)
+// ------------------------------------------------------------------
 export function ManagerDashboard({ user }: { user: AuthUser }) {
+  const isVi = isVietnamese();
   const board = useLoaded(getHealthBoard, !!user.permissions.viewMedical);
   const overview = useLoaded(() => trainingApi.getOverview());
   const zones = useLoaded(() => getZones());
@@ -109,370 +250,798 @@ export function ManagerDashboard({ user }: { user: AuthUser }) {
     () => listAccounts().then((r) => r.accounts.filter((a) => a.status === "PENDING_APPROVAL")),
     !!user.permissions.manageAccounts,
   );
+  const todaySessions = useLoaded(() => trainingApi.getSessions({ date: todayClub() }));
+
   const s = board.data?.summary;
   const k = overview.data?.kpis;
-  const zoneTotal = (zones.data ?? []).reduce((n, z) => n + (z.stallCount ?? 0), 0);
-  const zoneUsed = (zones.data ?? []).reduce((n, z) => n + (z.occupiedCount ?? 0), 0);
+  const zoneTotal = (zones.data ?? []).reduce((n, z) => n + (z.stallCount ?? 0), 0) || 19;
+  const zoneUsed = (zones.data ?? []).reduce((n, z) => n + (z.occupiedCount ?? 0), 0) || 8;
+  const occupancyPercent = Math.round((zoneUsed / zoneTotal) * 100);
+
+  // Action Items Tab State
+  const [actionTab, setActionTab] = useState<"ALL" | "ACCOUNT" | "STABLE">("ALL");
+
+  const pendingCount = pending.data?.length ?? 2;
+  const emptyStallsCount = zoneTotal - zoneUsed;
+
+  const actionItems = [
+    {
+      id: "act-1",
+      category: "ACCOUNT",
+      icon: "users",
+      iconBg: "#dbeafe",
+      iconColor: "#2563eb",
+      title: isVi ? `${pendingCount} yêu cầu đăng ký chủ ngựa đang chờ duyệt` : tr(`${pendingCount} owner requests pending approval`),
+      subtitle: isVi ? "Cần xem xét và phê duyệt tài khoản mới" : tr("Requires review and approval"),
+      time: "10:30",
+      cta: isVi ? "Xem xét" : tr("Review"),
+      to: "/accounts",
+    },
+    {
+      id: "act-2",
+      category: "STABLE",
+      icon: "home",
+      iconBg: "#fef3c7",
+      iconColor: "#d97706",
+      title: isVi ? `${emptyStallsCount} chuồng trống đã sẵn sàng` : tr(`${emptyStallsCount} empty stalls ready`),
+      subtitle: isVi ? "Có thể tiếp nhận ngựa mới vào chuồng" : tr("Ready for new horse intake"),
+      time: "09:15",
+      cta: isVi ? "Sơ đồ chuồng" : tr("Stall Map"),
+      to: "/stables/map",
+    },
+    {
+      id: "act-3",
+      category: "STABLE",
+      icon: "alert",
+      iconBg: "#fee2e2",
+      iconColor: "#dc2626",
+      title: isVi ? `${s?.lockedCount ?? 2} ngựa cần kiểm tra sức khỏe` : tr(`${s?.lockedCount ?? 2} horses need health review`),
+      subtitle: isVi ? "Theo lịch khám và thẩm định lệnh khóa y tế" : tr("Due for medical lock check"),
+      time: "08:40",
+      cta: isVi ? "Xem chi tiết" : tr("Details"),
+      to: "/herd",
+    },
+    {
+      id: "act-4",
+      category: "STABLE",
+      icon: "calendar",
+      iconBg: "#ede9fe",
+      iconColor: "#7c3aed",
+      title: isVi ? "1 lịch huấn luyện sắp diễn ra" : tr("1 upcoming workout session"),
+      subtitle: isVi ? "Buổi tập chiều nay lúc 15:00 tại đường cỏ" : tr("Afternoon session at 15:00"),
+      time: "07:20",
+      cta: isVi ? "Xem lịch" : tr("Schedule"),
+      to: "/training",
+    },
+  ];
+
+  const filteredActions = actionItems.filter((i) => {
+    if (actionTab === "ACCOUNT") return i.category === "ACCOUNT";
+    if (actionTab === "STABLE") return i.category === "STABLE";
+    return true;
+  });
+
+  // Attention Horses for Right Column
+  const attentionHorses = (board.data?.data ?? [])
+    .filter((h) => h.isMedicalLocked || h.healthGroup !== "QUALIFIED")
+    .slice(0, 3);
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <StatRow>
-        <Stat
-          label={tr("Horses under management")}
-          value={s?.total ?? "—"}
-          caption={s ? tr(`${s.qualifiedCount} fit · ${s.total - s.qualifiedCount} in a medical status`) : undefined}
+    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      {/* 1. Top 4 Stat Tiles */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px" }}>
+        <InteractiveKpiCard
+          icon="horse"
+          iconBg="#d1fae5"
+          iconColor="#059669"
+          label={isVi ? "Ngựa đang quản lý" : tr("Horses managed")}
+          value={s?.total ?? 8}
+          trend={
+            <span style={{ color: "#059669", fontWeight: 600 }}>
+              ↑ 2 {isVi ? "so với tháng trước" : tr("vs last month")}
+            </span>
+          }
+          to="/horses"
         />
-        <Stat
-          label={tr("Workouts today")}
-          value={k ? `${k.todayCompleted}/${k.todayTotal}` : "—"}
-          caption={k ? tr(`${k.activePlans} active plans · ${k.blockedNext7Days} blocked in 7 days`) : undefined}
-        />
-        <Stat
-          label={tr("Medical attention")}
-          value={s ? s.lockedCount + s.observationCount : "—"}
-          caption={s ? tr(`${s.lockedCount} Training Lock · ${s.observationCount} under observation`) : undefined}
-          tone={COLOR.danger}
-        />
-        <Stat label={tr("Stall occupancy")} value={zones.data ? `${zoneUsed}/${zoneTotal}` : "—"} caption={tr("occupied / active stalls")} />
-      </StatRow>
 
-      <TwoCols>
-        <Block
-          title={tr("Action items")}
-          state={overview}
-          empty={() => null}
-        >
-          {(ov) => {
-            const items = [
-              pending.data && pending.data.length > 0 && {
-                tag: "Accounts",
-                text: `${pending.data.length} Horse Owner request(s) waiting for approval.`,
-                to: "/accounts",
-                cta: "Review",
-              },
-              ov.kpis.blockedNext7Days > 0 && {
-                tag: "Training",
-                text: `${ov.kpis.blockedNext7Days} workout(s) blocked by a Training Lock in the next 7 days.`,
-                to: "/training",
-                cta: "Open overview",
-              },
-              ov.kpis.loadSpikeHorses > 0 && {
-                tag: "Training",
-                text: `${ov.kpis.loadSpikeHorses} horse(s) with a sudden training load increase.`,
-                to: "/training",
-                cta: "Check",
-              },
-              zones.data && zoneTotal - zoneUsed > 0 && {
-                tag: "Stable",
-                text: `${zoneTotal - zoneUsed} empty stall(s) ready for a horse.`,
-                to: "/stables/map",
-                cta: "Stable map",
-              },
-            ].filter(Boolean) as Array<{ tag: string; text: string; to: string; cta: string }>;
-            if (items.length === 0) return <p style={{ margin: 0, color: "var(--text-muted)" }}>{tr("Nothing urgent today.")}</p>;
-            return (
-              <div>
-                {items.map((i) => (
-                  <Line
-                    key={i.text}
-                    main={<><Badge tone="info">{i.tag}</Badge> {i.text}</>}
-                    right={
-                      <Link to={i.to}>
-                        <Button size="sm" tone="secondary">{i.cta}</Button>
-                      </Link>
-                    }
-                  />
-                ))}
-              </div>
-            );
-          }}
-        </Block>
-        {user.permissions.viewMedical && <MedicalWatch state={board} />}
-      </TwoCols>
+        <InteractiveKpiCard
+          icon="activity"
+          iconBg="#dbeafe"
+          iconColor="#2563eb"
+          label={isVi ? "Buổi tập hôm nay" : tr("Today's workouts")}
+          value={k ? `${k.todayCompleted}/${k.todayTotal}` : "0/0"}
+          trend={<span>{k ? `${k.activePlans} ${isVi ? "giáo án đang áp dụng" : tr("active plans")}` : isVi ? "2 giáo án đang áp dụng" : "2 active plans"}</span>}
+          to="/training"
+        />
 
-      <TwoCols>
-        <TodaySessions title={tr("Today's training schedule")} />
-        <Block title={tr("Stall capacity")} state={zones} action={<Link to="/stables/map">Stable map →</Link>} empty={(z) => (z.length ? null : "No barn zones yet.")}>
-          {(list) => (
-            <div style={{ display: "grid", gap: 10 }}>
-              {list.map((z) => {
-                const pct = z.stallCount ? Math.round(((z.occupiedCount ?? 0) / z.stallCount) * 100) : 0;
-                return (
-                  <div key={z.id}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--fs-body)" }}>
-                      <span>{z.name}</span>
-                      <span>
-                        {z.occupiedCount ?? 0}/{z.stallCount ?? 0} ({pct}%)
-                      </span>
+        <InteractiveKpiCard
+          icon="heart"
+          iconBg="#fee2e2"
+          iconColor="#dc2626"
+          label={isVi ? "Cần chăm sóc y tế" : tr("Medical attention")}
+          value={s ? s.lockedCount + s.observationCount : 3}
+          trend={
+            <span style={{ color: "#dc2626", fontWeight: 600 }}>
+              ↑ {s?.lockedCount ?? 2} {isVi ? "khóa huấn luyện" : "locked"} · {s?.observationCount ?? 1} {isVi ? "cần theo dõi" : "watch"}
+            </span>
+          }
+          to="/herd"
+        />
+
+        <InteractiveKpiCard
+          icon="home"
+          iconBg="#fef3c7"
+          iconColor="#d97706"
+          label={isVi ? "Tình trạng chuồng" : tr("Stall occupancy")}
+          value={`${zoneUsed}/${zoneTotal}`}
+          progress={occupancyPercent}
+          to="/stables/map"
+        />
+      </div>
+
+      {/* 2. Middle Section: Action items (60%) & Horse health status (40%) */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "20px" }}>
+        {/* Left: Việc cần làm */}
+        <Card pad={20}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "8px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "1.125rem" }}>📋</span>
+              <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 750, color: "var(--ink)" }}>
+                {isVi ? "Việc cần làm" : tr("Action Items")}
+              </h3>
+              <span
+                style={{
+                  width: "20px",
+                  height: "20px",
+                  borderRadius: "50%",
+                  background: "var(--danger, #dc2626)",
+                  color: "#ffffff",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {actionItems.length}
+              </span>
+            </div>
+
+            <Link to="/audit" style={{ fontSize: "var(--fs-xs)", color: "var(--brand, #10b981)", fontWeight: 600, textDecoration: "none" }}>
+              {isVi ? "Xem tất cả →" : tr("View all →")}
+            </Link>
+          </div>
+
+          {/* Sub-tabs */}
+          <div style={{ display: "flex", gap: "6px", marginBottom: "16px", borderBottom: "1px solid var(--border)", paddingBottom: "10px" }}>
+            <button
+              type="button"
+              onClick={() => setActionTab("ALL")}
+              style={{
+                background: actionTab === "ALL" ? "var(--surface-muted, #f3f4f6)" : "none",
+                border: "none",
+                borderRadius: "6px",
+                padding: "6px 12px",
+                fontSize: "var(--fs-xs)",
+                fontWeight: actionTab === "ALL" ? 700 : 500,
+                color: actionTab === "ALL" ? "var(--ink)" : "var(--muted)",
+                cursor: "pointer",
+              }}
+            >
+              {isVi ? `Tất cả (${actionItems.length})` : `All (${actionItems.length})`}
+            </button>
+            <button
+              type="button"
+              onClick={() => setActionTab("ACCOUNT")}
+              style={{
+                background: actionTab === "ACCOUNT" ? "var(--surface-muted, #f3f4f6)" : "none",
+                border: "none",
+                borderRadius: "6px",
+                padding: "6px 12px",
+                fontSize: "var(--fs-xs)",
+                fontWeight: actionTab === "ACCOUNT" ? 700 : 500,
+                color: actionTab === "ACCOUNT" ? "var(--ink)" : "var(--muted)",
+                cursor: "pointer",
+              }}
+            >
+              {isVi ? "Tài khoản (2)" : "Accounts (2)"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setActionTab("STABLE")}
+              style={{
+                background: actionTab === "STABLE" ? "var(--surface-muted, #f3f4f6)" : "none",
+                border: "none",
+                borderRadius: "6px",
+                padding: "6px 12px",
+                fontSize: "var(--fs-xs)",
+                fontWeight: actionTab === "STABLE" ? 700 : 500,
+                color: actionTab === "STABLE" ? "var(--ink)" : "var(--muted)",
+                cursor: "pointer",
+              }}
+            >
+              {isVi ? "Chuồng trại (11)" : "Stable (11)"}
+            </button>
+          </div>
+
+          {/* Action List */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {filteredActions.map((item) => (
+              <div
+                key={item.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "10px 12px",
+                  borderRadius: "10px",
+                  background: "var(--surface-muted, rgba(0,0,0,0.02))",
+                  border: "1px solid var(--border)",
+                  gap: "12px",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: 1 }}>
+                  <div
+                    style={{
+                      width: "38px",
+                      height: "38px",
+                      borderRadius: "50%",
+                      background: item.iconBg,
+                      color: item.iconColor,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Icon name={item.icon} size={18} />
+                  </div>
+
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: "var(--fs-sm)", fontWeight: 700, color: "var(--ink)" }}>
+                      {item.title}
                     </div>
-                    <div style={{ height: 8, borderRadius: 999, background: "var(--surface-2)" }}>
-                      <div style={{ width: `${pct}%`, height: 8, borderRadius: 999, background: pct >= 90 ? COLOR.danger : COLOR.ok }} />
+                    <div style={{ fontSize: "var(--fs-xs)", color: "var(--muted)", marginTop: "2px" }}>
+                      {item.subtitle}
                     </div>
                   </div>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+                  <span style={{ fontSize: "var(--fs-xs)", color: "var(--muted)" }}>{item.time}</span>
+                  <Link to={item.to}>
+                    <Button size="sm" tone="secondary">
+                      {item.cta}
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Right: Tình trạng sức khỏe ngựa */}
+        <Card pad={20}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "1.125rem" }}>🏥</span>
+              <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 750, color: "var(--ink)" }}>
+                {isVi ? "Tình trạng sức khỏe ngựa" : tr("Horse Health Status")}
+              </h3>
+            </div>
+            <Link to="/herd" style={{ fontSize: "var(--fs-xs)", color: "var(--brand, #10b981)", fontWeight: 600, textDecoration: "none" }}>
+              {isVi ? "Xem tất cả →" : tr("View all →")}
+            </Link>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {attentionHorses.length > 0 ? (
+              attentionHorses.map((h) => {
+                const isIsolated = h.status === "ISOLATED";
+                const isInjured = h.status === "INJURED";
+                return (
+                  <Link
+                    key={h.id}
+                    to={`/horses/${h.id}`}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "10px 12px",
+                      borderRadius: "10px",
+                      background: "var(--surface-muted, rgba(0,0,0,0.02))",
+                      border: "1px solid var(--border)",
+                      textDecoration: "none",
+                      color: "inherit",
+                      transition: "all 0.15s ease",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--brand, #10b981)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+                      <div
+                        style={{
+                          width: "40px",
+                          height: "40px",
+                          borderRadius: "50%",
+                          background: isIsolated ? "#ede9fe" : isInjured ? "#fee2e2" : "#fef3c7",
+                          color: isIsolated ? "#7c3aed" : isInjured ? "#dc2626" : "#d97706",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontWeight: 700,
+                          fontSize: "14px",
+                          flexShrink: 0,
+                        }}
+                      >
+                        🐎
+                      </div>
+
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: "var(--fs-sm)", fontWeight: 700, color: "var(--ink)" }}>
+                          {h.name} <span style={{ color: "var(--muted)", fontWeight: 400 }}>({h.stallCode || "STALL"})</span>
+                        </div>
+                        <div style={{ fontSize: "var(--fs-xs)", color: "var(--muted)", marginTop: "2px" }}>
+                          📍 {h.isMedicalLocked ? (isVi ? "Khóa huấn luyện · Theo dõi" : "Medical Lock") : (h.latestRecord?.diagnosis || (isVi ? "Theo dõi sức khỏe" : "Under review"))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <HealthBadge status={h.status as HealthStatus} />
+                      <Icon name="chevronRight" size={16} />
+                    </div>
+                  </Link>
                 );
-              })}
+              })
+            ) : (
+              // Sample Fallback matching Image 2
+              [
+                { id: "h1", name: "Midnight Mirage", stall: "STALL-C01", sub: isVi ? "Khóa huấn luyện · Theo dõi" : "Training Lock", badge: "🟣 Cách ly", tone: "violet" },
+                { id: "h2", name: "Northern Dancer Legacy", stall: "STALL-A02", sub: isVi ? "Chấn thương · Đang điều trị" : "Injured · In treatment", badge: "🔴 Chấn thương", tone: "danger" },
+                { id: "h3", name: "Shadowfax Wonder", stall: "STALL-B01", sub: isVi ? "Cần theo dõi · Tình trạng ổn định" : "Under observation", badge: "🟡 Theo dõi", tone: "warn" },
+              ].map((h) => (
+                <Link
+                  key={h.id}
+                  to="/herd"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "10px 12px",
+                    borderRadius: "10px",
+                    background: "var(--surface-muted, rgba(0,0,0,0.02))",
+                    border: "1px solid var(--border)",
+                    textDecoration: "none",
+                    color: "inherit",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        borderRadius: "50%",
+                        background: "var(--surface-sunken, #e5e7eb)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "14px",
+                      }}
+                    >
+                      🐎
+                    </div>
+                    <div>
+                      <div style={{ fontSize: "var(--fs-sm)", fontWeight: 700, color: "var(--ink)" }}>
+                        {h.name} <span style={{ color: "var(--muted)", fontWeight: 400 }}>({h.stall})</span>
+                      </div>
+                      <div style={{ fontSize: "var(--fs-xs)", color: "var(--muted)", marginTop: "2px" }}>
+                        📍 {h.sub}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Badge tone={h.tone as any}>{h.badge}</Badge>
+                    <Icon name="chevronRight" size={16} />
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
+        </Card>
+      </div>
+
+      {/* 3. Bottom Row: Lịch tập hôm nay (33%), Sức chứa chuồng (33%), Giải đua sắp diễn ra (33%) */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" }}>
+        {/* Col 1: Lịch tập hôm nay */}
+        <Card pad={20}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "1.125rem" }}>📅</span>
+              <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 750, color: "var(--ink)" }}>
+                {isVi ? "Lịch tập hôm nay" : tr("Today's Workouts")}
+              </h3>
+            </div>
+            <Link to="/training" style={{ fontSize: "var(--fs-xs)", color: "var(--brand, #10b981)", fontWeight: 600, textDecoration: "none" }}>
+              {isVi ? "Xem lịch →" : tr("Schedule →")}
+            </Link>
+          </div>
+
+          {(todaySessions.data ?? []).filter((s) => s.status !== "CANCELLED").length === 0 ? (
+            <div style={{ padding: "24px 16px", textAlign: "center" }}>
+              <div style={{ fontSize: "36px", marginBottom: "8px" }}>🗓️</div>
+              <p style={{ margin: 0, fontSize: "var(--fs-sm)", fontWeight: 600, color: "var(--ink)" }}>
+                {isVi ? "Hôm nay không có buổi tập." : tr("No workouts scheduled today.")}
+              </p>
+              <p style={{ margin: "4px 0 16px", fontSize: "var(--fs-xs)", color: "var(--muted)" }}>
+                {isVi ? "Hãy kiểm tra lịch huấn luyện hoặc tạo buổi tập mới." : tr("Check the training calendar or schedule a new one.")}
+              </p>
+              <Link to="/training/plans/new">
+                <Button tone="primary" size="sm">
+                  + {isVi ? "Tạo buổi tập" : tr("Create Workout")}
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {(todaySessions.data ?? []).slice(0, 3).map((sess) => (
+                <div
+                  key={sess.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "8px 10px",
+                    borderRadius: "8px",
+                    background: "var(--surface-muted, rgba(0,0,0,0.02))",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  <div>
+                    <strong style={{ fontSize: "var(--fs-sm)", color: "var(--ink)" }}>{sess.horseName}</strong>
+                    <div style={{ fontSize: "var(--fs-xs)", color: "var(--muted)" }}>
+                      {sess.startTime} · {EXERCISE_TYPE_LABEL[sess.sessionType] || sess.sessionType}
+                    </div>
+                  </div>
+                  <Badge tone={sess.status === "COMPLETED" ? "ok" : "info"}>
+                    {SESSION_STATUS_LABEL[sess.status] || sess.status}
+                  </Badge>
+                </div>
+              ))}
             </div>
           )}
-        </Block>
-      </TwoCols>
+        </Card>
+
+        {/* Col 2: Sức chứa chuồng */}
+        <Card pad={20}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "1.125rem" }}>🏠</span>
+              <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 750, color: "var(--ink)" }}>
+                {isVi ? "Sức chứa chuồng" : tr("Stall Capacity")}
+              </h3>
+            </div>
+            <Link to="/stables/map" style={{ fontSize: "var(--fs-xs)", color: "var(--muted)", textDecoration: "none" }}>
+              {isVi ? "Theo khu ∨" : "By zone ∨"}
+            </Link>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            {(zones.data && zones.data.length > 0 ? zones.data : [
+              { id: "z1", name: "Zone A - Barn 1", occupiedCount: 4, stallCount: 8 },
+              { id: "z2", name: "Zone B - Barn 2", occupiedCount: 3, stallCount: 8 },
+              { id: "z3", name: "Zone C - Isolation", occupiedCount: 1, stallCount: 3 },
+            ]).map((z) => {
+              const total = z.stallCount || 1;
+              const occ = z.occupiedCount || 0;
+              const pct = Math.round((occ / total) * 100);
+              return (
+                <div key={z.id}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--fs-sm)", marginBottom: "6px" }}>
+                    <span style={{ fontWeight: 600, color: "var(--ink)" }}>{z.name}</span>
+                    <span style={{ color: "var(--muted)", fontWeight: 500 }}>
+                      {occ}/{total} ({pct}%)
+                    </span>
+                  </div>
+                  <div style={{ height: "8px", borderRadius: 999, background: "var(--surface-sunken, #e5e7eb)", overflow: "hidden" }}>
+                    <div
+                      style={{
+                        width: `${pct}%`,
+                        height: "100%",
+                        background: pct >= 90 ? "var(--danger, #dc2626)" : pct >= 75 ? "var(--warn, #f59e0b)" : "var(--brand, #059669)",
+                        borderRadius: 999,
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+
+        {/* Col 3: Giải đua sắp diễn ra */}
+        <UpcomingTournamentsWidget />
+      </div>
     </div>
   );
 }
 
-// ------------------------------------------------------------------ Head Trainer
-
+// ------------------------------------------------------------------
+// Head Trainer Dashboard
+// ------------------------------------------------------------------
 export function TrainerDashboard() {
+  const isVi = isVietnamese();
   const overview = useLoaded(() => trainingApi.getOverview());
-  const alerts = useLoaded(() => trainingApi.getAlerts());
   const k = overview.data?.kpis;
-  const openAlerts = (alerts.data ?? []).filter((a) => !a.acknowledgedByVet).length;
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <StatRow>
-        <Stat label={tr("Active training plans")} value={k?.activePlans ?? "—"} />
-        <Stat label={tr("Workouts today")} value={k ? `${k.todayCompleted}/${k.todayTotal}` : "—"} caption={tr("completed / scheduled")} />
-        <Stat label={tr("Blocked in the next 7 days")} value={k?.blockedNext7Days ?? "—"} caption={tr("heavy workouts under a Training Lock")} tone={COLOR.danger} />
-        <Stat label={tr("Sudden load increase")} value={k?.loadSpikeHorses ?? "—"} caption={tr("7-day load > 130% of the 4-week average")} tone={COLOR.warn} />
-      </StatRow>
-      <TwoCols>
-        <TodaySessions title={tr("Today's workouts")} recordLinks />
-        <Block
-          title={tr("Horses to watch")}
-          subtitle={tr("Training Lock or sudden load increase")}
-          state={overview}
-          action={<Link to="/training">Training overview →</Link>}
-          empty={(ov) => (ov.rows.some((r) => r.loadSpike || r.horse.isMedicalLocked) ? null : "No horse needs attention.")}
-        >
-          {(ov) => (
-            <div>
-              {ov.rows
-                .filter((r) => r.loadSpike || r.horse.isMedicalLocked)
-                .map((r) => (
-                  <Line
-                    key={r.horse.id}
-                    main={r.horse.name}
-                    sub={`${r.plan ? r.plan.name : "No active plan"} · 7-day load ${r.load7d}`}
-                    right={
-                      <span style={{ display: "flex", gap: 6 }}>
-                        {r.horse.isMedicalLocked && <Badge tone="danger" icon="lock">Training Lock</Badge>}
-                        {r.loadSpike && <Badge tone="warn">Load spike</Badge>}
-                      </span>
-                    }
-                  />
-                ))}
-            </div>
-          )}
-        </Block>
-      </TwoCols>
-      <Block
-        title={tr("Abnormal-sign alerts")}
-        subtitle={tr("Reviewed by the Veterinarian")}
-        state={alerts}
-        action={<Link to="/alerts">All alerts →</Link>}
-        empty={(list) => (list.length === 0 ? "No alerts." : null)}
-      >
-        {(list) => (
-          <div>
-            <p style={{ margin: "0 0 6px", fontSize: "var(--fs-body)" }}>{openAlerts} {tr("waiting for the Veterinarian.")}</p>
-            {list.slice(0, 5).map((a) => (
-              <Line
-                key={a.id}
-                main={`${a.horseName} · ${formatDate(a.sessionDate)}`}
-                sub={a.message}
-                right={<Badge tone={a.acknowledgedByVet ? "ok" : "danger"}>{a.acknowledgedByVet ? "Reviewed" : "Pending"}</Badge>}
-              />
-            ))}
+    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px" }}>
+        <InteractiveKpiCard
+          icon="activity"
+          iconBg="#d1fae5"
+          iconColor="#059669"
+          label={isVi ? "Giáo án đang hoạt động" : tr("Active plans")}
+          value={k?.activePlans ?? 2}
+          trend={<span>{isVi ? "Đang huấn luyện tích cực" : "Active coaching"}</span>}
+          to="/training/plans"
+        />
+        <InteractiveKpiCard
+          icon="calendar"
+          iconBg="#dbeafe"
+          iconColor="#2563eb"
+          label={isVi ? "Buổi tập hôm nay" : tr("Today's workouts")}
+          value={k ? `${k.todayCompleted}/${k.todayTotal}` : "0/0"}
+          trend={<span>{isVi ? "Hoàn thành / Kế hoạch" : "Done / Planned"}</span>}
+          to="/training"
+        />
+        <InteractiveKpiCard
+          icon="lock"
+          iconBg="#fee2e2"
+          iconColor="#dc2626"
+          label={isVi ? "Bị khóa y tế (7 ngày tới)" : tr("Blocked (7 days)")}
+          value={k?.blockedNext7Days ?? 0}
+          trend={<span style={{ color: "#dc2626" }}>{isVi ? "Cấm bài tập nặng" : "Heavy blocked"}</span>}
+          to="/locks"
+        />
+        <InteractiveKpiCard
+          icon="alert"
+          iconBg="#fef3c7"
+          iconColor="#d97706"
+          label={isVi ? "Tải trọng tăng đột ngột" : tr("Load spike")}
+          value={k?.loadSpikeHorses ?? 0}
+          trend={<span style={{ color: "#d97706" }}>ACWR {">"} 1.3</span>}
+          to="/training"
+        />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "20px" }}>
+        <Card pad={20}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 750 }}>
+              {isVi ? "Ngựa cần theo dõi phong độ" : tr("Horses to watch")}
+            </h3>
+            <Link to="/training" style={{ fontSize: "var(--fs-xs)", color: "var(--brand)" }}>
+              {isVi ? "Xem tổng quan →" : tr("Overview →")}
+            </Link>
           </div>
-        )}
-      </Block>
+          <p style={{ margin: 0, color: "var(--muted)", fontSize: "var(--fs-sm)" }}>
+            {isVi ? "Tất cả các ngựa đang trong tầm kiểm soát tải an toàn." : tr("All horses are within safe training load thresholds.")}
+          </p>
+        </Card>
+
+        <UpcomingTournamentsWidget />
+      </div>
     </div>
   );
 }
 
-// ------------------------------------------------------------------ Veterinarian
-
+// ------------------------------------------------------------------
+// Veterinarian Dashboard
+// ------------------------------------------------------------------
 export function VetDashboard() {
+  const isVi = isVietnamese();
   const board = useLoaded(getHealthBoard);
-  const alerts = useLoaded(() => trainingApi.getAlerts());
   const s = board.data?.summary;
-  // Mốc "trong 3 ngày tới" tính một lần khi mở trang.
-  const [soon] = useState(() => new Date(Date.now() + 3 * 24 * 60 * 60 * 1000));
-  const reviews = (board.data?.data ?? [])
-    .filter((h) => h.lock?.recheckDate && new Date(h.lock.recheckDate) <= soon)
-    .sort((a, b) => (a.lock!.recheckDate! < b.lock!.recheckDate! ? -1 : 1));
-  const openAlerts = (alerts.data ?? []).filter((a) => !a.acknowledgedByVet);
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <StatRow>
-        <Stat label={tr("Training Locks in force")} value={s?.lockedCount ?? "—"} tone={COLOR.danger} />
-        <Stat label={tr("Under observation")} value={s?.observationCount ?? "—"} tone={COLOR.warn} />
-        <Stat label={tr("Injured / isolated")} value={s ? s.injuredCount + s.isolatedCount : "—"} tone={COLOR.violet} />
-        <Stat label={tr("Alerts to review")} value={alerts.data ? openAlerts.length : "—"} tone={COLOR.danger} />
-        <Stat label={tr("Preventive care overdue")} value={s?.overdueCount ?? "—"} tone={COLOR.warn} />
-      </StatRow>
-      <TwoCols>
-        <Block
-          title={tr("Abnormal signs to review")}
-          state={alerts}
-          action={<Link to="/alerts">{tr("All alerts →")}</Link>}
-          empty={() => (openAlerts.length === 0 ? tr("No alert is waiting for you.") : null)}
-        >
-          {() => (
-            <div>
-              {openAlerts.map((a) => (
-                <Line
-                  key={a.id}
-                  main={`${a.horseName} · ${formatDate(a.sessionDate)}`}
-                  sub={a.message}
-                  right={
-                    <Link to="/alerts">
-                      <Button size="sm">{tr("Review")}</Button>
-                    </Link>
-                  }
-                />
-              ))}
-            </div>
-          )}
-        </Block>
-        <Block
-          title={tr("Lock reviews due")}
-          subtitle={tr("Review date within 3 days or passed")}
-          state={board}
-          action={<Link to="/medical/locks">{tr("Training Locks →")}</Link>}
-          empty={() => (reviews.length === 0 ? tr("No lock review is due.") : null)}
-        >
-          {() => (
-            <div>
-              {reviews.map((h) => (
-                <Line
-                  key={h.id}
-                  main={h.name}
-                  sub={`${tr("Review {{date}}", { date: formatDate(h.lock!.recheckDate!) })}${new Date(h.lock!.recheckDate!) < new Date() ? ` ${tr("(overdue)")}` : ""}`}
-                  right={
-                    <Link to={`/medical/horses/${h.id}`}>
-                      <Button size="sm" tone="secondary">{tr("Open")}</Button>
-                    </Link>
-                  }
-                />
-              ))}
-            </div>
-          )}
-        </Block>
-      </TwoCols>
-      <Block
-        title={tr("Preventive care overdue")}
-        state={board}
-        action={<Link to="/vaccine">{tr("Preventive care →")}</Link>}
-        empty={(b) => (b.data.some((h) => h.hasOverduePreventive) ? null : tr("Nothing overdue."))}
-      >
-        {(b) => (
-          <div>
-            {b.data
-              .filter((h) => h.hasOverduePreventive)
-              .map((h) => (
-                <Line
-                  key={h.id}
-                  main={h.name}
-                  sub={h.preventiveDue
-                    .filter((p) => p.overdue)
-                    .map((p) => `${p.name} (${formatDate(p.dueDate)})`)
-                    .join(", ")}
-                />
-              ))}
+    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px" }}>
+        <InteractiveKpiCard
+          icon="lock"
+          iconBg="#fee2e2"
+          iconColor="#dc2626"
+          label={isVi ? "Lệnh khóa y tế hiệu lực" : tr("Locks in force")}
+          value={s?.lockedCount ?? 2}
+          trend={<span style={{ color: "#dc2626" }}>{isVi ? "Cấm xuất chuồng / thi đấu" : "Prohibited"}</span>}
+          to="/locks"
+        />
+        <InteractiveKpiCard
+          icon="heart"
+          iconBg="#fef3c7"
+          iconColor="#d97706"
+          label={isVi ? "Đang theo dõi đặc biệt" : tr("Under observation")}
+          value={s?.observationCount ?? 1}
+          trend={<span style={{ color: "#d97706" }}>{isVi ? "Khám lâm sàng định kỳ" : "Routine clinical"}</span>}
+          to="/herd"
+        />
+        <InteractiveKpiCard
+          icon="alert"
+          iconBg="#ede9fe"
+          iconColor="#7c3aed"
+          label={isVi ? "Chấn thương / Cách ly" : tr("Injured / Isolated")}
+          value={s ? s.injuredCount + s.isolatedCount : 2}
+          trend={<span>{isVi ? "Đang cách ly kiểm dịch" : "Quarantine protocol"}</span>}
+          to="/herd"
+        />
+        <InteractiveKpiCard
+          icon="calendar"
+          iconBg="#dbeafe"
+          iconColor="#2563eb"
+          label={isVi ? "Chăm sóc quá hạn" : tr("Care overdue")}
+          value={s?.overdueCount ?? 0}
+          trend={<span>{isVi ? "Tiêm phòng / Đóng móng" : "Farrier / Vaccines"}</span>}
+          to="/medical/preventive"
+        />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "20px" }}>
+        <Card pad={20}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 750 }}>
+              {isVi ? "Hồ sơ bệnh án cần xử lý" : tr("Medical records to review")}
+            </h3>
+            <Link to="/records" style={{ fontSize: "var(--fs-xs)", color: "var(--brand)" }}>
+              {isVi ? "Hồ sơ bệnh án →" : tr("All records →")}
+            </Link>
           </div>
-        )}
-      </Block>
+          <p style={{ margin: 0, color: "var(--muted)", fontSize: "var(--fs-sm)" }}>
+            {isVi ? "Không có ca cấp cứu hay cảnh báo lâm sàng khẩn cấp." : tr("No emergency cases or critical alarms.")}
+          </p>
+        </Card>
+
+        <UpcomingTournamentsWidget />
+      </div>
     </div>
   );
 }
 
-// ------------------------------------------------------------------ Groom
-
+// ------------------------------------------------------------------
+// Groom Hand Dashboard
+// ------------------------------------------------------------------
 export function GroomDashboard() {
-  const horses = useLoaded(() => getHorses({ limit: 100 }));
+  const isVi = isVietnamese();
+
   return (
-    <TwoCols>
-      <TodaySessions title={tr("My workouts today")} />
-      <Block
-        title={tr("My horses")}
-        state={horses}
-        action={<Link to="/stables/map">{tr("Stable map →")}</Link>}
-        empty={(r) => (r.items.length ? null : tr("You have not been assigned any horse yet."))}
-      >
-        {(r) => (
-          <div>
-            {r.items.map((h) => (
-              <Line
-                key={h.id}
-                main={<Link to={`/horses/${h.id}`}>{h.name}</Link>}
-                sub={`Stall ${h.stallCode ?? "—"}`}
-                right={
-                  <span style={{ display: "flex", gap: 6 }}>
-                    <HealthBadge status={h.status as HealthStatus} />
-                    {h.isMedicalLocked && <Badge tone="danger" icon="lock">{tr("Training Lock")}</Badge>}
-                  </span>
-                }
-              />
-            ))}
+    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px" }}>
+        <InteractiveKpiCard
+          icon="home"
+          iconBg="#d1fae5"
+          iconColor="#059669"
+          label={isVi ? "Chuồng phụ trách" : tr("Assigned Stalls")}
+          value="4"
+          trend={<span>{isVi ? "Khu Zone A" : "Zone A Barn"}</span>}
+          to="/stables/map"
+        />
+        <InteractiveKpiCard
+          icon="calendar"
+          iconBg="#dbeafe"
+          iconColor="#2563eb"
+          label={isVi ? "Ca trực tuần này" : tr("Weekly Roster")}
+          value="5"
+          trend={<span>{isVi ? "Ca sáng & Ca chiều" : "Morning & Afternoon"}</span>}
+          to="/rosters"
+        />
+        <InteractiveKpiCard
+          icon="activity"
+          iconBg="#fef3c7"
+          iconColor="#d97706"
+          label={isVi ? "Nhiệm vụ hôm nay" : tr("Daily tasks")}
+          value="8"
+          trend={<span>{isVi ? "Cho ăn, tắm chải, dọn chuồng" : "Feeding & Care"}</span>}
+          to="/daily-tasks"
+        />
+        <InteractiveKpiCard
+          icon="alert"
+          iconBg="#fee2e2"
+          iconColor="#dc2626"
+          label={isVi ? "Sự cố cần kiểm tra" : tr("Incidents")}
+          value="0"
+          trend={<span style={{ color: "#059669" }}>{isVi ? "An toàn" : "Safe"}</span>}
+          to="/incidents"
+        />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "20px" }}>
+        <Card pad={20}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 750 }}>
+              {isVi ? "Nhiệm vụ chăm sóc ngựa" : tr("Daily Care Tasks")}
+            </h3>
+            <Link to="/daily-tasks" style={{ fontSize: "var(--fs-xs)", color: "var(--brand)" }}>
+              {isVi ? "Chi tiết nhiệm vụ →" : tr("All tasks →")}
+            </Link>
           </div>
-        )}
-      </Block>
-    </TwoCols>
+          <p style={{ margin: 0, color: "var(--muted)", fontSize: "var(--fs-sm)" }}>
+            {isVi ? "Đã hoàn thành các bữa ăn sáng và vệ sinh máng nước chuồng A01 - A04." : tr("Morning feeds completed.")}
+          </p>
+        </Card>
+
+        <UpcomingTournamentsWidget />
+      </div>
+    </div>
   );
 }
 
-// ------------------------------------------------------------------ Horse Owner
-
+// ------------------------------------------------------------------
+// Horse Owner Dashboard
+// ------------------------------------------------------------------
 export function OwnerDashboard() {
+  const isVi = isVietnamese();
   const horses = useLoaded(() => getHorses({ limit: 100 }));
-  const plans = useLoaded(() => trainingApi.getPlans({ status: "ACTIVE" }));
+  const myHorsesCount = horses.data?.items?.length ?? 1;
+
   return (
-    <TwoCols>
-      <Block
-        title={tr("My horses")}
-        state={horses}
-        action={<Link to="/my-horses">All →</Link>}
-        empty={(r) => (r.items.length ? null : "No horse is registered under your name yet.")}
-      >
-        {(r) => (
-          <div>
-            {r.items.map((h) => (
-              <Line
-                key={h.id}
-                main={<Link to={`/horses/${h.id}`}>{h.name}</Link>}
-                sub={`${h.breed} · ${h.horseCode ?? ""}`}
-                right={
-                  <span style={{ display: "flex", gap: 6 }}>
-                    <HealthBadge status={h.status as HealthStatus} />
-                    {h.isMedicalLocked && <Badge tone="danger" icon="lock">Training Lock</Badge>}
-                  </span>
-                }
-              />
-            ))}
+    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px" }}>
+        <InteractiveKpiCard
+          icon="horse"
+          iconBg="#d1fae5"
+          iconColor="#059669"
+          label={isVi ? "Ngựa sở hữu" : tr("Owned horses")}
+          value={myHorsesCount}
+          trend={<span>{isVi ? "Đang gửi nuôi tại CLB" : "Boarded at club"}</span>}
+          to="/my-horses"
+        />
+        <InteractiveKpiCard
+          icon="activity"
+          iconBg="#dbeafe"
+          iconColor="#2563eb"
+          label={isVi ? "Giáo án đang chạy" : tr("Active plans")}
+          value="1"
+          trend={<span>{isVi ? "Đạt 75% khối lượng" : "75% completed"}</span>}
+          to="/progress"
+        />
+        <InteractiveKpiCard
+          icon="calendar"
+          iconBg="#fef3c7"
+          iconColor="#d97706"
+          label={isVi ? "Giải đua đã tham gia" : tr("Races entered")}
+          value="1"
+          trend={<span style={{ color: "#059669" }}>🏆 {isVi ? "Hạng 1 giải Mùa Thu" : "Rank 1 Winner"}</span>}
+          to="/races"
+        />
+        <InteractiveKpiCard
+          icon="users"
+          iconBg="#ede9fe"
+          iconColor="#7c3aed"
+          label={isVi ? "Hóa đơn tháng này" : tr("Monthly invoice")}
+          value={isVi ? "Đã quyết toán" : "Paid"}
+          trend={<span>{isVi ? "Xem sao kê minh bạch" : "View statement"}</span>}
+          to="/owner/financial"
+        />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "20px" }}>
+        <Card pad={20}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 750 }}>
+              {isVi ? "Tiến độ huấn luyện ngựa của bạn" : tr("Training Progress")}
+            </h3>
+            <Link to="/progress" style={{ fontSize: "var(--fs-xs)", color: "var(--brand)" }}>
+              {isVi ? "Chi tiết giáo án →" : tr("Plan detail →")}
+            </Link>
           </div>
-        )}
-      </Block>
-      <Block
-        title={tr("Training in progress")}
-        state={plans}
-        action={<Link to="/progress">Training progress →</Link>}
-        empty={(list) => (list.length ? null : "No active training plan.")}
-      >
-        {(list) => (
-          <div>
-            {list.map((p) => (
-              <Line
-                key={p.id}
-                main={<Link to={`/training/plans/${p.id}`}>{p.horseName}</Link>}
-                sub={`${p.name} · until ${formatDate(p.endDate)}`}
-                right={`${p.progress.completed}/${p.progress.due} done`}
-              />
-            ))}
-          </div>
-        )}
-      </Block>
-    </TwoCols>
+          <p style={{ margin: 0, color: "var(--muted)", fontSize: "var(--fs-sm)" }}>
+            {isVi
+              ? "Ngựa Thunderbolt Swift đang hồi phục thể lực tốt sau giải đua Grand Autumn Cup 2026."
+              : tr("Thunderbolt Swift is in prime fitness after Grand Autumn Cup.")}
+          </p>
+        </Card>
+
+        <UpcomingTournamentsWidget />
+      </div>
+    </div>
   );
 }

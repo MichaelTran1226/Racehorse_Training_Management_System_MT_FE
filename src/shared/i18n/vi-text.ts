@@ -3304,4 +3304,19 @@ export const VI_TEXT: Record<string, string> = {
   // Vet & Groom dashboard additions
   "Review {{date}}": "Xem xét {{date}}",
   "(overdue)": "(quá hạn)",
+
+  // Racing & Tournament status & modals
+  "UPCOMING": "Sắp diễn ra",
+  "COMPLETED": "Đã hoàn thành",
+  "CANCELLED": "Đã hủy",
+  "Official Race Results (Locked)": "Kết quả thi đấu chính thức (Đã khóa)",
+  "Official Results Locked": "Kết quả chính thức đã khóa",
+  "Loading race entries and results...": "Đang tải danh sách ngựa tham gia và kết quả...",
+  "No registered horses found for this tournament.": "Chưa có ngựa nào đăng ký tham gia giải này.",
+  "Generate Monthly Invoices & Statements": "Phát hành hóa đơn & Bảng kê tài chính tháng",
+  "Automatically compute Boarding, Medical, Training fees and deduct 70% race prizes": "Tự động tính phí Lưu chuồng, Y tế, Huấn luyện và khấu trừ 70% tiền thưởng giải đua",
+  "Billing Period (YYYY-MM)": "Kỳ thanh toán (YYYY-MM)",
+  "Draft invoices will be created for all active horses in the club for this period.": "Hóa đơn nháp sẽ được tạo tự động cho toàn bộ ngựa đang hoạt động trong CLB ở kỳ này.",
+  "Generate Draft Invoices": "Phát hành hóa đơn nháp",
+  "Please enter a valid billing period in YYYY-MM format (e.g. 2026-11)": "Vui lòng nhập kỳ thanh toán hợp lệ theo định dạng YYYY-MM (Ví dụ: 2026-11)",
 };

@@ -7,9 +7,10 @@ import {
   isToday,
   markAllNotificationsAsRead,
   markNotificationAsRead,
+  localizeNotification,
 } from "@/shared/lib/notifications";
 
-import { tr } from "@/shared/i18n/tr";
+import { tr, isVietnamese } from "@/shared/i18n/tr";
 interface NotificationPopoverProps {
   notifications: AppNotification[];
   open: boolean;
@@ -80,6 +81,7 @@ export function NotificationPopover({
 
   const renderItem = (n: AppNotification) => {
     const theme = getCategoryTheme(n.category);
+    const loc = localizeNotification(n, isVietnamese());
     return (
       <div
         key={n.id}
@@ -137,7 +139,7 @@ export function NotificationPopover({
             <strong style={{ color: "var(--text)", fontWeight: 700 }}>
               {n.senderName ? `${n.senderName}: ` : ""}
             </strong>
-            <span style={{ fontWeight: n.read ? 400 : 600 }}>{n.message}</span>
+            <span style={{ fontWeight: n.read ? 400 : 600 }}>{loc.message}</span>
           </div>
           <div
             style={{

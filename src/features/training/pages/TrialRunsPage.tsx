@@ -79,14 +79,14 @@ export default function TrialRunsPage() {
         </div>
       </div>
 
-      <div style={{ padding: "0.85rem 1rem", borderRadius: "8px", background: "color-mix(in srgb, var(--brand) 8%, var(--surface))", border: "1px solid color-mix(in srgb, var(--brand) 25%, var(--border))", fontSize: "var(--fs-body)", lineHeight: 1.5 }}>
+      <div style={{ padding: "0.75rem 1rem", borderRadius: "8px", background: "color-mix(in srgb, var(--brand) 6%, var(--surface))", border: "1px solid color-mix(in srgb, var(--brand) 20%, var(--border))", fontSize: "var(--fs-sm)", lineHeight: 1.5 }}>
         {isVietnamese ? (
           <>
-            💡 <strong>Hướng dẫn nghiệp vụ (Lượt chạy thử):</strong> Lượt chạy thử (Trial Run) là buổi tập tốc độ cao mô phỏng chặng đua chính thức có nài ngựa (Jockey) điều khiển trên đường đua thật. Để xếp một lượt chạy thử, Huấn luyện viên trưởng thêm bài tập loại <em>{tr("Trial run")}</em> trong <strong>Kế hoạch huấn luyện</strong> hoặc <strong>Lịch tuần</strong> kèm chỉ định Nài ngựa và tốc độ mục tiêu. Hệ thống sẽ tự động giám sát an toàn: không cho phép 2 lượt chạy thử trên cùng một mặt sân trong khung 15 phút và chặn tuyệt đối nếu ngựa có lệnh khóa y tế.
+            💡 <strong>Lưu ý:</strong> Bảng này dùng để theo dõi và điều phối lịch chạy thử trên từng mặt sân nhằm tránh xung đột đường chạy (cách nhau tối thiểu 15 phút). Để lên lịch thêm lượt chạy thử mới, Huấn luyện viên trưởng vào <strong>Lịch tuần</strong> hoặc <strong>Kế hoạch huấn luyện</strong> và chọn loại bài tập là <em>Chạy thử (Trial run)</em>.
           </>
         ) : (
           <>
-            💡 <strong>Business Guide (Trial Runs):</strong> {tr("Trial runs are high-speed simulation workouts with professional jockeys on active tracks, requiring designated target speeds. Head Trainers schedule trial runs in")}{" "}<strong>{tr("Training Plans")}</strong> or <strong>{tr("Weekly Calendar")}</strong> {tr("(selecting workout type")}{" "}<em>{tr("Trial run")}</em>{tr("). The system strictly enforces safety by preventing two trial runs on the same track within a 15-minute window and blocking any horse under a medical lock.")}
+            💡 <strong>Track Coordinator Tip:</strong> This board monitors scheduled trial runs across active tracks to prevent track collisions (15-minute buffer). To schedule a new trial run, Head Trainers create a session with workout type <em>Trial run</em> in the <strong>Weekly Calendar</strong> or <strong>Training Plans</strong>.
           </>
         )}
       </div>
