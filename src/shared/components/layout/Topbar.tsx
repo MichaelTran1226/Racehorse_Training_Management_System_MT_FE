@@ -140,7 +140,7 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
         )}
       </div>
 
-      <div className={styles.tools}>
+      <div className={styles.centerGroup}>
         <div className={styles.search} ref={searchContainerRef}>
           <span className={styles.searchIcon}>
             <Icon name="search" size={16} />
@@ -190,8 +190,9 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
             triggerRef={searchContainerRef}
           />
         </div>
+      </div>
 
-        <div className={styles.divider} aria-hidden="true" />
+      <div className={styles.tools}>
 
         <div className={styles.bellWrap}>
           <div ref={bellTriggerRef} className={styles.bellTrigger}>

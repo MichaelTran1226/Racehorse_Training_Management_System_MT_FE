@@ -17,6 +17,7 @@ import { fetchTournaments } from "@/features/racing/api";
 import type { Tournament } from "@/features/racing/types";
 import { useLoaded } from "./DashboardBlocks";
 import { tr, isVietnamese } from "@/shared/i18n/tr";
+import { useAppLanguage } from "@/shared/lib/language";
 
 const TOURNAMENT_STATUS_LABEL: Record<string, string> = {
   UPCOMING: "Sắp diễn ra",
@@ -154,7 +155,7 @@ export function InteractiveKpiCard({
 // Upcoming Tournaments Widget (Bottom Right)
 // ------------------------------------------------------------------
 function UpcomingTournamentsWidget() {
-  const isVi = isVietnamese();
+  const { isVietnamese: isVi } = useAppLanguage();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -270,7 +271,7 @@ function UpcomingTournamentsWidget() {
 // Club Manager Dashboard (Matches Image 2 100%)
 // ------------------------------------------------------------------
 export function ManagerDashboard({ user }: { user: AuthUser }) {
-  const isVi = isVietnamese();
+  const { isVietnamese: isVi } = useAppLanguage();
   const board = useLoaded(getHealthBoard, !!user.permissions.viewMedical);
   const overview = useLoaded(() => trainingApi.getOverview());
   const zones = useLoaded(() => getZones());
@@ -798,7 +799,7 @@ export function ManagerDashboard({ user }: { user: AuthUser }) {
 // Head Trainer Dashboard
 // ------------------------------------------------------------------
 export function TrainerDashboard() {
-  const isVi = isVietnamese();
+  const { isVietnamese: isVi } = useAppLanguage();
   const overview = useLoaded(() => trainingApi.getOverview());
   const k = overview.data?.kpis;
 
@@ -868,7 +869,7 @@ export function TrainerDashboard() {
 // Veterinarian Dashboard
 // ------------------------------------------------------------------
 export function VetDashboard() {
-  const isVi = isVietnamese();
+  const { isVietnamese: isVi } = useAppLanguage();
   const board = useLoaded(getHealthBoard);
   const s = board.data?.summary;
 
@@ -938,7 +939,7 @@ export function VetDashboard() {
 // Groom Hand Dashboard
 // ------------------------------------------------------------------
 export function GroomDashboard() {
-  const isVi = isVietnamese();
+  const { isVietnamese: isVi } = useAppLanguage();
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -1006,7 +1007,7 @@ export function GroomDashboard() {
 // Horse Owner Dashboard
 // ------------------------------------------------------------------
 export function OwnerDashboard() {
-  const isVi = isVietnamese();
+  const { isVietnamese: isVi } = useAppLanguage();
   const horses = useLoaded(() => getHorses({ limit: 100 }));
   const myHorsesCount = horses.data?.items?.length ?? 1;
 

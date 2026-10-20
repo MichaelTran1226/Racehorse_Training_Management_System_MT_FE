@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Icon } from "@/shared/components/ui/Icon";
-import { isVietnamese } from "@/shared/i18n/tr";
+import { useAppLanguage } from "@/shared/lib/language";
 import type { AuthUser } from "@/shared/types/auth";
 
 interface DashboardHeroBannerProps {
@@ -28,7 +28,7 @@ const HERO_SLIDES: HeroSlide[] = [
     badgeVi: "Đấu Trường & Thành Tích Đua Ngựa",
     badgeEn: "Championship Thoroughbred Sprint",
     // Focus on the lead racehorses and sprinting jockeys on the right
-    focusPosition: "right 36%",
+    focusPosition: "right 40%",
   },
   {
     id: "stables",
@@ -49,14 +49,17 @@ const HERO_SLIDES: HeroSlide[] = [
     iconName: "flag",
     badgeVi: "Huấn Luyện Vượt Rào Thể Thao",
     badgeEn: "Equestrian Show Jumping & Training",
-    // Focus directly on the rider in helmet/jacket and the leaping horse with ears forward
-    focusPosition: "52% 14%",
+    // Rider & horse jumping are in the upper-left/center-left of the photo
+    focusPosition: "30% 12%",
   },
 ];
 
 export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
-  const isVi = isVietnamese();
+  const { isVietnamese: isVi } = useAppLanguage();
   const now = new Date();
+
+  // Strip role suffix like (Club Manager) from user name for clean greeting
+  const cleanName = user.fullName.replace(/\s*\([^)]*\)/g, "").trim() || user.fullName;
 
   // Always synchronized to Vietnam Club time (Asia/Ho_Chi_Minh)
   const weekdayStr = new Intl.DateTimeFormat(isVi ? "vi-VN" : "en-US", {
@@ -73,50 +76,11 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
 
   const formattedWeekday = weekdayStr.charAt(0).toUpperCase() + weekdayStr.slice(1);
 
-  const SUBTITLE_BY_ROLE: Record<string, { vi: string; en: string }> = {
-    CLUB_MANAGER: {
-      en: "Efficiently manage horses, training schedules, medical safety, and stable capacity.",
-      vi: "Quản lý ngựa, huấn luyện, an toàn y tế và sức chứa chuồng trại hiệu quả.",
-    },
-    HEAD_TRAINER: {
-      en: "Oversee training plans, monitor workout loads, and track recovery markers.",
-      vi: "Chỉ đạo giáo án huấn luyện, kiểm soát cường độ tập luyện và phát hiện dấu hiệu bất thường.",
-    },
-    VETERINARIAN: {
-      en: "Monitor herd health, evaluate medical locks, and manage preventive care schedules.",
-      vi: "Giám sát sức khỏe đàn ngựa, thẩm định lệnh khóa y tế và quản lý lịch chăm sóc phòng ngừa.",
-    },
-    GROOM: {
-      en: "Execute daily barn care tasks, follow shift rosters, and support horse wellness.",
-      vi: "Theo dõi nhiệm vụ chăm sóc chuồng trại, phân công ca trực và hỗ trợ ngựa luyện tập.",
-    },
-    HORSE_OWNER: {
-      en: "Track your horses' training progress, racing entries, and financial statements.",
-      vi: "Theo dõi chỉ số thể lực, tiến độ thi đấu của ngựa và sao kê chi phí hàng tháng minh bạch.",
-    },
-  };
-
-  const subtitle = SUBTITLE_BY_ROLE[user.role]
-    ? isVi
-      ? SUBTITLE_BY_ROLE[user.role].vi
-      : SUBTITLE_BY_ROLE[user.role].en
-    : isVi
-    ? "Hệ thống quản lý chuồng trại & huấn luyện ngựa đua EquiFlow."
-    : "EquiFlow racehorse management & training platform.";
-
-  // Carousel State
+  // Carousel State - Pure Automatic Rotation
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
-  const handlePrev = useCallback(() => {
-    setCurrentSlideIndex((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
-  }, []);
-
-  const handleNext = useCallback(() => {
-    setCurrentSlideIndex((prev) => (prev + 1) % HERO_SLIDES.length);
-  }, []);
-
-  // Auto-advance every 6.5 seconds, paused on hover or reduced motion
+  // Auto-advance every 5.5 seconds, paused on hover or reduced motion
   useEffect(() => {
     if (typeof window !== "undefined") {
       const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -127,7 +91,7 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
 
     const interval = setInterval(() => {
       setCurrentSlideIndex((prev) => (prev + 1) % HERO_SLIDES.length);
-    }, 6500);
+    }, 5500);
 
     return () => clearInterval(interval);
   }, [isPaused]);
@@ -144,11 +108,11 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
         position: "relative",
         borderRadius: "16px",
         overflow: "hidden",
-        padding: "28px 36px 24px",
+        padding: "26px 32px 20px",
         background: "linear-gradient(135deg, #032b1f 0%, #02241a 100%)",
         color: "#ffffff",
-        boxShadow: "0 12px 30px -6px rgba(2, 36, 26, 0.4), 0 6px 14px -4px rgba(2, 36, 26, 0.25)",
-        minHeight: "270px",
+        boxShadow: "0 10px 25px -5px rgba(2, 36, 26, 0.4), 0 6px 14px -4px rgba(2, 36, 26, 0.25)",
+        minHeight: "220px",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
@@ -181,7 +145,7 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
                 backgroundRepeat: "no-repeat",
                 opacity: isActive ? 1 : 0,
                 transform: isActive ? "scale(1.02)" : "scale(1.0)",
-                transition: "opacity 850ms cubic-bezier(0.4, 0, 0.2, 1), transform 6000ms ease-out",
+                transition: "opacity 850ms cubic-bezier(0.4, 0, 0.2, 1), transform 5500ms ease-out",
                 willChange: "opacity, transform",
               }}
             />
@@ -216,10 +180,10 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
         style={{
           position: "relative",
           zIndex: 3,
-          maxWidth: "540px",
+          maxWidth: "520px",
           display: "flex",
           flexDirection: "column",
-          gap: "10px",
+          gap: "12px",
         }}
       >
         {/* Badges Bar: Club Badge & Scene Tag */}
@@ -275,33 +239,20 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
           </div>
         </div>
 
-        {/* Welcome Greeting */}
+        {/* Welcome Greeting without awkward role suffix */}
         <h1
           style={{
             margin: 0,
-            fontSize: "1.75rem",
+            fontSize: "1.85rem",
             fontWeight: 800,
-            lineHeight: 1.25,
+            lineHeight: 1.2,
             color: "#ffffff",
             letterSpacing: "-0.025em",
             textShadow: "0 2px 6px rgba(0, 0, 0, 0.4)",
           }}
         >
-          {isVi ? `Chào mừng trở lại, ${user.fullName}!` : `Welcome back, ${user.fullName}!`}
+          {isVi ? `Chào mừng trở lại, ${cleanName}!` : `Welcome back, ${cleanName}!`}
         </h1>
-
-        {/* Role-Specific Subtitle */}
-        <p
-          style={{
-            margin: 0,
-            fontSize: "0.9375rem",
-            color: "rgba(255, 255, 255, 0.88)",
-            lineHeight: 1.55,
-            textShadow: "0 1px 3px rgba(0, 0, 0, 0.3)",
-          }}
-        >
-          {subtitle}
-        </p>
 
         {/* Live Synchronized Vietnam Club Date & Time Chip */}
         <div
@@ -310,7 +261,7 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
             alignItems: "center",
             gap: "8px",
             alignSelf: "flex-start",
-            marginTop: "4px",
+            marginTop: "2px",
             padding: "5px 12px",
             borderRadius: "8px",
             background: "rgba(255, 255, 255, 0.08)",
@@ -330,7 +281,7 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
         </div>
       </div>
 
-      {/* 3. Bottom Carousel Controls Bar */}
+      {/* 3. Bottom Carousel Progress Bar (Pure Automatic, No Arrow Buttons) */}
       <div
         style={{
           position: "relative",
@@ -403,77 +354,6 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
             </span>{" "}
             • {isVi ? currentSlide.badgeVi : currentSlide.badgeEn}
           </span>
-        </div>
-
-        {/* Prev & Next Navigation Buttons */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
-        >
-          <button
-            type="button"
-            aria-label={isVi ? "Ảnh trước" : "Previous slide"}
-            onClick={handlePrev}
-            style={{
-              width: "30px",
-              height: "30px",
-              borderRadius: "50%",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "rgba(255, 255, 255, 0.12)",
-              backdropFilter: "blur(4px)",
-              border: "1px solid rgba(255, 255, 255, 0.25)",
-              color: "#ffffff",
-              cursor: "pointer",
-              transition: "all 200ms ease",
-              padding: 0,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.25)";
-              e.currentTarget.style.borderColor = "rgba(110, 231, 183, 0.6)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)";
-              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.25)";
-            }}
-          >
-            <Icon name="chevronLeft" size={15} />
-          </button>
-
-          <button
-            type="button"
-            aria-label={isVi ? "Ảnh kế tiếp" : "Next slide"}
-            onClick={handleNext}
-            style={{
-              width: "30px",
-              height: "30px",
-              borderRadius: "50%",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "rgba(255, 255, 255, 0.12)",
-              backdropFilter: "blur(4px)",
-              border: "1px solid rgba(255, 255, 255, 0.25)",
-              color: "#ffffff",
-              cursor: "pointer",
-              transition: "all 200ms ease",
-              padding: 0,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.25)";
-              e.currentTarget.style.borderColor = "rgba(110, 231, 183, 0.6)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)";
-              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.25)";
-            }}
-          >
-            <Icon name="chevronRight" size={15} />
-          </button>
         </div>
       </div>
     </div>
