@@ -25,19 +25,21 @@ const HERO_SLIDES: HeroSlide[] = [
     tagVi: "Đua Ngựa Tốc Độ",
     tagEn: "Championship Racing",
     iconName: "trophy",
-    badgeVi: "Đấu Trường & Thành Tích",
-    badgeEn: "Championship Arena",
-    focusPosition: "center 42%",
+    badgeVi: "Đấu Trường & Thành Tích Đua Ngựa",
+    badgeEn: "Championship Thoroughbred Sprint",
+    // Focus on the lead racehorses and sprinting jockeys on the right
+    focusPosition: "right 36%",
   },
   {
     id: "stables",
     image: "/images/hero/hero-stables.png",
     tagVi: "Chuồng Trại & Y Tế",
-    tagEn: "Equine Care & Wellness",
+    tagEn: "Equine Care & Stables",
     iconName: "heart",
-    badgeVi: "Chăm Sóc & Chuồng Trại Chuẩn Quốc Tế",
-    badgeEn: "World-Class Stables & Care",
-    focusPosition: "right 28%",
+    badgeVi: "Chăm Sóc & Chuồng Trại Quốc Tế",
+    badgeEn: "World-Class Equine Care & Stables",
+    // Focus directly on the chestnut horse's head, eye, ears, white blaze and halter
+    focusPosition: "88% 28%",
   },
   {
     id: "jumping",
@@ -45,9 +47,10 @@ const HERO_SLIDES: HeroSlide[] = [
     tagVi: "Huấn Luyện Vượt Rào",
     tagEn: "Show Jumping",
     iconName: "flag",
-    badgeVi: "Kỷ Luật & Bứt Phá",
-    badgeEn: "Discipline & Precision",
-    focusPosition: "center 32%",
+    badgeVi: "Huấn Luyện Vượt Rào Thể Thao",
+    badgeEn: "Equestrian Show Jumping & Training",
+    // Focus directly on the rider in helmet/jacket and the leaping horse with ears forward
+    focusPosition: "52% 14%",
   },
 ];
 
@@ -72,24 +75,24 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
 
   const SUBTITLE_BY_ROLE: Record<string, { vi: string; en: string }> = {
     CLUB_MANAGER: {
-      vi: "Quản lý ngựa, huấn luyện, an toàn y tế và sức chứa chuồng trại hiệu quả.",
       en: "Efficiently manage horses, training schedules, medical safety, and stable capacity.",
+      vi: "Quản lý ngựa, huấn luyện, an toàn y tế và sức chứa chuồng trại hiệu quả.",
     },
     HEAD_TRAINER: {
-      vi: "Chỉ đạo giáo án huấn luyện, kiểm soát cường độ tập luyện và phát hiện dấu hiệu bất thường.",
       en: "Oversee training plans, monitor workout loads, and track recovery markers.",
+      vi: "Chỉ đạo giáo án huấn luyện, kiểm soát cường độ tập luyện và phát hiện dấu hiệu bất thường.",
     },
     VETERINARIAN: {
-      vi: "Giám sát sức khỏe đàn ngựa, thẩm định lệnh khóa y tế và quản lý lịch chăm sóc phòng ngừa.",
       en: "Monitor herd health, evaluate medical locks, and manage preventive care schedules.",
+      vi: "Giám sát sức khỏe đàn ngựa, thẩm định lệnh khóa y tế và quản lý lịch chăm sóc phòng ngừa.",
     },
     GROOM: {
-      vi: "Theo dõi nhiệm vụ chăm sóc chuồng trại, phân công ca trực và hỗ trợ ngựa luyện tập.",
       en: "Execute daily barn care tasks, follow shift rosters, and support horse wellness.",
+      vi: "Theo dõi nhiệm vụ chăm sóc chuồng trại, phân công ca trực và hỗ trợ ngựa luyện tập.",
     },
     HORSE_OWNER: {
-      vi: "Theo dõi chỉ số thể lực, tiến độ thi đấu của ngựa và sao kê chi phí hàng tháng minh bạch.",
       en: "Track your horses' training progress, racing entries, and financial statements.",
+      vi: "Theo dõi chỉ số thể lực, tiến độ thi đấu của ngựa và sao kê chi phí hàng tháng minh bạch.",
     },
   };
 
@@ -113,7 +116,7 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
     setCurrentSlideIndex((prev) => (prev + 1) % HERO_SLIDES.length);
   }, []);
 
-  // Auto-advance every 6.5 seconds, paused on user hover or reduced motion
+  // Auto-advance every 6.5 seconds, paused on hover or reduced motion
   useEffect(() => {
     if (typeof window !== "undefined") {
       const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -141,212 +144,205 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
         position: "relative",
         borderRadius: "16px",
         overflow: "hidden",
-        padding: "26px 32px 20px",
-        background: "linear-gradient(135deg, rgba(4, 47, 36, 0.98) 0%, rgba(2, 44, 34, 0.99) 100%)",
+        padding: "28px 36px 24px",
+        background: "linear-gradient(135deg, #032b1f 0%, #02241a 100%)",
         color: "#ffffff",
-        boxShadow: "0 10px 25px -5px rgba(6, 78, 59, 0.35), 0 8px 10px -6px rgba(6, 78, 59, 0.25)",
-        minHeight: "210px",
+        boxShadow: "0 12px 30px -6px rgba(2, 36, 26, 0.4), 0 6px 14px -4px rgba(2, 36, 26, 0.25)",
+        minHeight: "270px",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        gap: "1.25rem",
       }}
     >
-      {/* Background Image Carousel Layers with Ken Burns and Crossfade */}
-      {HERO_SLIDES.map((slide, index) => {
-        const isActive = index === currentSlideIndex;
-        return (
-          <div
-            key={slide.id}
-            aria-hidden={!isActive}
-            style={{
-              position: "absolute",
-              inset: 0,
-              backgroundImage: `url(${slide.image})`,
-              backgroundPosition: slide.focusPosition,
-              backgroundSize: "cover",
-              opacity: isActive ? 0.62 : 0,
-              transform: isActive ? "scale(1.03)" : "scale(1.0)",
-              transition:
-                "opacity 1000ms cubic-bezier(0.4, 0, 0.2, 1), transform 6500ms cubic-bezier(0.25, 1, 0.5, 1)",
-              pointerEvents: "none",
-              willChange: "opacity, transform",
-            }}
-          />
-        );
-      })}
-
-      {/* Layer 1: Left-to-Right Deep Emerald Gradient for Text Contrast */}
+      {/* 1. Right Showcase Photo Area: 65% width, 100% full vibrant color, no green tint over horses */}
       <div
         style={{
           position: "absolute",
-          inset: 0,
-          background:
-            "linear-gradient(90deg, rgba(4, 47, 36, 0.96) 0%, rgba(4, 47, 36, 0.88) 38%, rgba(6, 78, 59, 0.52) 72%, rgba(6, 78, 59, 0.2) 100%)",
+          top: 0,
+          bottom: 0,
+          right: 0,
+          width: "66%",
+          overflow: "hidden",
           pointerEvents: "none",
         }}
-      />
+      >
+        {HERO_SLIDES.map((slide, index) => {
+          const isActive = index === currentSlideIndex;
+          return (
+            <div
+              key={slide.id}
+              aria-hidden={!isActive}
+              style={{
+                position: "absolute",
+                inset: 0,
+                backgroundImage: `url(${slide.image})`,
+                backgroundPosition: slide.focusPosition,
+                backgroundSize: "cover",
+                backgroundRepeat: "no-repeat",
+                opacity: isActive ? 1 : 0,
+                transform: isActive ? "scale(1.02)" : "scale(1.0)",
+                transition: "opacity 850ms cubic-bezier(0.4, 0, 0.2, 1), transform 6000ms ease-out",
+                willChange: "opacity, transform",
+              }}
+            />
+          );
+        })}
 
-      {/* Layer 2: Bottom Subtle Vignette for Controls Legibility */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: "linear-gradient(0deg, rgba(2, 44, 34, 0.8) 0%, rgba(2, 44, 34, 0.25) 30%, transparent 100%)",
-          pointerEvents: "none",
-        }}
-      />
+        {/* Soft Feathered Blend: Left edge transitions smoothly into solid emerald card */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(90deg, #032b1f 0%, rgba(3, 43, 31, 0.95) 12%, rgba(3, 43, 31, 0.4) 30%, transparent 55%)",
+            pointerEvents: "none",
+          }}
+        />
 
-      {/* Main Content (Header & Info) */}
+        {/* Subtle Top & Bottom edge soft shade */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(180deg, rgba(3, 43, 31, 0.3) 0%, transparent 20%, transparent 80%, rgba(2, 36, 26, 0.5) 100%)",
+            pointerEvents: "none",
+          }}
+        />
+      </div>
+
+      {/* 2. Left Content Section: Pure, high-contrast, uncluttered typography */}
       <div
         style={{
           position: "relative",
-          zIndex: 2,
+          zIndex: 3,
+          maxWidth: "540px",
           display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          flexWrap: "wrap",
-          gap: "1.5rem",
+          flexDirection: "column",
+          gap: "10px",
         }}
       >
-        <div style={{ maxWidth: "700px" }}>
-          {/* Tag Bar: Club Badge & Active Scene Tag */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "8px",
-              marginBottom: "12px",
-            }}
-          >
-            {/* Club Tag */}
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "4px 12px",
-                borderRadius: "999px",
-                background: "rgba(255, 255, 255, 0.14)",
-                backdropFilter: "blur(6px)",
-                border: "1px solid rgba(110, 231, 183, 0.35)",
-                fontSize: "0.75rem",
-                fontWeight: 700,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                color: "#6ee7b7",
-              }}
-            >
-              <Icon name="horse" size={14} />
-              <span>THIÊN MÃ EQUESTRIAN CLUB</span>
-            </div>
-
-            {/* Dynamic Scene Tag */}
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "4px 10px",
-                borderRadius: "999px",
-                background: "rgba(6, 78, 59, 0.65)",
-                backdropFilter: "blur(4px)",
-                border: "1px solid rgba(255, 255, 255, 0.15)",
-                fontSize: "0.7rem",
-                fontWeight: 600,
-                color: "#a7f3d0",
-                transition: "all 400ms ease",
-              }}
-            >
-              <Icon name={currentSlide.iconName} size={12} />
-              <span>{isVi ? currentSlide.tagVi : currentSlide.tagEn}</span>
-            </div>
-          </div>
-
-          {/* Welcome Greeting */}
-          <h1
-            style={{
-              margin: 0,
-              fontSize: "1.65rem",
-              fontWeight: 800,
-              lineHeight: 1.25,
-              color: "#ffffff",
-              letterSpacing: "-0.02em",
-              textShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
-            }}
-          >
-            {isVi ? `Chào mừng trở lại, ${user.fullName}!` : `Welcome back, ${user.fullName}!`}
-          </h1>
-
-          <p
-            style={{
-              margin: "8px 0 0",
-              fontSize: "0.9375rem",
-              color: "rgba(255, 255, 255, 0.9)",
-              lineHeight: 1.5,
-              textShadow: "0 1px 4px rgba(0, 0, 0, 0.25)",
-            }}
-          >
-            {subtitle}
-          </p>
-        </div>
-
-        {/* Live Synchronized Vietnam Club Date */}
+        {/* Badges Bar: Club Badge & Scene Tag */}
         <div
           style={{
-            textAlign: "right",
-            padding: "12px 20px",
-            borderRadius: "12px",
-            background: "rgba(255, 255, 255, 0.09)",
-            backdropFilter: "blur(8px)",
-            border: "1px solid rgba(255, 255, 255, 0.18)",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "8px",
           }}
         >
+          {/* Club Tag */}
           <div
             style={{
-              fontSize: "0.8125rem",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "4px 12px",
+              borderRadius: "999px",
+              background: "rgba(255, 255, 255, 0.12)",
+              backdropFilter: "blur(6px)",
+              border: "1px solid rgba(110, 231, 183, 0.3)",
+              fontSize: "0.75rem",
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "#6ee7b7",
+            }}
+          >
+            <Icon name="horse" size={14} />
+            <span>THIÊN MÃ EQUESTRIAN CLUB</span>
+          </div>
+
+          {/* Dynamic Scene Tag */}
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "4px 10px",
+              borderRadius: "999px",
+              background: "rgba(6, 78, 59, 0.75)",
+              backdropFilter: "blur(4px)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              fontSize: "0.7rem",
               fontWeight: 600,
               color: "#a7f3d0",
-              textTransform: "capitalize",
+              transition: "all 400ms ease",
             }}
           >
-            {formattedWeekday}
+            <Icon name={currentSlide.iconName} size={12} />
+            <span>{isVi ? currentSlide.tagVi : currentSlide.tagEn}</span>
           </div>
-          <div
-            style={{
-              fontSize: "1.125rem",
-              fontWeight: 800,
-              color: "#ffffff",
-              marginTop: "2px",
-            }}
-          >
-            {dateStr}
-          </div>
-          <div
-            style={{
-              fontSize: "0.6875rem",
-              color: "rgba(255, 255, 255, 0.7)",
-              marginTop: "2px",
-            }}
-          >
-            {isVi ? "Giờ chuẩn CLB (GMT+7)" : "Club Standard Time (GMT+7)"}
-          </div>
+        </div>
+
+        {/* Welcome Greeting */}
+        <h1
+          style={{
+            margin: 0,
+            fontSize: "1.75rem",
+            fontWeight: 800,
+            lineHeight: 1.25,
+            color: "#ffffff",
+            letterSpacing: "-0.025em",
+            textShadow: "0 2px 6px rgba(0, 0, 0, 0.4)",
+          }}
+        >
+          {isVi ? `Chào mừng trở lại, ${user.fullName}!` : `Welcome back, ${user.fullName}!`}
+        </h1>
+
+        {/* Role-Specific Subtitle */}
+        <p
+          style={{
+            margin: 0,
+            fontSize: "0.9375rem",
+            color: "rgba(255, 255, 255, 0.88)",
+            lineHeight: 1.55,
+            textShadow: "0 1px 3px rgba(0, 0, 0, 0.3)",
+          }}
+        >
+          {subtitle}
+        </p>
+
+        {/* Live Synchronized Vietnam Club Date & Time Chip */}
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            alignSelf: "flex-start",
+            marginTop: "4px",
+            padding: "5px 12px",
+            borderRadius: "8px",
+            background: "rgba(255, 255, 255, 0.08)",
+            backdropFilter: "blur(6px)",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            fontSize: "0.78125rem",
+            color: "rgba(255, 255, 255, 0.85)",
+          }}
+        >
+          <span style={{ color: "#6ee7b7", fontWeight: 700 }}>{formattedWeekday}</span>
+          <span style={{ color: "rgba(255, 255, 255, 0.4)" }}>•</span>
+          <span style={{ color: "#ffffff", fontWeight: 600 }}>{dateStr}</span>
+          <span style={{ color: "rgba(255, 255, 255, 0.4)" }}>•</span>
+          <span style={{ fontSize: "0.72rem", color: "rgba(255, 255, 255, 0.65)" }}>
+            {isVi ? "Giờ CLB (GMT+7)" : "Club Time (GMT+7)"}
+          </span>
         </div>
       </div>
 
-      {/* Bottom Carousel Controls Bar */}
+      {/* 3. Bottom Carousel Controls Bar */}
       <div
         style={{
           position: "relative",
-          zIndex: 2,
+          zIndex: 3,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           flexWrap: "wrap",
           gap: "12px",
-          paddingTop: "6px",
+          marginTop: "16px",
+          paddingTop: "10px",
+          borderTop: "1px solid rgba(255, 255, 255, 0.1)",
         }}
       >
         {/* Indicators & Current Scene Caption */}
@@ -354,7 +350,7 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "10px",
+            gap: "12px",
           }}
         >
           {/* Indicators */}
@@ -379,7 +375,7 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
                   onClick={() => setCurrentSlideIndex(idx)}
                   style={{
                     height: "8px",
-                    width: isActive ? "26px" : "8px",
+                    width: isActive ? "28px" : "8px",
                     borderRadius: "4px",
                     background: isActive ? "#34d399" : "rgba(255, 255, 255, 0.35)",
                     border: "none",
@@ -396,10 +392,10 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
           {/* Scene Name & Counter */}
           <span
             style={{
-              fontSize: "0.75rem",
-              color: "rgba(255, 255, 255, 0.8)",
+              fontSize: "0.78125rem",
+              color: "rgba(255, 255, 255, 0.85)",
               fontWeight: 500,
-              letterSpacing: "0.02em",
+              letterSpacing: "0.01em",
             }}
           >
             <span style={{ color: "#6ee7b7", fontWeight: 700 }}>
@@ -414,7 +410,7 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "6px",
+            gap: "8px",
           }}
         >
           <button
@@ -422,15 +418,15 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
             aria-label={isVi ? "Ảnh trước" : "Previous slide"}
             onClick={handlePrev}
             style={{
-              width: "28px",
-              height: "28px",
+              width: "30px",
+              height: "30px",
               borderRadius: "50%",
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
               background: "rgba(255, 255, 255, 0.12)",
               backdropFilter: "blur(4px)",
-              border: "1px solid rgba(255, 255, 255, 0.2)",
+              border: "1px solid rgba(255, 255, 255, 0.25)",
               color: "#ffffff",
               cursor: "pointer",
               transition: "all 200ms ease",
@@ -438,14 +434,14 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = "rgba(255, 255, 255, 0.25)";
-              e.currentTarget.style.borderColor = "rgba(110, 231, 183, 0.5)";
+              e.currentTarget.style.borderColor = "rgba(110, 231, 183, 0.6)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)";
-              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.2)";
+              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.25)";
             }}
           >
-            <Icon name="chevronLeft" size={14} />
+            <Icon name="chevronLeft" size={15} />
           </button>
 
           <button
@@ -453,15 +449,15 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
             aria-label={isVi ? "Ảnh kế tiếp" : "Next slide"}
             onClick={handleNext}
             style={{
-              width: "28px",
-              height: "28px",
+              width: "30px",
+              height: "30px",
               borderRadius: "50%",
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
               background: "rgba(255, 255, 255, 0.12)",
               backdropFilter: "blur(4px)",
-              border: "1px solid rgba(255, 255, 255, 0.2)",
+              border: "1px solid rgba(255, 255, 255, 0.25)",
               color: "#ffffff",
               cursor: "pointer",
               transition: "all 200ms ease",
@@ -469,14 +465,14 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = "rgba(255, 255, 255, 0.25)";
-              e.currentTarget.style.borderColor = "rgba(110, 231, 183, 0.5)";
+              e.currentTarget.style.borderColor = "rgba(110, 231, 183, 0.6)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)";
-              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.2)";
+              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.25)";
             }}
           >
-            <Icon name="chevronRight" size={14} />
+            <Icon name="chevronRight" size={15} />
           </button>
         </div>
       </div>
