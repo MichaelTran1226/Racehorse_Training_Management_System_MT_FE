@@ -135,22 +135,51 @@ export function WorkoutDialog({ plans, plan: fixedPlan, session, defaultDate, on
   });
 
   const submit = async () => {
+    if (!planId) {
+      setError(tr("Please select a horse and plan."));
+      return;
+    }
+    if (phases.length > 0 && !phaseId) {
+      setError(tr("Please select a phase."));
+      return;
+    }
+    if (!groomId) {
+      setError(tr("Please select an assigned groom."));
+      return;
+    }
+    if (forcedHeavy && (!speed || Number(speed) < 10 || Number(speed) > 70)) {
+      setError(tr("Target speed (10-70 km/h) is required for breeze and trial runs."));
+      return;
+    }
+    if (forcedHeavy && !jockey.trim()) {
+      setError(tr("Jockey name is required for breeze and trial runs."));
+      return;
+    }
+    if (!distance || distance < 100 || distance > 5000) {
+      setError(tr("Distance must be 100 to 5000 m."));
+      return;
+    }
+    if (!reps || reps < 1 || reps > 10) {
+      setError(tr("Reps must be 1 to 10."));
+      return;
+    }
+
     setSubmitting(true);
     setError("");
     try {
       if (session) {
         await trainingApi.updateSession(session.id, input());
-        toast.show("Workout updated.", "ok");
+        toast.show(tr("Workout updated."), "ok");
       } else if (repeat) {
         const res = await trainingApi.createRepeatSessions(planId, { ...input(), weekdays, until });
         const skipped = res.skipped.map((s) => `${s.date}: ${s.reason}`).join("; ");
         toast.show(
-          `Created ${res.created} workout(s).${res.skipped.length ? ` Skipped ${res.skipped.length} day(s): ${skipped}` : ""}`,
+          tr(`Created ${res.created} workout(s).${res.skipped.length ? ` Skipped ${res.skipped.length} day(s): ${skipped}` : ""}`),
           res.skipped.length ? "warn" : "ok",
         );
       } else {
         await trainingApi.createSession(planId, input());
-        toast.show("Workout added.", "ok");
+        toast.show(tr("Workout added."), "ok");
       }
       onSaved(date);
     } catch (err) {
@@ -174,13 +203,13 @@ export function WorkoutDialog({ plans, plan: fixedPlan, session, defaultDate, on
       width={640}
       foot={
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
-          <Button tone="ghost" onClick={onClose}>Cancel</Button>
+          <Button tone="ghost" onClick={onClose}>{tr("Cancel")}</Button>
           <Button
             tone="primary"
             onClick={() => void submit()}
             disabled={submitting || !planId || !groomId || (phases.length > 0 && !phaseId) || (needVet && !vetConsulted) || Boolean(repeatInvalid)}
           >
-            {warnings.length > 0 ? "Save anyway" : "Save workout"}
+            {warnings.length > 0 ? tr("Save anyway") : tr("Save workout")}
           </Button>
         </div>
       }

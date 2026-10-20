@@ -211,8 +211,16 @@ export function RecordResultsModal({
             {tr("Loading race entries and results...")}
           </div>
         ) : rows.length === 0 ? (
-          <div style={{ padding: "3rem", textAlign: "center", color: "var(--muted)" }}>
-            {tr("No registered horses found for this tournament.")}
+          <div style={{ padding: "2.5rem 1rem", textAlign: "center", color: "var(--muted)", background: "var(--surface)", borderRadius: "var(--r-md)", border: "1px dashed var(--border)" }}>
+            <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🏁</div>
+            <strong style={{ display: "block", color: "var(--ink)", fontSize: "var(--fs-body)", marginBottom: "0.25rem" }}>
+              {tr("Chưa có kết quả hoặc danh sách đăng ký cho giải đấu này")}
+            </strong>
+            <p style={{ margin: 0, fontSize: "var(--fs-sm)" }}>
+              {isCompleted
+                ? tr("Giải đấu ở trạng thái Đã hoàn thành nhưng chưa có chiến mã nào được ghi nhận kết quả.")
+                : tr("Giải đấu chưa có ngựa đăng ký tham gia. Hãy đăng ký ngựa thi đấu trước khi ghi nhận kết quả.")}
+            </p>
           </div>
         ) : (
           <div style={{ maxHeight: "380px", overflowY: "auto", overflowX: "hidden", width: "100%" }}>

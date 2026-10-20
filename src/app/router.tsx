@@ -147,10 +147,9 @@ function PermissionMatrixRoute() {
   return <PermissionMatrix accountId={id} />;
 }
 
-// "Training Progress" trên menu: Chủ ngựa xem giáo án ngựa của mình (SC-2.02), nhân viên xem Tổng quan (SC-2.01).
+// "Training Progress" trên menu: Xem danh sách tiến độ giáo án & kế hoạch huấn luyện (SC-2.02).
 function TrainingProgressRoute() {
-  const user = useCurrentUser();
-  return user.role === "HORSE_OWNER" ? <PlanListPage /> : <TrainingOverviewPage />;
+  return <PlanListPage />;
 }
 
 // Mọi đường dẫn chưa có trang riêng (ngựa, huấn luyện, y tế...). RoleGuard trong AppShell đã kiểm quyền trước đó.

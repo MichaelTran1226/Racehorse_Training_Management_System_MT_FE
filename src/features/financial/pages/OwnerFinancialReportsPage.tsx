@@ -8,7 +8,7 @@ import { KpiTile } from "@/shared/components/ui/KpiTile";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
 import { tr } from "@/shared/i18n/tr";
-import { fetchOwnerSummary, changeInvoiceStatus, generateMonthlyInvoices } from "../api";
+import { fetchOwnerSummary, changeInvoiceStatus, generateMonthlyInvoices, payInvoice } from "../api";
 import type { FinancialInvoice, InvoiceStatus, OwnerSummaryResponse } from "../types";
 
 export default function OwnerFinancialReportsPage() {
@@ -25,6 +25,12 @@ export default function OwnerFinancialReportsPage() {
   const [billingPeriodInput, setBillingPeriodInput] = useState("2026-11");
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
+
+  // Horse owner payment modal state
+  const [payingInvoice, setPayingInvoice] = useState<FinancialInvoice | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<"VIETQR" | "CARD" | "BALANCE">("VIETQR");
+  const [processingPayment, setProcessingPayment] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -82,6 +88,36 @@ export default function OwnerFinancialReportsPage() {
 
   function handlePrintSnapshot() {
     window.print();
+  }
+
+  function handleOpenPayment(invoice: FinancialInvoice) {
+    setPayingInvoice(invoice);
+    setPaymentSuccess(false);
+    setPaymentMethod("VIETQR");
+  }
+
+  async function handleExecutePayment() {
+    if (!payingInvoice) return;
+    setProcessingPayment(true);
+    try {
+      await payInvoice(payingInvoice.id, {
+        paymentMethod,
+        transactionRef: "TXN-" + Date.now().toString().slice(-6),
+      });
+      setPaymentSuccess(true);
+      setStatusMessage(
+        tr(`Payment confirmed for invoice ${payingInvoice.billingPeriod} (${payingInvoice.horse.name})`),
+      );
+      setTimeout(() => {
+        setPayingInvoice(null);
+        setPaymentSuccess(false);
+        loadData();
+      }, 1500);
+    } catch (err: any) {
+      alert(err?.message || tr("Payment failed. Please try again."));
+    } finally {
+      setProcessingPayment(false);
+    }
   }
 
   const invoices = summary?.invoices ?? [];
@@ -164,6 +200,36 @@ export default function OwnerFinancialReportsPage() {
         />
       </div>
 
+      {/* Ledger Settlement Calculation Guide */}
+      <Card pad={16}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 700, color: "var(--ink)", fontSize: "var(--fs-sm)" }}>
+            <span>💡</span>
+            <span>{tr("How Monthly Settlement & Prize Credits Work")}</span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0.75rem", fontSize: "var(--fs-xs)", color: "var(--muted)" }}>
+            <div style={{ padding: "0.625rem 0.875rem", background: "var(--surface-sunken, #f8fafc)", borderRadius: "var(--r-sm, 6px)", border: "1px solid var(--border)" }}>
+              <strong style={{ color: "var(--ink)", display: "block", marginBottom: "0.25rem" }}>
+                1. {tr("Total Upkeep Expenses")}
+              </strong>
+              {tr("Sum of monthly Stall Boarding, Vet & Medical exams, and conditioning services for each horse.")}
+            </div>
+            <div style={{ padding: "0.625rem 0.875rem", background: "var(--surface-sunken, #f8fafc)", borderRadius: "var(--r-sm, 6px)", border: "1px solid var(--border)" }}>
+              <strong style={{ color: "var(--brand, #10b981)", display: "block", marginBottom: "0.25rem" }}>
+                2. {tr("Tournament Prize Credits (70%)")}
+              </strong>
+              {tr("70% of prize money won by your horses is automatically deducted directly from upkeep costs.")}
+            </div>
+            <div style={{ padding: "0.625rem 0.875rem", background: "var(--surface-sunken, #f8fafc)", borderRadius: "var(--r-sm, 6px)", border: "1px solid var(--border)" }}>
+              <strong style={{ color: "var(--ink)", display: "block", marginBottom: "0.25rem" }}>
+                3. {tr("Net Settlement Balance")}
+              </strong>
+              {tr("Expenses minus Prize Credits. If positive, owner pays the balance. If negative, club pays surplus to owner.")}
+            </div>
+          </div>
+        </div>
+      </Card>
+
       {/* Filter and Period Selector */}
       <Card pad={16}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
@@ -225,7 +291,7 @@ export default function OwnerFinancialReportsPage() {
                   <th style={{ padding: "0.75rem 0.5rem" }}>{tr("Prize Credit")}</th>
                   <th style={{ padding: "0.75rem 0.5rem" }}>{tr("Net Amount")}</th>
                   <th style={{ padding: "0.75rem 0.5rem" }}>{tr("Status")}</th>
-                  {isClubManager && <th style={{ padding: "0.75rem 0.5rem" }}>{tr("Actions")}</th>}
+                  <th style={{ padding: "0.75rem 0.5rem" }}>{tr("Actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -280,30 +346,47 @@ export default function OwnerFinancialReportsPage() {
                           {tr(inv.status)}
                         </Badge>
                       </td>
-                      {isClubManager && (
-                        <td style={{ padding: "0.75rem 0.5rem" }}>
-                          <div style={{ display: "flex", gap: "0.25rem" }}>
-                            {inv.status === "DRAFT" && (
-                              <Button
-                                tone="secondary"
-                                size="sm"
-                                onClick={() => handleStatusChange(inv.id, "SENT")}
-                              >
-                                {tr("Send")}
-                              </Button>
-                            )}
-                            {inv.status === "SENT" && (
-                              <Button
-                                tone="primary"
-                                size="sm"
-                                onClick={() => handleStatusChange(inv.id, "PAID")}
-                              >
-                                {tr("Mark Paid")}
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      )}
+                      <td style={{ padding: "0.75rem 0.5rem" }}>
+                        <div style={{ display: "flex", gap: "0.375rem", alignItems: "center", flexWrap: "wrap" }}>
+                          {isClubManager && inv.status === "DRAFT" && (
+                            <Button
+                              tone="secondary"
+                              size="sm"
+                              onClick={() => handleStatusChange(inv.id, "SENT")}
+                            >
+                              {tr("Send")}
+                            </Button>
+                          )}
+                          {isClubManager && inv.status === "SENT" && (
+                            <Button
+                              tone="secondary"
+                              size="sm"
+                              onClick={() => handleStatusChange(inv.id, "PAID")}
+                            >
+                              {tr("Mark Paid")}
+                            </Button>
+                          )}
+                          {(inv.status === "SENT" || inv.status === "OVERDUE") && inv.netAmount > 0 && (
+                            <Button
+                              tone="primary"
+                              size="sm"
+                              onClick={() => handleOpenPayment(inv)}
+                            >
+                              💳 {tr("Pay Now")}
+                            </Button>
+                          )}
+                          {(inv.status === "SENT" || inv.status === "OVERDUE") && inv.netAmount <= 0 && (
+                            <span style={{ fontSize: "var(--fs-xs)", color: "var(--brand, #10b981)", fontWeight: 600 }}>
+                              {tr("Payout Pending")}
+                            </span>
+                          )}
+                          {inv.status === "PAID" && (
+                            <span style={{ fontSize: "var(--fs-xs)", color: "var(--brand, #10b981)", fontWeight: 600 }}>
+                              ✓ {tr("Settled")}
+                            </span>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
@@ -318,7 +401,7 @@ export default function OwnerFinancialReportsPage() {
         <Modal
           title={tr("Generate Monthly Invoices & Statements")}
           subtitle={tr("Automatically compute Boarding, Medical, Training fees and deduct 70% race prizes")}
-          width={500}
+          width={540}
           onClose={() => !generating && setIsGenerateOpen(false)}
           foot={
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", width: "100%" }}>
@@ -369,9 +452,340 @@ export default function OwnerFinancialReportsPage() {
                 {tr("Draft invoices will be created for all active horses in the club for this period.")}
               </p>
             </div>
+
+            {/* Parameter & Ledger Explanation */}
+            <div
+              style={{
+                padding: "0.875rem 1rem",
+                background: "var(--surface-sunken, #f8fafc)",
+                borderRadius: "var(--r-sm, 6px)",
+                border: "1px solid var(--border)",
+                fontSize: "var(--fs-xs)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.5rem",
+              }}
+            >
+              <strong style={{ color: "var(--ink)", fontSize: "var(--fs-sm)" }}>
+                📋 {tr("Monthly Statement Calculation Rule:")}
+              </strong>
+              <div>
+                • <strong>{tr("Total Upkeep Expenses:")}</strong> {tr("Includes base stall boarding (6,000,000 đ/mo), conditioning care (4,000,000 đ/mo), plus all logged veterinary exams & medicine.")}
+              </div>
+              <div>
+                • <strong>{tr("Tournament Prize Credits:")}</strong> {tr("70% of race winnings won by the horse in this period are credited back to the owner.")}
+              </div>
+              <div>
+                • <strong>{tr("Net Settlement Balance:")}</strong> {tr("Upkeep Expenses minus Prize Credits. Generates a clear payable statement for the horse owner.")}
+              </div>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Horse Owner Online Payment Modal */}
+      {payingInvoice && (
+        <Modal
+          title={tr("Online Statement Payment")}
+          subtitle={tr("Period {{period}} — Horse: {{horse}}", {
+            period: payingInvoice.billingPeriod,
+            horse: payingInvoice.horse.name,
+          })}
+          width={580}
+          onClose={() => !processingPayment && setPayingInvoice(null)}
+          foot={
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", width: "100%" }}>
+              <Button tone="secondary" onClick={() => setPayingInvoice(null)} disabled={processingPayment}>
+                {tr("Cancel")}
+              </Button>
+              <Button tone="primary" onClick={handleExecutePayment} disabled={processingPayment || paymentSuccess}>
+                {processingPayment
+                  ? tr("Processing Payment...")
+                  : paymentSuccess
+                  ? "✓ " + tr("Paid Successfully")
+                  : "✓ " + tr("Confirm Payment ({{amount}} đ)", { amount: payingInvoice.netAmount.toLocaleString() })}
+              </Button>
+            </div>
+          }
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            {paymentSuccess && (
+              <div
+                style={{
+                  padding: "0.875rem 1rem",
+                  background: "var(--brand-muted, rgba(16, 185, 129, 0.15))",
+                  color: "var(--brand, #10b981)",
+                  borderRadius: "var(--r-sm, 6px)",
+                  fontWeight: 700,
+                  fontSize: "var(--fs-sm)",
+                  border: "1px solid var(--brand, #10b981)",
+                }}
+              >
+                🎉 {tr("Payment confirmed successfully! Invoice marked as PAID.")}
+              </div>
+            )}
+
+            {/* Bill Summary */}
+            <div
+              style={{
+                padding: "0.875rem 1rem",
+                background: "var(--surface-sunken, #f8fafc)",
+                borderRadius: "var(--r-sm, 6px)",
+                border: "1px solid var(--border)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.375rem",
+                fontSize: "var(--fs-sm)",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "var(--muted)" }}>{tr("Stall Boarding:")}</span>
+                <strong>{payingInvoice.boardingFee.toLocaleString()} đ</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "var(--muted)" }}>{tr("Medical & Veterinary:")}</span>
+                <strong>{payingInvoice.medicalFee.toLocaleString()} đ</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "var(--muted)" }}>{tr("Conditioning & Training:")}</span>
+                <strong>{payingInvoice.trainingFee.toLocaleString()} đ</strong>
+              </div>
+              {payingInvoice.prizeCredit > 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between", color: "var(--brand, #10b981)" }}>
+                  <span>{tr("70% Race Prize Deduction:")}</span>
+                  <strong>-{payingInvoice.prizeCredit.toLocaleString()} đ</strong>
+                </div>
+              )}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  paddingTop: "0.5rem",
+                  marginTop: "0.25rem",
+                  borderTop: "1px dashed var(--border)",
+                  fontSize: "var(--fs-base, 1rem)",
+                  fontWeight: 800,
+                  color: "var(--ink)",
+                }}
+              >
+                <span>{tr("Total Amount Due:")}</span>
+                <span style={{ color: "var(--brand, #10b981)" }}>
+                  {payingInvoice.netAmount.toLocaleString()} đ
+                </span>
+              </div>
+            </div>
+
+            {/* Payment Method Selector */}
+            <div>
+              <label style={{ display: "block", fontSize: "var(--fs-sm)", fontWeight: 600, marginBottom: "0.5rem" }}>
+                {tr("Select Payment Method")}
+              </label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.5rem" }}>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("VIETQR")}
+                  style={{
+                    padding: "0.625rem 0.5rem",
+                    borderRadius: "var(--r-sm, 6px)",
+                    border: paymentMethod === "VIETQR" ? "2px solid var(--brand, #10b981)" : "1px solid var(--border)",
+                    background: paymentMethod === "VIETQR" ? "var(--brand-muted, rgba(16, 185, 129, 0.08))" : "var(--surface)",
+                    cursor: "pointer",
+                    textAlign: "center",
+                    fontWeight: 600,
+                    fontSize: "var(--fs-xs)",
+                    color: "var(--ink)",
+                  }}
+                >
+                  📱 VietQR (Napas)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("CARD")}
+                  style={{
+                    padding: "0.625rem 0.5rem",
+                    borderRadius: "var(--r-sm, 6px)",
+                    border: paymentMethod === "CARD" ? "2px solid var(--brand, #10b981)" : "1px solid var(--border)",
+                    background: paymentMethod === "CARD" ? "var(--brand-muted, rgba(16, 185, 129, 0.08))" : "var(--surface)",
+                    cursor: "pointer",
+                    textAlign: "center",
+                    fontWeight: 600,
+                    fontSize: "var(--fs-xs)",
+                    color: "var(--ink)",
+                  }}
+                >
+                  💳 Visa / Master
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("BALANCE")}
+                  style={{
+                    padding: "0.625rem 0.5rem",
+                    borderRadius: "var(--r-sm, 6px)",
+                    border: paymentMethod === "BALANCE" ? "2px solid var(--brand, #10b981)" : "1px solid var(--border)",
+                    background: paymentMethod === "BALANCE" ? "var(--brand-muted, rgba(16, 185, 129, 0.08))" : "var(--surface)",
+                    cursor: "pointer",
+                    textAlign: "center",
+                    fontWeight: 600,
+                    fontSize: "var(--fs-xs)",
+                    color: "var(--ink)",
+                  }}
+                >
+                  🏦 {tr("Club Deposit")}
+                </button>
+              </div>
+            </div>
+
+            {/* Payment Method Details */}
+            {paymentMethod === "VIETQR" && (
+              <div
+                style={{
+                  padding: "1rem",
+                  background: "var(--surface)",
+                  borderRadius: "var(--r-sm, 6px)",
+                  border: "1px solid var(--border)",
+                  display: "flex",
+                  gap: "1.25rem",
+                  alignItems: "center",
+                }}
+              >
+                {/* VietQR Mock Card Visual */}
+                <div
+                  style={{
+                    width: 130,
+                    height: 130,
+                    background: "#ffffff",
+                    borderRadius: "var(--r-sm, 6px)",
+                    border: "1px solid #cbd5e1",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.06)",
+                    flexShrink: 0,
+                    position: "relative",
+                  }}
+                >
+                  <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#005baa", marginBottom: 2 }}>
+                    VIETQR | NAPAS247
+                  </div>
+                  {/* Stylized QR grid representation */}
+                  <div
+                    style={{
+                      width: 90,
+                      height: 90,
+                      background: "repeating-linear-gradient(45deg, #1e293b, #1e293b 8px, #ffffff 8px, #ffffff 16px)",
+                      borderRadius: 4,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <div style={{ width: 28, height: 28, background: "#ffffff", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.6rem", fontWeight: 900, color: "var(--brand, #10b981)" }}>
+                      EQF
+                    </div>
+                  </div>
+                  <div style={{ fontSize: "0.6rem", color: "#64748b", marginTop: 2 }}>
+                    {tr("Scan with Bank App")}
+                  </div>
+                </div>
+
+                <div style={{ fontSize: "var(--fs-xs)", display: "flex", flexDirection: "column", gap: "0.35rem", flex: 1 }}>
+                  <div>
+                    <span style={{ color: "var(--muted)", display: "block" }}>{tr("Bank Name:")}</span>
+                    <strong style={{ color: "var(--ink)", fontSize: "var(--fs-sm)" }}>Vietcombank (VCB)</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: "var(--muted)", display: "block" }}>{tr("Account Number:")}</span>
+                    <strong style={{ color: "var(--brand, #10b981)", fontSize: "var(--fs-base)" }}>9876 5432 10</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: "var(--muted)", display: "block" }}>{tr("Beneficiary:")}</span>
+                    <strong style={{ color: "var(--ink)" }}>CLB DUA NGUA EQUIFLOW</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: "var(--muted)", display: "block" }}>{tr("Transfer Note:")}</span>
+                    <strong style={{ color: "var(--ink)", background: "var(--surface-sunken)", padding: "2px 6px", borderRadius: 4 }}>
+                      EQUIFLOW {payingInvoice.id.slice(-6).toUpperCase()}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {paymentMethod === "CARD" && (
+              <div
+                style={{
+                  padding: "1rem",
+                  background: "var(--surface)",
+                  borderRadius: "var(--r-sm, 6px)",
+                  border: "1px solid var(--border)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.75rem",
+                  fontSize: "var(--fs-sm)",
+                }}
+              >
+                <div>
+                  <label style={{ display: "block", fontSize: "var(--fs-xs)", color: "var(--muted)", marginBottom: 4 }}>
+                    {tr("Card Number")}
+                  </label>
+                  <input
+                    type="text"
+                    defaultValue="4111 2222 3333 4444"
+                    style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)" }}
+                  />
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "var(--fs-xs)", color: "var(--muted)", marginBottom: 4 }}>
+                      {tr("Expiry Date")}
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue="12/28"
+                      style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "var(--fs-xs)", color: "var(--muted)", marginBottom: 4 }}>
+                      CVV / CVC
+                    </label>
+                    <input
+                      type="password"
+                      defaultValue="888"
+                      style={{ width: "100%", padding: "0.5rem 0.75rem", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)" }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {paymentMethod === "BALANCE" && (
+              <div
+                style={{
+                  padding: "1rem",
+                  background: "var(--surface-sunken)",
+                  borderRadius: "var(--r-sm, 6px)",
+                  border: "1px solid var(--border)",
+                  fontSize: "var(--fs-sm)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.5rem",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "var(--muted)" }}>{tr("Club Deposit Balance:")}</span>
+                  <strong style={{ color: "var(--brand, #10b981)" }}>50,000,000 đ</strong>
+                </div>
+                <div style={{ fontSize: "var(--fs-xs)", color: "var(--muted)" }}>
+                  ✓ {tr("Sufficient deposit balance available. Amount will be deducted immediately.")}
+                </div>
+              </div>
+            )}
           </div>
         </Modal>
       )}
     </div>
   );
 }
+

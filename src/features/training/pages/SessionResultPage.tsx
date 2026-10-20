@@ -137,14 +137,14 @@ export default function SessionResultPage() {
 
   const problems: string[] = [];
   const d = Number(distance);
-  if (!Number.isInteger(d) || d < 50 || d > 10000) problems.push("Actual distance must be 50 to 10 000 m.");
-  if (needsTime && !seconds) problems.push("Running time is required (format mm:ss.s).");
-  if (!needsTime && time.trim() && !seconds) problems.push("Running time is not valid (format mm:ss.s).");
-  if (peakHr && recoveryHr && Number(recoveryHr) > Number(peakHr)) problems.push("Heart rate after 10 minutes cannot exceed the peak heart rate.");
-  if (!score) problems.push("Please give a performance score.");
-  if (!completion) problems.push("Please choose the completion level.");
-  if (comment.trim().length < 10 || comment.trim().length > 2000) problems.push("Comment must be 10 to 2000 characters.");
-  if (signs.length > 0 && (signNotes.trim().length < 10 || signNotes.trim().length > 500)) problems.push("Describe the abnormal signs (10-500 characters).");
+  if (!Number.isInteger(d) || d < 50 || d > 10000) problems.push(tr("Actual distance must be 50 to 10 000 m."));
+  if (needsTime && !seconds) problems.push(tr("Running time is required (format mm:ss.s)."));
+  if (!needsTime && time.trim() && !seconds) problems.push(tr("Running time is not valid (format mm:ss.s)."));
+  if (peakHr && recoveryHr && Number(recoveryHr) > Number(peakHr)) problems.push(tr("Heart rate after 10 minutes cannot exceed the peak heart rate."));
+  if (!score) problems.push(tr("Please give a performance score."));
+  if (!completion) problems.push(tr("Please choose the completion level."));
+  if (comment.trim().length < 2 || comment.trim().length > 2000) problems.push(tr("Comment must be 2 to 2000 characters."));
+  if (signs.length > 0 && (signNotes.trim().length < 2 || signNotes.trim().length > 500)) problems.push(tr("Describe the abnormal signs (2-500 characters)."));
 
   const set =
     <T,>(setter: (v: T) => void) =>
@@ -338,9 +338,33 @@ export default function SessionResultPage() {
               </Field>
             </div>
             <div style={{ marginTop: "1rem" }}>
-              <Field label={tr(`Professional comment (${comment.trim().length}/2000)`)} required hint={tr("10 – 2000 characters")}>
+              <Field label={tr(`Professional comment (${comment.trim().length}/2000)`)} required hint={tr("2 – 2000 characters")}>
                 <Textarea rows={3} maxLength={2000} value={comment} onChange={(e) => set(setComment)(e.target.value)} />
               </Field>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "0.375rem" }}>
+                <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", alignSelf: "center" }}>{tr("Quick notes:")}</span>
+                <button
+                  type="button"
+                  onClick={() => set(setComment)(tr("Hoàn thành tốt bài tập, sải bước đều và nhịp thở phục hồi ổn định."))}
+                  style={{ fontSize: "var(--fs-xs)", padding: "0.2rem 0.6rem", borderRadius: "12px", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--ink)" }}
+                >
+                  {tr("+ Hoàn thành tốt")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => set(setComment)(tr("Ngựa mệt mỏi nhẹ ở 200m cuối, cần theo dõi giảm tải buổi sau."))}
+                  style={{ fontSize: "var(--fs-xs)", padding: "0.2rem 0.6rem", borderRadius: "12px", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--ink)" }}
+                >
+                  {tr("+ Mệt mỏi nhẹ")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => set(setComment)(tr("Có dấu hiệu bất thường về vận động, đề nghị Bác sĩ thú y kiểm tra chuyên sâu."))}
+                  style={{ fontSize: "var(--fs-xs)", padding: "0.2rem 0.6rem", borderRadius: "12px", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--ink)" }}
+                >
+                  {tr("+ Bất thường cần khám")}
+                </button>
+              </div>
             </div>
             <div style={{ marginTop: "1rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
               <strong style={{ fontSize: "var(--fs-body)" }}>{tr("Abnormal signs")}</strong>
@@ -359,9 +383,33 @@ export default function SessionResultPage() {
                   <Alert tone="warn" title={tr("The Veterinarian and Head Trainer are alerted when you save")}>
                     {tr("Placing a Training Lock is the Veterinarian's decision.")}
                   </Alert>
-                  <Field label={tr("Describe the signs")} required hint={tr("10 – 500 characters")}>
+                  <Field label={tr("Describe the signs")} required hint={tr("2 – 500 characters")}>
                     <Textarea rows={2} maxLength={500} value={signNotes} onChange={(e) => set(setSignNotes)(e.target.value)} />
                   </Field>
+                  <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "0.25rem" }}>
+                    <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", alignSelf: "center" }}>{tr("Quick templates:")}</span>
+                    <button
+                      type="button"
+                      onClick={() => set(setSignNotes)(tr("Khập khiễng nhẹ chân sau bên phải sau khi tăng tốc cự ly 800m."))}
+                      style={{ fontSize: "var(--fs-xs)", padding: "0.2rem 0.6rem", borderRadius: "12px", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--ink)" }}
+                    >
+                      {tr("+ Khập khiễng chân sau")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => set(setSignNotes)(tr("Nhịp tim phục hồi chậm, thở dốc bất thường kéo dài hơn 10 phút sau bài tập."))}
+                      style={{ fontSize: "var(--fs-xs)", padding: "0.2rem 0.6rem", borderRadius: "12px", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--ink)" }}
+                    >
+                      {tr("+ Thở dốc, tim chậm hồi")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => set(setSignNotes)(tr("Căng cứng cơ vai và lưng khi sải bước dài, có biểu hiện đau khi chạm vào."))}
+                      style={{ fontSize: "var(--fs-xs)", padding: "0.2rem 0.6rem", borderRadius: "12px", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--ink)" }}
+                    >
+                      {tr("+ Căng cứng cơ vai")}
+                    </button>
+                  </div>
                 </>
               )}
             </div>

@@ -18,6 +18,20 @@ const TOURNAMENT_STATUS_LABEL: Record<string, string> = {
   CANCELLED: "Đã hủy",
 };
 
+const TOURNAMENT_STATUS_LABEL_EN: Record<string, string> = {
+  UPCOMING: "Upcoming",
+  OPEN_REGISTRATION: "Open for Registration",
+  CLOSED_REGISTRATION: "Registration Closed",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
+};
+
+function getTournamentStatusLabel(status: string) {
+  return isVietnamese()
+    ? (TOURNAMENT_STATUS_LABEL[status] ?? status)
+    : (TOURNAMENT_STATUS_LABEL_EN[status] ?? status);
+}
+
 import {
   fetchTournaments,
   createTournament,
@@ -180,6 +194,48 @@ export default function RaceEntryPage() {
         />
       </div>
 
+      {/* Status Guide Accordion / Information Card */}
+      <div
+        style={{
+          padding: "0.875rem 1.25rem",
+          borderRadius: "8px",
+          background: "color-mix(in srgb, var(--brand) 6%, var(--surface))",
+          border: "1px solid color-mix(in srgb, var(--brand) 20%, var(--border))",
+          fontSize: "var(--fs-sm)",
+          lineHeight: 1.6,
+        }}
+      >
+        <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: "0.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <span>ℹ️</span> {isVietnamese() ? "Giải thích trạng thái giải đấu & Quy trình đăng ký:" : tr("Tournament Status & Registration Process:")}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0.75rem", marginTop: "0.5rem" }}>
+          <div>
+            <strong style={{ color: "var(--info, #3b82f6)" }}>• {isVietnamese() ? "Sắp diễn ra (Upcoming):" : "Upcoming:"}</strong>{" "}
+            {isVietnamese()
+              ? "Giải đấu đã được công bố trên lịch thi đấu nhưng chưa mở nhận hồ sơ. Huấn luyện viên theo dõi điều lệ và cự ly để lên kế hoạch chuẩn bị."
+              : tr("Tournament is scheduled on the calendar but registration is not open yet.")}
+          </div>
+          <div>
+            <strong style={{ color: "var(--brand, #10b981)" }}>• {isVietnamese() ? "Đang mở đăng ký (Open for Registration):" : "Open for Registration:"}</strong>{" "}
+            {isVietnamese()
+              ? "Cổng nộp hồ sơ đang mở. Chủ ngựa và HLV có thể bấm 'Đăng ký ngựa thi đấu' để đưa chiến mã đủ điều kiện tham gia tranh tài."
+              : tr("Registration is actively open. Horse Owners and Trainers can enroll eligible horses.")}
+          </div>
+          <div>
+            <strong style={{ color: "var(--text-muted)" }}>• {isVietnamese() ? "Đã hoàn thành (Completed):" : "Completed:"}</strong>{" "}
+            {isVietnamese()
+              ? "Giải đấu đã hoàn tất thi đấu. Bấm 'Xem kết quả' để xem bảng xếp hạng thứ tự, thời gian chạy và giải thưởng được ghi nhận."
+              : tr("Race finished. Click 'View Results' to inspect final rankings, finish times, and prize money.")}
+          </div>
+          <div>
+            <strong style={{ color: "var(--danger, #ef4444)" }}>• {isVietnamese() ? "Đã hủy (Cancelled):" : "Cancelled:"}</strong>{" "}
+            {isVietnamese()
+              ? "Giải tạm dừng tổ chức. Hồ sơ giải đấu và danh sách ngựa đăng ký được bảo lưu an toàn tại tab 'Đã hủy', có thể 'Mở lại giải' bất kỳ lúc nào."
+              : tr("Event cancelled. Safely archived under 'Cancelled' tab and can be reopened anytime.")}
+          </div>
+        </div>
+      </div>
+
       {/* Filter and Tab Bar */}
       <Card pad={16}>
         <div
@@ -281,7 +337,7 @@ export default function RaceEntryPage() {
                             : "danger"
                         }
                       >
-                        {isVietnamese() ? (TOURNAMENT_STATUS_LABEL[tourney.status] ?? tourney.status) : tr(tourney.status)}
+                        {getTournamentStatusLabel(tourney.status)}
                       </Badge>
                     </div>
 
@@ -415,7 +471,7 @@ export default function RaceEntryPage() {
                             tone="quiet"
                             onClick={() => setCancelTarget(tourney)}
                           >
-                            {isVietnamese() ? "Hủy giải" : tr("Cancel")}
+                            {isVietnamese() ? "Hủy giải đua" : tr("Cancel Event")}
                           </Button>
                         )}
                         {tourney.status === "CANCELLED" && (
@@ -423,7 +479,7 @@ export default function RaceEntryPage() {
                             tone="secondary"
                             onClick={() => setReopenTarget(tourney)}
                           >
-                            {isVietnamese() ? "Mở lại" : tr("Reopen")}
+                            {isVietnamese() ? "Mở lại giải" : tr("Reopen Event")}
                           </Button>
                         )}
                         {registeredCount === 0 && !isCompleted && (
@@ -431,7 +487,7 @@ export default function RaceEntryPage() {
                             tone="danger"
                             onClick={() => setDeleteTarget(tourney)}
                           >
-                            {tr("Delete")}
+                            {isVietnamese() ? "Xóa vĩnh viễn" : tr("Delete Permanently")}
                           </Button>
                         )}
                       </div>
