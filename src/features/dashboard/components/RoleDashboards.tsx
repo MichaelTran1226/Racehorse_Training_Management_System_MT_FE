@@ -17,7 +17,7 @@ import { fetchTournaments } from "@/features/racing/api";
 import type { Tournament } from "@/features/racing/types";
 import { useLoaded } from "./DashboardBlocks";
 import { ActionItemsCard } from "./ActionItemsCard";
-import { tr, isVietnamese } from "@/shared/i18n/tr";
+import { tr } from "@/shared/i18n/tr";
 import { useAppLanguage } from "@/shared/lib/language";
 
 const TOURNAMENT_STATUS_LABEL: Record<string, string> = {

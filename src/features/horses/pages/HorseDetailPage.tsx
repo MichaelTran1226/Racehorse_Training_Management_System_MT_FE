@@ -26,7 +26,7 @@ import { AssignStallDialog, ReturnStallDialog, TransferStallDialog } from "@/fea
 import { formatDate, formatDateTime } from "@/shared/lib/format";
 import { useAppLanguage } from "@/shared/lib/language";
 
-import { tr, isVietnamese } from "@/shared/i18n/tr";
+import { tr } from "@/shared/i18n/tr";
 /** Nguồn đổi trạng thái (Tab 4). */
 const STATUS_SOURCE_LABEL: Record<string, string> = {
   MANUAL: "Manual",

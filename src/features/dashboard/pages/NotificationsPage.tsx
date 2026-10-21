@@ -17,7 +17,7 @@ import {
   localizeNotification,
 } from "@/shared/lib/notifications";
 
-import { tr, isVietnamese } from "@/shared/i18n/tr";
+import { tr } from "@/shared/i18n/tr";
 import { useAppLanguage } from "@/shared/lib/language";
 export default function NotificationsPage() {
   const { isVietnamese: isVi } = useAppLanguage();

@@ -8,7 +8,7 @@ interface LanguageToggleProps {
 }
 
 export function LanguageToggle({ className }: LanguageToggleProps) {
-  const { lang, toggleLanguage, t } = useAppLanguage();
+  const { lang, toggleLanguage } = useAppLanguage();
   const nextLangLabel = lang === "vi" ? "Switch to English" : "Chuyển sang Tiếng Việt";
 
   return (

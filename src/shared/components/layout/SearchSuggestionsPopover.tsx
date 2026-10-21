@@ -188,7 +188,7 @@ type ListItem =
 
 export function SearchSuggestionsPopover({
   horses,
-  user,
+  user: _user,
   query,
   open,
   onClose,

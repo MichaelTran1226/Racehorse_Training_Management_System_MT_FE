@@ -8,7 +8,6 @@ import { AuthLayout } from "@/shared/components/layout/AuthLayout";
 import { Alert } from "@/shared/components/ui/Alert";
 import { Button } from "@/shared/components/ui/Button";
 import { ApiError } from "@/shared/lib/api";
-import { formatTime } from "@/shared/lib/format";
 import { messageFor } from "@/shared/lib/messages";
 import { passwordError } from "@/shared/lib/password";
 import { resetPassword } from "../api";

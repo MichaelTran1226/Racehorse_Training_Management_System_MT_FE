@@ -33,7 +33,7 @@ interface TopbarProps {
 export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
   const { user } = useAuth();
   const { theme, toggle: toggleTheme } = useTheme();
-  const { isVietnamese, t } = useAppLanguage();
+  const { t } = useAppLanguage();
   const navigate = useNavigate();
   const [popoverOpen, setPopoverOpen] = useState(false);
   const bellTriggerRef = useRef<HTMLDivElement>(null);

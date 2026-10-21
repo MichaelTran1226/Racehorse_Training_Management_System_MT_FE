@@ -22,7 +22,7 @@ import type { IncidentReport } from '../types/incidents';
 export default function DailyChecklistPage() {
   const user = useCurrentUser();
   const toast = useToast();
-  const { isVietnamese } = useAppLanguage();
+  useAppLanguage();
   const isGroom = user?.role === 'GROOM';
 
   const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);

@@ -18,7 +18,7 @@ import type { IncidentReport, IncidentSeverity, IncidentStatus } from '../types/
 
 export default function IncidentListPage() {
   const user = useCurrentUser();
-  const { isVietnamese } = useAppLanguage();
+  useAppLanguage();
   const [incidents, setIncidents] = useState<IncidentReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

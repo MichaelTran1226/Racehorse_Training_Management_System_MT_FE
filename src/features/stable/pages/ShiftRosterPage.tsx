@@ -286,8 +286,12 @@ export default function ShiftRosterPage() {
         </div>
       </div>
 
-      {/* Chế độ Groom: Ca trực của tôi */}
-      {isGroom && onlyMyShifts ? (
+      {/* Content */}
+      {loading ? (
+        <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--muted)', background: 'var(--surface)', borderRadius: 'var(--r-md)' }}>
+          {tr('Loading rosters...')}
+        </div>
+      ) : isGroom && onlyMyShifts ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ margin: 0, fontSize: '1.125rem' }}>

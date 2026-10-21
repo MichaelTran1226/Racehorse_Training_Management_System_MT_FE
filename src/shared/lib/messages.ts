@@ -163,6 +163,8 @@ const VI_TO_EN: Record<string, string> = {
 export function messageFor(err: unknown): string {
   if (err instanceof ApiError) {
     if (err.status >= 500) return isVietnamese() ? tr(GENERIC.SERVER_ERROR) : GENERIC.SERVER_ERROR;
+    const dynamicMsg = DYNAMIC[err.code]?.(err.data as Record<string, unknown>);
+    if (dynamicMsg) return isVietnamese() ? tr(dynamicMsg) : dynamicMsg;
     const enGeneric = GENERIC[err.code];
     if (isVietnamese()) {
       if (
