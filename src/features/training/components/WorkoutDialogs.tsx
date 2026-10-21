@@ -31,6 +31,7 @@ import type {
 import { hasCode } from "./PlanDialogs";
 
 import { tr } from "@/shared/i18n/tr";
+import { useAppLanguage } from "@/shared/lib/language";
 const WEEKDAYS = [
   { n: 1, label: "Mon" },
   { n: 2, label: "Tue" },
@@ -60,6 +61,7 @@ interface WorkoutDialogProps {
  * - BE trả WARNINGS_NEED_CONFIRMATION -> hiện khung vàng, bấm Lưu lần 2 để xác nhận.
  */
 export function WorkoutDialog({ plans, plan: fixedPlan, session, defaultDate, onClose, onSaved }: WorkoutDialogProps) {
+  useAppLanguage();
   const toast = useToast();
   const editing = Boolean(session);
   const [grooms, setGrooms] = useState<Groom[]>([]);
@@ -369,6 +371,7 @@ export function CancelWorkoutDialog({ session, onClose, onDone }: { session: Exe
     }
   };
 
+  useAppLanguage();
   return (
     <Modal
       title={tr(`Cancel ${EXERCISE_TYPE_LABEL[session.sessionType]} at ${session.sessionDate} ${session.startTime} – ${session.horseName}?`)}
@@ -376,8 +379,8 @@ export function CancelWorkoutDialog({ session, onClose, onDone }: { session: Exe
       onClose={onClose}
       foot={
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
-          <Button tone="ghost" onClick={onClose}>Close</Button>
-          <Button tone="danger" onClick={() => void submit()} disabled={submitting || !reason || !noteOk}>Cancel workout</Button>
+          <Button tone="ghost" onClick={onClose}>{tr("Close")}</Button>
+          <Button tone="danger" onClick={() => void submit()} disabled={submitting || !reason || !noteOk}>{tr("Cancel workout")}</Button>
         </div>
       }
     >
@@ -387,7 +390,7 @@ export function CancelWorkoutDialog({ session, onClose, onDone }: { session: Exe
             value={reason}
             onChange={(e) => setReason(e.target.value as CancelWorkoutReason)}
             options={[
-              { value: "", label: "Select a reason", disabled: true },
+              { value: "", label: tr("Select a reason"), disabled: true },
               ...(Object.keys(CANCEL_REASON_LABEL) as CancelWorkoutReason[]).map((r) => ({ value: r, label: CANCEL_REASON_LABEL[r] })),
             ]}
           />
@@ -402,6 +405,7 @@ export function CancelWorkoutDialog({ session, onClose, onDone }: { session: Exe
 
 /** DL-2.07 Khôi phục buổi tập bị chặn (sau khi gỡ khóa), có thể dời ngày giờ. */
 export function RestoreWorkoutDialog({ session, onClose, onDone }: { session: ExerciseSession; onClose: () => void; onDone: () => void }) {
+  useAppLanguage();
   const toast = useToast();
   const today = todayClub();
   const [date, setDate] = useState(session.sessionDate >= today ? session.sessionDate : today);
@@ -414,7 +418,7 @@ export function RestoreWorkoutDialog({ session, onClose, onDone }: { session: Ex
     setError("");
     try {
       await trainingApi.restoreBlockedSession(session.id, clubIso(date, time));
-      toast.show("Workout restored.", "ok");
+      toast.show(tr("Workout restored."), "ok");
       onDone();
       onClose();
     } catch (err) {
@@ -430,8 +434,8 @@ export function RestoreWorkoutDialog({ session, onClose, onDone }: { session: Ex
       onClose={onClose}
       foot={
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
-          <Button tone="ghost" onClick={onClose}>Cancel</Button>
-          <Button tone="primary" onClick={() => void submit()} disabled={submitting}>Restore</Button>
+          <Button tone="ghost" onClick={onClose}>{tr("Cancel")}</Button>
+          <Button tone="primary" onClick={() => void submit()} disabled={submitting}>{tr("Restore")}</Button>
         </div>
       }
     >

@@ -16,6 +16,7 @@ import { EXERCISE_TYPE_LABEL, SESSION_STATUS_LABEL, SESSION_STATUS_TONE } from "
 import type { ExerciseSession } from "../types";
 
 import { tr } from "@/shared/i18n/tr";
+import { useAppLanguage } from "@/shared/lib/language";
 
 function minusDays(date: string, days: number): string {
   const d = new Date(`${date}T00:00:00Z`);
@@ -28,6 +29,7 @@ function minusDays(date: string, days: number): string {
  * và các kết quả 14 ngày gần nhất; mọi vai trò được vào có lối mở Biểu đồ thể lực (SC-2.07).
  */
 export default function SessionMetricsPage() {
+  useAppLanguage();
   const user = useCurrentUser();
   const [sessions, setSessions] = useState<ExerciseSession[]>([]);
   const [horses, setHorses] = useState<{ value: string; label: string }[]>([]);

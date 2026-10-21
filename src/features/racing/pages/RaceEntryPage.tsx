@@ -8,6 +8,7 @@ import { KpiTile } from "@/shared/components/ui/KpiTile";
 import { Tabs } from "@/shared/components/ui/Tabs";
 import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
 import { tr, isVietnamese } from "@/shared/i18n/tr";
+import { useAppLanguage } from "@/shared/lib/language";
 import { ConfirmModal } from "@/shared/components/ui/ConfirmModal";
 
 const TOURNAMENT_STATUS_LABEL: Record<string, string> = {
@@ -45,6 +46,7 @@ import { RaceRegistrationModal } from "../components/RaceRegistrationModal";
 import { RecordResultsModal } from "../components/RecordResultsModal";
 
 export default function RaceEntryPage() {
+  useAppLanguage();
   const user = useCurrentUser();
   const isClubManager = user.role === "CLUB_MANAGER";
   const isTrainer = user.role === "HEAD_TRAINER";

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Modal } from "@/shared/components/ui/Modal";
 import { Button } from "@/shared/components/ui/Button";
 import { tr } from "@/shared/i18n/tr";
+import { useAppLanguage } from "@/shared/lib/language";
 import type { Tournament, TrackSurface, TournamentStatus } from "../types";
 
 interface TournamentModalProps {
@@ -17,6 +18,7 @@ export function TournamentModal({
   onSubmit,
   initialData,
 }: TournamentModalProps) {
+  useAppLanguage();
   const [name, setName] = useState("");
   const [raceDate, setRaceDate] = useState("");
   const [registrationDeadline, setRegistrationDeadline] = useState("");

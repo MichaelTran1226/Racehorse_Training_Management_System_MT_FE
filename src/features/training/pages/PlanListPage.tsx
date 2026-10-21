@@ -17,10 +17,12 @@ import { PLAN_STATUS_LABEL, PLAN_STATUS_TONE } from "../types";
 import type { PlanStatus, TrainingPlan } from "../types";
 
 import { tr } from "@/shared/i18n/tr";
+import { useAppLanguage } from "@/shared/lib/language";
 const PAGE_SIZE = 20;
 
 /** SC-2.02 Danh sách giáo án. Bấm dòng để mở SC-2.04; HT có Lập giáo án và Nhân bản. */
 export default function PlanListPage() {
+  useAppLanguage();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const user = useCurrentUser();

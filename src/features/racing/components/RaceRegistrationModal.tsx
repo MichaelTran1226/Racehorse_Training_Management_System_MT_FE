@@ -3,6 +3,7 @@ import { Modal } from "@/shared/components/ui/Modal";
 import { Button } from "@/shared/components/ui/Button";
 import { Badge } from "@/shared/components/ui/Badge";
 import { tr, isVietnamese } from "@/shared/i18n/tr";
+import { useAppLanguage } from "@/shared/lib/language";
 import { fetchEligibility, registerHorseForRace } from "../api";
 import type { EligibilityResponse, Tournament } from "../types";
 
@@ -56,6 +57,7 @@ export function RaceRegistrationModal({
   tournament,
   onSuccess,
 }: RaceRegistrationModalProps) {
+  useAppLanguage();
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [data, setData] = useState<EligibilityResponse | null>(null);

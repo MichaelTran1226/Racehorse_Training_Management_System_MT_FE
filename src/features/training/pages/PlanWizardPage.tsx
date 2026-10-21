@@ -17,6 +17,7 @@ import { PHASE_TYPE_LABEL } from "../types";
 import type { PhaseSurface, PhaseType, TrainingPhase, TrainingPlan } from "../types";
 
 import { tr } from "@/shared/i18n/tr";
+import { useAppLanguage } from "@/shared/lib/language";
 const SURFACE_LABEL: Record<PhaseSurface, string> = { TURF: "Turf", DIRT: "Dirt", SYNTHETIC: "Mixed / synthetic" };
 const MEDICAL = ["UNDER_OBSERVATION", "INJURED", "ISOLATED"];
 
@@ -57,6 +58,7 @@ function validate(name: string, objective: string, start: string, end: string, p
 
 /** SC-2.03 Tạo / Sửa giáo án (HT). Sửa được khi Nháp hoặc Đang áp dụng. */
 export default function PlanWizardPage() {
+  useAppLanguage();
   const { id } = useParams<{ id?: string }>();
   const editing = Boolean(id);
   const navigate = useNavigate();

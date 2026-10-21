@@ -30,6 +30,7 @@ import {
 import type { ExerciseSession, SessionStatus, TrainingPhase, TrainingPlan } from "../types";
 
 import { tr } from "@/shared/i18n/tr";
+import { useAppLanguage } from "@/shared/lib/language";
 type PlanWithSessions = TrainingPlan & { sessions: ExerciseSession[] };
 type Dialog =
   | { kind: "activate" | "complete" | "cancel" | "clone" }
@@ -52,6 +53,7 @@ function distanceOf(s: ExerciseSession): number {
 
 /** SC-2.04 Chi tiết giáo án. HT thao tác; CM, VET, OWNER chỉ xem. */
 export default function PlanDetailPage() {
+  useAppLanguage();
   const { id = "" } = useParams();
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();

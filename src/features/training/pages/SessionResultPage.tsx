@@ -28,6 +28,7 @@ import {
 import type { AbnormalSign, CompletionLevel, ExerciseSession, TrackCondition, TrackType } from "../types";
 
 import { tr } from "@/shared/i18n/tr";
+import { useAppLanguage } from "@/shared/lib/language";
 /** "mm:ss.s" <-> giây. */
 function parseTime(text: string): number | null {
   const m = /^(\d{1,2}):([0-5]\d(?:\.\d)?)$/.exec(text.trim());
@@ -46,6 +47,7 @@ const EDIT_WINDOW_MS = 48 * 60 * 60 * 1000;
 
 /** SC-2.06 Kết quả buổi tập: HT ghi / sửa; CM, VET, OWNER, GROOM (buổi được giao, không thấy điểm) xem. */
 export default function SessionResultPage() {
+  useAppLanguage();
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const toast = useToast();

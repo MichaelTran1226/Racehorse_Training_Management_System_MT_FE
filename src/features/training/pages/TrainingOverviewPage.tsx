@@ -19,10 +19,12 @@ import type { OverviewRow, TrainingOverview } from "../types";
 import { Icon } from "@/shared/components/ui/Icon";
 
 import { tr } from "@/shared/i18n/tr";
+import { useAppLanguage } from "@/shared/lib/language";
 type SortKey = "name" | "progress" | "score" | "load" | "next";
 
 /** SC-2.01 Tổng quan huấn luyện (CM, HT, VET). */
 export default function TrainingOverviewPage() {
+  useAppLanguage();
   const navigate = useNavigate();
   const user = useCurrentUser();
   const [data, setData] = useState<TrainingOverview | null>(null);

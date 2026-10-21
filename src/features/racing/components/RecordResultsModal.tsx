@@ -3,6 +3,7 @@ import { Modal } from "@/shared/components/ui/Modal";
 import { Button } from "@/shared/components/ui/Button";
 import { Badge } from "@/shared/components/ui/Badge";
 import { tr } from "@/shared/i18n/tr";
+import { useAppLanguage } from "@/shared/lib/language";
 import { recordRaceResults, lockRaceResults, fetchTournamentDetail, type SingleResultInput } from "../api";
 import type { Tournament } from "../types";
 
@@ -21,6 +22,7 @@ export function RecordResultsModal({
   isClubManager,
   onSuccess,
 }: RecordResultsModalProps) {
+  useAppLanguage();
   const [rows, setRows] = useState<
     Array<{
       registrationId: string;
