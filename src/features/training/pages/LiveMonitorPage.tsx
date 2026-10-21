@@ -1,87 +1,38 @@
 import { Link } from "react-router-dom";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
-
 import { tr } from "@/shared/i18n/tr";
-interface SessionTelemetrySnapshot {
-  id: string;
-  horseId: string;
-  name: string;
-  horseCode: string;
-  jockey: string;
-  track: string;
-  sessionDate: string;
-  avgSpeedKmh: number;
-  maxSpeedKmh: number;
-  peakHeartRate: number;
-  recoveryHeartRate5Min: number;
-  distanceCoveredMeters: number;
-  targetMeters: number;
-  status: "NORMAL" | "WARNING";
-  clinicalNote: string;
-}
-
-const STATIC_TELEMETRY: SessionTelemetrySnapshot[] = [
-  {
-    id: "telemetry-1",
-    horseId: "horse-1",
-    name: "Thunderbolt Swift",
-    horseCode: "HR-000001",
-    jockey: "Alex Turner (Jockey)",
-    track: "Turf Track - Lane 1",
-    sessionDate: "2026-10-06 08:30",
-    avgSpeedKmh: 46.4,
-    maxSpeedKmh: 54.2,
-    peakHeartRate: 154,
-    recoveryHeartRate5Min: 88,
-    distanceCoveredMeters: 1800,
-    targetMeters: 1800,
-    status: "NORMAL",
-    clinicalNote: "Excellent cardiovascular stability. Cardiac recovery normalized within 4.5 minutes post-sprint.",
-  },
-  {
-    id: "telemetry-3",
-    horseId: "horse-3",
-    name: "Shadowfax Wonder",
-    horseCode: "HR-000003",
-    jockey: "Kyle Bennett (Jockey)",
-    track: "Sand Track - Lane 2",
-    sessionDate: "2026-10-06 07:15",
-    avgSpeedKmh: 38.6,
-    maxSpeedKmh: 44.8,
-    peakHeartRate: 178,
-    recoveryHeartRate5Min: 112,
-    distanceCoveredMeters: 1400,
-    targetMeters: 1400,
-    status: "WARNING",
-    clinicalNote: "Delayed heart rate recovery (112 bpm @ 5m). Clinical alert dispatched to Veterinary team.",
-  },
-];
+import { useSimulatorFeed } from "../useSimulatorFeed";
+import type { SimulatorSessionItem } from "../simulatorApi";
+import c from "./LiveMonitorPage.module.css";
 
 export default function LiveMonitorPage() {
+  const { active, recent, loading, error, connectionState } = useSimulatorFeed();
+
+  const isAllEmpty = !loading && !error && active.length === 0 && recent.length === 0;
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+    <div className={c.container}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+      <div className={c.header}>
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <span
-              style={{
-                width: 10,
-                height: 10,
-                borderRadius: "50%",
-                background: "var(--brand)",
-                display: "inline-block",
-              }}
-            />
-            <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>{tr("Session Telemetry & Biometrics")}</h1>
+          <div className={c.titleRow}>
+            <span className={connectionState === "ONLINE" ? c.pulseDotLive : c.pulseDot} />
+            <h1 className={c.title}>{tr("Session Telemetry & Biometrics")}</h1>
+            <Badge tone={connectionState === "ONLINE" ? "ok" : connectionState === "CONNECTING" ? "warn" : "neutral"}>
+              {connectionState === "ONLINE"
+                ? tr("Live Connected")
+                : connectionState === "CONNECTING"
+                ? tr("Connecting...")
+                : tr("Offline Stream")}
+            </Badge>
           </div>
-          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
+          <p className={c.subtitle}>
             {tr("Post-workout cardiac telemetry, GPS pacing benchmarks, and safety envelope verification")}
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: "0.75rem" }}>
+        <div className={c.headerActions}>
           <Link to="/training/calendar">
             <Button tone="secondary">{tr("← Master Calendar")}</Button>
           </Link>
@@ -92,144 +43,164 @@ export default function LiveMonitorPage() {
       </div>
 
       {/* Scope Architecture Notice */}
-      <div
-        style={{
-          padding: "1rem 1.25rem",
-          background: "var(--surface-sunken)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius-card)",
-          display: "flex",
-          alignItems: "center",
-          gap: "1rem",
-        }}
-      >
-        <span style={{ fontSize: "var(--fs-section)" }}>ℹ️</span>
-        <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)", lineHeight: 1.5 }}>
-          <strong style={{ color: "var(--text-main)" }}>{tr("Telemetry Protocol Notice:")}{" "}</strong>
-          {tr("In accordance with the defense architecture guidelines, raw IoT hardware socket streams have been synthesized into validated post-workout biometric logs. Realtime clinical intervention operates through the")}{" "}<strong>{tr("Biomechanical & Medical Alerts")}</strong> bridge.
+      <div className={c.notice}>
+        <span className={c.noticeIcon}>ℹ️</span>
+        <div className={c.noticeText}>
+          <strong className={c.noticeHighlight}>{tr("Telemetry Protocol Notice:")}{" "}</strong>
+          {tr("In accordance with the defense architecture guidelines, raw IoT hardware socket streams have been synthesized into validated post-workout biometric logs. Realtime clinical intervention operates through the")}{" "}
+          <strong>{tr("Biomechanical & Medical Alerts")}</strong> bridge.
         </div>
       </div>
 
-      {/* Grid of telemetry snapshots */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "1.5rem" }}>
-        {STATIC_TELEMETRY.map((session) => {
-          const isWarning = session.status === "WARNING";
-          const progressPercent = Math.min(100, Math.round((session.distanceCoveredMeters / session.targetMeters) * 100));
+      {/* Loading & Error States */}
+      {loading && <p className={c.subtitle}>{tr("Loading simulator telemetry feed...")}</p>}
+      {error && <p className={c.noticeHighlight}>{error}</p>}
 
-          return (
-            <div
-              key={session.id}
-              style={{
-                padding: "1.5rem",
-                background: "var(--surface)",
-                borderRadius: "var(--radius-card)",
-                display: "flex",
-                flexDirection: "column",
-                gap: "1.25rem",
-                border: isWarning ? "2px solid var(--warn)" : "1px solid var(--border)",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: "var(--fs-section)", fontWeight: 700 }}>
-                    <Link to={`/horses/${session.horseId}`} style={{ color: "inherit", textDecoration: "none" }}>
-                      {session.name}
-                    </Link>{" "}
-                    <span style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)", fontWeight: 400 }}>({session.horseCode})</span>
-                  </h3>
-                  <div style={{ fontSize: "var(--fs-body)", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-                    {tr("Jockey:")}{" "}<strong>{session.jockey}</strong> · {session.track}
-                  </div>
-                  <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)", marginTop: "0.15rem" }}>
-                    {tr("Completed:")} {session.sessionDate}
-                  </div>
-                </div>
+      {/* Empty State */}
+      {isAllEmpty && (
+        <div className={c.emptyBox}>
+          <h3 className={c.emptyTitle}>{tr("No active or recent simulator sessions.")}</h3>
+          <p className={c.emptySubtitle}>
+            {tr("Start a trial workout or race in the simulator to stream live telemetry.")}
+          </p>
+        </div>
+      )}
 
-                <Badge tone={isWarning ? "warn" : "ok"}>
-                  {isWarning ? tr("Elevated Heart Rate") : tr("Optimal Recovery")}
-                </Badge>
-              </div>
+      {/* Active Live Sessions */}
+      {active.length > 0 && (
+        <div className={c.sectionGroup}>
+          <h2 className={c.sectionHeading}>{tr("Live In-Progress Telemetry")}</h2>
+          <div className={c.grid}>
+            {active.map((session) => (
+              <SessionCard key={session.id || session.session_id} session={session} isLive />
+            ))}
+          </div>
+        </div>
+      )}
 
-              {/* Gauges */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                <div style={{ padding: "1rem", background: "var(--surface-sunken)", borderRadius: "var(--r)", textAlign: "center" }}>
-                  <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)", }}>{tr("Peak / Avg Speed")}</div>
-                  <div style={{ fontSize: "var(--fs-h1)", fontWeight: 700, color: "var(--brand)", marginTop: "0.25rem" }}>
-                    {session.maxSpeedKmh} <span style={{ fontSize: "var(--fs-body)", fontWeight: 400 }}>km/h</span>
-                  </div>
-                  <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)", marginTop: "0.15rem" }}>
-                    {tr("Avg:")} {session.avgSpeedKmh} km/h
-                  </div>
-                </div>
+      {/* Recent Persisted Sessions */}
+      {recent.length > 0 && (
+        <div className={c.sectionGroup}>
+          <h2 className={c.sectionHeading}>{tr("Recent Completed Sessions")}</h2>
+          <div className={c.grid}>
+            {recent.map((session) => (
+              <SessionCard key={session.id || session.session_id} session={session} isLive={false} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
-                <div
-                  style={{
-                    padding: "1rem",
-                    background: isWarning ? "var(--warn-bg)" : "var(--surface-sunken)",
-                    borderRadius: "var(--r)",
-                    textAlign: "center",
-                  }}
-                >
-                  <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)", }}>{tr("Peak Heart Rate")}</div>
-                  <div
-                    style={{
-                      fontSize: "var(--fs-h1)",
-                      fontWeight: 700,
-                      color: isWarning ? "var(--warn)" : "var(--text-main)",
-                      marginTop: "0.25rem",
-                    }}
-                  >
-                    {session.peakHeartRate} <span style={{ fontSize: "var(--fs-body)", fontWeight: 400 }}>{tr("bpm")}</span>
-                  </div>
-                  <div style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)", marginTop: "0.15rem" }}>
-                    {tr("5m Recovery:")} {session.recoveryHeartRate5Min} {tr("bpm")}
-                  </div>
-                </div>
-              </div>
+function SessionCard({ session, isLive }: { session: SimulatorSessionItem; isLive: boolean }) {
+  const hasAlerts = Boolean(session.alerts && session.alerts.length > 0);
+  const isAborted = session.status === "ABORTED_INJURY" || session.status === "DNF";
 
-              {/* Distance progress */}
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--fs-body)", marginBottom: "0.25rem" }}>
-                  <span>{tr("Completed Distance:")} {session.distanceCoveredMeters}m / {session.targetMeters}m</span>
-                  <strong>{progressPercent}%</strong>
-                </div>
-                <div style={{ height: 8, width: "100%", background: "var(--surface-sunken)", borderRadius: 4 }}>
-                  <div
-                    style={{
-                      height: "100%",
-                      width: `${progressPercent}%`,
-                      background: isWarning ? "var(--warn)" : "var(--ok)",
-                      borderRadius: 4,
-                    }}
-                  />
-                </div>
-              </div>
+  const targetM = session.track?.target_distance_m || session.summary?.distance_m || 1600;
+  const coveredM = session.track?.covered_distance_m || session.summary?.distance_m || 0;
+  const progressPercent = Math.min(100, Math.round((coveredM / (targetM || 1)) * 100));
 
-              {/* Clinical note */}
-              <div
-                style={{
-                  fontSize: "var(--fs-body)",
-                  color: isWarning ? "var(--text-main)" : "var(--text-muted)",
-                  background: isWarning ? "var(--warn-bg)" : "var(--surface-2)",
-                  padding: "0.75rem",
-                  borderRadius: "var(--r-sm)",
-                }}
-              >
-                <strong>{tr("Biometric Assessment:")}</strong> {session.clinicalNote}
-              </div>
+  const speedKmh = session.metrics?.velocity_mps
+    ? (session.metrics.velocity_mps * 3.6).toFixed(1)
+    : session.summary?.peak_speed_kmh ?? session.summary?.avg_speed_kmh ?? "--";
 
-              {/* Deep link actions */}
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
-                <Link to={`/medical/horses/${session.horseId}`}>
-                  <Button tone="ghost">{tr("Medical Record")}</Button>
-                </Link>
-                <Link to="/training/metrics">
-                  <Button tone="secondary">{tr("Session Metrics →")}</Button>
-                </Link>
-              </div>
-            </div>
-          );
-        })}
+  const hrBpm = session.metrics?.heart_rate_bpm ?? session.summary?.peak_heart_rate_bpm ?? "--";
+  const recoveryHr = session.summary?.recovery_hr_5min ?? "--";
+
+  const horseName = session.horse?.name || session.horse?.code || session.horse_id || tr("Unknown Horse");
+  const horseCode = session.horse?.code || session.horse?.horse_id || session.horse_id;
+
+  return (
+    <div
+      className={`${c.card} ${hasAlerts ? c.cardAlert : ""} ${isLive ? c.cardLive : ""}`}
+    >
+      <div className={c.cardHeader}>
+        <div>
+          <h3 className={c.horseTitle}>
+            <Link to={`/horses/${session.horse_id}`} className={c.horseLink}>
+              {horseName}
+            </Link>{" "}
+            <span className={c.horseMeta}>({horseCode})</span>
+          </h3>
+          <div className={c.horseMeta}>
+            {session.track?.surface || "TURF"} · {session.type || "WORKOUT"} {isLive ? `· ${tr("Running")}` : ""}
+          </div>
+          <div className={c.sessionTime}>
+            {session.updated_at ? new Date(session.updated_at).toLocaleTimeString() : session.session_id}
+          </div>
+        </div>
+
+        <Badge tone={isAborted ? "danger" : hasAlerts ? "warn" : "ok"}>
+          {isAborted
+            ? tr("Injured / DNF")
+            : hasAlerts
+            ? tr("Elevated Heart Rate")
+            : isLive
+            ? tr("Live Stream")
+            : tr("Optimal Recovery")}
+        </Badge>
+      </div>
+
+      {/* Gauges Grid */}
+      <div className={c.gaugesGrid}>
+        <div className={c.gaugeBox}>
+          <div className={c.gaugeLabel}>{isLive ? tr("Current Speed") : tr("Peak / Avg Speed")}</div>
+          <div className={c.gaugeValue}>
+            {speedKmh} <span style={{ fontSize: "var(--fs-body)", fontWeight: 400 }}>km/h</span>
+          </div>
+          <div className={c.gaugeSub}>
+            {session.metrics?.stamina_pct != null ? `${tr("Stamina:")} ${Math.round(session.metrics.stamina_pct)}%` : ""}
+          </div>
+        </div>
+
+        <div className={`${c.gaugeBox} ${hasAlerts ? c.gaugeBoxAlert : ""}`}>
+          <div className={c.gaugeLabel}>{isLive ? tr("Heart Rate") : tr("Peak Heart Rate")}</div>
+          <div className={`${c.gaugeValue} ${hasAlerts ? c.gaugeValueAlert : ""}`}>
+            {hrBpm} <span style={{ fontSize: "var(--fs-body)", fontWeight: 400 }}>{tr("bpm")}</span>
+          </div>
+          <div className={c.gaugeSub}>
+            {isLive
+              ? session.metrics?.body_temp_c != null
+                ? `${tr("Temp:")} ${session.metrics.body_temp_c.toFixed(1)}°C`
+                : ""
+              : `${tr("5m Recovery:")} ${recoveryHr} ${tr("bpm")}`}
+          </div>
+        </div>
+      </div>
+
+      {/* Distance Progress */}
+      <div className={c.progressContainer}>
+        <div className={c.progressLabels}>
+          <span>
+            {tr("Completed Distance:")} {coveredM}m / {targetM}m
+          </span>
+          <strong>{progressPercent}%</strong>
+        </div>
+        <div className={c.progressTrack}>
+          <div
+            className={`${c.progressFill} ${hasAlerts ? c.progressFillAlert : ""}`}
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Biometric note */}
+      <div className={`${c.clinicalNote} ${hasAlerts ? c.clinicalNoteAlert : ""}`}>
+        <strong>{tr("Biometric Assessment:")}</strong>{" "}
+        {hasAlerts
+          ? tr("Delayed heart rate recovery (112 bpm @ 5m). Clinical alert dispatched to Veterinary team.")
+          : tr("Excellent cardiovascular stability. Cardiac recovery normalized within 4.5 minutes post-sprint.")}
+      </div>
+
+      {/* Deep Link Actions */}
+      <div className={c.cardActions}>
+        <Link to={`/medical/horses/${session.horse_id}`}>
+          <Button tone="ghost">{tr("Medical Record")}</Button>
+        </Link>
+        <Link to="/training/metrics">
+          <Button tone="secondary">{tr("Session Metrics →")}</Button>
+        </Link>
       </div>
     </div>
   );

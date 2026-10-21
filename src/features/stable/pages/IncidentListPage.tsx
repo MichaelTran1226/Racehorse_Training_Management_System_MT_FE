@@ -12,6 +12,7 @@ import { useAppLanguage } from '@/shared/lib/language';
 import { tr } from '@/shared/i18n/tr';
 import { messageFor } from '@/shared/lib/messages';
 import { incidentsApi } from '../api/incidentsApi';
+import { subscribeSimulatorEvent } from '@/features/training/simulatorSocket';
 import { IncidentReportModal, COMMON_SYMPTOMS } from '../components/IncidentReportModal';
 import { IncidentDetailModal } from '../components/IncidentDetailModal';
 import type { IncidentReport, IncidentSeverity, IncidentStatus } from '../types/incidents';
@@ -53,6 +54,14 @@ export default function IncidentListPage() {
   useEffect(() => {
     loadIncidents();
   }, [severityFilter, statusFilter, search]);
+
+  // Realtime incident auto-refresh via shared Socket.IO connection
+  useEffect(() => {
+    const unsub = subscribeSimulatorEvent('sim:incident_report', () => {
+      loadIncidents();
+    });
+    return unsub;
+  }, []);
 
   const getSeverityBadge = (sev: IncidentSeverity) => {
     switch (sev) {

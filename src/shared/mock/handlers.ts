@@ -190,6 +190,91 @@ const DELETABLE: Account["status"][] = ["INVITED", "PENDING_EMAIL", "REJECTED"];
 // ------------------------------------------------------------------ các route
 
 const routes: Route[] = [
+  // ---- Simulator Sessions (REST mock for LiveMonitorPage)
+  {
+    method: "GET",
+    pattern: /^\/(?:api\/)?simulator\/sessions$/,
+    handler: () => {
+      if (typeof window !== "undefined" && window.sessionStorage?.getItem("equiflow.mock.empty_simulator") === "true") {
+        return { active: [], recent: [] };
+      }
+      const horses = getStoredHorses();
+      const h1 = horses[0] || { id: "horse-1", name: "Thunderbolt Swift", code: "HR-000001", microchip: "985141000000001" };
+      const h2 = horses[2] || { id: "horse-3", name: "Shadowfax Wonder", code: "HR-000003", microchip: "985141000000003" };
+
+      return {
+        active: [
+          {
+            id: "WRK-20261021-001",
+            session_id: "WRK-20261021-001",
+            type: "WORKOUT",
+            status: "IN_PROGRESS",
+            horse_id: h1.id,
+            horse: {
+              horse_id: h1.id,
+              name: h1.name,
+              code: (h1 as any).horseCode ?? h1.code,
+              microchip_id: h1.microchip ?? "985141000000001",
+            },
+            track: {
+              surface: "TURF",
+              target_distance_m: 1800,
+              covered_distance_m: 650,
+              track_condition: "GOOD",
+            },
+            metrics: {
+              velocity_mps: 14.2,
+              heart_rate_bpm: 154,
+              stamina_pct: 76.5,
+              body_temp_c: 38.6,
+              stride_length_m: 6.8,
+              stride_freq_spm: 132,
+              calories_kcal: 420,
+            },
+            alerts: [],
+            updated_at: new Date().toISOString(),
+          },
+        ],
+        recent: [
+          {
+            id: "WRK-20261020-099",
+            session_id: "WRK-20261020-099",
+            type: "WORKOUT",
+            status: "COMPLETED",
+            horse_id: h2.id,
+            horse: {
+              horse_id: h2.id,
+              name: h2.name,
+              code: (h2 as any).horseCode ?? h2.code,
+              microchip_id: h2.microchip ?? "985141000000003",
+            },
+            track: {
+              surface: "SAND",
+              target_distance_m: 1400,
+              covered_distance_m: 1400,
+              track_condition: "NORMAL",
+            },
+            metrics: {
+              velocity_mps: 12.8,
+              heart_rate_bpm: 178,
+              stamina_pct: 42.0,
+              body_temp_c: 39.2,
+            },
+            alerts: ["HIGH_HEART_RATE"],
+            summary: {
+              duration_s: 108.5,
+              avg_speed_kmh: 46.4,
+              peak_speed_kmh: 54.2,
+              peak_heart_rate_bpm: 178,
+              recovery_hr_5min: 112,
+              distance_m: 1400,
+            },
+            updated_at: new Date(Date.now() - 3600000).toISOString(),
+          },
+        ],
+      };
+    },
+  },
   // ---- Flow 5: Giải đua & Đăng ký thi đấu (SC-5.01 -> SC-5.04)
   {
     method: "GET",
