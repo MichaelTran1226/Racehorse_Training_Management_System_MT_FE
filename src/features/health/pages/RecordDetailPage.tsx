@@ -83,10 +83,10 @@ export default function RecordDetailPage() {
     }
     try {
       await deleteDraftRecord(record.id);
-      toast.show("Draft medical record deleted.", "ok");
+      toast.show(tr("Draft medical record deleted."), "ok");
       navigate(`/medical/horses/${record.horseId}`);
     } catch {
-      toast.show("Failed to delete draft record.", "danger");
+      toast.show(tr("Failed to delete draft record."), "danger");
     }
   }
 
@@ -108,7 +108,7 @@ export default function RecordDetailPage() {
           description={error || tr("This record does not exist or you lack permission to view it.")}
           action={
             <Button tone="primary" onClick={() => navigate(-1)}>
-              Go Back
+              {tr("Go Back")}
             </Button>
           }
         />
@@ -144,7 +144,7 @@ export default function RecordDetailPage() {
                       : "ok"
                   }
                 >
-                  {tr("Severity:")}{" "}{record.severity}
+                  {tr("Severity:")}{" "}{tr(record.severity)}
                 </Badge>
               )}
             </div>
@@ -201,7 +201,10 @@ export default function RecordDetailPage() {
 
       {/* Tabs */}
       <Tabs
-        items={isOwner ? RECORD_TABS.filter((t) => t.id !== "prescriptions") : RECORD_TABS}
+        items={(isOwner ? RECORD_TABS.filter((t) => t.id !== "prescriptions") : RECORD_TABS).map((t) => ({
+          ...t,
+          label: tr(t.label),
+        }))}
         active={activeTab}
         onChange={(tabId) => setSearchParams({ tab: tabId })}
       />

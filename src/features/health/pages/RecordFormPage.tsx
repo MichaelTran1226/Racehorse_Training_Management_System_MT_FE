@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams, useSearchParams, useBlocker } from "react-router-dom";
 import { Checkbox } from "@/shared/components/form/Checkbox";
 import { Field } from "@/shared/components/form/Field";
@@ -65,6 +65,11 @@ export default function RecordFormPage() {
 
   const isEdit = Boolean(id);
 
+  const examTypeOptions = useMemo(() => EXAM_TYPE_OPTIONS.map((o) => ({ value: o.value, label: tr(o.label) })), []);
+  const discoveryOptions = useMemo(() => DISCOVERY_OPTIONS.map((o) => ({ value: o.value, label: tr(o.label) })), []);
+  const labTypeOptions = useMemo(() => LAB_TYPE_OPTIONS.map((o) => ({ value: o.value, label: tr(o.label) })), []);
+  const proposedStatusOptions = useMemo(() => PROPOSED_STATUS_OPTIONS.map((o) => ({ value: o.value, label: tr(o.label) })), []);
+
   // Block 1: Exam info
   const [horseId, setHorseId] = useState(horseIdParam);
   const [horseOptions, setHorseOptions] = useState<{ value: string; label: string }[]>([]);
@@ -87,11 +92,11 @@ export default function RecordFormPage() {
             setHorseId(data[0].id);
           }
         } else {
-          setHorseOptions([{ value: "", label: "-- No horses available --" }]);
+          setHorseOptions([{ value: "", label: tr("-- No horses available --") }]);
         }
       })
       .catch(() => {
-        if (active) setHorseOptions([{ value: "", label: "-- Error loading horses --" }]);
+        if (active) setHorseOptions([{ value: "", label: tr("-- Error loading horses --") }]);
       })
       .finally(() => {
         if (active) setLoadingHorses(false);
@@ -507,7 +512,7 @@ export default function RecordFormPage() {
 
           <Field label={tr("Examination Type *")}>
             <Select
-              options={EXAM_TYPE_OPTIONS}
+              options={examTypeOptions}
               value={examinationType}
               onChange={(e) => setExaminationType(e.target.value)}
             />
@@ -515,7 +520,7 @@ export default function RecordFormPage() {
 
           <Field label={tr("Discovery Source")}>
             <Select
-              options={DISCOVERY_OPTIONS}
+              options={discoveryOptions}
               value={discoverySource}
               onChange={(e) => setDiscoverySource(e.target.value)}
             />
@@ -710,7 +715,7 @@ export default function RecordFormPage() {
                   }}
                 >
                   <Select
-                    options={LAB_TYPE_OPTIONS}
+                    options={labTypeOptions}
                     value={test.testType}
                     onChange={(e) => updateLabTest(idx, "testType", e.target.value)}
                   />
@@ -817,7 +822,7 @@ export default function RecordFormPage() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "center" }}>
             <Field label={tr("Proposed Horse Status")}>
               <Select
-                options={PROPOSED_STATUS_OPTIONS}
+                options={proposedStatusOptions}
                 value={proposedStatus}
                 onChange={(e) => setProposedStatus(e.target.value)}
               />

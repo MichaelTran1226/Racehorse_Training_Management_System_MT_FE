@@ -9,7 +9,7 @@ export const STORAGE_LANG_KEY = "equiflow-lang-v2";
 
 export function getStoredLanguage(): SupportedLanguage {
   try {
-    const saved = localStorage.getItem(STORAGE_LANG_KEY);
+    const saved = localStorage.getItem(STORAGE_LANG_KEY) || localStorage.getItem("equiflow-lang");
     if (saved === "en" || saved === "vi") return saved;
     // Always default to English ('en') unless explicitly switched by user
     return "en";
@@ -32,7 +32,7 @@ i18n.use({
   type: "postProcessor",
   name: "viText",
   process: (value: string, _key: string | string[], _options: unknown, translator: { language?: string }) =>
-    translator?.language === "vi" ? (VI_TEXT[value] ?? value) : value,
+    translator?.language?.toLowerCase().startsWith("vi") ? (VI_TEXT[value] ?? value) : value,
 });
 
 i18n
@@ -53,6 +53,7 @@ i18n
 export function changeAppLanguage(lang: SupportedLanguage) {
   try {
     localStorage.setItem(STORAGE_LANG_KEY, lang);
+    localStorage.setItem("equiflow-lang", lang);
   } catch {
     // Storage restricted
   }

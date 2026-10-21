@@ -523,14 +523,14 @@ export function ManagerDashboard({ user }: { user: AuthUser }) {
             <div style={{ padding: "24px 16px", textAlign: "center" }}>
               <div style={{ fontSize: "36px", marginBottom: "8px" }}>🗓️</div>
               <p style={{ margin: 0, fontSize: "var(--fs-sm)", fontWeight: 600, color: "var(--ink)" }}>
-                {isVi ? "Hôm nay không có buổi tập." : tr("No workouts scheduled today.")}
+                {isVi ? "Hôm nay không có buổi tập nào." : tr("No workouts scheduled today.")}
               </p>
               <p style={{ margin: "4px 0 16px", fontSize: "var(--fs-xs)", color: "var(--muted)" }}>
-                {isVi ? "Hãy kiểm tra lịch huấn luyện hoặc tạo buổi tập mới." : tr("Check the training calendar or schedule a new one.")}
+                {isVi ? "Ban huấn luyện chưa lên lịch buổi tập cho hôm nay." : tr("No workouts scheduled by the training team today.")}
               </p>
-              <Link to="/training/plans/new">
-                <Button tone="primary" size="sm">
-                  + {isVi ? "Tạo buổi tập" : tr("Create Workout")}
+              <Link to="/training">
+                <Button tone="secondary" size="sm">
+                  {isVi ? "Xem tổng quan huấn luyện" : tr("View Training Overview")}
                 </Button>
               </Link>
             </div>

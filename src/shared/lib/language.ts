@@ -3,7 +3,7 @@ import { changeAppLanguage, type SupportedLanguage } from "@/shared/i18n";
 
 export function useAppLanguage() {
   const { i18n, t } = useTranslation();
-  const currentLang = (i18n.language === "vi" ? "vi" : "en") as SupportedLanguage;
+  const currentLang = (i18n.language && i18n.language.toLowerCase().startsWith("vi") ? "vi" : "en") as SupportedLanguage;
 
   const setLanguage = (lang: SupportedLanguage) => {
     changeAppLanguage(lang);

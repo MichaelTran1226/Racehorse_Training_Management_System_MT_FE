@@ -72,9 +72,11 @@ export function Sidebar({ user, pathname, note, accountsAlert, open, onNavigate 
       <div className={styles.groups}>
         {groups.map((g) => {
           const rawKey = g.label.toLowerCase().replace(/\s+/g, "_");
+          const isWorkspace = g.label === "WORKSPACE";
+          const groupTitle = isWorkspace ? "" : t(`nav.group_${rawKey}`, t(`nav.${rawKey}`, capitalize(g.label)));
           return (
             <div key={g.label} className={styles.group}>
-              <p className={styles.groupLabel}>{t(`nav.group_${rawKey}`, t(`nav.${rawKey}`, capitalize(g.label)))}</p>
+              {groupTitle ? <p className={styles.groupLabel}>{groupTitle}</p> : null}
             {g.items.map((it) => {
               const active = isNavItemActive(it, pathname);
               const showAlertDot =
@@ -102,8 +104,8 @@ export function Sidebar({ user, pathname, note, accountsAlert, open, onNavigate 
 
       {note && (
         <Link to={note.href} onClick={onNavigate} className={styles.note}>
-          <strong>{note.title}</strong>
-          <span>{note.body}</span>
+          <strong>{tr(note.title)}</strong>
+          <span>{tr(note.body)}</span>
         </Link>
       )}
 

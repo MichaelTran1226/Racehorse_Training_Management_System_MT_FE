@@ -40,7 +40,7 @@ export const vi: TranslationResources = {
   },
   nav: {
     // Navigation Groups
-    group_workspace: "Không gian làm việc",
+    group_workspace: "",
     group_administration: "Quản trị",
     group_master_data: "Dữ liệu danh mục",
     group_training: "Huấn luyện",
@@ -52,7 +52,7 @@ export const vi: TranslationResources = {
     group_supplies: "Vật tư",
     group_other: "Khác",
     group_audit: "Nhật ký hệ thống",
-    workspace: "Không gian làm việc",
+    workspace: "",
     administration: "Quản trị",
     master_data: "Dữ liệu danh mục",
     masterData: "Dữ liệu danh mục",

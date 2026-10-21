@@ -3509,5 +3509,17 @@ export const VI_TEXT: Record<string, string> = {
   "Comment cannot exceed 2000 characters.": "Nhận xét không được vượt quá 2.000 ký tự.",
   "Notes cannot exceed 500 characters.": "Ghi chú không được vượt quá 500 ký tự.",
   "Please check and correct the highlighted fields below.": "Vui lòng kiểm tra và sửa các ô được đánh dấu bên dưới.",
+  "{{count}} request waiting": "{{count}} yêu cầu đang chờ",
+  "{{count}} requests waiting": "{{count}} yêu cầu đang chờ",
+  "{{role}} · sent {{date}}": "{{role}} · gửi lúc {{date}}",
+  "sent {{date}}": "gửi lúc {{date}}",
+  "requested {{date}}": "yêu cầu lúc {{date}}",
+  "Invited {{date}}": "Được mời lúc {{date}}",
+  "Date & Time": "Ngày & Giờ",
+  "Exercise & Distance": "Bài tập & Cự ly",
+  "TRAINING": "HUẤN LUYỆN",
+  "MEDICAL": "Y TẾ & SỨC KHỎE",
+  "ADMINISTRATION": "QUẢN TRỊ",
+  "Notifications, {{count}} unread": "Thông báo, {{count}} chưa đọc",
 };
 

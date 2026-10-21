@@ -18,7 +18,9 @@ import {
 } from "@/shared/lib/notifications";
 
 import { tr, isVietnamese } from "@/shared/i18n/tr";
+import { useAppLanguage } from "@/shared/lib/language";
 export default function NotificationsPage() {
+  const { isVietnamese: isVi } = useAppLanguage();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"all" | "unread">("all");
   const [notifications, setNotifications] = useState<AppNotification[]>(() =>
@@ -61,7 +63,7 @@ export default function NotificationsPage() {
 
   const renderItem = (n: AppNotification) => {
     const theme = getCategoryTheme(n.category);
-    const loc = localizeNotification(n, isVietnamese());
+    const loc = localizeNotification(n, isVi);
     return (
       <div
         key={n.id}
@@ -114,9 +116,9 @@ export default function NotificationsPage() {
             <Badge tone={n.category === "LOCK" ? "danger" : n.category === "ACCOUNT" ? "violet" : "info"}>
               {loc.categoryLabel}
             </Badge>
-            {n.senderName && (
+            {loc.senderName && (
               <span style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>
-                {tr("From:")}{" "}<strong>{n.senderName}</strong>
+                {tr("From:")}{" "}<strong>{loc.senderName}</strong>
               </span>
             )}
             <span style={{ marginLeft: "auto", fontSize: "var(--fs-caption)", color: "var(--text-muted)", flexShrink: 0 }}>

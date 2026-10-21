@@ -322,40 +322,32 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
       ],
     },
     {
-      label: "SUPPLIES",
-      items: [
-        item("supplies/inventory", "Zone Inventory", "layers", { i18nKey: "zoneInventory" }),
-        item("supplies/requests", "Restock Requests", "clipboard", { i18nKey: "restockRequests" }),
-        item("catalog", "Supplies Catalog", "package", { requires: "manageAccounts" }),
-      ],
-    },
-    {
       label: "MASTER DATA",
       items: [
         item("horses", "Horses", "horse", { requires: "viewHorses" }),
         item("stalls", "Stall Map", "grid"),
-        item("tasks", "Today's Tasks", "check"),
         item("stable/shifts", "Shift Roster", "calendar", { i18nKey: "shiftRoster" }),
-        item("rations", "Meal Rations", "wheat", { i18nKey: "rations" }),
+      ],
+    },
+    {
+      label: "SUPPLIES",
+      items: [
+        item("catalog", "Supplies Catalog", "package", { requires: "manageAccounts" }),
+        item("supplies/inventory", "Zone Inventory", "layers", { i18nKey: "zoneInventory" }),
+        item("supplies/requests", "Restock Requests", "clipboard", { i18nKey: "restockRequests" }),
       ],
     },
     {
       label: "TRAINING",
       items: [
         item("training", "Training Overview", "chart", { i18nKey: "trainingOverview" }),
-        item("plans", "Training Plans", "clipboard", { i18nKey: "trainingPlans" }),
-        item("calendar", "Weekly Calendar", "calendar"),
       ],
     },
-    // Menu Y tế (MEDICAL) cho CLUB_MANAGER (quản lý, giám sát sức khỏe, bệnh án và lịch chăm sóc)
+    // Menu Y tế (MEDICAL) cho CLUB_MANAGER (giám sát tổng quan sức khỏe đàn)
     {
       label: "MEDICAL",
       items: [
         item("herd", "Herd Health", "stethoscope", { requires: "viewMedical" }),
-        item("records", "Medical Records", "file", { requires: "viewMedical" }),
-        item("locks", "Training Locks", "lock", { requires: "viewMedical" }),
-        item("vaccine", "Preventive Care", "syringe", { requires: "viewMedical" }),
-        item("incidents", "Incident Reports", "camera", { requires: "viewMedical" }),
       ],
     },
     {

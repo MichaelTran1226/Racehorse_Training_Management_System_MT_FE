@@ -38,7 +38,7 @@ export const en = {
   },
   nav: {
     // Navigation Groups
-    group_workspace: "Workspace",
+    group_workspace: "",
     group_administration: "Administration",
     group_master_data: "Master Data",
     group_training: "Training",
@@ -50,7 +50,7 @@ export const en = {
     group_supplies: "Supplies",
     group_other: "Other",
     group_audit: "Audit",
-    workspace: "Workspace",
+    workspace: "",
     administration: "Administration",
     master_data: "Master Data",
     masterData: "Master Data",

@@ -76,7 +76,7 @@ export function EditAccountModal({ account, isSelf, isLastManager, onClose, onSa
   }
 
   return (
-    <Modal title={tr("Edit account")} subtitle={`${ROLE_LABEL[account.role]} · ${account.email}`} width={500} onClose={onClose}>
+    <Modal title={tr("Edit account")} subtitle={`${tr(ROLE_LABEL[account.role])} · ${account.email}`} width={500} onClose={onClose}>
       <form onSubmit={onSubmit} noValidate className={styles.form}>
         <dl className={styles.facts}>
           <dt>{tr("Status")}</dt>

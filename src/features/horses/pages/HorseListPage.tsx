@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
@@ -93,12 +93,16 @@ export default function HorseListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const [breedOptions, setBreedOptions] = useState([{ value: "ALL", label: "Breed: All" }]);
+  const [breedOptions, setBreedOptions] = useState([{ value: "ALL", label: tr("Breed: All") }]);
+
+  const genderOptions = useMemo(() => GENDER_OPTIONS.map((o) => ({ value: o.value, label: tr(o.label) })), []);
+  const lockOptions = useMemo(() => LOCK_OPTIONS.map((o) => ({ value: o.value, label: tr(o.label) })), []);
+  const sortOptions = useMemo(() => SORT_OPTIONS.map((o) => ({ value: o.value, label: tr(o.label) })), []);
 
   // Bộ lọc Giống lấy từ danh mục SC-1.06 (cả mục đã ngừng dùng, vì ngựa cũ vẫn mang giá trị đó).
   useEffect(() => {
     getHorseCatalog("BREED", "ALL")
-      .then((items) => setBreedOptions([{ value: "ALL", label: "Breed: All" }, ...items.map((i) => ({ value: i.name, label: i.name }))]))
+      .then((items) => setBreedOptions([{ value: "ALL", label: tr("Breed: All") }, ...items.map((i) => ({ value: i.name, label: i.name }))]))
       .catch(() => undefined);
   }, []);
 
@@ -182,7 +186,7 @@ export default function HorseListPage() {
   const columns: Column<Horse>[] = [
     {
       key: "horse",
-      header: "Horse",
+      header: tr("Horse"),
       render: (h) => (
         <div style={{ display: "grid", minWidth: 0 }}>
           <Link to={`/horses/${h.id}`} className="nowrap" style={{ fontWeight: 600, color: "var(--text)" }}>
@@ -197,7 +201,7 @@ export default function HorseListPage() {
     },
     {
       key: "sex",
-      header: "Sex · Age",
+      header: tr("Sex · Age"),
       render: (h) => (
         <span className="num nowrap">
           {h.gender ? tr(h.gender) : "—"} · {ageOf(h.dob)}
@@ -208,7 +212,7 @@ export default function HorseListPage() {
       ? [
           {
             key: "stall",
-            header: "Stall",
+            header: tr("Stall"),
             render: (h: Horse) =>
               h.stallCode ? (
                 <div style={{ display: "grid" }}>
@@ -231,20 +235,20 @@ export default function HorseListPage() {
       ? [
           {
             key: "owner",
-            header: "Owner",
+            header: tr("Owner"),
             render: (h: Horse) => <span className="nowrap">{h.owner?.fullName ?? h.ownerName ?? "—"}</span>,
           },
         ]
       : []),
     {
       key: "status",
-      header: "Status",
+      header: tr("Status"),
       render: (h) =>
         h.status ? <HealthBadge status={h.status as HealthStatus} /> : <span style={{ color: "var(--muted)" }}>—</span>,
     },
     {
       key: "lock",
-      header: "Training Lock",
+      header: tr("Training Lock"),
       render: (h) =>
         h.isMedicalLocked ? (
           <Badge tone="danger" icon="lock">
@@ -258,7 +262,7 @@ export default function HorseListPage() {
     },
     {
       key: "chip",
-      header: "Microchip",
+      header: tr("Microchip"),
       hideOnNarrow: true,
       render: (h) => {
         let chip = h.microchip || h.microchipRfid || "—";
@@ -335,7 +339,7 @@ export default function HorseListPage() {
             label={tr("Filter by status")}
             items={STATUS_FILTERS.map((s) => ({
               id: s.id,
-              label: s.label,
+              label: tr(s.label),
               count: s.id === queryStatus && !loading && !error ? total : undefined,
             }))}
             active={queryStatus}
@@ -357,13 +361,13 @@ export default function HorseListPage() {
             <Select aria-label={tr("Breed")} value={queryBreed} options={breedOptions} onChange={(e) => updateUrl({ breed: e.target.value, page: 1 })} />
           </div>
           <div style={{ width: 130 }}>
-            <Select aria-label={tr("Sex")} value={queryGender} options={GENDER_OPTIONS} onChange={(e) => updateUrl({ gender: e.target.value, page: 1 })} />
+            <Select aria-label={tr("Sex")} value={queryGender} options={genderOptions} onChange={(e) => updateUrl({ gender: e.target.value, page: 1 })} />
           </div>
           <div style={{ width: 190 }}>
             <Select
               aria-label={tr("Training Lock")}
               value={queryLock}
-              options={LOCK_OPTIONS}
+              options={lockOptions}
               onChange={(e) => updateUrl({ lock: e.target.value, page: 1 })}
             />
           </div>
@@ -371,7 +375,7 @@ export default function HorseListPage() {
             <Checkbox checked={queryNoStall} onChange={(v) => updateUrl({ noStall: v ? "true" : undefined, page: 1 })} label={tr("No stall yet")} />
           )}
           <div style={{ width: 180, marginLeft: "auto" }}>
-            <Select aria-label={tr("Sort")} value={querySort} options={SORT_OPTIONS} onChange={(e) => updateUrl({ sort: e.target.value, page: 1 })} />
+            <Select aria-label={tr("Sort")} value={querySort} options={sortOptions} onChange={(e) => updateUrl({ sort: e.target.value, page: 1 })} />
           </div>
           {filtered && (
             <Button tone="ghost" size="sm" icon="x" onClick={resetFilters}>
@@ -387,7 +391,7 @@ export default function HorseListPage() {
               title={tr("Couldn’t load the horse list")}
               action={
                 <Button size="sm" tone="secondary" onClick={loadData}>
-                  Try again
+                  {tr("Try again")}
                 </Button>
               }
             >
@@ -410,11 +414,11 @@ export default function HorseListPage() {
                   action={
                     filtered ? (
                       <Button tone="secondary" onClick={resetFilters}>
-                        Clear all filters
+                        {tr("Clear all filters")}
                       </Button>
                     ) : canEdit ? (
                       <LinkButton to="/horses/new" tone="primary" icon="plus">
-                        Register horse
+                        {tr("Register horse")}
                       </LinkButton>
                     ) : undefined
                   }
