@@ -65,7 +65,7 @@ import {
 import { AppShell } from "@/shared/components/layout/AppShell";
 import { Providers } from "@/shared/components/layout/Providers";
 import { RoleGuard } from "./RoleGuard";
-import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
+
 
 // BẢNG ROUTE DUY NHẤT của ứng dụng: đường dẫn URL → trang thật nằm trong features/*/pages.
 // Thêm màn hình mới = thêm một dòng { path, element } vào đây (xem CONTRIBUTING.md).

@@ -5,15 +5,14 @@
 
 .popover {
   position: absolute;
-  top: calc(100% + 10px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: 720px;
-  max-width: min(720px, calc(100vw - 24px));
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  width: 100%;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
-  box-shadow: 0 20px 48px -10px rgba(0, 0, 0, 0.28), 0 10px 24px -5px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.22), 0 8px 16px -4px rgba(0, 0, 0, 0.12);
   z-index: 1000;
   overflow: hidden;
   animation: slideFadeIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
@@ -24,11 +23,11 @@
 @keyframes slideFadeIn {
   from {
     opacity: 0;
-    transform: translate(-50%, -6px);
+    transform: translateY(-6px);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, 0);
+    transform: translateY(0);
   }
 }
 

@@ -16,6 +16,7 @@ import { listAccounts } from "@/features/accounts/api";
 import { fetchTournaments } from "@/features/racing/api";
 import type { Tournament } from "@/features/racing/types";
 import { useLoaded } from "./DashboardBlocks";
+import { ActionItemsCard } from "./ActionItemsCard";
 import { tr, isVietnamese } from "@/shared/i18n/tr";
 import { useAppLanguage } from "@/shared/lib/language";
 
@@ -287,68 +288,8 @@ export function ManagerDashboard({ user }: { user: AuthUser }) {
   const zoneUsed = (zones.data ?? []).reduce((n, z) => n + (z.occupiedCount ?? 0), 0) || 8;
   const occupancyPercent = Math.round((zoneUsed / zoneTotal) * 100);
 
-  // Action Items Tab State
-  const [actionTab, setActionTab] = useState<"ALL" | "ACCOUNT" | "STABLE">("ALL");
-
   const pendingCount = pending.data?.length ?? 2;
   const emptyStallsCount = zoneTotal - zoneUsed;
-
-  const actionItems = [
-    {
-      id: "act-1",
-      category: "ACCOUNT",
-      icon: "users",
-      iconBg: "#dbeafe",
-      iconColor: "#2563eb",
-      title: isVi ? `${pendingCount} yêu cầu đăng ký chủ ngựa đang chờ duyệt` : tr(`${pendingCount} owner requests pending approval`),
-      subtitle: isVi ? "Cần xem xét và phê duyệt tài khoản mới" : tr("Requires review and approval"),
-      time: "10:30",
-      cta: isVi ? "Xem xét" : tr("Review"),
-      to: "/accounts",
-    },
-    {
-      id: "act-2",
-      category: "STABLE",
-      icon: "home",
-      iconBg: "#fef3c7",
-      iconColor: "#d97706",
-      title: isVi ? `${emptyStallsCount} chuồng trống đã sẵn sàng` : tr(`${emptyStallsCount} empty stalls ready`),
-      subtitle: isVi ? "Có thể tiếp nhận ngựa mới vào chuồng" : tr("Ready for new horse intake"),
-      time: "09:15",
-      cta: isVi ? "Sơ đồ chuồng" : tr("Stall Map"),
-      to: "/stables/map",
-    },
-    {
-      id: "act-3",
-      category: "STABLE",
-      icon: "alert",
-      iconBg: "#fee2e2",
-      iconColor: "#dc2626",
-      title: isVi ? `${s?.lockedCount ?? 2} ngựa cần kiểm tra sức khỏe` : tr(`${s?.lockedCount ?? 2} horses need health review`),
-      subtitle: isVi ? "Theo lịch khám và thẩm định lệnh khóa y tế" : tr("Due for medical lock check"),
-      time: "08:40",
-      cta: isVi ? "Xem chi tiết" : tr("Details"),
-      to: "/herd",
-    },
-    {
-      id: "act-4",
-      category: "STABLE",
-      icon: "calendar",
-      iconBg: "#ede9fe",
-      iconColor: "#7c3aed",
-      title: isVi ? "1 lịch huấn luyện sắp diễn ra" : tr("1 upcoming workout session"),
-      subtitle: isVi ? "Buổi tập chiều nay lúc 15:00 tại đường cỏ" : tr("Afternoon session at 15:00"),
-      time: "07:20",
-      cta: isVi ? "Xem lịch" : tr("Schedule"),
-      to: "/training",
-    },
-  ];
-
-  const filteredActions = actionItems.filter((i) => {
-    if (actionTab === "ACCOUNT") return i.category === "ACCOUNT";
-    if (actionTab === "STABLE") return i.category === "STABLE";
-    return true;
-  });
 
   // Attention Horses for Right Column
   const attentionHorses = (board.data?.data ?? [])
@@ -410,155 +351,37 @@ export function ManagerDashboard({ user }: { user: AuthUser }) {
 
       {/* 2. Middle Section: Action items (60%) & Horse health status (40%) */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "20px" }}>
-        {/* Left: Việc cần làm */}
-        <Card pad={20}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "8px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "1.125rem" }}>📋</span>
-              <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 750, color: "var(--ink)" }}>
-                {isVi ? "Việc cần làm" : tr("Action Items")}
-              </h3>
-              <span
-                style={{
-                  width: "20px",
-                  height: "20px",
-                  borderRadius: "50%",
-                  background: "var(--danger, #dc2626)",
-                  color: "#ffffff",
-                  fontSize: "11px",
-                  fontWeight: 700,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {actionItems.length}
-              </span>
-            </div>
-
-            <Link to="/audit" style={{ fontSize: "var(--fs-xs)", color: "var(--brand, #10b981)", fontWeight: 600, textDecoration: "none" }}>
-              {isVi ? "Xem tất cả →" : tr("View all →")}
-            </Link>
-          </div>
-
-          {/* Sub-tabs */}
-          <div style={{ display: "flex", gap: "6px", marginBottom: "16px", borderBottom: "1px solid var(--border)", paddingBottom: "10px" }}>
-            <button
-              type="button"
-              onClick={() => setActionTab("ALL")}
-              style={{
-                background: actionTab === "ALL" ? "var(--surface-muted, #f3f4f6)" : "none",
-                border: "none",
-                borderRadius: "6px",
-                padding: "6px 12px",
-                fontSize: "var(--fs-xs)",
-                fontWeight: actionTab === "ALL" ? 700 : 500,
-                color: actionTab === "ALL" ? "var(--ink)" : "var(--muted)",
-                cursor: "pointer",
-              }}
-            >
-              {isVi ? `Tất cả (${actionItems.length})` : `All (${actionItems.length})`}
-            </button>
-            <button
-              type="button"
-              onClick={() => setActionTab("ACCOUNT")}
-              style={{
-                background: actionTab === "ACCOUNT" ? "var(--surface-muted, #f3f4f6)" : "none",
-                border: "none",
-                borderRadius: "6px",
-                padding: "6px 12px",
-                fontSize: "var(--fs-xs)",
-                fontWeight: actionTab === "ACCOUNT" ? 700 : 500,
-                color: actionTab === "ACCOUNT" ? "var(--ink)" : "var(--muted)",
-                cursor: "pointer",
-              }}
-            >
-              {isVi ? "Tài khoản (2)" : "Accounts (2)"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setActionTab("STABLE")}
-              style={{
-                background: actionTab === "STABLE" ? "var(--surface-muted, #f3f4f6)" : "none",
-                border: "none",
-                borderRadius: "6px",
-                padding: "6px 12px",
-                fontSize: "var(--fs-xs)",
-                fontWeight: actionTab === "STABLE" ? 700 : 500,
-                color: actionTab === "STABLE" ? "var(--ink)" : "var(--muted)",
-                cursor: "pointer",
-              }}
-            >
-              {isVi ? "Chuồng trại (11)" : "Stable (11)"}
-            </button>
-          </div>
-
-          {/* Action List */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            {filteredActions.map((item) => (
-              <div
-                key={item.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "10px 12px",
-                  borderRadius: "10px",
-                  background: "var(--surface-muted, rgba(0,0,0,0.02))",
-                  border: "1px solid var(--border)",
-                  gap: "12px",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: 1 }}>
-                  <div
-                    style={{
-                      width: "38px",
-                      height: "38px",
-                      borderRadius: "50%",
-                      background: item.iconBg,
-                      color: item.iconColor,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <Icon name={item.icon} size={18} />
-                  </div>
-
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: "var(--fs-sm)", fontWeight: 700, color: "var(--ink)" }}>
-                      {item.title}
-                    </div>
-                    <div style={{ fontSize: "var(--fs-xs)", color: "var(--muted)", marginTop: "2px" }}>
-                      {item.subtitle}
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-                  <span style={{ fontSize: "var(--fs-xs)", color: "var(--muted)" }}>{item.time}</span>
-                  <Link to={item.to}>
-                    <Button size="sm" tone="secondary">
-                      {item.cta}
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
+        {/* Left: Việc cần làm (Action Items Center) */}
+        <ActionItemsCard
+          pendingCount={pendingCount}
+          emptyStallsCount={emptyStallsCount}
+          lockedCount={s?.lockedCount ?? 2}
+        />
 
         {/* Right: Tình trạng sức khỏe ngựa */}
-        <Card pad={20}>
+        <Card pad={24}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "1.125rem" }}>🏥</span>
-              <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 750, color: "var(--ink)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div
+                style={{
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "10px",
+                  background: "#FCE8E8",
+                  color: "#D33B35",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Icon name="heart" size={18} />
+              </div>
+              <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 750, color: "var(--text)" }}>
                 {isVi ? "Tình trạng sức khỏe ngựa" : tr("Horse Health Status")}
               </h3>
             </div>
-            <Link to="/herd" style={{ fontSize: "var(--fs-xs)", color: "var(--brand, #10b981)", fontWeight: 600, textDecoration: "none" }}>
+            <Link to="/herd" style={{ fontSize: "13.5px", color: "var(--text-2)", fontWeight: 600, textDecoration: "none" }}>
               {isVi ? "Xem tất cả →" : tr("View all →")}
             </Link>
           </div>

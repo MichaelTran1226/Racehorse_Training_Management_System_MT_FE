@@ -1,4 +1,4 @@
-import type { Tournament, TournamentRegistration, TournamentResult } from "@/features/racing/types";
+import type { Tournament } from "@/features/racing/types";
 
 const RACING_STORAGE_KEY = "equiflow_mock_tournaments";
 

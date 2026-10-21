@@ -92,24 +92,24 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
         position: "relative",
         borderRadius: "16px",
         overflow: "hidden",
-        padding: "34px 36px 30px",
+        padding: "48px 48px",
         background: "linear-gradient(135deg, #032b1f 0%, #02241a 100%)",
         color: "#ffffff",
-        boxShadow: "0 10px 25px -5px rgba(2, 36, 26, 0.4), 0 6px 14px -4px rgba(2, 36, 26, 0.25)",
-        minHeight: "185px",
+        boxShadow: "0 14px 32px -6px rgba(2, 36, 26, 0.45), 0 8px 18px -4px rgba(2, 36, 26, 0.3)",
+        minHeight: "260px",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
       }}
     >
-      {/* 1. Right Showcase Photo Area: 65% width, 100% full vibrant color, no green tint over horses */}
+      {/* 1. Right Showcase Photo Area: 68% width, 100% full vibrant color, no green tint over horses */}
       <div
         style={{
           position: "absolute",
           top: 0,
           bottom: 0,
           right: 0,
-          width: "66%",
+          width: "68%",
           overflow: "hidden",
           pointerEvents: "none",
         }}
@@ -142,7 +142,7 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
             position: "absolute",
             inset: 0,
             background:
-              "linear-gradient(90deg, #032b1f 0%, rgba(3, 43, 31, 0.95) 12%, rgba(3, 43, 31, 0.4) 30%, transparent 55%)",
+              "linear-gradient(90deg, #032b1f 0%, rgba(3, 43, 31, 0.95) 14%, rgba(3, 43, 31, 0.35) 32%, transparent 55%)",
             pointerEvents: "none",
           }}
         />
@@ -153,7 +153,7 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
             position: "absolute",
             inset: 0,
             background:
-              "linear-gradient(180deg, rgba(3, 43, 31, 0.3) 0%, transparent 20%, transparent 80%, rgba(2, 36, 26, 0.5) 100%)",
+              "linear-gradient(180deg, rgba(3, 43, 31, 0.25) 0%, transparent 20%, transparent 80%, rgba(2, 36, 26, 0.5) 100%)",
             pointerEvents: "none",
           }}
         />
@@ -164,22 +164,22 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
         style={{
           position: "relative",
           zIndex: 3,
-          maxWidth: "520px",
+          maxWidth: "560px",
           display: "flex",
           flexDirection: "column",
-          gap: "10px",
+          gap: "14px",
         }}
       >
         {/* Welcome Greeting without awkward role suffix */}
         <h1
           style={{
             margin: 0,
-            fontSize: "2rem",
-            fontWeight: 800,
+            fontSize: "2.35rem",
+            fontWeight: 850,
             lineHeight: 1.2,
             color: "#ffffff",
             letterSpacing: "-0.025em",
-            textShadow: "0 2px 6px rgba(0, 0, 0, 0.4)",
+            textShadow: "0 2px 8px rgba(0, 0, 0, 0.45)",
           }}
         >
           {isVi ? `Chào mừng trở lại, ${cleanName}!` : `Welcome back, ${cleanName}!`}
@@ -190,23 +190,23 @@ export function DashboardHeroBanner({ user }: DashboardHeroBannerProps) {
           style={{
             display: "inline-flex",
             alignItems: "center",
-            gap: "8px",
+            gap: "10px",
             alignSelf: "flex-start",
             marginTop: "2px",
-            padding: "6px 14px",
-            borderRadius: "8px",
-            background: "rgba(255, 255, 255, 0.08)",
-            backdropFilter: "blur(6px)",
-            border: "1px solid rgba(255, 255, 255, 0.12)",
-            fontSize: "0.8125rem",
-            color: "rgba(255, 255, 255, 0.85)",
+            padding: "8px 16px",
+            borderRadius: "10px",
+            background: "rgba(255, 255, 255, 0.1)",
+            backdropFilter: "blur(8px)",
+            border: "1px solid rgba(255, 255, 255, 0.16)",
+            fontSize: "0.85rem",
+            color: "rgba(255, 255, 255, 0.9)",
           }}
         >
           <span style={{ color: "#6ee7b7", fontWeight: 700 }}>{formattedWeekday}</span>
           <span style={{ color: "rgba(255, 255, 255, 0.4)" }}>•</span>
           <span style={{ color: "#ffffff", fontWeight: 600 }}>{dateStr}</span>
           <span style={{ color: "rgba(255, 255, 255, 0.4)" }}>•</span>
-          <span style={{ fontSize: "0.75rem", color: "rgba(255, 255, 255, 0.65)" }}>
+          <span style={{ fontSize: "0.78rem", color: "rgba(255, 255, 255, 0.7)" }}>
             {isVi ? "Giờ CLB (GMT+7)" : "Club Time (GMT+7)"}
           </span>
         </div>
