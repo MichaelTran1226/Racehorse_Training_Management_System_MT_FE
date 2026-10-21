@@ -3480,6 +3480,7 @@ export const VI_TEXT: Record<string, string> = {
   "4 to 32 letters, digits or hyphens": "4 đến 32 chữ in hoa, chữ số hoặc dấu gạch nối",
   "Physical Traits": "Đặc điểm thể chất",
   "Edit Medical Record": "Chỉnh sửa bệnh án",
+  "Edit Electronic Medical Record": "Chỉnh sửa bệnh án điện tử",
   "New Medical Record": "Tạo bệnh án mới",
   "Record clinical exam findings, vital signs, and treatment plan.": "Khám lâm sàng, ghi nhận chỉ số sinh tồn và phác đồ điều trị.",
   "3. Diagnostic Tests & Imaging": "3. Xét nghiệm & chẩn đoán hình ảnh",

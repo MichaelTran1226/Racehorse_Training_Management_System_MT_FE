@@ -341,13 +341,19 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
       label: "TRAINING",
       items: [
         item("training", "Training Overview", "chart", { i18nKey: "trainingOverview" }),
+        item("plans", "Training Plans", "clipboard", { i18nKey: "trainingPlans" }),
+        item("calendar", "Weekly Calendar", "calendar"),
       ],
     },
-    // Menu Y tế (MEDICAL) cho CLUB_MANAGER (giám sát tổng quan sức khỏe đàn)
+    // Menu Y tế (MEDICAL) cho CLUB_MANAGER (quản lý, giám sát sức khỏe, bệnh án và lịch chăm sóc)
     {
       label: "MEDICAL",
       items: [
         item("herd", "Herd Health", "stethoscope", { requires: "viewMedical" }),
+        item("records", "Medical Records", "file", { requires: "viewMedical" }),
+        item("locks", "Training Locks", "lock", { requires: "viewMedical" }),
+        item("vaccine", "Preventive Care", "syringe", { requires: "viewMedical" }),
+        item("incidents", "Incident Reports", "camera", { requires: "viewMedical" }),
       ],
     },
     {

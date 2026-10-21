@@ -439,7 +439,7 @@ export default function RecordFormPage() {
         <div className={styles.headerTop}>
           <div className={styles.titleArea}>
             <h1 className={styles.horseTitle}>
-              {isEdit ? tr("Edit Medical Record") : tr("New Medical Record")}
+              {isEdit ? tr("Edit Electronic Medical Record") : tr("New Electronic Medical Record")}
             </h1>
             <span style={{ fontSize: "var(--fs-body)", color: "var(--muted)" }}>
               {tr("Record clinical exam findings, vital signs, and treatment plan.")}
