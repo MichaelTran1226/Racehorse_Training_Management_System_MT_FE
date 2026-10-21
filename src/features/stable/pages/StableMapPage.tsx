@@ -20,12 +20,14 @@ import { HEALTH_STATUS } from "@/shared/lib/status";
 import { HORSE_STATUS_COLOR, allocationOf, useStallCounts } from "../stallUtils";
 
 import { tr } from "@/shared/i18n/tr";
+import { useAppLanguage } from "@/shared/lib/language";
 const REFRESH_MS = 60_000;
 
 type Dialog = "assign" | "transfer" | "return" | null;
 
 /** SC-1.04 Sơ đồ chuồng trại: CM, HT, VET, GROOM (OWNER bị chặn ở route và BE). */
 export default function StableMapPage() {
+  useAppLanguage(); // subscribe to language changes so tr() placeholder re-renders
   const user = useCurrentUser();
   const canManage = user.role === "CLUB_MANAGER" || user.role === "HEAD_TRAINER";
   const isGroom = user.role === "GROOM";
