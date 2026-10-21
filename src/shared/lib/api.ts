@@ -43,6 +43,8 @@ export function registerApiHandlers(next: ApiHandlers): void {
 interface ApiOptions {
   // true = không kích hoạt xử lý 401/403 chung (dùng cho lần hỏi "tôi là ai" lúc mở trang).
   silent?: boolean;
+  // Hủy request nếu server không trả lời trong khoảng này (ms) => ApiError 0 TIMEOUT.
+  timeoutMs?: number;
 }
 
 export async function api<T>(method: HttpMethod, path: string, body?: unknown, options: ApiOptions = {}): Promise<T> {
@@ -54,11 +56,11 @@ export async function api<T>(method: HttpMethod, path: string, body?: unknown, o
     }
 
     try {
-      return await request<T>(method, path, body);
+      return await request<T>(method, path, body, options.timeoutMs);
     } catch (err) {
       // Access token hết hạn (15 phút) => đổi refresh token lấy cặp mới rồi gọi lại đúng một lần.
       if (err instanceof ApiError && err.status === 401 && err.code === "UNAUTHENTICATED" && (await refreshTokens())) {
-        return await request<T>(method, path, body);
+        return await request<T>(method, path, body, options.timeoutMs);
       }
       throw err;
     }
@@ -72,17 +74,24 @@ export async function api<T>(method: HttpMethod, path: string, body?: unknown, o
   }
 }
 
-async function request<T>(method: HttpMethod, path: string, body?: unknown): Promise<T> {
+async function request<T>(method: HttpMethod, path: string, body?: unknown, timeoutMs?: number): Promise<T> {
   const headers: Record<string, string> = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
   const accessToken = getTokens()?.accessToken;
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
 
-  const res = await fetch(`${API_URL}${path}`, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal: timeoutMs ? AbortSignal.timeout(timeoutMs) : undefined,
+    });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "TimeoutError") throw new ApiError(0, "TIMEOUT", "Timeout");
+    throw err;
+  }
   const payload = await res.json().catch(() => null);
   if (!res.ok) {
     // Lỗi từ backend: { success: false, code, message, data }

@@ -17,11 +17,11 @@ async function switchToVietnamese(page: Page) {
 // Yêu cầu song ngữ: nút đổi ngôn ngữ chuyển toàn bộ chữ giao diện sang tiếng Việt và ghi nhớ lựa chọn.
 test('the language toggle switches the interface to Vietnamese and remembers it', async ({ page }) => {
   await page.goto('/login');
-  await expect(page.getByRole('button', { name: 'Enter workspace' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Chuyển sang Tiếng Việt' }).click();
-  await expect(page.getByRole('button', { name: 'Vào không gian làm việc' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Đăng nhập', exact: true })).toBeVisible();
   await page.reload();
-  await expect(page.getByRole('button', { name: 'Vào không gian làm việc' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Đăng nhập', exact: true })).toBeVisible();
 });
 
 test('horse profile page reflects bilingual attributes and age localization', async ({ page }) => {

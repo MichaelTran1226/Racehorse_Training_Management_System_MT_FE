@@ -33,11 +33,15 @@ export function strengthOf(pw: string): Strength {
   return LEVELS[pw ? scorePassword(pw) : 0];
 }
 
+// Giới hạn trên của mật khẩu (giống BE PASSWORD_MAX; bcrypt chỉ dùng 72 byte đầu).
+export const PASSWORD_MAX = 128;
+
 // Luật chung cho mọi form đặt mật khẩu mới (giống BE common/utils/password.ts). Trả về câu lỗi hoặc "" nếu hợp lệ.
-// Luật: ≥ 8 ký tự, có ít nhất 1 chữ in hoa, 1 chữ số và 1 ký tự đặc biệt.
+// Luật: 8–128 ký tự, có ít nhất 1 chữ in hoa, 1 chữ số và 1 ký tự đặc biệt.
 export function passwordError(pw: string): string {
   if (!pw) return "New password is required.";
   if (pw.length < 8) return "Password must be at least 8 characters.";
+  if (pw.length > PASSWORD_MAX) return "Password must be at most 128 characters.";
   if (!/[A-Z]/.test(pw)) return "Add at least one uppercase letter.";
   if (!/[0-9]/.test(pw)) return "Add at least one digit.";
   if (!/[^A-Za-z0-9]/.test(pw)) return "Add at least one special character.";

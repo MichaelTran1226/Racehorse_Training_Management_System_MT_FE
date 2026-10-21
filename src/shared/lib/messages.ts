@@ -1,7 +1,6 @@
 // Mã lỗi từ API → câu thông báo tiếng Anh dễ hiểu. Nêu điều kiện, không trách người dùng.
 
 import { ApiError } from "@/shared/lib/api";
-import { formatDateTime, formatTime } from "@/shared/lib/format";
 
 export type AlertTone = "ok" | "warn" | "danger" | "info";
 
@@ -14,6 +13,8 @@ export interface AlertSpec {
 
 const GENERIC: Record<string, string> = {
   NETWORK_ERROR: "The service did not answer. Check the connection and try again.",
+  TIMEOUT: "The server took too long to answer. Try again.",
+  SERVER_ERROR: "Something went wrong on our side. Try again in a moment.",
   SERVICE_UNAVAILABLE: "The service did not answer. Nothing was changed. Try again in a moment.",
   EMAIL_TAKEN: "This email already has an account in the system.",
   ROLE_NOT_ALLOWED: "Only Horse Owner accounts can be requested here. Staff accounts are created by the Club Manager.",
@@ -161,6 +162,7 @@ const VI_TO_EN: Record<string, string> = {
 
 export function messageFor(err: unknown): string {
   if (err instanceof ApiError) {
+    if (err.status >= 500) return isVietnamese() ? tr(GENERIC.SERVER_ERROR) : GENERIC.SERVER_ERROR;
     const enGeneric = GENERIC[err.code];
     if (isVietnamese()) {
       if (
@@ -212,127 +214,94 @@ export function otpMessage(err: unknown): string {
 }
 
 export interface LoginFailure {
-  alert: AlertSpec;
+  // null = lỗi đã hiện ngay tại ô nhập, không cần Alert.
+  alert: AlertSpec | null;
+  emailError?: string;
   passwordError?: string;
-  // Nút đăng nhập bị khóa + tooltip giải thích ai xử lý được.
-  blockedReason?: string;
-  footNote?: string;
-  // Khóa tạm sau 5 lần sai: mốc (ms) server cho phép thử lại — trang đăng nhập đếm ngược tới đây.
+  // Khóa tạm sau nhiều lần sai: mốc (ms) server cho phép thử lại — trang đăng nhập đếm ngược tới đây.
   retryAt?: number;
-  // Nút đi tiếp trong Alert: nhập OTP xác minh email / nhận lời mời.
-  next?: "verifyEmail" | "acceptInvite";
+  // Nút đi tiếp trong Alert: nhập OTP xác minh email / nhận lời mời / đăng ký lại.
+  next?: "verifyEmail" | "acceptInvite" | "signUp";
 }
 
-// Kết quả đăng nhập thất bại (design 0.4 – 0.6) → nội dung Alert, nút và chú thích.
+// "Contact the Club Manager." + lý do CM ghi khi khóa / vô hiệu hóa (nếu có).
+function contactManager(reason: unknown): string {
+  return reason ? `Contact the Club Manager. Reason: ${String(reason)}` : "Contact the Club Manager.";
+}
+
+// Kết quả đăng nhập thất bại → Alert ngắn (1 tiêu đề + tối đa 1 câu) hoặc lỗi tại ô nhập.
+// Không báo riêng "sai email" hay "sai mật khẩu" để không lộ email nào có tài khoản.
 export function loginFailure(err: unknown): LoginFailure {
   if (!(err instanceof ApiError)) {
-    return { alert: { tone: "danger", icon: "xCircle", title: "Sign-in failed", body: messageFor(err) } };
+    return { alert: { tone: "danger", icon: "xCircle", title: "Sign-in failed", body: "Try again in a moment." } };
   }
   const d = err.data;
-  const who = d.fullName ? `${d.fullName} · ${d.roleLabel}` : undefined;
-  // Lý do Club Manager ghi khi khóa / từ chối / vô hiệu hóa (có thể trống).
-  const reason = d.reason ? ` Reason: ${String(d.reason)}` : "";
+
+  if (err.status >= 500) {
+    return { alert: { tone: "danger", icon: "xCircle", title: "Something went wrong", body: "Try again in a moment." } };
+  }
 
   switch (err.code) {
+    case "VALIDATION": {
+      // BE từ chối dữ liệu (thường FE đã chặn trước): đưa lỗi về đúng ô nhập.
+      const text = err.details.join(" ").toLowerCase();
+      return {
+        alert: null,
+        emailError: text.includes("email") ? "Enter a valid @gmail.com address." : undefined,
+        passwordError: text.includes("password") ? "Password must be 8–128 characters." : undefined,
+      };
+    }
     case "INVALID_CREDENTIALS": {
-      // Không nói rõ sai email hay sai mật khẩu. Chỉ khi còn đúng 1 lần mới cảnh báo thêm (WorkFlow 1 §3.2).
       const left = Number(d.attemptsLeft ?? 0);
       return {
         alert: {
           tone: "danger",
           icon: "alert",
           title: "Email or password is incorrect",
-          body:
-            left === 1
-              ? "Check both fields and try again. 1 attempt remaining before this account is temporarily locked."
-              : "Check both fields and try again.",
+          body: left === 1 ? "1 attempt left before sign-in is paused." : "",
         },
-        passwordError: "Password is incorrect.",
-        footNote: "Not sure of the password? Use Forgot password to set a new one",
       };
     }
     case "ATTEMPTS_EXCEEDED": {
-      // Nội dung đếm ngược do trang đăng nhập dựng từ retryAt (thời gian lấy từ server, không tính ở client).
+      // Nội dung đếm ngược do trang đăng nhập dựng từ retryAt (thời gian lấy từ server).
       const retryAt = d.retryAt ? Date.parse(String(d.retryAt)) : undefined;
-      return {
-        alert: {
-          tone: "danger",
-          icon: "alert",
-          title: "Too many attempts",
-          body: `Sign-in is paused for 15 minutes${retryAt ? ` (until ${formatTime(retryAt)})` : ""}. Use Forgot password to unlock it now.`,
-        },
-        retryAt,
-      };
+      return { alert: null, retryAt };
     }
     case "ACCOUNT_LOCKED":
-      return {
-        alert: {
-          tone: "danger",
-          icon: "ban",
-          title: "Account is locked",
-          body: `The Club Manager locked this account at ${d.lockedAt ? formatDateTime(String(d.lockedAt)) : "an earlier time"}. Contact support@equiflow.vn to have it unlocked.${reason}`,
-        },
-        blockedReason: "Only the Club Manager can unlock an account.",
-        footNote: who,
-      };
+      return { alert: { tone: "danger", icon: "ban", title: "This account is locked", body: contactManager(d.reason) } };
     case "ACCOUNT_PENDING":
       return {
         alert: {
           tone: "warn",
           icon: "clock",
-          title: "Account is pending approval",
-          body: `The request${d.requestCode ? ` ${String(d.requestCode)}` : ""} reached the Club Manager at ${d.requestedAt ? formatDateTime(String(d.requestedAt)) : "an earlier time"}. Quote this code when you contact the club; an email follows as soon as it is approved.`,
+          title: "Account pending approval",
+          body: d.requestCode
+            ? `Request ${String(d.requestCode)}. You will get an email once it is approved.`
+            : "You will get an email once it is approved.",
         },
-        blockedReason: "The account works only after the Club Manager approves it.",
-        footNote: who ? `${who}${d.requestCode ? ` · ${String(d.requestCode)}` : ""}` : undefined,
       };
     case "EMAIL_NOT_VERIFIED":
-      return {
-        alert: {
-          tone: "warn",
-          icon: "mail",
-          title: "Email is not verified yet",
-          body: "Enter the 6-digit code sent to this address to finish the sign-up request.",
-        },
-        blockedReason: "Verify the email with the code first.",
-        footNote: who,
-        next: "verifyEmail",
-      };
+      return { alert: { tone: "warn", icon: "mail", title: "Email not verified", body: "" }, next: "verifyEmail" };
     case "ACCOUNT_INVITED":
-      return {
-        alert: {
-          tone: "info",
-          icon: "mail",
-          title: "Invitation not accepted yet",
-          body: "Open the invitation email from the Club Manager and enter its code on the Accept invitation page to set a password.",
-        },
-        blockedReason: "The invitation must be accepted first.",
-        footNote: who,
-        next: "acceptInvite",
-      };
+      return { alert: { tone: "info", icon: "mail", title: "Invitation not accepted yet", body: "" }, next: "acceptInvite" };
     case "ACCOUNT_INACTIVE":
-      return {
-        alert: {
-          tone: "danger",
-          icon: "ban",
-          title: "Account is inactive",
-          body: `This account was switched off. Contact support@equiflow.vn to reactivate it.${reason}`,
-        },
-        blockedReason: "Only the Club Manager can reactivate an account.",
-        footNote: who,
-      };
+      return { alert: { tone: "danger", icon: "ban", title: "This account is deactivated", body: contactManager(d.reason) } };
     case "ACCOUNT_REJECTED":
       return {
         alert: {
           tone: "danger",
           icon: "xCircle",
-          title: "The request was declined",
-          body: `The Club Manager declined this account request.${reason} Send a new request if the details were wrong.`,
+          title: "Sign-up request declined",
+          body: d.reason ? `Reason: ${String(d.reason)}` : "",
         },
-        blockedReason: "The request was declined by the Club Manager.",
-        footNote: who,
+        next: "signUp",
       };
+    case "RATE_LIMITED":
+      return { alert: { tone: "danger", icon: "clock", title: "Too many requests", body: "Wait a minute and try again." } };
+    case "NETWORK_ERROR":
+    case "TIMEOUT":
+      return { alert: { tone: "danger", icon: "alert", title: "Cannot reach the server", body: "Check your connection and try again." } };
     default:
-      return { alert: { tone: "danger", icon: "xCircle", title: "Sign-in failed", body: messageFor(err) } };
+      return { alert: { tone: "danger", icon: "xCircle", title: "Sign-in failed", body: GENERIC[err.code] ?? "Try again in a moment." } };
   }
 }

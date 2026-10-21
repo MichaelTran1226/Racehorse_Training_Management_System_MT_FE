@@ -13,7 +13,7 @@ import { OtpVerifyForm } from "../components/OtpVerifyForm";
 import styles from "./AuthPages.module.css";
 
 import { tr } from "@/shared/i18n/tr";
-const EMAIL_RE = /^[^\s@]+@gmail\.com$/i;
+import { EMAIL_RE } from "@/shared/lib/email";
 
 // Accept Invite: nhân viên được Club Manager mời nhập mã trong email mời (OTP, không dùng link),
 // rồi sang /reset-password để đặt mật khẩu lần đầu — tài khoản chuyển INVITED → ACTIVE.
