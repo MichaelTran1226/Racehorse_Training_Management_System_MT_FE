@@ -96,9 +96,9 @@ export default function SessionMetricsPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>{tr("Workout Results & Session Metrics")}</h1>
+          <h1 style={{ margin: 0, fontSize: "var(--fs-h1)", fontWeight: 700 }}>{tr("Session Metrics")}</h1>
           <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
-            {tr("Record results after workouts; abnormal signs alert the Veterinarian. Values are entered by hand.")}
+            {tr("Log workout performance, biometric telemetry, and abnormal health indicators.")}
           </p>
         </div>
         {(user.role === "HEAD_TRAINER" || user.role === "VETERINARIAN") && (

@@ -85,8 +85,8 @@ export default function SignUpPage() {
     <AuthLayout
       compact
       hero={HERO_TEAM}
-      title={tr("Request a Horse Owner account.")}
-      description={tr("For owners who keep horses at the club. The Club Manager reviews every request before the account can be used. Staff accounts are created by the Club Manager.")}
+      title={tr("Request a Horse Owner account")}
+      description={tr("Account requests are reviewed and approved by the Club Manager.")}
     >
       <form onSubmit={onSubmit} noValidate style={{ display: "contents" }}>
         {alertBody && (

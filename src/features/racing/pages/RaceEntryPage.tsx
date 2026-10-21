@@ -157,9 +157,9 @@ export default function RaceEntryPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
-        title={tr("Tournament Registration & Race Entries")}
+        title={tr("Tournaments & Entries")}
         description={tr(
-          "Official championship management, horse eligibility screening, race execution, and prize money settlement.",
+          "Tournament schedule, horse eligibility screening, and race registrations.",
         )}
         action={
           isClubManager ? (

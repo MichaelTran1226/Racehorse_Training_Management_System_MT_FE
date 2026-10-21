@@ -253,7 +253,7 @@ export default function CareSchedulePage() {
     <div style={{ display: "grid", gap: 20 }}>
       <PageHeader
         title={tr("Preventive care")}
-        description={tr("Vaccinations, deworming, farrier and dental care for every horse, with the next due date.")}
+        description={tr("Vaccinations, deworming, farrier, and dental schedules for all horses.")}
       />
 
       <Card pad={0}>

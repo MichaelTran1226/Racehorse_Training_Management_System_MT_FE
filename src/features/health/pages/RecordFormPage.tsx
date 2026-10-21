@@ -434,10 +434,10 @@ export default function RecordFormPage() {
         <div className={styles.headerTop}>
           <div className={styles.titleArea}>
             <h1 className={styles.horseTitle}>
-              {isEdit ? tr("Edit Medical Record (Draft)") : tr("New Electronic Medical Record")}
+              {isEdit ? tr("Edit Medical Record") : tr("New Medical Record")}
             </h1>
             <span style={{ fontSize: "var(--fs-body)", color: "var(--muted)" }}>
-              {tr("Record clinical exam findings, vital signs, and initialize the treatment plan.")}
+              {tr("Record clinical exam findings, vital signs, and treatment plan.")}
             </span>
           </div>
         </div>
@@ -682,7 +682,7 @@ export default function RecordFormPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h2 className={styles.sectionTitle}>
             <Icon name="file" size={18} />
-            {tr("3. Diagnostic Tests & Imaging (0–20 items)")}
+            {tr("3. Diagnostic Tests & Imaging")}
           </h2>
           <Button size="sm" tone="ghost" icon="plus" onClick={addLabTest}>
             {tr("Add Diagnostic Result")}
@@ -752,7 +752,7 @@ export default function RecordFormPage() {
       <div className={styles.sectionCard}>
         <h2 className={styles.sectionTitle}>
           <Icon name="stethoscope" size={18} />
-          {tr("4. Confirmatory Diagnosis & Proposed Actions")}
+          {tr("4. Diagnosis & Treatment Plan")}
         </h2>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>

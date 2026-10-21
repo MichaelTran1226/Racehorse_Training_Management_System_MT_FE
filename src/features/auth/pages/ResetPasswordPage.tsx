@@ -71,11 +71,11 @@ export default function ResetPasswordPage() {
 
   return (
     <AuthLayout
-      title={invite ? tr("Choose your password.") : tr("Choose the new password.")}
+      title={invite ? tr("Set password") : tr("New password")}
       description={
         invite
-          ? tr(`Welcome${flow.fullName ? `, ${flow.fullName}` : ""}. The invitation for ${flow.email} was accepted; set a password before ${formatTime(flow.expiresAt)} to activate the account.`)
-          : tr(`Resetting for ${flow.email}. The code was accepted; this step expires at ${formatTime(flow.expiresAt)}.`)
+          ? tr("Set your password to activate your account.")
+          : tr("Enter a new password for your account.")
       }
     >
       <form onSubmit={onSubmit} noValidate style={{ display: "contents" }}>

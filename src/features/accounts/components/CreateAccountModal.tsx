@@ -57,8 +57,8 @@ export function CreateAccountModal({ onClose, onCreated }: CreateAccountModalPro
 
   return (
     <Modal
-      title={tr("Create a staff account")}
-      subtitle={tr("The new member gets an invitation email to set a password.")}
+      title={tr("Add staff account")}
+      subtitle={tr("An invitation email will be sent to activate the account.")}
       width={460}
       onClose={onClose}
     >

@@ -60,9 +60,9 @@ export default function RaceResultsPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
-        title={tr("Official Race Results & Championship Hall of Fame")}
+        title={tr("Race Results")}
         description={tr(
-          "Verified tournament standings, sprint speeds, prize money distributions, and club career statistics.",
+          "Official tournament standings, sprint speeds, and prize distributions.",
         )}
       />
 

@@ -56,7 +56,7 @@ export function EditAccountModal({ account, isSelf, isLastManager, onClose, onSa
     if (busy) return;
     if (fullNameError(fullName)) return setErrors({ fullName: fullNameError(fullName) });
 
-    const cleanPhone = phone.replace(/[\s-]/g, "");
+    const cleanPhone = phone.replace(/[\s.-]/g, "").replace(/^\+84/, "0");
     if (cleanPhone && !VN_PHONE_RE.test(cleanPhone)) {
       return setErrors({ phone: t("phoneValidation.error") });
     }
@@ -64,7 +64,7 @@ export function EditAccountModal({ account, isSelf, isLastManager, onClose, onSa
     setBusy(true);
     setErrors({});
     try {
-      const res = await updateAccount(account.id, { fullName: fullName.trim(), phone: phone.trim() });
+      const res = await updateAccount(account.id, { fullName: fullName.trim(), phone: cleanPhone });
       onSaved(res.account);
     } catch (err) {
       const field = err instanceof ApiError ? err.data.field : undefined;

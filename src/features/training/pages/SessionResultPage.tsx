@@ -29,12 +29,20 @@ import type { AbnormalSign, CompletionLevel, ExerciseSession, TrackCondition, Tr
 
 import { tr } from "@/shared/i18n/tr";
 import { useAppLanguage } from "@/shared/lib/language";
-/** "mm:ss.s" <-> giây. */
+/** "mm:ss.s" hoặc số giây thô <-> giây. */
 function parseTime(text: string): number | null {
-  const m = /^(\d{1,2}):([0-5]\d(?:\.\d)?)$/.exec(text.trim());
-  if (!m) return null;
-  const seconds = Number(m[1]) * 60 + Number(m[2]);
-  return seconds >= 5 && seconds <= 3599.9 ? seconds : null;
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+  const m = /^(\d{1,2}):([0-5]\d(?:\.\d)?)$/.exec(trimmed);
+  if (m) {
+    const seconds = Number(m[1]) * 60 + Number(m[2]);
+    return seconds >= 5 && seconds <= 3599.9 ? seconds : null;
+  }
+  const rawSec = Number(trimmed);
+  if (!isNaN(rawSec) && rawSec >= 5 && rawSec <= 3599.9) {
+    return rawSec;
+  }
+  return null;
 }
 function formatTime(seconds?: number | null): string {
   if (seconds == null) return "";
@@ -73,6 +81,17 @@ export default function SessionResultPage() {
   const [comment, setComment] = useState("");
   const [signs, setSigns] = useState<AbnormalSign[]>([]);
   const [signNotes, setSignNotes] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  function clearFieldError(field: string) {
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  }
 
   // Bug #68: đóng tab / tải lại khi có thay đổi chưa lưu -> trình duyệt hỏi lại.
   useEffect(() => {
@@ -111,6 +130,7 @@ export default function SessionResultPage() {
     setComment(r?.headTrainerFeedback ?? "");
     setSigns(r?.abnormalSignTypes ?? []);
     setSignNotes(r?.abnormalSignsDescription ?? "");
+    setFieldErrors({});
     setDirty(false);
   }, []);
 
@@ -137,29 +157,81 @@ export default function SessionResultPage() {
   const firstSaved = r?.recordedAt ? new Date(r.recordedAt).getTime() : null;
   const canEditResult = isTrainer && session.status === "COMPLETED" && firstSaved != null && loadedAt - firstSaved <= EDIT_WINDOW_MS;
 
-  const problems: string[] = [];
   const d = Number(distance);
-  if (!Number.isInteger(d) || d < 50 || d > 10000) problems.push(tr("Actual distance must be 50 to 10 000 m."));
-  if (needsTime && !seconds) problems.push(tr("Running time is required (format mm:ss.s)."));
-  if (!needsTime && time.trim() && !seconds) problems.push(tr("Running time is not valid (format mm:ss.s)."));
-  if (peakHr && recoveryHr && Number(recoveryHr) > Number(peakHr)) problems.push(tr("Heart rate after 10 minutes cannot exceed the peak heart rate."));
-  if (!score) problems.push(tr("Please give a performance score."));
-  if (!completion) problems.push(tr("Please choose the completion level."));
-  if (comment.trim().length < 2 || comment.trim().length > 2000) problems.push(tr("Comment must be 2 to 2000 characters."));
-  if (signs.length > 0 && (signNotes.trim().length < 2 || signNotes.trim().length > 500)) problems.push(tr("Describe the abnormal signs (2-500 characters)."));
+
+  function validateForm(): boolean {
+    const errs: Record<string, string> = {};
+    if (!distance.trim()) {
+      errs.distance = tr("Actual distance is required.");
+    } else if (!Number.isInteger(d) || d < 50 || d > 10000) {
+      errs.distance = tr("Actual distance must be 50 to 10,000 m.");
+    }
+
+    if (needsTime && !seconds) {
+      errs.time = tr("Running time is required (format mm:ss.s or seconds).");
+    } else if (!needsTime && time.trim() && !seconds) {
+      errs.time = tr("Running time is not valid (format mm:ss.s or seconds).");
+    }
+
+    if (peakHr) {
+      const p = Number(peakHr);
+      if (isNaN(p) || p < 20 || p > 260) {
+        errs.peakHr = tr("Peak heart rate must be 20 to 260 bpm.");
+      }
+    }
+
+    if (recoveryHr) {
+      const rec = Number(recoveryHr);
+      if (isNaN(rec) || rec < 20 || rec > 220) {
+        errs.recoveryHr = tr("Recovery heart rate must be 20 to 220 bpm.");
+      } else if (peakHr && rec > Number(peakHr)) {
+        errs.recoveryHr = tr("Recovery heart rate cannot exceed peak heart rate.");
+      }
+    }
+
+    if (!score) {
+      errs.score = tr("Please select a performance score.");
+    }
+
+    if (!completion) {
+      errs.completion = tr("Please select a completion level.");
+    }
+
+    const trimmedComment = comment.trim();
+    if (!trimmedComment || trimmedComment.length < 2) {
+      errs.comment = tr("Comment must be at least 2 characters.");
+    } else if (trimmedComment.length > 2000) {
+      errs.comment = tr("Comment cannot exceed 2000 characters.");
+    }
+
+    if (signs.length > 0) {
+      const trimmedNotes = signNotes.trim();
+      if (!trimmedNotes || trimmedNotes.length < 2) {
+        errs.signNotes = tr("Describe the abnormal signs (2-500 characters).");
+      } else if (trimmedNotes.length > 500) {
+        errs.signNotes = tr("Notes cannot exceed 500 characters.");
+      }
+    }
+
+    setFieldErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      setError(tr("Please check and correct the highlighted fields below."));
+      return false;
+    }
+    setError("");
+    return true;
+  }
 
   const set =
-    <T,>(setter: (v: T) => void) =>
+    <T,>(setter: (v: T) => void, fieldName?: string) =>
     (v: T) => {
       setter(v);
       setDirty(true);
+      if (fieldName) clearFieldError(fieldName);
     };
 
   const save = async () => {
-    if (problems.length > 0) {
-      setError(problems[0]);
-      return;
-    }
+    if (!validateForm()) return;
     setSubmitting(true);
     setError("");
     try {
@@ -199,7 +271,12 @@ export default function SessionResultPage() {
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
-        <h1 style={{ margin: 0, fontSize: "var(--fs-kpi)" }}>{tr("Workout result")}</h1>
+        <div>
+          <h1 style={{ margin: 0, fontSize: "var(--fs-kpi)" }}>{tr("Workout result")}</h1>
+          <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
+            {tr("Record performance metrics, speed telemetry, and trainer observations.")}
+          </p>
+        </div>
         <div style={{ display: "flex", gap: "0.5rem" }}>
           {user.role !== "GROOM" && (
             <Link to={`/horses/${session.horseId}/fitness`}><Button tone="secondary">{tr("Fitness chart")}</Button></Link>
@@ -278,11 +355,11 @@ export default function SessionResultPage() {
           <Card pad={20}>
             <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>{tr("Actual figures")}</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
-              <Field label={tr("Actual distance (m)")} required hint={tr("50 – 10 000, all reps")}>
-                <Input type="number" inputMode="numeric" value={distance} onChange={(e) => set(setDistance)(e.target.value)} />
+              <Field label={tr("Actual distance (m)")} required error={fieldErrors.distance} hint={tr("50 – 10 000, all reps")}>
+                <Input type="number" inputMode="numeric" value={distance} onChange={(e) => set(setDistance, "distance")(e.target.value)} />
               </Field>
-              <Field label={tr("Running time (mm:ss.s)")} required={needsTime}>
-                <Input value={time} placeholder="01:12.5" onChange={(e) => set(setTime)(e.target.value)} />
+              <Field label={tr("Running time (mm:ss.s)")} required={needsTime} error={fieldErrors.time} hint={tr("e.g. 01:12.5 or seconds")}>
+                <Input value={time} placeholder="01:12.5" onChange={(e) => set(setTime, "time")(e.target.value)} />
               </Field>
               <Field label={tr("Average speed (km/h)")} hint={tr("Calculated")}>
                 <Input value={avgSpeed ?? ""} readOnly />
@@ -304,11 +381,11 @@ export default function SessionResultPage() {
                   ]}
                 />
               </Field>
-              <Field label={tr("Peak heart rate (bpm)")} hint="20 – 260">
-                <Input type="number" inputMode="numeric" value={peakHr} onChange={(e) => set(setPeakHr)(e.target.value)} />
+              <Field label={tr("Peak heart rate (bpm)")} error={fieldErrors.peakHr} hint="20 – 260 bpm">
+                <Input type="number" inputMode="numeric" value={peakHr} onChange={(e) => set(setPeakHr, "peakHr")(e.target.value)} />
               </Field>
-              <Field label={tr("Heart rate after 10 min rest (bpm)")} hint="20 – 200">
-                <Input type="number" inputMode="numeric" value={recoveryHr} onChange={(e) => set(setRecoveryHr)(e.target.value)} />
+              <Field label={tr("Heart rate after 10 min rest (bpm)")} error={fieldErrors.recoveryHr} hint="20 – 200 bpm">
+                <Input type="number" inputMode="numeric" value={recoveryHr} onChange={(e) => set(setRecoveryHr, "recoveryHr")(e.target.value)} />
               </Field>
             </div>
             {avgSpeed != null && avgSpeed > 75 && (
@@ -321,17 +398,17 @@ export default function SessionResultPage() {
           <Card pad={20}>
             <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>{tr("Evaluation")}</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
-              <Field label={tr("Performance score")} required>
+              <Field label={tr("Performance score")} required error={fieldErrors.score}>
                 <Select
                   value={score}
-                  onChange={(e) => set(setScore)(e.target.value)}
+                  onChange={(e) => set(setScore, "score")(e.target.value)}
                   options={[{ value: "", label: "—", disabled: true }, ...Array.from({ length: 10 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }))]}
                 />
               </Field>
-              <Field label={tr("Completion")} required>
+              <Field label={tr("Completion")} required error={fieldErrors.completion}>
                 <Select
                   value={completion}
-                  onChange={(e) => set(setCompletion)(e.target.value as CompletionLevel)}
+                  onChange={(e) => set(setCompletion, "completion")(e.target.value as CompletionLevel)}
                   options={[
                     { value: "", label: "—", disabled: true },
                     ...(Object.keys(COMPLETION_LABEL) as CompletionLevel[]).map((c) => ({ value: c, label: COMPLETION_LABEL[c] })),
@@ -340,28 +417,28 @@ export default function SessionResultPage() {
               </Field>
             </div>
             <div style={{ marginTop: "1rem" }}>
-              <Field label={tr(`Professional comment (${comment.trim().length}/2000)`)} required hint={tr("2 – 2000 characters")}>
-                <Textarea rows={3} maxLength={2000} value={comment} onChange={(e) => set(setComment)(e.target.value)} />
+              <Field label={tr(`Professional comment (${comment.trim().length}/2000)`)} required error={fieldErrors.comment} hint={tr("2 – 2000 characters")}>
+                <Textarea rows={3} maxLength={2000} value={comment} onChange={(e) => set(setComment, "comment")(e.target.value)} />
               </Field>
               <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "0.375rem" }}>
                 <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", alignSelf: "center" }}>{tr("Quick notes:")}</span>
                 <button
                   type="button"
-                  onClick={() => set(setComment)(tr("Hoàn thành tốt bài tập, sải bước đều và nhịp thở phục hồi ổn định."))}
+                  onClick={() => set(setComment, "comment")(tr("Hoàn thành tốt bài tập, sải bước đều và nhịp thở phục hồi ổn định."))}
                   style={{ fontSize: "var(--fs-xs)", padding: "0.2rem 0.6rem", borderRadius: "12px", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--ink)" }}
                 >
                   {tr("+ Hoàn thành tốt")}
                 </button>
                 <button
                   type="button"
-                  onClick={() => set(setComment)(tr("Ngựa mệt mỏi nhẹ ở 200m cuối, cần theo dõi giảm tải buổi sau."))}
+                  onClick={() => set(setComment, "comment")(tr("Ngựa mệt mỏi nhẹ ở 200m cuối, cần theo dõi giảm tải buổi sau."))}
                   style={{ fontSize: "var(--fs-xs)", padding: "0.2rem 0.6rem", borderRadius: "12px", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--ink)" }}
                 >
                   {tr("+ Mệt mỏi nhẹ")}
                 </button>
                 <button
                   type="button"
-                  onClick={() => set(setComment)(tr("Có dấu hiệu bất thường về vận động, đề nghị Bác sĩ thú y kiểm tra chuyên sâu."))}
+                  onClick={() => set(setComment, "comment")(tr("Có dấu hiệu bất thường về vận động, đề nghị Bác sĩ thú y kiểm tra chuyên sâu."))}
                   style={{ fontSize: "var(--fs-xs)", padding: "0.2rem 0.6rem", borderRadius: "12px", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--ink)" }}
                 >
                   {tr("+ Bất thường cần khám")}
@@ -385,8 +462,8 @@ export default function SessionResultPage() {
                   <Alert tone="warn" title={tr("The Veterinarian and Head Trainer are alerted when you save")}>
                     {tr("Placing a Training Lock is the Veterinarian's decision.")}
                   </Alert>
-                  <Field label={tr("Describe the signs")} required hint={tr("2 – 500 characters")}>
-                    <Textarea rows={2} maxLength={500} value={signNotes} onChange={(e) => set(setSignNotes)(e.target.value)} />
+                  <Field label={tr("Describe the signs")} required error={fieldErrors.signNotes} hint={tr("2 – 500 characters")}>
+                    <Textarea rows={2} maxLength={500} value={signNotes} onChange={(e) => set(setSignNotes, "signNotes")(e.target.value)} />
                   </Field>
                   <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "0.25rem" }}>
                     <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", alignSelf: "center" }}>{tr("Quick templates:")}</span>

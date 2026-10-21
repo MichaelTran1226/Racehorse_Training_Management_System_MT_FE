@@ -347,8 +347,8 @@ export default function AccountListPage() {
   return (
     <>
       <PageHeader
-        title={tr("Account Management")}
-        description={tr("Manage club staff, horse owners, account approvals, and security access levels.")}
+        title={tr("Accounts")}
+        description={tr("Manage club staff, horse owners, and account approvals.")}
         showDate
       />
 

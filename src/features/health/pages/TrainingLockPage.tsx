@@ -197,7 +197,7 @@ export default function TrainingLockPage() {
     <div style={{ display: "grid", gap: 20 }}>
       <PageHeader
         title={tr("Training Locks")}
-        description={tr("Heavy workouts and trial runs are blocked while a horse has an active lock. Only the Veterinarian places, extends or lifts a lock.")}
+        description={tr("Heavy workouts and trial runs are blocked while a horse has an active medical lock.")}
         action={
           isVet && (
             <Button
