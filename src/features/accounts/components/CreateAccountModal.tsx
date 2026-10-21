@@ -14,7 +14,7 @@ import { createAccount } from "../api";
 import { fullNameError } from "@/shared/lib/name";
 
 import { tr } from "@/shared/i18n/tr";
-const EMAIL_RE = /^[^\s@]+@gmail\.com$/i;
+import { EMAIL_RE } from "@/shared/lib/email";
 
 // Horse Owner tự đăng ký ở trang Sign Up, nên không có trong danh sách tạo tài khoản.
 const STAFF_ROLES: Role[] = ["HEAD_TRAINER", "VETERINARIAN", "GROOM", "CLUB_MANAGER"];

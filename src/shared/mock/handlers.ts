@@ -6,6 +6,7 @@
 
 import { ApiError } from "@/shared/lib/api";
 import type { HttpMethod } from "@/shared/lib/api";
+import { EMAIL_RE } from "@/shared/lib/email";
 import { passwordError } from "@/shared/lib/password";
 import { defaultNotify, defaultPermissions, normalizePermissions, notifyLock, PERMISSIONS, ROLE_LABEL } from "@/shared/lib/permissions";
 import { clearSession, readSession, writeSession } from "@/shared/lib/session";
@@ -76,7 +77,6 @@ const OTP_MAX_ATTEMPTS = 5;
 const LOGIN_MAX_FAILS = 5;
 const LOGIN_LOCK = 15 * 60 * 1000;
 const PASSWORD_MAX_AGE_DAYS = 180;
-const EMAIL_RE = /^[^\s@]+@gmail\.com$/i;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const norm = (email: unknown) => String(email ?? "").trim().toLowerCase();

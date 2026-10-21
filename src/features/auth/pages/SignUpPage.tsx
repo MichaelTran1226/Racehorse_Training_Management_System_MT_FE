@@ -16,7 +16,7 @@ import styles from "./AuthPages.module.css";
 import { fullNameError } from "@/shared/lib/name";
 
 import { tr } from "@/shared/i18n/tr";
-const EMAIL_RE = /^[^\s@]+@gmail\.com$/i;
+import { EMAIL_RE } from "@/shared/lib/email";
 
 // Trang này CHỈ để Horse Owner tự đăng ký (không có ô chọn vai trò); nhân viên do Club Manager mời.
 

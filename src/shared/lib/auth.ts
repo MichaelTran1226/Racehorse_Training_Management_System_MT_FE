@@ -7,8 +7,11 @@ import type { AuthUser } from "@/shared/types/auth";
 // Backend thật trả kèm cặp JWT; mock chỉ trả { user }.
 type LoginResponse = { user: AuthUser } & Partial<TokenPair>;
 
+// Server không trả lời trong 15 giây => báo "Cannot reach the server" thay vì để nút quay mãi.
+const LOGIN_TIMEOUT_MS = 15_000;
+
 export async function login(email: string, password: string, remember: boolean): Promise<AuthUser> {
-  const res = await api<LoginResponse>("POST", "/auth/login", { email, password, remember });
+  const res = await api<LoginResponse>("POST", "/auth/login", { email, password, remember }, { timeoutMs: LOGIN_TIMEOUT_MS });
   if (res.accessToken && res.refreshToken) {
     saveTokens({ accessToken: res.accessToken, refreshToken: res.refreshToken }, remember);
   }

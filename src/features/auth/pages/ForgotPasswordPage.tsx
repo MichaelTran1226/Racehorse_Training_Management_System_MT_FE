@@ -13,7 +13,7 @@ import { EMAIL_PLACEHOLDER } from "@/shared/lib/brand";
 import styles from "./AuthPages.module.css";
 
 import { tr } from "@/shared/i18n/tr";
-const EMAIL_RE = /^[^\s@]+@gmail\.com$/i;
+import { EMAIL_RE } from "@/shared/lib/email";
 
 // Bước 1 quên mật khẩu: nhập email để nhận mã OTP.
 // Kết quả LUÔN giống nhau dù email có tồn tại hay không (thông báo trung tính).
