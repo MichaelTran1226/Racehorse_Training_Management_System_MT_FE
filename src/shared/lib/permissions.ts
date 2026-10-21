@@ -387,6 +387,51 @@ export function navFor(role: Role, permissions: PermissionMap): NavGroup[] {
 }
 
 export function isNavItemActive(navItem: NavItem, pathname: string): boolean {
+  if (navItem.href === "/training") {
+    return pathname === "/training";
+  }
+  if (navItem.href === "/plans") {
+    return (
+      pathname === "/plans" ||
+      pathname.startsWith("/plans/") ||
+      pathname === "/training/plans" ||
+      pathname.startsWith("/training/plans/")
+    );
+  }
+  if (navItem.href === "/calendar") {
+    return (
+      pathname === "/calendar" ||
+      pathname.startsWith("/calendar/") ||
+      pathname === "/training/calendar" ||
+      pathname.startsWith("/training/calendar/") ||
+      pathname === "/training/schedule" ||
+      pathname.startsWith("/training/schedule/")
+    );
+  }
+  if (navItem.href === "/trials") {
+    return (
+      pathname === "/trials" ||
+      pathname.startsWith("/trials/") ||
+      pathname === "/training/trials" ||
+      pathname.startsWith("/training/trials/")
+    );
+  }
+  if (navItem.href === "/metrics") {
+    return (
+      pathname === "/metrics" ||
+      pathname.startsWith("/metrics/") ||
+      pathname === "/training/metrics" ||
+      pathname.startsWith("/training/metrics/")
+    );
+  }
+  if (navItem.href === "/alerts") {
+    return (
+      pathname === "/alerts" ||
+      pathname.startsWith("/alerts/") ||
+      pathname === "/training/alerts" ||
+      pathname.startsWith("/training/alerts/")
+    );
+  }
   return pathname === navItem.href || pathname.startsWith(navItem.href + "/");
 }
 

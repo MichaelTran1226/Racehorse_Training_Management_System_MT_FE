@@ -5,16 +5,13 @@ import { vi } from "./locales/vi";
 import { VI_TEXT } from "./vi-text";
 
 export type SupportedLanguage = "en" | "vi";
-export const STORAGE_LANG_KEY = "equiflow-lang";
+export const STORAGE_LANG_KEY = "equiflow-lang-v2";
 
 export function getStoredLanguage(): SupportedLanguage {
   try {
     const saved = localStorage.getItem(STORAGE_LANG_KEY);
     if (saved === "en" || saved === "vi") return saved;
-    // Default to 'vi' or system language if starts with 'vi'
-    if (typeof navigator !== "undefined" && navigator.language?.startsWith("vi")) {
-      return "vi";
-    }
+    // Always default to English ('en') unless explicitly switched by user
     return "en";
   } catch {
     return "en";

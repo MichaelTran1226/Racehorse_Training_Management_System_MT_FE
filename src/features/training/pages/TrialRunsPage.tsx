@@ -12,7 +12,8 @@ import { useAppLanguage } from "@/shared/lib/language";
 import { messageFor } from "@/shared/lib/messages";
 import { todayClub, trainingApi } from "../api";
 import { SESSION_STATUS_LABEL, TRACK_LABEL } from "../types";
-import type { ExerciseSession } from "../types";
+import type { ExerciseSession, TrainingPlan } from "../types";
+import { WorkoutDialog } from "../components/WorkoutDialogs";
 
 import { tr } from "@/shared/i18n/tr";
 function plusDays(date: string, days: number): string {
@@ -23,7 +24,7 @@ function plusDays(date: string, days: number): string {
 
 /**
  * Lượt chạy thử (tab của SC-2.05): mỗi lượt là một buổi tập loại "Trial run".
- * Lên lịch ở Lịch tập; hệ thống chặn 2 lượt trên cùng mặt sân trong khung 15 phút (Q-2.04).
+ * Lên lịch trực tiếp hoặc ở Lịch tập; hệ thống chặn 2 lượt trên cùng mặt sân trong khung 15 phút.
  */
 export default function TrialRunsPage() {
   const user = useCurrentUser();
@@ -32,7 +33,11 @@ export default function TrialRunsPage() {
   const [from, setFrom] = useState(todayClub());
   const [to, setTo] = useState(plusDays(todayClub(), 14));
   const [trials, setTrials] = useState<ExerciseSession[]>([]);
+  const [plans, setPlans] = useState<TrainingPlan[]>([]);
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const canManage = user.role === "HEAD_TRAINER" || user.role === "CLUB_MANAGER";
 
   const latestRequest = useRef(0);
   const load = useCallback(async () => {
@@ -50,13 +55,21 @@ export default function TrialRunsPage() {
 
   useEffect(() => {
     void load();
+    trainingApi
+      .getPlans()
+      .then(setPlans)
+      .catch(() => {});
   }, [load]);
+
+  const handleOpenSchedule = () => {
+    setIsScheduleOpen(true);
+  };
 
   // Nhóm theo ngày + mặt sân để điều phối.
   const groups = new Map<string, ExerciseSession[]>();
-  for (const tr of trials) {
-    const key = `${tr.sessionDate} · ${TRACK_LABEL[tr.trackType]}`;
-    groups.set(key, [...(groups.get(key) ?? []), tr]);
+  for (const trSession of trials) {
+    const key = `${trSession.sessionDate} · ${TRACK_LABEL[trSession.trackType]}`;
+    groups.set(key, [...(groups.get(key) ?? []), trSession]);
   }
 
   return (
@@ -68,37 +81,43 @@ export default function TrialRunsPage() {
             {t("trialRuns.subtitle")}
           </p>
         </div>
-        <div style={{ display: "flex", gap: "0.75rem" }}>
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+          {canManage && (
+            <Button tone="primary" onClick={handleOpenSchedule}>
+              + {isVietnamese ? "Lên lịch chạy thử" : tr("Schedule Trial Run")}
+            </Button>
+          )}
           <Link to="/training/calendar">
-            <Button tone={user.role === "HEAD_TRAINER" ? "primary" : "secondary"}>
-              {user.role === "HEAD_TRAINER"
-                ? (isVietnamese ? "+ Lên lịch trên lịch tuần" : tr("+ Schedule in calendar"))
-                : (isVietnamese ? "← Lịch tập" : tr("← Schedule"))}
+            <Button tone="secondary">
+              {isVietnamese ? "📅 Xem trên lịch tuần" : tr("📅 Weekly Calendar")}
             </Button>
           </Link>
         </div>
       </div>
 
-      <div style={{ padding: "0.85rem 1rem", borderRadius: "8px", background: "color-mix(in srgb, var(--brand) 8%, var(--surface))", border: "1px solid color-mix(in srgb, var(--brand) 25%, var(--border))", fontSize: "var(--fs-body)", lineHeight: 1.5 }}>
+      <div style={{ padding: "0.75rem 1rem", borderRadius: "8px", background: "color-mix(in srgb, var(--brand) 6%, var(--surface))", border: "1px solid color-mix(in srgb, var(--brand) 20%, var(--border))", fontSize: "var(--fs-sm)", lineHeight: 1.5 }}>
         {isVietnamese ? (
           <>
-            💡 <strong>Hướng dẫn nghiệp vụ (Lượt chạy thử):</strong> Lượt chạy thử (Trial Run) là buổi tập tốc độ cao mô phỏng chặng đua chính thức có nài ngựa (Jockey) điều khiển trên đường đua thật. Để xếp một lượt chạy thử, Huấn luyện viên trưởng thêm bài tập loại <em>{tr("Trial run")}</em> trong <strong>Kế hoạch huấn luyện</strong> hoặc <strong>Lịch tuần</strong> kèm chỉ định Nài ngựa và tốc độ mục tiêu. Hệ thống sẽ tự động giám sát an toàn: không cho phép 2 lượt chạy thử trên cùng một mặt sân trong khung 15 phút và chặn tuyệt đối nếu ngựa có lệnh khóa y tế.
+            ⏱️ <strong>Theo dõi & Điều phối đường chạy thử:</strong> Giám sát các phiên chạy thử tốc độ cao. Hệ thống tự động đảm bảo khoảng cách an toàn tối thiểu 15 phút giữa 2 lượt chạy trên cùng một đường chạy và chặn ngựa đang bị khóa y tế. Bấm <em>"Ghi kết quả"</em> trên từng phiên để cập nhật tốc độ, thời gian và chỉ số phục hồi.
           </>
         ) : (
           <>
-            💡 <strong>Business Guide (Trial Runs):</strong> {tr("Trial runs are high-speed simulation workouts with professional jockeys on active tracks, requiring designated target speeds. Head Trainers schedule trial runs in")}{" "}<strong>{tr("Training Plans")}</strong> or <strong>{tr("Weekly Calendar")}</strong> {tr("(selecting workout type")}{" "}<em>{tr("Trial run")}</em>{tr("). The system strictly enforces safety by preventing two trial runs on the same track within a 15-minute window and blocking any horse under a medical lock.")}
+            ⏱️ <strong>Track Coordination & Monitoring:</strong> Monitor high-speed trial runs across active courses. The system automatically enforces a 15-minute safety buffer between consecutive runs on the same track. Click <em>"Record result"</em> on any session to log time, speed, and recovery metrics.
           </>
         )}
       </div>
 
       <Card pad={16}>
-        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "flex-end" }}>
           <Field label={isVietnamese ? "Từ ngày" : tr("From")}>
             <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
           </Field>
           <Field label={isVietnamese ? "Đến ngày" : tr("To")}>
             <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
           </Field>
+          <Button tone="secondary" onClick={() => void load()}>
+            {isVietnamese ? "Lọc" : tr("Filter")}
+          </Button>
         </div>
       </Card>
 
@@ -108,8 +127,15 @@ export default function TrialRunsPage() {
         </div>
       ) : trials.length === 0 ? (
         <EmptyState
-          title={isVietnamese ? "Không có lượt chạy thử trong khoảng thời gian này" : tr("No trial runs in this period")}
-          description={isVietnamese ? "Các lượt chạy thử sẽ xuất hiện tại đây ngay khi được xếp lịch." : tr("Trial runs appear here once they are scheduled.")}
+          title={isVietnamese ? "Chưa có lượt chạy thử nào trong khoảng thời gian này" : tr("No trial runs in this period")}
+          description={isVietnamese ? "Các lượt chạy thử sẽ xuất hiện tại đây ngay khi được xếp lịch hoặc bạn có thể tạo phiên chạy thử mới." : tr("Trial runs appear here once they are scheduled.")}
+          action={
+            canManage ? (
+              <Button tone="primary" onClick={handleOpenSchedule}>
+                + {isVietnamese ? "Lên lịch chạy thử ngay" : tr("Schedule Trial Run Now")}
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
         [...groups.entries()].map(([key, rows]) => (
@@ -124,6 +150,7 @@ export default function TrialRunsPage() {
                     <th style={{ padding: "0.5rem 0.75rem" }}>{isVietnamese ? "Nài ngựa" : tr("Jockey")}</th>
                     <th style={{ padding: "0.5rem 0.75rem" }}>{isVietnamese ? "Cự ly / Mục tiêu" : tr("Distance / target")}</th>
                     <th style={{ padding: "0.5rem 0.75rem" }}>{isVietnamese ? "Trạng thái" : tr("Status")}</th>
+                    <th style={{ padding: "0.5rem 0.75rem", textAlign: "right" }}>{isVietnamese ? "Thao tác" : tr("Actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -142,6 +169,15 @@ export default function TrialRunsPage() {
                           {SESSION_STATUS_LABEL[row.status]}
                         </Badge>
                       </td>
+                      <td style={{ padding: "0.5rem 0.75rem", textAlign: "right" }}>
+                        <Link to={`/training/sessions/${row.id}/result`}>
+                          <Button size="sm" tone={row.status === "COMPLETED" ? "secondary" : "primary"}>
+                            {row.status === "COMPLETED"
+                              ? (isVietnamese ? "Xem kết quả" : tr("View result"))
+                              : (isVietnamese ? "Ghi kết quả" : tr("Record result"))}
+                          </Button>
+                        </Link>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -150,6 +186,19 @@ export default function TrialRunsPage() {
           </Card>
         ))
       )}
+
+      {isScheduleOpen && (
+        <WorkoutDialog
+          plans={plans}
+          defaultDate={from}
+          onClose={() => setIsScheduleOpen(false)}
+          onSaved={() => {
+            setIsScheduleOpen(false);
+            void load();
+          }}
+        />
+      )}
     </div>
   );
 }
+

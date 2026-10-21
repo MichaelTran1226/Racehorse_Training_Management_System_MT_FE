@@ -24,6 +24,7 @@ import { Icon } from "@/shared/components/ui/Icon";
 import { useToast } from "@/shared/components/ui/Toast";
 import { AssignStallDialog, ReturnStallDialog, TransferStallDialog } from "@/features/stable/components/StallDialogs";
 import { formatDate, formatDateTime } from "@/shared/lib/format";
+import { useAppLanguage } from "@/shared/lib/language";
 
 import { tr, isVietnamese } from "@/shared/i18n/tr";
 /** Nguồn đổi trạng thái (Tab 4). */
@@ -36,6 +37,7 @@ const STATUS_SOURCE_LABEL: Record<string, string> = {
 
 export default function HorseDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { isVietnamese: isVi } = useAppLanguage();
   const currentUser = useCurrentUser();
   const toast = useToast();
   const [horse, setHorse] = useState<Horse | null>(null);
@@ -139,7 +141,7 @@ export default function HorseDetailPage() {
     if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
-    ageText = isVietnamese() ? `${age >= 0 ? age : 0} tuổi` : `${age >= 0 ? age : 0} y/o`;
+    ageText = isVi ? `${age >= 0 ? age : 0} tuổi` : `${age >= 0 ? age : 0} y/o`;
   }
 
   // Microchip display masking for grooms
@@ -157,12 +159,12 @@ export default function HorseDetailPage() {
 
   // 6 Tabs according to SC-1.03 (Hide stable tabs for owners, hide owner tab for VET/GROOM per CL-1.07)
   const tabs = [
-    { id: "info", label: "General Information" },
-    ...(!isOwner ? [{ id: "stable", label: "Stabling & Care" }] : [{ id: "routine", label: "Daily Routine" }]),
-    ...(canViewOwner ? [{ id: "owner", label: "Ownership & Custody" }] : []),
-    { id: "status-history", label: "Status History" },
-    ...(!isOwner ? [{ id: "stall-history", label: "Stall History" }] : []),
-    { id: "timeline", label: "Lifecycle Timeline" },
+    { id: "info", label: tr("General Information") },
+    ...(!isOwner ? [{ id: "stable", label: tr("Stabling & Care") }] : [{ id: "routine", label: tr("Daily Routine") }]),
+    ...(canViewOwner ? [{ id: "owner", label: tr("Ownership & Custody") }] : []),
+    { id: "status-history", label: tr("Status History") },
+    ...(!isOwner ? [{ id: "stall-history", label: tr("Stall History") }] : []),
+    { id: "timeline", label: tr("Lifecycle Timeline") },
   ];
 
   return (

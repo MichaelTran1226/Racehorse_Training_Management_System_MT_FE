@@ -294,3 +294,101 @@ export function subscribeNotificationSettings(onChange: () => void): () => void 
   };
 }
 
+export interface LocalizedNotification {
+  title: string;
+  message: string;
+  categoryLabel: string;
+}
+
+export function localizeNotification(n: AppNotification, isVi: boolean): LocalizedNotification {
+  const CATEGORY_MAP_VI: Record<string, string> = {
+    LOCK: "Khóa huấn luyện",
+    MEDICAL: "Hồ sơ y tế",
+    TRAINING: "Huấn luyện & Buổi tập",
+    ACCOUNT: "Tài khoản & vai trò",
+    HORSE: "Hồ sơ ngựa",
+    SYSTEM: "Hệ thống",
+  };
+
+  const CATEGORY_MAP_EN: Record<string, string> = {
+    LOCK: "Training Lock",
+    MEDICAL: "Health & Medical",
+    TRAINING: "Training & Workouts",
+    ACCOUNT: "Accounts & Roles",
+    HORSE: "Horse Profiles",
+    SYSTEM: "System Notification",
+  };
+
+  const categoryLabel = isVi
+    ? CATEGORY_MAP_VI[n.category] || "Thông báo"
+    : CATEGORY_MAP_EN[n.category] || "Notification";
+
+  if (!isVi) {
+    return {
+      title: n.title,
+      message: n.message,
+      categoryLabel,
+    };
+  }
+
+  let title = n.title;
+  let message = n.message;
+
+  if (/Horse Status Update/i.test(n.title)) {
+    title = "Cập nhật trạng thái y tế ngựa";
+  } else if (/New Account Pending Approval/i.test(n.title)) {
+    title = "Yêu cầu đăng ký tài khoản mới";
+  } else if (/Training Lock Placed/i.test(n.title)) {
+    title = "Áp đặt lệnh khóa huấn luyện y tế";
+  } else if (/Care Schedule Overdue/i.test(n.title)) {
+    title = "Lịch chăm sóc sức khỏe quá hạn";
+  } else if (/New Stall Allocation/i.test(n.title)) {
+    title = "Phân bổ vị trí chuồng mới";
+  } else if (/Workout Completed/i.test(n.title)) {
+    title = "Hoàn thành buổi tập luyện";
+  }
+
+  const lockMatch = n.message.match(/^(.*?) was placed on Medical Lock due to (.*?)\.?$/i);
+  if (lockMatch) {
+    const [, horse, reason] = lockMatch;
+    message = `Ngựa ${horse} đã bị bác sĩ thú y áp đặt Lệnh Khóa Y Tế do ${reason}.`;
+  }
+
+  const regMatch = n.message.match(/^(.*?) has registered for (.*?) role and is pending approval\.?$/i);
+  if (regMatch) {
+    const [, name, role] = regMatch;
+    const roleMap: Record<string, string> = {
+      "Groom Hand": "Nhân viên chăm sóc (Groom)",
+      "Head Trainer": "Huấn luyện viên trưởng",
+      "Veterinarian": "Bác sĩ thú y",
+      "Horse Owner": "Chủ ngựa",
+      "Club Manager": "Quản lý câu lạc bộ",
+    };
+    const roleVi = roleMap[role.trim()] || role;
+    message = `${name} đã đăng ký tài khoản vai trò ${roleVi} và đang chờ phê duyệt.`;
+  }
+
+  if (/Medical Lock (.*?) placed on (.*?)\. Heavy workouts blocked\./i.test(n.message)) {
+    const m = n.message.match(/Medical Lock (.*?) placed on (.*?)\. Heavy workouts blocked\./i);
+    if (m) message = `Lệnh khóa y tế ${m[1]} đã áp dụng cho ngựa ${m[2]}. Các buổi tập nặng đã tạm dừng.`;
+  }
+
+  if (/Farrier Hoof Care schedule for (.*?) is overdue by (\d+) days/i.test(n.message)) {
+    const m = n.message.match(/Farrier Hoof Care schedule for (.*?) is overdue by (\d+) days/i);
+    if (m) message = `Lịch đóng móng & chăm sóc móng cho ngựa ${m[1]} đã quá hạn ${m[2]} ngày.`;
+  }
+
+  if (/You have been assigned as primary groom for (.*?) at (.*?)\./i.test(n.message)) {
+    const m = n.message.match(/You have been assigned as primary groom for (.*?) at (.*?)\./i);
+    if (m) message = `Bạn được phân công làm người chăm sóc chính cho ngựa ${m[1]} tại chuồng ${m[2]}.`;
+  }
+
+  if (/(.*?) completed a trial workout session with score (.*?)\./i.test(n.message)) {
+    const m = n.message.match(/(.*?) completed a trial workout session with score (.*?)\./i);
+    if (m) message = `Ngựa ${m[1]} đã hoàn thành buổi tập với điểm số đạt được là ${m[2]}.`;
+  }
+
+  return { title, message, categoryLabel };
+}
+
+

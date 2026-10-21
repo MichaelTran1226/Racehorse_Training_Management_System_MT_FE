@@ -14,9 +14,10 @@ import {
   markNotificationAsRead,
   subscribeNotifications,
   clearAllNotifications,
+  localizeNotification,
 } from "@/shared/lib/notifications";
 
-import { tr } from "@/shared/i18n/tr";
+import { tr, isVietnamese } from "@/shared/i18n/tr";
 export default function NotificationsPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"all" | "unread">("all");
@@ -60,6 +61,7 @@ export default function NotificationsPage() {
 
   const renderItem = (n: AppNotification) => {
     const theme = getCategoryTheme(n.category);
+    const loc = localizeNotification(n, isVietnamese());
     return (
       <div
         key={n.id}
@@ -110,7 +112,7 @@ export default function NotificationsPage() {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
             <Badge tone={n.category === "LOCK" ? "danger" : n.category === "ACCOUNT" ? "violet" : "info"}>
-              {theme.label}
+              {loc.categoryLabel}
             </Badge>
             {n.senderName && (
               <span style={{ fontSize: "var(--fs-caption)", color: "var(--text-muted)" }}>
@@ -130,7 +132,7 @@ export default function NotificationsPage() {
               color: n.read ? "var(--text)" : "var(--text-strong)",
             }}
           >
-            {n.title}
+            {loc.title}
           </h4>
 
           <p
@@ -141,7 +143,7 @@ export default function NotificationsPage() {
               color: n.read ? "var(--text-muted)" : "var(--text)",
             }}
           >
-            {n.message}
+            {loc.message}
           </p>
 
           {/* Action Link Button */}

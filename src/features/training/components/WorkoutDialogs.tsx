@@ -31,6 +31,7 @@ import type {
 import { hasCode } from "./PlanDialogs";
 
 import { tr } from "@/shared/i18n/tr";
+import { useAppLanguage } from "@/shared/lib/language";
 const WEEKDAYS = [
   { n: 1, label: "Mon" },
   { n: 2, label: "Tue" },
@@ -60,6 +61,7 @@ interface WorkoutDialogProps {
  * - BE trả WARNINGS_NEED_CONFIRMATION -> hiện khung vàng, bấm Lưu lần 2 để xác nhận.
  */
 export function WorkoutDialog({ plans, plan: fixedPlan, session, defaultDate, onClose, onSaved }: WorkoutDialogProps) {
+  useAppLanguage();
   const toast = useToast();
   const editing = Boolean(session);
   const [grooms, setGrooms] = useState<Groom[]>([]);
@@ -135,22 +137,51 @@ export function WorkoutDialog({ plans, plan: fixedPlan, session, defaultDate, on
   });
 
   const submit = async () => {
+    if (!planId) {
+      setError(tr("Please select a horse and plan."));
+      return;
+    }
+    if (phases.length > 0 && !phaseId) {
+      setError(tr("Please select a phase."));
+      return;
+    }
+    if (!groomId) {
+      setError(tr("Please select an assigned groom."));
+      return;
+    }
+    if (forcedHeavy && (!speed || Number(speed) < 10 || Number(speed) > 70)) {
+      setError(tr("Target speed (10-70 km/h) is required for breeze and trial runs."));
+      return;
+    }
+    if (forcedHeavy && !jockey.trim()) {
+      setError(tr("Jockey name is required for breeze and trial runs."));
+      return;
+    }
+    if (!distance || distance < 100 || distance > 5000) {
+      setError(tr("Distance must be 100 to 5000 m."));
+      return;
+    }
+    if (!reps || reps < 1 || reps > 10) {
+      setError(tr("Reps must be 1 to 10."));
+      return;
+    }
+
     setSubmitting(true);
     setError("");
     try {
       if (session) {
         await trainingApi.updateSession(session.id, input());
-        toast.show("Workout updated.", "ok");
+        toast.show(tr("Workout updated."), "ok");
       } else if (repeat) {
         const res = await trainingApi.createRepeatSessions(planId, { ...input(), weekdays, until });
         const skipped = res.skipped.map((s) => `${s.date}: ${s.reason}`).join("; ");
         toast.show(
-          `Created ${res.created} workout(s).${res.skipped.length ? ` Skipped ${res.skipped.length} day(s): ${skipped}` : ""}`,
+          tr(`Created ${res.created} workout(s).${res.skipped.length ? ` Skipped ${res.skipped.length} day(s): ${skipped}` : ""}`),
           res.skipped.length ? "warn" : "ok",
         );
       } else {
         await trainingApi.createSession(planId, input());
-        toast.show("Workout added.", "ok");
+        toast.show(tr("Workout added."), "ok");
       }
       onSaved(date);
     } catch (err) {
@@ -174,13 +205,13 @@ export function WorkoutDialog({ plans, plan: fixedPlan, session, defaultDate, on
       width={640}
       foot={
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
-          <Button tone="ghost" onClick={onClose}>Cancel</Button>
+          <Button tone="ghost" onClick={onClose}>{tr("Cancel")}</Button>
           <Button
             tone="primary"
             onClick={() => void submit()}
             disabled={submitting || !planId || !groomId || (phases.length > 0 && !phaseId) || (needVet && !vetConsulted) || Boolean(repeatInvalid)}
           >
-            {warnings.length > 0 ? "Save anyway" : "Save workout"}
+            {warnings.length > 0 ? tr("Save anyway") : tr("Save workout")}
           </Button>
         </div>
       }
@@ -340,6 +371,7 @@ export function CancelWorkoutDialog({ session, onClose, onDone }: { session: Exe
     }
   };
 
+  useAppLanguage();
   return (
     <Modal
       title={tr(`Cancel ${EXERCISE_TYPE_LABEL[session.sessionType]} at ${session.sessionDate} ${session.startTime} – ${session.horseName}?`)}
@@ -347,8 +379,8 @@ export function CancelWorkoutDialog({ session, onClose, onDone }: { session: Exe
       onClose={onClose}
       foot={
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
-          <Button tone="ghost" onClick={onClose}>Close</Button>
-          <Button tone="danger" onClick={() => void submit()} disabled={submitting || !reason || !noteOk}>Cancel workout</Button>
+          <Button tone="ghost" onClick={onClose}>{tr("Close")}</Button>
+          <Button tone="danger" onClick={() => void submit()} disabled={submitting || !reason || !noteOk}>{tr("Cancel workout")}</Button>
         </div>
       }
     >
@@ -358,7 +390,7 @@ export function CancelWorkoutDialog({ session, onClose, onDone }: { session: Exe
             value={reason}
             onChange={(e) => setReason(e.target.value as CancelWorkoutReason)}
             options={[
-              { value: "", label: "Select a reason", disabled: true },
+              { value: "", label: tr("Select a reason"), disabled: true },
               ...(Object.keys(CANCEL_REASON_LABEL) as CancelWorkoutReason[]).map((r) => ({ value: r, label: CANCEL_REASON_LABEL[r] })),
             ]}
           />
@@ -373,6 +405,7 @@ export function CancelWorkoutDialog({ session, onClose, onDone }: { session: Exe
 
 /** DL-2.07 Khôi phục buổi tập bị chặn (sau khi gỡ khóa), có thể dời ngày giờ. */
 export function RestoreWorkoutDialog({ session, onClose, onDone }: { session: ExerciseSession; onClose: () => void; onDone: () => void }) {
+  useAppLanguage();
   const toast = useToast();
   const today = todayClub();
   const [date, setDate] = useState(session.sessionDate >= today ? session.sessionDate : today);
@@ -385,7 +418,7 @@ export function RestoreWorkoutDialog({ session, onClose, onDone }: { session: Ex
     setError("");
     try {
       await trainingApi.restoreBlockedSession(session.id, clubIso(date, time));
-      toast.show("Workout restored.", "ok");
+      toast.show(tr("Workout restored."), "ok");
       onDone();
       onClose();
     } catch (err) {
@@ -401,8 +434,8 @@ export function RestoreWorkoutDialog({ session, onClose, onDone }: { session: Ex
       onClose={onClose}
       foot={
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
-          <Button tone="ghost" onClick={onClose}>Cancel</Button>
-          <Button tone="primary" onClick={() => void submit()} disabled={submitting}>Restore</Button>
+          <Button tone="ghost" onClick={onClose}>{tr("Cancel")}</Button>
+          <Button tone="primary" onClick={() => void submit()} disabled={submitting}>{tr("Restore")}</Button>
         </div>
       }
     >

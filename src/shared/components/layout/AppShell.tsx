@@ -66,8 +66,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             onMenu={() => setMenuOpen(true)}
             onLogout={() => setLogoutOpen(true)}
           />
-          {/* key theo ngôn ngữ: đổi ngôn ngữ thì trang vẽ lại để mọi chữ tr() đổi theo. */}
-          <main id="content" className={styles.content} key={lang}>
+          <main id="content" className={styles.content}>
             {children}
           </main>
         </div>

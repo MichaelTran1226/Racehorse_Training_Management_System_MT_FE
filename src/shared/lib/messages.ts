@@ -121,20 +121,74 @@ const DYNAMIC: Record<string, (d: Record<string, unknown>) => string | undefined
   POSITION_TAKEN: (d) => `This grid position is already used by stall ${d.stallCode}.`,
 };
 
+import { isVietnamese, tr } from "@/shared/i18n/tr";
+
+const VI_TO_EN: Record<string, string> = {
+  "Ngày tập là bắt buộc.": "Scheduled date is required.",
+  "Ngày tập không hợp lệ.": "Scheduled date is invalid.",
+  "Vui lòng chọn giai đoạn.": "Please select a phase.",
+  "Vui lòng chọn loại bài tập.": "Please select a workout type.",
+  "Vui lòng chọn cường độ.": "Please select intensity.",
+  "Cự ly phải là số nguyên.": "Distance must be an integer.",
+  "Cự ly phải từ 100 đến 5000 m.": "Distance must be 100 to 5000 m.",
+  "Số hiệp phải từ 1 đến 10.": "Repetitions must be 1 to 10.",
+  "Tốc độ mục tiêu phải từ 10 đến 70 km/h.": "Target speed must be 10 to 70 km/h.",
+  "Mặt đường chạy không hợp lệ.": "Track surface is invalid.",
+  "Vui lòng chọn nhân viên phụ trách.": "Please select an assigned staff member.",
+  "Ghi chú hướng dẫn tối đa 500 ký tự.": "Instructions can be at most 500 characters.",
+  "Nhận xét phải từ 10 đến 2000 ký tự.": "Comment must be 10 to 2000 characters.",
+  "Nhận xét phải từ 2 đến 2000 ký tự.": "Comment must be 2 to 2000 characters.",
+  "Vui lòng nhập nhận xét.": "Please enter a comment.",
+  "Vui lòng mô tả dấu hiệu bất thường (10-500 ký tự).": "Please describe abnormal signs (10-500 characters).",
+  "Vui lòng mô tả dấu hiệu bất thường (2-500 ký tự).": "Please describe abnormal signs (2-500 characters).",
+  "Điểm phong độ phải từ 1 đến 10.": "Performance score must be 1 to 10.",
+  "Vui lòng chọn mức hoàn thành.": "Please select completion level.",
+  "Ngày bắt đầu không được trong quá khứ.": "Start date cannot be in the past.",
+  "Giáo án cần ít nhất 1 giai đoạn.": "A plan needs at least one phase.",
+  "Không thể xếp lịch buổi tập trong quá khứ.": "A workout cannot be scheduled in the past.",
+  "Giờ bắt đầu phải trong khoảng 04:00 - 20:00.": "Start time must be between 04:00 and 20:00.",
+  "Ngày tập phải nằm trong khoảng thời gian của giai đoạn.": "Workout date must be within the phase dates.",
+  "Cần nhập tốc độ mục tiêu cho bài tập nước rút hoặc chạy thử.": "Target speed is required for breeze and trial runs.",
+  "Cần nhập tên nài ngựa cho bài tập nước rút hoặc chạy thử.": "Jockey name is required for breeze and trial runs.",
+  "Một ngựa chỉ được tập tối đa 3 buổi mỗi ngày.": "A horse can have at most 3 workouts per day.",
+  "Khung giờ chạy thử bị trùng trên đường chạy này.": "Trial run slot is already taken on this track.",
+  "Chỉ được sửa buổi tập ở trạng thái Đã lên lịch.": "Only scheduled workouts can be edited.",
+  "Đã có lượt chạy thử khác trên mặt sân này trong khung 15 phút.": "Another trial run is already scheduled on this track within 15 minutes.",
+  "Ngựa đang bị Khóa huấn luyện y tế.": "The horse is currently under a Medical Training Lock.",
+  "Chưa chọn người chăm sóc.": "Please select an assigned groom.",
+  "Chưa chọn giai đoạn giáo án.": "Please select a training phase.",
+};
+
 export function messageFor(err: unknown): string {
   if (err instanceof ApiError) {
-    if (
-      err.message &&
-      err.message !== err.code &&
-      err.message !== "Not Found" &&
-      err.message !== "Bad Request" &&
-      err.message !== "Forbidden resource"
-    ) {
-      return err.message;
+    const enGeneric = GENERIC[err.code];
+    if (isVietnamese()) {
+      if (
+        err.message &&
+        err.message !== err.code &&
+        err.message !== "Not Found" &&
+        err.message !== "Bad Request" &&
+        err.message !== "Forbidden resource"
+      ) {
+        return tr(err.message);
+      }
+      return enGeneric ? tr(enGeneric) : tr("Something went wrong. Try again.");
+    } else {
+      // English mode: prefer English generic by error code if available
+      if (enGeneric) return enGeneric;
+      if (
+        err.message &&
+        err.message !== err.code &&
+        err.message !== "Not Found" &&
+        err.message !== "Bad Request" &&
+        err.message !== "Forbidden resource"
+      ) {
+        return VI_TO_EN[err.message] ?? err.message;
+      }
+      return "Something went wrong. Try again.";
     }
-    return GENERIC[err.code] ?? err.message ?? "Something went wrong. Try again.";
   }
-  return "Something went wrong. Try again.";
+  return isVietnamese() ? tr("Something went wrong. Try again.") : "Something went wrong. Try again.";
 }
 
 // Câu lỗi cho ô nhập mã OTP.

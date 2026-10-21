@@ -17,6 +17,7 @@ import { PHASE_TYPE_LABEL } from "../types";
 import type { PhaseSurface, PhaseType, TrainingPhase, TrainingPlan } from "../types";
 
 import { tr } from "@/shared/i18n/tr";
+import { useAppLanguage } from "@/shared/lib/language";
 const SURFACE_LABEL: Record<PhaseSurface, string> = { TURF: "Turf", DIRT: "Dirt", SYNTHETIC: "Mixed / synthetic" };
 const MEDICAL = ["UNDER_OBSERVATION", "INJURED", "ISOLATED"];
 
@@ -41,22 +42,23 @@ function newPhase(startDate: string, endDate: string, index: number): TrainingPh
 
 /** Kiểm form trước khi gửi (BE kiểm lại tất cả). Trả câu lỗi đầu tiên hoặc "". */
 function validate(name: string, objective: string, start: string, end: string, phases: TrainingPhase[]): string {
-  if (name.trim().length < 3 || name.trim().length > 150) return "Plan name must be 3 to 150 characters.";
-  if (objective.trim().length < 10 || objective.trim().length > 1000) return "Objective must be 10 to 1000 characters.";
-  if (end < start) return "End date must be on or after the start date.";
-  if (phases.length === 0) return "A plan needs at least one phase.";
+  if (name.trim().length < 3 || name.trim().length > 150) return tr("Plan name must be 3 to 150 characters.");
+  if (objective.trim().length < 10 || objective.trim().length > 1000) return tr("Objective must be 10 to 1000 characters.");
+  if (end < start) return tr("End date must be on or after the start date.");
+  if (phases.length === 0) return tr("A plan needs at least one phase.");
   const sorted = [...phases].sort((a, b) => a.startDate.localeCompare(b.startDate));
   for (const [i, p] of sorted.entries()) {
-    if (p.name.trim().length < 2) return "Each phase needs a name (2-100 characters).";
-    if (p.endDate < p.startDate) return `Phase ${p.name}: end date must be on or after the start date.`;
-    if (p.startDate < start || p.endDate > end) return `Phase ${p.name} must be within the plan dates.`;
-    if (i > 0 && p.startDate <= sorted[i - 1].endDate) return `Phase ${p.name} overlaps phase ${sorted[i - 1].name}.`;
+    if (p.name.trim().length < 2) return tr("Each phase needs a name (2-100 characters).");
+    if (p.endDate < p.startDate) return tr("Phase {{name}}: end date must be on or after the start date.", { name: p.name });
+    if (p.startDate < start || p.endDate > end) return tr("Phase {{name}} must be within the plan dates.", { name: p.name });
+    if (i > 0 && p.startDate <= sorted[i - 1].endDate) return tr("Phase {{name}} overlaps phase {{prev}}.", { name: p.name, prev: sorted[i - 1].name });
   }
   return "";
 }
 
 /** SC-2.03 Tạo / Sửa giáo án (HT). Sửa được khi Nháp hoặc Đang áp dụng. */
 export default function PlanWizardPage() {
+  useAppLanguage();
   const { id } = useParams<{ id?: string }>();
   const editing = Boolean(id);
   const navigate = useNavigate();
@@ -169,7 +171,7 @@ export default function PlanWizardPage() {
       const payload = { horseId, phaseName: name.trim(), objective: objective.trim(), notes: notes.trim(), startDate, endDate, phases };
       const saved = editing && id ? await trainingApi.updatePlan(id, payload) : await trainingApi.createPlan(payload);
       setDirty(false);
-      toast.show("Training plan saved.", "ok");
+      toast.show(tr("Training plan saved! You can now add workouts to each phase."), "ok");
       navigate(`/training/plans/${saved.id}${activate ? "?activate=1" : ""}`);
     } catch (err) {
       setError(messageFor(err));
@@ -190,9 +192,58 @@ export default function PlanWizardPage() {
           {editing ? tr(`Edit ${existing?.planCode ?? "plan"}`) : tr("Create Training Plan")}
         </h1>
         <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
-          {tr("A new plan is saved as a draft. Add workouts, then activate it.")}
+          {tr("Create plan architecture with phases first (Step 1). Once saved, you can immediately add workouts and schedule sessions on the Weekly Calendar (Step 2).")}
         </p>
       </div>
+
+      {/* 2-Step Periodization Roadmap Guide */}
+      <Card pad={16}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.5rem 0.875rem",
+                borderRadius: "var(--r-sm, 6px)",
+                background: "var(--brand-muted, rgba(16, 185, 129, 0.12))",
+                border: "1px solid var(--brand, #10b981)",
+                color: "var(--brand, #10b981)",
+                fontWeight: 700,
+                fontSize: "var(--fs-sm)",
+              }}
+            >
+              <span style={{ width: 20, height: 20, borderRadius: "50%", background: "var(--brand, #10b981)", color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem" }}>
+                1
+              </span>
+              <span>{tr("Step 1: Goals, Duration & Phases")}</span>
+            </div>
+            <span style={{ color: "var(--muted)", fontWeight: 700 }}>➔</span>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.5rem 0.875rem",
+                borderRadius: "var(--r-sm, 6px)",
+                background: "var(--surface-sunken, #f8fafc)",
+                border: "1px dashed var(--border)",
+                color: "var(--muted)",
+                fontSize: "var(--fs-sm)",
+              }}
+            >
+              <span style={{ width: 20, height: 20, borderRadius: "50%", background: "var(--muted)", color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem" }}>
+                2
+              </span>
+              <span>{tr("Step 2: Add Workouts & Calendar")}</span>
+            </div>
+          </div>
+          <div style={{ fontSize: "var(--fs-xs)", color: "var(--muted)", maxWidth: 360 }}>
+            💡 {tr("Why this order? Workouts require Phase boundaries and dates to ensure horse conditioning safety.")}
+          </div>
+        </div>
+      </Card>
 
       {error && <Alert tone="danger" title={tr("Cannot save")}>{error}</Alert>}
 
@@ -311,11 +362,11 @@ export default function PlanWizardPage() {
       <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", padding: "0.75rem 0" }}>
         <Button tone="ghost" onClick={cancel}>{tr("Cancel")}</Button>
         <Button tone="secondary" onClick={() => void save(false)} disabled={submitting || !horseId}>
-          {editing && existing?.status === "ACTIVE" ? tr("Save") : tr("Save draft")}
+          {editing ? tr("Save draft changes") : tr("Save Draft")}
         </Button>
         {canActivateAfterSave && (
           <Button tone="primary" onClick={() => void save(true)} disabled={submitting || !horseId}>
-            {tr("Save and activate")}
+            {editing ? tr("Save and activate") : tr("Save Plan & Next: Add Workouts ➔")}
           </Button>
         )}
       </div>

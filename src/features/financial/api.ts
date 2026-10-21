@@ -65,3 +65,11 @@ export async function generateMonthlyInvoices(
 ): Promise<{ success: boolean; createdCount: number; billingPeriod: string }> {
   return api("POST", "/invoices/generate-monthly", { billingPeriod });
 }
+
+export async function payInvoice(
+  id: string,
+  paymentData?: { paymentMethod?: string; transactionRef?: string },
+): Promise<FinancialInvoice> {
+  return api<FinancialInvoice>("POST", `/invoices/${id}/pay`, paymentData || {});
+}
+

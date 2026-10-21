@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Modal } from "@/shared/components/ui/Modal";
 import { Button } from "@/shared/components/ui/Button";
 import { tr } from "@/shared/i18n/tr";
+import { useAppLanguage } from "@/shared/lib/language";
 import type { Tournament, TrackSurface, TournamentStatus } from "../types";
 
 interface TournamentModalProps {
@@ -17,6 +18,7 @@ export function TournamentModal({
   onSubmit,
   initialData,
 }: TournamentModalProps) {
+  useAppLanguage();
   const [name, setName] = useState("");
   const [raceDate, setRaceDate] = useState("");
   const [registrationDeadline, setRegistrationDeadline] = useState("");
@@ -52,7 +54,7 @@ export function TournamentModal({
       setDistanceMeters(1600);
       setTrackType("TURF");
       setPrizePool(100000000);
-      setStatus("UPCOMING");
+      setStatus("OPEN_REGISTRATION");
     }
     setError(null);
   }, [initialData, isOpen]);
@@ -75,6 +77,12 @@ export function TournamentModal({
     }
     if (new Date(registrationDeadline) > new Date(raceDate)) {
       setError(tr("Registration deadline cannot be after the race date"));
+      return;
+    }
+
+    const isDeadlinePassed = new Date(registrationDeadline + "T23:59:59") < new Date();
+    if (status === "OPEN_REGISTRATION" && isDeadlinePassed) {
+      setError(tr("Cannot open registration because the registration deadline has already passed"));
       return;
     }
 
@@ -184,7 +192,13 @@ export function TournamentModal({
               type="date"
               required
               value={registrationDeadline}
-              onChange={(e) => setRegistrationDeadline(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setRegistrationDeadline(val);
+                if (val && new Date(val + "T23:59:59") < new Date() && status === "OPEN_REGISTRATION") {
+                  setStatus("CLOSED_REGISTRATION");
+                }
+              }}
               style={{
                 width: "100%",
                 padding: "0.625rem 0.875rem",
@@ -299,25 +313,39 @@ export function TournamentModal({
             <label style={{ display: "block", fontSize: "var(--fs-sm, 0.875rem)", fontWeight: 600, marginBottom: "0.375rem" }}>
               {tr("Status")}
             </label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as TournamentStatus)}
-              style={{
-                width: "100%",
-                padding: "0.625rem 0.875rem",
-                borderRadius: "var(--r-sm, 6px)",
-                border: "1px solid var(--border)",
-                background: "var(--surface)",
-                color: "var(--ink)",
-                fontSize: "var(--fs-body)",
-              }}
-            >
-              <option value="UPCOMING">{tr("Upcoming")}</option>
-              <option value="OPEN_REGISTRATION">{tr("Registration Open")}</option>
-              <option value="CLOSED_REGISTRATION">{tr("Registration Closed")}</option>
-              <option value="COMPLETED">{tr("Completed")}</option>
-              <option value="CANCELLED">{tr("Cancelled")}</option>
-            </select>
+            {(() => {
+              const isDeadlinePassed = registrationDeadline ? new Date(registrationDeadline + "T23:59:59") < new Date() : false;
+              return (
+                <>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value as TournamentStatus)}
+                    style={{
+                      width: "100%",
+                      padding: "0.625rem 0.875rem",
+                      borderRadius: "var(--r-sm, 6px)",
+                      border: "1px solid var(--border)",
+                      background: "var(--surface)",
+                      color: "var(--ink)",
+                      fontSize: "var(--fs-body)",
+                    }}
+                  >
+                    <option value="UPCOMING">{tr("Upcoming (Not opened yet)")}</option>
+                    <option value="OPEN_REGISTRATION" disabled={isDeadlinePassed}>
+                      {tr("Registration Open")} {isDeadlinePassed ? `(${tr("Deadline passed")})` : ""}
+                    </option>
+                    <option value="CLOSED_REGISTRATION">{tr("Registration Closed")}</option>
+                    <option value="COMPLETED">{tr("Completed")}</option>
+                    <option value="CANCELLED">{tr("Cancelled")}</option>
+                  </select>
+                  {isDeadlinePassed && (
+                    <p style={{ margin: "0.375rem 0 0", fontSize: "0.75rem", color: "var(--warning-text, #d97706)" }}>
+                      ⚠️ {tr("Deadline has passed. Status cannot be Open for Registration.")}
+                    </p>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
       </form>

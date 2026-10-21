@@ -1,4 +1,4 @@
-import type { Tournament, TournamentRegistration, TournamentResult } from "@/features/racing/types";
+import type { Tournament } from "@/features/racing/types";
 
 const RACING_STORAGE_KEY = "equiflow_mock_tournaments";
 
@@ -141,6 +141,21 @@ const INITIAL_TOURNAMENTS: Tournament[] = [
     status: "UPCOMING",
     createdAt: "2026-10-10T09:00:00Z",
     updatedAt: "2026-10-10T09:00:00Z",
+    registeredCount: 0,
+    registrations: [],
+  },
+  {
+    id: "tourney-04",
+    name: "Phu Tho Summer Classic 2026",
+    raceDate: "2026-08-15T08:00:00Z",
+    location: "Phu Tho Racecourse - Track B",
+    distanceMeters: 1600,
+    trackType: "TURF",
+    prizePool: 150000000,
+    registrationDeadline: "2026-08-01T23:59:59Z",
+    status: "CANCELLED",
+    createdAt: "2026-07-01T09:00:00Z",
+    updatedAt: "2026-08-02T10:00:00Z",
     registeredCount: 0,
     registrations: [],
   },

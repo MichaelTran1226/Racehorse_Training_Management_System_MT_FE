@@ -1,0 +1,373 @@
+/* ActionItemsCard.module.css
+ * Enterprise Task Center / Việc cần làm for TMEC Dashboard
+ * Supports Light & Dark themes natively
+ */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px 24px 20px;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04));
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.2s ease;
+}
+
+/* Header Section */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.headerIconBox {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #E8F2EB;
+  color: #244638;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+:global([data-theme="dark"]) .headerIconBox,
+:global(.theme-dark) .headerIconBox {
+  background: rgba(141, 187, 164, 0.2);
+  color: #8DBBA4;
+}
+
+.title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 750;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.badge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #8F3340;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.viewAllLink {
+  font-size: 13px;
+  color: var(--text-2);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.viewAllLink:hover {
+  color: var(--brand);
+  text-decoration: underline;
+}
+
+/* Separator */
+.divider {
+  height: 1px;
+  background: var(--border-soft);
+  margin: 0 0 16px;
+  border: none;
+}
+
+/* Tabs Bar (with bottom baseline) */
+.tabsBar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border, #DCE5DE);
+  padding: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabsBar::-webkit-scrollbar {
+  display: none;
+}
+
+.tabBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px 10px;
+  border-radius: 8px 8px 0 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  outline: none;
+  background: transparent;
+  color: var(--muted, #78847D);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.tabBtn:hover {
+  color: var(--text, #26332C);
+  background: rgba(36, 70, 56, 0.04);
+}
+
+.tabBtnActive {
+  background: #E8F2EB;
+  color: #244638;
+  font-weight: 700;
+  border-bottom: 3px solid #244638;
+}
+
+:global([data-theme="dark"]) .tabBtnActive,
+:global(.theme-dark) .tabBtnActive {
+  background: rgba(141, 187, 164, 0.18);
+  color: #8DBBA4;
+  border-bottom: 3px solid #8DBBA4;
+}
+
+/* Tasks List */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Task Item Card */
+.taskCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-radius: 14px;
+  background: #FAFBFA;
+  border: 1px solid #DCE5DE;
+  gap: 16px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+:global([data-theme="dark"]) .taskCard,
+:global(.theme-dark) .taskCard {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+.taskCard:hover {
+  border-color: var(--border-strong, #C9D3CB);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.cardLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  flex: 1;
+}
+
+/* Left Icon Squircle */
+.iconCircle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* 4 Characteristic Pastel Icon Backgrounds */
+.iconAccount {
+  background: #E8F0FF;
+  color: #4168E8;
+}
+:global([data-theme="dark"]) .iconAccount,
+:global(.theme-dark) .iconAccount {
+  background: rgba(65, 104, 232, 0.25);
+  color: #8da5ff;
+}
+
+.iconStable {
+  background: #FFF3D0;
+  color: #C78325;
+}
+:global([data-theme="dark"]) .iconStable,
+:global(.theme-dark) .iconStable {
+  background: rgba(199, 131, 37, 0.25);
+  color: #fed7aa;
+}
+
+.iconHealth {
+  background: #FCE8E8;
+  color: #D33B35;
+}
+:global([data-theme="dark"]) .iconHealth,
+:global(.theme-dark) .iconHealth {
+  background: rgba(211, 59, 53, 0.25);
+  color: #fca5a5;
+}
+
+.iconTraining {
+  background: #F0E9FF;
+  color: #8054E8;
+}
+:global([data-theme="dark"]) .iconTraining,
+:global(.theme-dark) .iconTraining {
+  background: rgba(128, 84, 232, 0.25);
+  color: #c4b5fd;
+}
+
+.textGroup {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.taskTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.taskSubtitle {
+  font-size: 13.5px;
+  color: var(--muted);
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Card Right: Time + CTA Button */
+.cardRight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.taskTime {
+  font-size: 13px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 8px;
+  background: #FFFFFF;
+  border: 1px solid #DCE5DE;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+:global([data-theme="dark"]) .actionBtn,
+:global(.theme-dark) .actionBtn {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.actionBtn:hover {
+  background: #F5F8F5;
+  border-color: #315D4B;
+  color: #244638;
+}
+
+:global([data-theme="dark"]) .actionBtn:hover,
+:global(.theme-dark) .actionBtn:hover {
+  background: rgba(141, 187, 164, 0.15);
+  border-color: #8DBBA4;
+  color: #8DBBA4;
+}
+
+/* Empty State */
+.emptyState {
+  padding: 36px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.emptyTitle {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.emptySubtitle {
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 320px;
+  line-height: 1.45;
+}
+
+/* Mobile & Tablet Responsive */
+@media (max-width: 640px) {
+  .taskCard {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px 16px;
+    gap: 12px;
+  }
+
+  .cardLeft {
+    width: 100%;
+  }
+
+  .taskTitle,
+  .taskSubtitle {
+    white-space: normal;
+  }
+
+  .cardRight {
+    width: 100%;
+    justify-content: space-between;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-soft);
+  }
+
+  .actionBtn {
+    flex: 1;
+    max-width: 140px;
+  }
+}
