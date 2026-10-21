@@ -182,8 +182,8 @@ export default function SessionResultPage() {
 
     if (recoveryHr) {
       const rec = Number(recoveryHr);
-      if (isNaN(rec) || rec < 20 || rec > 220) {
-        errs.recoveryHr = tr("Recovery heart rate must be 20 to 220 bpm.");
+      if (isNaN(rec) || rec < 20 || rec > 200) {
+        errs.recoveryHr = tr("Recovery heart rate must be 20 to 200 bpm.");
       } else if (peakHr && rec > Number(peakHr)) {
         errs.recoveryHr = tr("Recovery heart rate cannot exceed peak heart rate.");
       }

@@ -3501,7 +3501,7 @@ export const VI_TEXT: Record<string, string> = {
   "Running time is required (format mm:ss.s or seconds).": "Vui lòng nhập thời gian chạy (định dạng mm:ss.s hoặc số giây).",
   "Running time is not valid (format mm:ss.s or seconds).": "Thời gian chạy không hợp lệ (định dạng mm:ss.s hoặc số giây).",
   "Peak heart rate must be 20 to 260 bpm.": "Nhịp tim đỉnh phải từ 20 đến 260 bpm.",
-  "Recovery heart rate must be 20 to 220 bpm.": "Nhịp tim phục hồi phải từ 20 đến 220 bpm.",
+  "Recovery heart rate must be 20 to 200 bpm.": "Nhịp tim phục hồi phải từ 20 đến 200 bpm.",
   "Recovery heart rate cannot exceed peak heart rate.": "Nhịp tim phục hồi không thể cao hơn nhịp tim đỉnh.",
   "Please select a performance score.": "Vui lòng chọn điểm đánh giá phong độ.",
   "Please select a completion level.": "Vui lòng chọn mức độ hoàn thành bài tập.",
