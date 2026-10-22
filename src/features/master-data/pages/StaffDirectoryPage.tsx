@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
-import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
+import { useCurrentUser } from '@/shared/components/layout/authContext';
 import { Card } from "@/shared/components/ui/Card";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";

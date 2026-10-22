@@ -7,14 +7,15 @@ import { Select } from '@/shared/components/form/Select';
 import { Badge } from '@/shared/components/ui/Badge';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { Alert } from '@/shared/components/ui/Alert';
-import { useCurrentUser } from '@/shared/components/layout/AuthProvider';
+import { useCurrentUser } from '@/shared/components/layout/authContext';
 import { tr } from '@/shared/i18n/tr';
 import { messageFor } from '@/shared/lib/messages';
 import { incidentsApi } from '../api/incidentsApi';
 import { subscribeSimulatorEvent } from '@/features/training/simulatorSocket';
-import { IncidentReportModal, COMMON_SYMPTOMS } from '../components/IncidentReportModal';
+import { IncidentReportModal } from '../components/IncidentReportModal';
 import { IncidentDetailModal } from '../components/IncidentDetailModal';
 import type { IncidentReport, IncidentSeverity, IncidentStatus } from '../types/incidents';
+import { COMMON_SYMPTOMS } from '../types/incidents';
 
 export default function IncidentListPage() {
   const user = useCurrentUser();

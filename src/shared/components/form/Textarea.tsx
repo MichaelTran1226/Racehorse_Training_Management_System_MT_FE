@@ -1,6 +1,6 @@
 import type { TextareaHTMLAttributes } from "react";
 import { cx } from "@/shared/lib/cx";
-import { useFieldControl } from "./Field";
+import { useFieldControl } from "./fieldContext";
 import styles from "./Control.module.css";
 import { tr } from "@/shared/i18n/tr";
 

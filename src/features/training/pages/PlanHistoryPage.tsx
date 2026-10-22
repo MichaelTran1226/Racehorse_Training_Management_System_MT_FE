@@ -5,7 +5,7 @@ import { Button } from "@/shared/components/ui/Button";
 import { Card } from "@/shared/components/ui/Card";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Select } from "@/shared/components/form/Select";
-import { useToast } from "@/shared/components/ui/Toast";
+import { useToast } from '@/shared/components/ui/useToast';
 import { messageFor } from "@/shared/lib/messages";
 import { trainingApi } from "../api";
 import type { TrainingPlan } from "../types";

@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
-import { useToast } from "@/shared/components/ui/Toast";
+import { useToast } from '@/shared/components/ui/useToast';
 import { changeHorseStatus } from "../api";
 import { HEALTH_STATUS } from "@/shared/lib/status";
 import { messageFor } from "@/shared/lib/messages";
-import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
+import { useCurrentUser } from '@/shared/components/layout/authContext';
 import { Badge } from "@/shared/components/ui/Badge";
 import type { HealthStatus, HorseStatus } from "@/shared/types/enums";
 import type { Horse } from "../types";

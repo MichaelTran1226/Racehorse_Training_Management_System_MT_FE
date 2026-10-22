@@ -6,13 +6,12 @@ import { Textarea } from '@/shared/components/form/Textarea';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Alert } from '@/shared/components/ui/Alert';
-import { useToast } from '@/shared/components/ui/Toast';
-import { useCurrentUser } from '@/shared/components/layout/AuthProvider';
+import { useToast } from '@/shared/components/ui/useToast';
+import { useCurrentUser } from '@/shared/components/layout/authContext';
 import { tr } from '@/shared/i18n/tr';
 import { messageFor } from '@/shared/lib/messages';
 import { incidentsApi } from '../api/incidentsApi';
-import { COMMON_SYMPTOMS } from './IncidentReportModal';
-import type { IncidentReport, IncidentSeverity, IncidentStatus } from '../types/incidents';
+import { COMMON_SYMPTOMS, type IncidentReport, type IncidentSeverity, type IncidentStatus } from '../types/incidents';
 
 interface IncidentDetailModalProps {
   incident: IncidentReport;

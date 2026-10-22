@@ -1,7 +1,7 @@
 import type { SelectHTMLAttributes } from "react";
 import { Icon } from "@/shared/components/ui/Icon";
 import { cx } from "@/shared/lib/cx";
-import { useFieldControl } from "./Field";
+import { useFieldControl } from "./fieldContext";
 import styles from "./Control.module.css";
 import { trNode } from "@/shared/i18n/tr";
 

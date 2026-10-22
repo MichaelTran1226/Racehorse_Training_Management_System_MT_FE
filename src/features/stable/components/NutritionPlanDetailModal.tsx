@@ -5,7 +5,7 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { Alert } from '@/shared/components/ui/Alert';
 import { Textarea } from '@/shared/components/form/Textarea';
 import { Field } from '@/shared/components/form/Field';
-import { useToast } from '@/shared/components/ui/Toast';
+import { useToast } from '@/shared/components/ui/useToast';
 import { tr } from '@/shared/i18n/tr';
 import { messageFor } from '@/shared/lib/messages';
 import { nutritionApi } from '../api/nutritionApi';

@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { InputHTMLAttributes } from "react";
 import { Icon } from "@/shared/components/ui/Icon";
 import { cx } from "@/shared/lib/cx";
-import { useFieldControl } from "./Field";
+import { useFieldControl } from "./fieldContext";
 import styles from "./Control.module.css";
 import { tr } from "@/shared/i18n/tr";
 

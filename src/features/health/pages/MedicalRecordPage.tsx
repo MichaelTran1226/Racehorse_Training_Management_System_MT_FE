@@ -6,8 +6,8 @@ import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { HealthBadge } from "@/shared/components/ui/HealthBadge";
 import { Icon } from "@/shared/components/ui/Icon";
 import { Tabs } from "@/shared/components/ui/Tabs";
-import { useAuth } from "@/shared/components/layout/AuthProvider";
-import { useToast } from "@/shared/components/ui/Toast";
+import { useAuth } from '@/shared/components/layout/authContext';
+import { useToast } from '@/shared/components/ui/useToast';
 import { cx } from "@/shared/lib/cx";
 import {
   getHorseMedicalProfile,

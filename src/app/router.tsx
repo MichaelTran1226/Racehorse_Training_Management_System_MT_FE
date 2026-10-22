@@ -1,6 +1,4 @@
-import { Suspense } from "react";
-import { createBrowserRouter, Navigate, Outlet, useParams, useRouteError } from "react-router-dom";
-import { tr } from "@/shared/i18n/tr";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import AuditLogPage from "@/features/dashboard/pages/AuditLogPage";
 import AccountListPage from "@/features/accounts/pages/AccountListPage";
 import StaffDirectoryPage from "@/features/master-data/pages/StaffDirectoryPage";
@@ -9,7 +7,6 @@ import HorseDetailPage from "@/features/horses/pages/HorseDetailPage";
 import HorseFormPage from "@/features/horses/pages/HorseFormPage";
 import DeletedHorsesPage from "@/features/horses/pages/DeletedHorsesPage";
 import AcceptInvitePage from "@/features/auth/pages/AcceptInvitePage";
-import PermissionMatrix from "@/features/accounts/pages/PermissionMatrix";
 import ChangePasswordPage from "@/features/auth/pages/ChangePasswordPage";
 import Forbidden403Page from "@/features/auth/pages/Forbidden403Page";
 import ForgotPasswordPage from "@/features/auth/pages/ForgotPasswordPage";
@@ -21,7 +18,6 @@ import ResetPasswordPage from "@/features/auth/pages/ResetPasswordPage";
 import SessionExpiredPage from "@/features/auth/pages/SessionExpiredPage";
 import SignUpPage from "@/features/auth/pages/SignUpPage";
 import VerifyEmailPage from "@/features/auth/pages/VerifyEmailPage";
-import ComingSoonPage from "@/features/dashboard/pages/ComingSoonPage";
 import DashboardPage from "@/features/dashboard/pages/DashboardPage";
 import NotificationsPage from "@/features/dashboard/pages/NotificationsPage";
 import NotificationSettingsPage from "@/features/dashboard/pages/NotificationSettingsPage";
@@ -62,102 +58,15 @@ import {
   RaceResultsPage,
   OwnerFinancialReportsPage,
 } from "./lazyPages";
-import { AppShell } from "@/shared/components/layout/AppShell";
-import { Providers } from "@/shared/components/layout/Providers";
-import { RoleGuard } from "./RoleGuard";
-import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
+import {
+  AppLayout,
+  ComingSoonRoute,
+  PermissionMatrixRoute,
+  RootLayout,
+  RouteErrorBoundary,
+  TrainingProgressRoute,
+} from "./RouteLayouts";
 
-// BẢNG ROUTE DUY NHẤT của ứng dụng: đường dẫn URL → trang thật nằm trong features/*/pages.
-// Thêm màn hình mới = thêm một dòng { path, element } vào đây (xem CONTRIBUTING.md).
-
-// Bắt lỗi phát sinh từ các tuyến đường hoặc xung đột DOM do tiện ích dịch tự động
-function RouteErrorBoundary() {
-  const error = useRouteError();
-  console.error("Route error captured:", error);
-  return (
-    <div style={{ padding: "4rem 1.5rem", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
-      <h2 style={{ fontSize: "var(--fs-kpi)", fontWeight: 700, margin: 0, color: "var(--ink)" }}>
-        {tr("Unexpected Display Conflict")}
-      </h2>
-      <p style={{ color: "var(--muted)", maxWidth: 520, margin: 0, fontSize: "var(--fs-body)", lineHeight: 1.6 }}>
-        {tr("The browser encountered a DOM reconciliation conflict (often caused by auto-translation extensions). Please reload or navigate back to the dashboard.")}
-      </p>
-      <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.5rem" }}>
-        <button
-          type="button"
-          onClick={() => window.location.reload()}
-          style={{
-            padding: "0.625rem 1.25rem",
-            background: "var(--brand)",
-            color: "var(--text-on-brand)",
-            border: "none",
-            borderRadius: "var(--r-sm)",
-            cursor: "pointer",
-            fontWeight: 600,
-          }}
-        >
-          {tr("Reload Page")}
-        </button>
-        <a
-          href="/herd"
-          style={{
-            padding: "0.625rem 1.25rem",
-            background: "var(--surface)",
-            color: "var(--ink)",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--r-sm)",
-            textDecoration: "none",
-            fontWeight: 600,
-          }}
-        >
-          {tr("Back to Herd Health")}
-        </a>
-      </div>
-    </div>
-  );
-}
-
-// Bọc mọi trang bằng các provider toàn cục (toast, trạng thái đăng nhập).
-function RootLayout() {
-  return (
-    <Providers>
-      <Outlet />
-    </Providers>
-  );
-}
-
-// Khung chung của mọi trang SAU đăng nhập: Sidebar + Topbar. Chưa đăng nhập thì AppShell đưa về /login.
-function AppLayout() {
-  return (
-    <AppShell>
-      {/* RoleGuard chặn trang khi tài khoản không đủ quyền (hiện 403 ngay tại URL đó). */}
-      <RoleGuard>
-        {/* Nhóm Y tế và Huấn luyện tải theo route (React.lazy) để file JS đầu tiên nhẹ hơn. */}
-        <Suspense fallback={<p role="status" style={{ margin: 0, color: "var(--muted)" }}>Loading…</p>}>
-          <Outlet />
-        </Suspense>
-      </RoleGuard>
-    </AppShell>
-  );
-}
-
-// Lấy :id từ URL /accounts/:id/permissions rồi truyền cho trang.
-function PermissionMatrixRoute() {
-  const { id = "" } = useParams();
-  return <PermissionMatrix accountId={id} />;
-}
-
-// "Training Progress" trên menu: Chủ ngựa xem giáo án ngựa của mình (SC-2.02), nhân viên xem Tổng quan (SC-2.01).
-function TrainingProgressRoute() {
-  const user = useCurrentUser();
-  return user.role === "HORSE_OWNER" ? <PlanListPage /> : <TrainingOverviewPage />;
-}
-
-// Mọi đường dẫn chưa có trang riêng (ngựa, huấn luyện, y tế...). RoleGuard trong AppShell đã kiểm quyền trước đó.
-function ComingSoonRoute() {
-  const { "*": path = "" } = useParams();
-  return <ComingSoonPage slug={path.split("/")[0] ?? ""} />;
-}
 
 export const router = createBrowserRouter([
   {

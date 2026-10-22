@@ -6,7 +6,7 @@ import { Select } from "@/shared/components/form/Select";
 import { Textarea } from "@/shared/components/form/Textarea";
 import { Checkbox } from "@/shared/components/form/Checkbox";
 import { Alert } from "@/shared/components/ui/Alert";
-import { useToast } from "@/shared/components/ui/Toast";
+import { useToast } from '@/shared/components/ui/useToast';
 import { messageFor } from "@/shared/lib/messages";
 import { changeHorseStatus } from "../api";
 import { RETIRE_REASON_LABEL } from "../types";

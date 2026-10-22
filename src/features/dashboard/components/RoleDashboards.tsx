@@ -12,7 +12,8 @@ import { EXERCISE_TYPE_LABEL, SESSION_STATUS_LABEL, type ExerciseSession } from 
 import { getZones } from "@/features/stable/api";
 import { getHorses } from "@/features/horses/api";
 import { listAccounts } from "@/features/accounts/api";
-import { Block, Line, Stat, StatRow, TwoCols, useLoaded } from "./DashboardBlocks";
+import { Block, Line, Stat, StatRow, TwoCols } from "./DashboardBlocks";
+import { useLoaded } from "./useLoaded";
 
 import { tr } from "@/shared/i18n/tr";
 const COLOR = { ok: "var(--ok)", warn: "var(--warn)", danger: "var(--danger)", violet: "var(--violet)" };

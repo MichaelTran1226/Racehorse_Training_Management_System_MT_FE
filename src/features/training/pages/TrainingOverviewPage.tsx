@@ -8,7 +8,7 @@ import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Checkbox } from "@/shared/components/form/Checkbox";
 import { Input } from "@/shared/components/form/Input";
 import { Select } from "@/shared/components/form/Select";
-import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
+import { useCurrentUser } from '@/shared/components/layout/authContext';
 import { HEALTH_STATUS } from "@/shared/lib/status";
 import { messageFor } from "@/shared/lib/messages";
 import type { HealthStatus } from "@/shared/types/enums";

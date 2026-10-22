@@ -4,7 +4,7 @@ import { Button } from "@/shared/components/ui/Button";
 import { Field } from "@/shared/components/form/Field";
 import { Select } from "@/shared/components/form/Select";
 import { Textarea } from "@/shared/components/form/Textarea";
-import { useToast } from "@/shared/components/ui/Toast";
+import { useToast } from '@/shared/components/ui/useToast';
 import { api } from "@/shared/lib/api";
 import { messageFor } from "@/shared/lib/messages";
 import type { PublicAccount } from "@/shared/types/auth";

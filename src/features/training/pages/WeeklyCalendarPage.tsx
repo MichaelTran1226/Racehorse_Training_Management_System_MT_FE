@@ -7,7 +7,7 @@ import { Card } from "@/shared/components/ui/Card";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Input } from "@/shared/components/form/Input";
 import { Select } from "@/shared/components/form/Select";
-import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
+import { useCurrentUser } from '@/shared/components/layout/authContext';
 import { ROLES } from "@/shared/types/auth";
 import { useAppLanguage } from "@/shared/lib/language";
 import { messageFor } from "@/shared/lib/messages";

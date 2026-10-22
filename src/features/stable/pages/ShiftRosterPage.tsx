@@ -5,7 +5,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Alert } from '@/shared/components/ui/Alert';
 import { Select } from '@/shared/components/form/Select';
-import { useCurrentUser } from '@/shared/components/layout/AuthProvider';
+import { useCurrentUser } from '@/shared/components/layout/authContext';
 import { useAppLanguage } from '@/shared/lib/language';
 import { messageFor } from '@/shared/lib/messages';
 import { tr } from '@/shared/i18n/tr';

@@ -5,7 +5,7 @@ import { Button } from "@/shared/components/ui/Button";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Input } from "@/shared/components/form/Input";
 import { Select } from "@/shared/components/form/Select";
-import { useAuth } from "@/shared/components/layout/AuthProvider";
+import { useAuth } from '@/shared/components/layout/authContext';
 import { listRecords } from "../api";
 import type { MedicalRecord } from "../types";
 import styles from "./MedicalRecordPage.module.css";

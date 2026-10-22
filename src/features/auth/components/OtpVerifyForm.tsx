@@ -4,7 +4,7 @@ import { Field } from "@/shared/components/form/Field";
 import { OtpInput } from "@/shared/components/form/OtpInput";
 import { Alert } from "@/shared/components/ui/Alert";
 import { Button } from "@/shared/components/ui/Button";
-import { useToast } from "@/shared/components/ui/Toast";
+import { useToast } from '@/shared/components/ui/useToast';
 import { ApiError } from "@/shared/lib/api";
 import { formatCountdown, formatDateTime } from "@/shared/lib/format";
 import { useCountdown } from "@/shared/lib/hooks";

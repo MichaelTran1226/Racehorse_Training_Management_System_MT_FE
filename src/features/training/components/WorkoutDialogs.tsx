@@ -7,7 +7,7 @@ import { Field } from "@/shared/components/form/Field";
 import { Input } from "@/shared/components/form/Input";
 import { Select } from "@/shared/components/form/Select";
 import { Textarea } from "@/shared/components/form/Textarea";
-import { useToast } from "@/shared/components/ui/Toast";
+import { useToast } from '@/shared/components/ui/useToast';
 import { messageFor } from "@/shared/lib/messages";
 import { clubIso, todayClub, trainingApi } from "../api";
 import {
@@ -28,7 +28,7 @@ import type {
   TrackType,
   TrainingPlan,
 } from "../types";
-import { hasCode } from "./PlanDialogs";
+import { hasCode } from "@/shared/lib/api";
 
 import { tr } from "@/shared/i18n/tr";
 const WEEKDAYS = [

@@ -1,4 +1,4 @@
-import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
+import { useCurrentUser } from '@/shared/components/layout/authContext';
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import {
   GroomDashboard,

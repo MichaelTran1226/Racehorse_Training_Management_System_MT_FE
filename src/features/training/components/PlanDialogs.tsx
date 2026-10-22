@@ -7,9 +7,8 @@ import { Field } from "@/shared/components/form/Field";
 import { Input } from "@/shared/components/form/Input";
 import { Select } from "@/shared/components/form/Select";
 import { Textarea } from "@/shared/components/form/Textarea";
-import { useToast } from "@/shared/components/ui/Toast";
+import { useToast } from '@/shared/components/ui/useToast';
 import { useAppLanguage } from "@/shared/lib/language";
-import { ApiError } from "@/shared/lib/api";
 import { messageFor } from "@/shared/lib/messages";
 import { getHorses } from "@/features/horses/api";
 import type { Horse } from "@/features/horses/types";
@@ -254,9 +253,4 @@ export function ClonePlanDialog({ plan, onClose, onDone }: DialogProps) {
       </div>
     </Modal>
   );
-}
-
-/** Lỗi API có mã nào không (dùng cho các hộp thoại cần bấm lần 2). */
-export function hasCode(err: unknown, code: string): err is ApiError {
-  return err instanceof ApiError && err.code === code;
 }

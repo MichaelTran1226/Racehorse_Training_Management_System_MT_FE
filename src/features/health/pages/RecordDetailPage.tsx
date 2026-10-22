@@ -5,8 +5,8 @@ import { Button } from "@/shared/components/ui/Button";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Icon } from "@/shared/components/ui/Icon";
 import { Tabs } from "@/shared/components/ui/Tabs";
-import { useAuth } from "@/shared/components/layout/AuthProvider";
-import { useToast } from "@/shared/components/ui/Toast";
+import { useAuth } from '@/shared/components/layout/authContext';
+import { useToast } from '@/shared/components/ui/useToast';
 import {
   addFollowUp,
   addPrescription,

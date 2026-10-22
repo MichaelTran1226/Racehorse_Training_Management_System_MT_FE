@@ -1,22 +1,9 @@
-import { createContext, useContext, useId } from "react";
+import { useId } from "react";
 import type { ReactNode } from "react";
 import { Icon } from "@/shared/components/ui/Icon";
 import styles from "./Field.module.css";
 import { trNode } from "@/shared/i18n/tr";
-
-interface FieldControl {
-  id: string;
-  describedBy?: string;
-  invalid: boolean;
-}
-
-// Field "chia sẻ" id, mô tả lỗi và trạng thái invalid cho ô nhập nằm bên trong qua Context,
-// nên trang không phải tự đặt id/htmlFor/aria-describedby cho từng ô.
-const FieldContext = createContext<FieldControl | null>(null);
-
-export function useFieldControl(): FieldControl | null {
-  return useContext(FieldContext);
-}
+import { FieldContext, type FieldControl } from "./fieldContext";
 
 interface FieldProps {
   label: string;

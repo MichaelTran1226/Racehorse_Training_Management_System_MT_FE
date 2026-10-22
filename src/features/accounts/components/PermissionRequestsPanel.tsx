@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Alert } from "@/shared/components/ui/Alert";
 import { Button } from "@/shared/components/ui/Button";
 import { Card } from "@/shared/components/ui/Card";
-import { useToast } from "@/shared/components/ui/Toast";
+import { useToast } from '@/shared/components/ui/useToast';
 import { formatDateTime } from "@/shared/lib/format";
 import { messageFor } from "@/shared/lib/messages";
 import { ROLE_LABEL } from "@/shared/lib/permissions";

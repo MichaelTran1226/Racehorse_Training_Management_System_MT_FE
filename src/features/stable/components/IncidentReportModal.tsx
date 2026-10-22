@@ -5,13 +5,14 @@ import { Select } from '@/shared/components/form/Select';
 import { Textarea } from '@/shared/components/form/Textarea';
 import { Button } from '@/shared/components/ui/Button';
 import { Alert } from '@/shared/components/ui/Alert';
-import { useToast } from '@/shared/components/ui/Toast';
+import { useToast } from '@/shared/components/ui/useToast';
 import { tr } from '@/shared/i18n/tr';
 import { messageFor } from '@/shared/lib/messages';
 import { getHorses } from '@/features/horses/api';
 import { incidentsApi } from '../api/incidentsApi';
 import type { Horse } from '@/features/horses/types';
 import type { IncidentReport, IncidentSeverity } from '../types/incidents';
+import { COMMON_SYMPTOMS } from '../types/incidents';
 
 interface IncidentReportModalProps {
   initialHorseId?: string;
@@ -19,17 +20,6 @@ interface IncidentReportModalProps {
   onClose: () => void;
   onSuccess: (incident: IncidentReport) => void;
 }
-
-export const COMMON_SYMPTOMS: Array<{ key: string; label: string }> = [
-  { key: 'COLIC', label: 'Colic / Abdominal Pain' },
-  { key: 'LOSS_OF_APPETITE', label: 'Loss of Appetite' },
-  { key: 'FEVER', label: 'Fever / High Temperature' },
-  { key: 'HOOF_INJURY', label: 'Hoof Injury' },
-  { key: 'LAMENESS', label: 'Lameness / Limping' },
-  { key: 'COUGHING', label: 'Coughing / Respiratory Distress' },
-  { key: 'WOUND', label: 'Wound / External Bleeding' },
-  { key: 'OTHER', label: 'Other Abnormal Signs' },
-];
 
 export function IncidentReportModal({
   initialHorseId,

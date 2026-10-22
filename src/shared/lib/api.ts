@@ -24,6 +24,12 @@ export class ApiError extends Error {
   }
 }
 
+/** Kiểm tra lỗi API có mã code tương ứng (hữu ích cho error handling). */
+export function hasCode(err: unknown, code: string): err is ApiError {
+  return err instanceof ApiError && err.code === code;
+}
+
+
 // true = dữ liệu giả trong trình duyệt (không có backend).
 export const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true";
 const API_URL = import.meta.env.VITE_API_URL ?? "";

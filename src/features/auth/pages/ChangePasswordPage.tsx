@@ -8,7 +8,7 @@ import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { Alert } from "@/shared/components/ui/Alert";
 import { Button } from "@/shared/components/ui/Button";
 import { Card } from "@/shared/components/ui/Card";
-import { useToast } from "@/shared/components/ui/Toast";
+import { useToast } from '@/shared/components/ui/useToast';
 import { ApiError } from "@/shared/lib/api";
 import { formatDate } from "@/shared/lib/format";
 import { messageFor } from "@/shared/lib/messages";

@@ -8,7 +8,7 @@ import { Segmented } from "@/shared/components/ui/Segmented";
 import { Input } from "@/shared/components/form/Input";
 import { Select } from "@/shared/components/form/Select";
 import { Checkbox } from "@/shared/components/form/Checkbox";
-import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
+import { useCurrentUser } from '@/shared/components/layout/authContext';
 import { messageFor } from "@/shared/lib/messages";
 import { formatDate, formatDateTime, formatTime } from "@/shared/lib/format";
 import { getStalls, getZones } from "@/features/stable/api";

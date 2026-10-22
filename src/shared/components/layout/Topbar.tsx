@@ -16,7 +16,7 @@ import { getHealthBoard, type HealthBoardHorse } from "@/features/health/api";
 import { HEALTH_STATUS } from "@/shared/lib/status";
 import type { HealthStatus } from "@/shared/types/enums";
 import type { BreadcrumbSegment } from "@/shared/lib/navigation";
-import { useAuth } from "./AuthProvider";
+import { useAuth } from './authContext';
 import { NotificationPopover } from "./NotificationPopover";
 import { SearchSuggestionsPopover } from "./SearchSuggestionsPopover";
 import styles from "./Topbar.module.css";

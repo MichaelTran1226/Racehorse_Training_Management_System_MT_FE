@@ -8,7 +8,7 @@ import { breadcrumbFor } from "@/shared/lib/navigation";
 import { ROLE_LABEL } from "@/shared/lib/permissions";
 import { useAppLanguage } from "@/shared/lib/language";
 import { startNotificationPolling } from "@/shared/lib/notifications";
-import { useAuth } from "./AuthProvider";
+import { useAuth } from './authContext';
 import { BreadcrumbContext } from "./BreadcrumbContext";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";

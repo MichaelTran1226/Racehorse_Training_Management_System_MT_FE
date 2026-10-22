@@ -8,7 +8,7 @@ import { HealthBadge } from "@/shared/components/ui/HealthBadge";
 import { Segmented } from "@/shared/components/ui/Segmented";
 import { Select } from "@/shared/components/form/Select";
 import { Checkbox } from "@/shared/components/form/Checkbox";
-import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
+import { useCurrentUser } from '@/shared/components/layout/authContext';
 import { messageFor } from "@/shared/lib/messages";
 import { formatDate, formatTime } from "@/shared/lib/format";
 import type { HealthStatus } from "@/shared/types/enums";

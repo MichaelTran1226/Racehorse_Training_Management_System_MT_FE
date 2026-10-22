@@ -80,3 +80,14 @@ export interface IncidentsListResponse {
   limit: number;
   totalPages: number;
 }
+
+export const COMMON_SYMPTOMS: Array<{ key: string; label: string }> = [
+  { key: 'COLIC', label: 'Colic / Abdominal Pain' },
+  { key: 'LOSS_OF_APPETITE', label: 'Loss of Appetite' },
+  { key: 'FEVER', label: 'Fever / High Temperature' },
+  { key: 'HOOF_INJURY', label: 'Hoof Injury' },
+  { key: 'LAMENESS', label: 'Lameness / Limping' },
+  { key: 'COUGHING', label: 'Coughing / Respiratory Distress' },
+  { key: 'WOUND', label: 'Wound / External Bleeding' },
+  { key: 'OTHER', label: 'Other Abnormal Signs' },
+];

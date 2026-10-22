@@ -11,8 +11,8 @@ import { Input } from "@/shared/components/form/Input";
 import { Select } from "@/shared/components/form/Select";
 import { Textarea } from "@/shared/components/form/Textarea";
 import { Checkbox } from "@/shared/components/form/Checkbox";
-import { useToast } from "@/shared/components/ui/Toast";
-import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
+import { useToast } from '@/shared/components/ui/useToast';
+import { useCurrentUser } from '@/shared/components/layout/authContext';
 import { messageFor } from "@/shared/lib/messages";
 import {
   createStall,

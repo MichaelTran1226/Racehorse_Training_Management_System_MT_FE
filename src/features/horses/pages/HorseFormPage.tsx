@@ -8,7 +8,7 @@ import { Select } from "@/shared/components/form/Select";
 import { Field } from "@/shared/components/form/Field";
 import { Alert } from "@/shared/components/ui/Alert";
 import { ConfirmModal } from "@/shared/components/ui/ConfirmModal";
-import { useToast } from "@/shared/components/ui/Toast";
+import { useToast } from '@/shared/components/ui/useToast';
 import { ApiError } from "@/shared/lib/api";
 import { getHorseById, createHorse, updateHorse, getHorseCatalog } from "../api";
 import type { Horse, CreateHorsePayload, UpdateHorsePayload, HorseCatalogItem } from "../types";

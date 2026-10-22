@@ -13,7 +13,7 @@ import { Pagination } from "@/shared/components/ui/Pagination";
 import { Field } from "@/shared/components/form/Field";
 import { Input } from "@/shared/components/form/Input";
 import { Textarea } from "@/shared/components/form/Textarea";
-import { useToast } from "@/shared/components/ui/Toast";
+import { useToast } from '@/shared/components/ui/useToast';
 import { HEALTH_STATUS } from "@/shared/lib/status";
 import { formatDateTime } from "@/shared/lib/format";
 import { messageFor } from "@/shared/lib/messages";

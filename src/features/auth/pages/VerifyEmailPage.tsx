@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AuthLayout, HERO_TEAM } from "@/shared/components/layout/AuthLayout";
+import { AuthLayout } from "@/shared/components/layout/AuthLayout";
+import { HERO_TEAM } from "@/shared/components/layout/authHeroes";
 import { formatDateTime, formatTime } from "@/shared/lib/format";
 import { useQueryParams } from "@/shared/lib/hooks";
 import { verifyEmail } from "../api";

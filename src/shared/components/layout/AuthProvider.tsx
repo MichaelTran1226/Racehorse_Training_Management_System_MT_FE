@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerApiHandlers } from "@/shared/lib/api";
@@ -9,20 +9,7 @@ import type { AuthUser } from "@/shared/types/auth";
 const IDLE_MS = 30 * 60 * 1000;
 const ACTIVITY_EVENTS = ["click", "keydown", "pointerdown", "scroll"] as const;
 
-type AuthStatus = "loading" | "authenticated" | "anonymous";
-
-interface AuthContextValue {
-  status: AuthStatus;
-  user: AuthUser | null;
-  expired: boolean;
-  signIn: (email: string, password: string, remember: boolean) => Promise<AuthUser>;
-  signOut: () => Promise<void>;
-  refresh: () => Promise<void>;
-  setUser: (user: AuthUser) => void;
-  markExpired: () => void;
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null);
+import { AuthContext, type AuthContextValue, type AuthStatus } from "./authContext";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
@@ -113,17 +100,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
-  return ctx;
-}
-
-// Dùng trong các trang nằm SAU AppShell (đã chắc chắn có người đăng nhập).
-export function useCurrentUser(): AuthUser {
-  const { user } = useAuth();
-  if (!user) throw new Error("useCurrentUser needs a signed-in user");
-  return user;
 }

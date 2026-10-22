@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Field } from "@/shared/components/form/Field";
 import { Input } from "@/shared/components/form/Input";
 import { Checkbox } from "@/shared/components/form/Checkbox";
-import { useAuth } from "@/shared/components/layout/AuthProvider";
+import { useAuth } from '@/shared/components/layout/authContext';
 import { AuthLayout } from "@/shared/components/layout/AuthLayout";
 import { Alert } from "@/shared/components/ui/Alert";
 import type { AlertTone } from "@/shared/components/ui/Alert";

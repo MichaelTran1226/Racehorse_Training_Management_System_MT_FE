@@ -10,8 +10,8 @@ import { messageFor } from "@/shared/lib/messages";
 import { HEALTH_STATUS } from "@/shared/lib/status";
 import type { HealthStatus } from "@/shared/types/enums";
 import { clubParts, trainingApi } from "../api";
-import { FitnessChart, SERIES_COLOR, SERIES_LABEL } from "../components/FitnessChart";
-import type { FitnessSeries } from "../components/FitnessChart";
+import { FitnessChart } from "../components/FitnessChart";
+import { type FitnessSeries, SERIES_COLOR, SERIES_LABEL } from "../components/fitnessChartConstants";
 import { EXERCISE_TYPE_LABEL } from "../types";
 import type { FitnessData } from "../types";
 

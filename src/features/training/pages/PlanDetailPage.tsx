@@ -7,7 +7,7 @@ import { Card } from "@/shared/components/ui/Card";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Select } from "@/shared/components/form/Select";
 import { Tabs } from "@/shared/components/ui/Tabs";
-import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
+import { useCurrentUser } from '@/shared/components/layout/authContext';
 import { formatDateTime } from "@/shared/lib/format";
 import { messageFor } from "@/shared/lib/messages";
 import { todayClub, trainingApi } from "../api";

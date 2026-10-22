@@ -5,7 +5,7 @@ import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
 import { KpiTile } from "@/shared/components/ui/KpiTile";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
-import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
+import { useCurrentUser } from '@/shared/components/layout/authContext';
 import { tr } from "@/shared/i18n/tr";
 import { fetchOwnerSummary, changeInvoiceStatus, generateMonthlyInvoices } from "../api";
 import type { InvoiceStatus, OwnerSummaryResponse } from "../types";

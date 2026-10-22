@@ -1,20 +1,13 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { cx } from "@/shared/lib/cx";
 import { Icon } from "./Icon";
 import styles from "./Toast.module.css";
 import { tr, trNode } from "@/shared/i18n/tr";
-
-export type ToastTone = "ok" | "warn" | "danger" | "info";
+import { ToastContext, type ToastOptions, type ToastTone } from "./useToast";
 
 const ICONS: Record<ToastTone, string> = { ok: "checkCircle", warn: "alert", danger: "xCircle", info: "info" };
 const DURATION_MS = 4200;
-
-// Nút hành động trong toast, ví dụ "Undo" sau khi xóa hồ sơ ngựa.
-export interface ToastOptions {
-  action?: { label: string; onClick: () => void };
-  durationMs?: number;
-}
 
 interface ToastItem {
   id: number;
@@ -22,12 +15,6 @@ interface ToastItem {
   tone: ToastTone;
   action?: ToastOptions["action"];
 }
-
-interface ToastApi {
-  show: (message: string, tone?: ToastTone, options?: ToastOptions) => void;
-}
-
-const ToastContext = createContext<ToastApi | null>(null);
 
 // Toast thông báo lưu thành công ở góc dưới bên phải: trang không nhảy, tự biến mất sau ~4 giây.
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -88,10 +75,4 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       </div>
     </ToastContext.Provider>
   );
-}
-
-export function useToast(): ToastApi {
-  const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error("useToast must be used inside <ToastProvider>");
-  return ctx;
 }

@@ -3,7 +3,7 @@ import { Modal } from '@/shared/components/ui/Modal';
 import { Field } from '@/shared/components/form/Field';
 import { Button } from '@/shared/components/ui/Button';
 import { Alert } from '@/shared/components/ui/Alert';
-import { useToast } from '@/shared/components/ui/Toast';
+import { useToast } from '@/shared/components/ui/useToast';
 import { messageFor } from '@/shared/lib/messages';
 import { tr } from '@/shared/i18n/tr';
 import { copyWeekRosters } from '../api/shiftRosterApi';

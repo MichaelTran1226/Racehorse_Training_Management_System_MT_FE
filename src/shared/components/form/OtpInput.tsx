@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { ClipboardEvent, KeyboardEvent } from "react";
 import { cx } from "@/shared/lib/cx";
-import { useFieldControl } from "./Field";
+import { useFieldControl } from "./fieldContext";
 import { tr } from "@/shared/i18n/tr";
 import styles from "./OtpInput.module.css";
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Input } from "@/shared/components/form/Input";
-import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
+import { useCurrentUser } from '@/shared/components/layout/authContext';
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { Alert } from "@/shared/components/ui/Alert";
 import { Avatar } from "@/shared/components/ui/Avatar";
@@ -15,7 +15,7 @@ import type { Column } from "@/shared/components/ui/DataTable";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Pagination } from "@/shared/components/ui/Pagination";
 import { Tabs } from "@/shared/components/ui/Tabs";
-import { useToast } from "@/shared/components/ui/Toast";
+import { useToast } from '@/shared/components/ui/useToast';
 import { formatDate, formatDateTime, formatTime } from "@/shared/lib/format";
 import { messageFor } from "@/shared/lib/messages";
 import { ROLE_LABEL } from "@/shared/lib/permissions";

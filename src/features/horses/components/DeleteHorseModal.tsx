@@ -6,7 +6,7 @@ import { Field } from "@/shared/components/form/Field";
 import { Input } from "@/shared/components/form/Input";
 import { Textarea } from "@/shared/components/form/Textarea";
 import { Alert } from "@/shared/components/ui/Alert";
-import { useToast } from "@/shared/components/ui/Toast";
+import { useToast } from '@/shared/components/ui/useToast';
 import { messageFor } from "@/shared/lib/messages";
 import { deleteHorse, restoreHorse } from "../api";
 import type { Horse } from "../types";

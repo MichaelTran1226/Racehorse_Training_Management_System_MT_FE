@@ -10,7 +10,7 @@ import { Card } from "@/shared/components/ui/Card";
 import { ConfirmModal } from "@/shared/components/ui/ConfirmModal";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Switch } from "@/shared/components/ui/Switch";
-import { useToast } from "@/shared/components/ui/Toast";
+import { useToast } from '@/shared/components/ui/useToast';
 import { ApiError } from "@/shared/lib/api";
 import { formatDate, padCount } from "@/shared/lib/format";
 import { messageFor } from "@/shared/lib/messages";

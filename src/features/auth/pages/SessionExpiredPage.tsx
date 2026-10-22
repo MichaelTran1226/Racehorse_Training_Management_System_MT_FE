@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useAuth } from "@/shared/components/layout/AuthProvider";
+import { useAuth } from '@/shared/components/layout/authContext';
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { Card } from "@/shared/components/ui/Card";
 

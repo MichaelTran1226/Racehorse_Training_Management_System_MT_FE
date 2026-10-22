@@ -3,23 +3,9 @@ import { clubParts } from "../api";
 import type { FitnessData } from "../types";
 
 import { tr } from "@/shared/i18n/tr";
-export type FitnessSeries = "speed" | "score" | "peakHr" | "recoveryHr" | "load";
+import { type FitnessSeries, SERIES_COLOR, SERIES_LABEL } from "./fitnessChartConstants";
 
-export const SERIES_LABEL: Record<FitnessSeries, string> = {
-  speed: "Avg speed (km/h)",
-  score: "Performance (1-10)",
-  peakHr: "Peak heart rate",
-  recoveryHr: "HR after 10 min",
-  load: "Weekly load",
-};
-
-const COLORS: Record<FitnessSeries, string> = {
-  speed: "var(--info)",
-  score: "var(--ok)",
-  peakHr: "var(--danger)",
-  recoveryHr: "var(--warn)",
-  load: "var(--border-field)",
-};
+const COLORS = SERIES_COLOR;
 
 const W = 760;
 const H = 280;
@@ -103,5 +89,3 @@ export function FitnessChart({ data, series, from, to }: { data: FitnessData; se
     </svg>
   );
 }
-
-export const SERIES_COLOR = COLORS;

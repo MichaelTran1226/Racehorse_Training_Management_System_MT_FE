@@ -7,7 +7,7 @@ import { Alert } from '@/shared/components/ui/Alert';
 import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { Input } from '@/shared/components/form/Input';
 import { Select } from '@/shared/components/form/Select';
-import { useCurrentUser } from '@/shared/components/layout/AuthProvider';
+import { useCurrentUser } from '@/shared/components/layout/authContext';
 import { useAppLanguage } from '@/shared/lib/language';
 import { tr } from '@/shared/i18n/tr';
 import { messageFor } from '@/shared/lib/messages';

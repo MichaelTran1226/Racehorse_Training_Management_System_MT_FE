@@ -6,25 +6,12 @@ import styles from "./VitalsDisplay.module.css";
 import { formatDate, formatDateTime } from "@/shared/lib/format";
 
 import { tr } from "@/shared/i18n/tr";
+import { isHeartRateWarning, isRespiratoryWarning, isTempWarning } from "./vitalsWarnings";
+
 interface VitalsDisplayProps {
   vitals?: VitalSigns;
   history?: (VitalSigns & { recordedAt: string })[];
   recordedAt?: string;
-}
-
-export function isTempWarning(temp?: number): boolean {
-  if (temp === undefined || temp === null) return false;
-  return temp < 37.2 || temp > 38.6;
-}
-
-export function isHeartRateWarning(hr?: number): boolean {
-  if (hr === undefined || hr === null) return false;
-  return hr < 28 || hr > 44;
-}
-
-export function isRespiratoryWarning(rr?: number): boolean {
-  if (rr === undefined || rr === null) return false;
-  return rr < 8 || rr > 16;
 }
 
 export function VitalsDisplay({ vitals, history, recordedAt }: VitalsDisplayProps) {

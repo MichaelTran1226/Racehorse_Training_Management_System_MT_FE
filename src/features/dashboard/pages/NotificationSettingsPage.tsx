@@ -4,8 +4,8 @@ import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
 import { Icon } from "@/shared/components/ui/Icon";
 import { Switch } from "@/shared/components/ui/Switch";
-import { useAuth } from "@/shared/components/layout/AuthProvider";
-import { useToast } from "@/shared/components/ui/Toast";
+import { useAuth } from '@/shared/components/layout/authContext';
+import { useToast } from '@/shared/components/ui/useToast';
 import {
   NOTIFICATION_CATEGORIES,
   getDefaultNotificationSettings,

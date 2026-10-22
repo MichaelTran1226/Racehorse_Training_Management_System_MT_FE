@@ -6,7 +6,7 @@ import { Badge } from "@/shared/components/ui/Badge";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { KpiTile } from "@/shared/components/ui/KpiTile";
 import { Tabs } from "@/shared/components/ui/Tabs";
-import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
+import { useCurrentUser } from '@/shared/components/layout/authContext';
 import { tr } from "@/shared/i18n/tr";
 import {
   fetchTournaments,

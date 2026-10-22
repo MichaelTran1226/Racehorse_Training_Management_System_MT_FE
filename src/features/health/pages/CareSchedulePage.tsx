@@ -14,8 +14,8 @@ import type { BadgeTone } from "@/shared/lib/status";
 import { Input } from "@/shared/components/form/Input";
 import { Modal } from "@/shared/components/ui/Modal";
 import { Textarea } from "@/shared/components/form/Textarea";
-import { useAuth } from "@/shared/components/layout/AuthProvider";
-import { useToast } from "@/shared/components/ui/Toast";
+import { useAuth } from '@/shared/components/layout/authContext';
+import { useToast } from '@/shared/components/ui/useToast';
 import { healthApi } from "../api";
 import type { PreventiveCareItem, PreventiveStatus } from "../types";
 

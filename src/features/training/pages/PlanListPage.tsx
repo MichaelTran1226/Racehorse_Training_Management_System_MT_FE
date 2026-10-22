@@ -8,7 +8,7 @@ import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { Input } from "@/shared/components/form/Input";
 import { Pagination } from "@/shared/components/ui/Pagination";
 import { Tabs } from "@/shared/components/ui/Tabs";
-import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
+import { useCurrentUser } from '@/shared/components/layout/authContext';
 import { messageFor } from "@/shared/lib/messages";
 import { trainingApi } from "../api";
 import { ClonePlanDialog } from "../components/PlanDialogs";

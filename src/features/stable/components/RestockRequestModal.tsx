@@ -6,7 +6,7 @@ import { Select } from '@/shared/components/form/Select';
 import { Textarea } from '@/shared/components/form/Textarea';
 import { Button } from '@/shared/components/ui/Button';
 import { Alert } from '@/shared/components/ui/Alert';
-import { useToast } from '@/shared/components/ui/Toast';
+import { useToast } from '@/shared/components/ui/useToast';
 import { tr } from '@/shared/i18n/tr';
 import { messageFor } from '@/shared/lib/messages';
 import { inventoryApi } from '../api/inventoryApi';
