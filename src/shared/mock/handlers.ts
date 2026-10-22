@@ -3161,6 +3161,27 @@ const routes: Route[] = [
     },
   },
   {
+    method: "POST",
+    pattern: /^\/simulator\/workouts\/([^/]+)\/start$/,
+    handler({ db, params }) {
+      trainingRole(currentUser(db), ["HEAD_TRAINER"]);
+      const workout = getStoredWorkouts().find((w) => w.id === params[0]);
+      if (!workout) throw new ApiError(404, "WORKOUT_NOT_FOUND", "Workout session not found.");
+      if (workout.status !== "SCHEDULED") {
+        throw new ApiError(409, "WORKOUT_NOT_SIMULATABLE", "Only scheduled workouts can be simulated.");
+      }
+      if (new Date(workout.scheduledDate) > new Date()) {
+        throw new ApiError(409, "WORKOUT_NOT_STARTED", "The workout has not reached its scheduled start time.");
+      }
+      const horse = mockHorse(workout.horseId);
+      if (horse.isLocked && isHeavyMock(workout)) {
+        throw new ApiError(409, "MEDICAL_LOCK_ACTIVE", "A medical lock prevents this high-intensity workout.");
+      }
+      const sessionId = `mock-sim-${workout.id}`;
+      return { sessionId, status: "PENDING", launchUrl: `http://localhost:5175/?sessionId=${sessionId}` };
+    },
+  },
+  {
     method: "GET",
     pattern: /^\/training\/grooms$/,
     handler({ db }) {

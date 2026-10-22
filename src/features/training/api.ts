@@ -17,6 +17,7 @@ import type {
   TrainingOverview,
   TrainingPhase,
   TrainingPlan,
+  WorkoutSimulationStart,
 } from "./types";
 
 // Mọi lỗi từ BE đi thẳng ra màn hình (không còn "lưu tạm vào trình duyệt rồi báo thành công").
@@ -356,6 +357,10 @@ export const trainingApi = {
     if (range?.to) params.set("to", range.to);
     const qs = params.toString() ? `?${params.toString()}` : "";
     return (await api<BeWorkout[]>("GET", `/training/trial-runs${qs}`)).map((w) => toSession(w));
+  },
+
+  async startSimulation(workoutId: string): Promise<WorkoutSimulationStart> {
+    return api<WorkoutSimulationStart>("POST", `/simulator/workouts/${workoutId}/start`);
   },
 
   // Thể lực & cảnh báo

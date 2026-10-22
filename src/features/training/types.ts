@@ -3,6 +3,11 @@
 
 export type PlanStatus = "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED";
 export type SessionStatus = "SCHEDULED" | "COMPLETED" | "BLOCKED" | "MISSED" | "CANCELLED";
+export interface WorkoutSimulationStart {
+  sessionId: string;
+  status: "PENDING" | "RUNNING" | "COMPLETED" | "ABORTED_INJURY";
+  launchUrl: string;
+}
 export type ExerciseType = "WALK" | "TROT" | "CANTER" | "BREEZE" | "TRIAL" | "SWIM" | "TREADMILL";
 export type ExerciseIntensity = "LIGHT" | "MEDIUM" | "HEAVY";
 export type TrackType = "TURF" | "DIRT" | "SYNTHETIC" | "NONE";

@@ -86,3 +86,24 @@ test('a groom sees the workouts assigned to them', async ({ page }) => {
   await expect(page.getByText(/Thunderbolt Swift/).first()).toBeVisible();
   await expect(page.getByText('do not take the horse to the track', { exact: false }).first()).toBeVisible();
 });
+
+test('head trainer launches a due trial with the URL issued by the backend', async ({ page }) => {
+  await page.context().route('http://localhost:5175/**', (route) =>
+    route.fulfill({ contentType: 'text/html', body: '<title>Simulator</title>' }),
+  );
+  await signIn(page, 'nam.tran@gmail.com');
+  await page.goto('/training/trials');
+
+  const dueRow = page.getByRole('row').filter({ hasText: 'Thunderbolt Swift' }).filter({ hasText: '1200m' });
+  const futureRow = page.getByRole('row').filter({ hasText: 'Thunderbolt Swift' }).filter({ hasText: '1000m' });
+  await expect(futureRow.getByRole('button', { name: 'Run simulation' })).toBeDisabled();
+  await expect(futureRow.getByRole('button', { name: 'Run simulation' })).toHaveAttribute(
+    'title',
+    'The trial has not reached its scheduled start time.',
+  );
+  const popupPromise = page.waitForEvent('popup');
+  await dueRow.getByRole('button', { name: 'Run simulation' }).click();
+  const popup = await popupPromise;
+
+  await expect(popup).toHaveURL(/localhost:5175\/\?sessionId=mock-sim-w-106/);
+});
