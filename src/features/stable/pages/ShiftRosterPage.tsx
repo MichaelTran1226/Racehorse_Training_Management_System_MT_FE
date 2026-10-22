@@ -69,7 +69,6 @@ export default function ShiftRosterPage() {
   const [rosters, setRosters] = useState<ShiftRosterItem[]>([]);
   const [myShifts, setMyShifts] = useState<MyShiftItem[]>([]);
   const [allGrooms, setAllGrooms] = useState<GroomUserSummary[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   // Selected slot for modal
@@ -119,7 +118,6 @@ export default function ShiftRosterPage() {
 
   // Tải dữ liệu
   const fetchData = useCallback(async () => {
-    setLoading(true);
     setError('');
     try {
       const [zList, sList, rList, gList] = await Promise.all([
@@ -148,8 +146,6 @@ export default function ShiftRosterPage() {
       }
     } catch (err) {
       setError(messageFor(err));
-    } finally {
-      setLoading(false);
     }
   }, [startDateStr, endDateStr, selectedZoneId, isManager, isGroom]);
 

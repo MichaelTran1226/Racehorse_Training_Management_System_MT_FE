@@ -123,6 +123,10 @@ const DYNAMIC: Record<string, (d: Record<string, unknown>) => string | undefined
 
 export function messageFor(err: unknown): string {
   if (err instanceof ApiError) {
+    if (err.data && DYNAMIC[err.code]) {
+      const dynamicMsg = DYNAMIC[err.code](err.data as Record<string, unknown>);
+      if (dynamicMsg) return dynamicMsg;
+    }
     if (
       err.message &&
       err.message !== err.code &&

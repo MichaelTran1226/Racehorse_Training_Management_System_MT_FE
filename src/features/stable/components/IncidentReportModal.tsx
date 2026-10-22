@@ -42,7 +42,7 @@ export function IncidentReportModal({
   const [loadingHorses, setLoadingHorses] = useState(true);
 
   const [horseId, setHorseId] = useState<string>(initialHorseId || '');
-  const [stallZoneId, setStallZoneId] = useState<string>(initialZoneId || '');
+  const stallZoneId = initialZoneId || '';
   const [severity, setSeverity] = useState<IncidentSeverity>('MODERATE');
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
   const [description, setDescription] = useState<string>('');

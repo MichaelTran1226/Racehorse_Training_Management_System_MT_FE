@@ -8,7 +8,7 @@ import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
 import { tr } from "@/shared/i18n/tr";
 import { fetchOwnerSummary, changeInvoiceStatus, generateMonthlyInvoices } from "../api";
-import type { FinancialInvoice, InvoiceStatus, OwnerSummaryResponse } from "../types";
+import type { InvoiceStatus, OwnerSummaryResponse } from "../types";
 
 export default function OwnerFinancialReportsPage() {
   const user = useCurrentUser();

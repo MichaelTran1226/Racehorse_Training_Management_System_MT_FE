@@ -2,9 +2,6 @@ import type {
   HorseMedicalProfile,
   MedicalRecord,
   ObservationNote,
-  PrescriptionItem,
-  TreatmentPhase,
-  FollowUpItem,
 } from "@/features/health/types";
 import { getHorseById, getInjuriesForHorse, getStoredHorses, getStoredLocks } from "./horsesData";
 

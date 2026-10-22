@@ -131,13 +131,6 @@ export function NutritionPlanDetailModal({
     REJECTED: tr('Rejected'),
     ARCHIVED: tr('Archived'),
   };
-
-  const mealIcons: Record<string, string> = {
-    MORNING: '☀️',
-    NOON: '🌤️',
-    EVENING: '🌙',
-  };
-
   const mealNames: Record<string, string> = {
     MORNING: tr('Morning Meal'),
     NOON: tr('Noon Meal'),

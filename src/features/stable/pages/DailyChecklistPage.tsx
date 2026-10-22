@@ -8,7 +8,6 @@ import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { Alert } from '@/shared/components/ui/Alert';
 import { useToast } from '@/shared/components/ui/Toast';
 import { useCurrentUser } from '@/shared/components/layout/AuthProvider';
-import { useAppLanguage } from '@/shared/lib/language';
 import { tr } from '@/shared/i18n/tr';
 import { messageFor } from '@/shared/lib/messages';
 import { dailyTasksApi } from '../api/dailyTasksApi';
@@ -22,7 +21,6 @@ import type { IncidentReport } from '../types/incidents';
 export default function DailyChecklistPage() {
   const user = useCurrentUser();
   const toast = useToast();
-  const { isVietnamese } = useAppLanguage();
   const isGroom = user?.role === 'GROOM';
 
   const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);

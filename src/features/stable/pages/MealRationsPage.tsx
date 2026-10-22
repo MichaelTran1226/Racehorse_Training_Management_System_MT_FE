@@ -7,9 +7,7 @@ import { Select } from '@/shared/components/form/Select';
 import { Badge } from '@/shared/components/ui/Badge';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { Alert } from '@/shared/components/ui/Alert';
-import { useToast } from '@/shared/components/ui/Toast';
 import { useCurrentUser } from '@/shared/components/layout/AuthProvider';
-import { useAppLanguage } from '@/shared/lib/language';
 import { tr } from '@/shared/i18n/tr';
 import { messageFor } from '@/shared/lib/messages';
 import { nutritionApi } from '../api/nutritionApi';
@@ -21,8 +19,6 @@ import type { Zone } from '../types';
 
 export default function MealRationsPage() {
   const user = useCurrentUser();
-  const toast = useToast();
-  const { isVietnamese } = useAppLanguage();
 
   const [plans, setPlans] = useState<NutritionPlan[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);

@@ -8,7 +8,6 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { Alert } from '@/shared/components/ui/Alert';
 import { useCurrentUser } from '@/shared/components/layout/AuthProvider';
-import { useAppLanguage } from '@/shared/lib/language';
 import { tr } from '@/shared/i18n/tr';
 import { messageFor } from '@/shared/lib/messages';
 import { incidentsApi } from '../api/incidentsApi';
@@ -19,7 +18,6 @@ import type { IncidentReport, IncidentSeverity, IncidentStatus } from '../types/
 
 export default function IncidentListPage() {
   const user = useCurrentUser();
-  const { isVietnamese } = useAppLanguage();
   const [incidents, setIncidents] = useState<IncidentReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

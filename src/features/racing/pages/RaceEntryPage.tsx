@@ -12,10 +12,9 @@ import {
   fetchTournaments,
   createTournament,
   updateTournament,
-  changeTournamentStatus,
   deleteTournament,
 } from "../api";
-import type { Tournament, TournamentStatus } from "../types";
+import type { Tournament } from "../types";
 import { TournamentModal } from "../components/TournamentModal";
 import { RaceRegistrationModal } from "../components/RaceRegistrationModal";
 import { RecordResultsModal } from "../components/RecordResultsModal";
@@ -72,13 +71,6 @@ export default function RaceEntryPage() {
       await createTournament(data);
     }
     loadData();
-  }
-
-  async function handleStatusChange(id: string, newStatus: TournamentStatus) {
-    if (window.confirm(tr(`Change tournament status to ${newStatus}?`))) {
-      await changeTournamentStatus(id, newStatus);
-      loadData();
-    }
   }
 
   async function handleDelete(id: string) {

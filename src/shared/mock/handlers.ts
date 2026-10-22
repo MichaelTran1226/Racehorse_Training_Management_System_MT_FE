@@ -4172,9 +4172,7 @@ const routes: Route[] = [
     method: "POST",
     pattern: /^\/nutrition-plans\/calculate-metrics$/,
     handler({ body }) {
-      const { horseId, meals } = body as { horseId: string; meals: Array<{ items: Array<{ amount: number; unit: string }> }> };
-      const horses = getStoredHorses();
-      const h = horses.find((x) => x.id === horseId);
+      const { meals } = body as { horseId?: string; meals: Array<{ items: Array<{ amount: number; unit: string }> }> };
       const horseWeightKg = 500;
 
       let totalKg = 0;
@@ -5209,17 +5207,6 @@ function mockStallList(db: Db) {
       };
     }),
   );
-}
-
-function mockZones() {
-  const stalls = mockStallList(getDb());
-  return MOCK_ZONES.map((z) => ({
-    ...z,
-    description: null,
-    isActive: true,
-    stallCount: stalls.filter((s) => s.zoneId === z.id).length,
-    occupiedCount: stalls.filter((s) => s.zoneId === z.id && s.allocations.length > 0).length,
-  }));
 }
 
 function mockStalls(db: Db, url: URL) {

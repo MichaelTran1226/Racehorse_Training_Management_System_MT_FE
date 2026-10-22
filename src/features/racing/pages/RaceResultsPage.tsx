@@ -3,7 +3,6 @@ import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { Card } from "@/shared/components/ui/Card";
 import { Badge } from "@/shared/components/ui/Badge";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
-import { Button } from "@/shared/components/ui/Button";
 import { tr } from "@/shared/i18n/tr";
 import { fetchTournaments, fetchTournamentDetail } from "../api";
 import type { Tournament } from "../types";
