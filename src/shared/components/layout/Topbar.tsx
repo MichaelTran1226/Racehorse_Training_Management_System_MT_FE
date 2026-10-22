@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Icon } from "@/shared/components/ui/Icon";
 import { LanguageToggle } from "@/shared/components/ui/LanguageToggle";
-import { useTheme } from "@/shared/lib/theme";
+import { ThemeToggle } from "@/shared/components/ui/ThemeToggle";
 import { useAppLanguage } from "@/shared/lib/language";
 import { cx } from "@/shared/lib/cx";
 import {
@@ -32,7 +32,6 @@ interface TopbarProps {
 // Topbar phẳng 64px: (menu khi hẹp) · breadcrumb trang con · ô tìm · chuông · đổi theme · đăng xuất.
 export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
   const { user } = useAuth();
-  const { theme, toggle: toggleTheme } = useTheme();
   const { t } = useAppLanguage();
   const navigate = useNavigate();
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -228,15 +227,7 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
           <LanguageToggle />
 
           {/* Theme Toggle Button */}
-          <button
-            type="button"
-            aria-label={theme === "dark" ? t("topbar.themeToggleLight", "Switch to light mode") : t("topbar.themeToggleDark", "Switch to dark mode")}
-            title={theme === "dark" ? t("topbar.themeToggleLight", "Switch to light mode") : t("topbar.themeToggleDark", "Switch to dark mode")}
-            onClick={toggleTheme}
-            className={styles.actionBtn}
-          >
-            <Icon name={theme === "dark" ? "sun" : "moon"} size={18} />
-          </button>
+          <ThemeToggle className={styles.actionBtn} />
 
           {/* Logout Button */}
           <button

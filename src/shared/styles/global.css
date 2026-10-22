@@ -89,3 +89,34 @@ th {
   white-space: nowrap;
   border: 0;
 }
+
+/* ============================================================
+   View Transition: Hiệu ứng chuyển đổi màn hình Sáng / Tối
+   ============================================================ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+  display: block;
+}
+
+::view-transition-image-pair(root) {
+  isolation: isolate;
+}
+
+/* Sáng -> Tối: Màn sáng (old view) thu trọn về nút nhấn, nền tối ở dưới */
+[data-theme-transition="to-dark"]::view-transition-old(root) {
+  z-index: 9999;
+}
+[data-theme-transition="to-dark"]::view-transition-new(root) {
+  z-index: 1;
+}
+
+/* Tối -> Sáng: Màn sáng (new view) bung toả từ nút nhấn, nền tối ở dưới */
+[data-theme-transition="to-light"]::view-transition-old(root) {
+  z-index: 1;
+}
+[data-theme-transition="to-light"]::view-transition-new(root) {
+  z-index: 9999;
+}
+
