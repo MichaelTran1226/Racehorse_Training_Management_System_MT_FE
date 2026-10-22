@@ -188,7 +188,7 @@ export default function AccountListPage() {
   const columns: Column<PublicAccount>[] = [
     {
       key: "account",
-      header: "Account",
+      header: tr("Account"),
       width: 290,
       render: (r) => (
         <CellPrimary
@@ -200,10 +200,10 @@ export default function AccountListPage() {
     },
     {
       key: "role",
-      header: "Role",
+      header: tr("Role"),
       width: 210,
       render: (r) => {
-        const roleLabel = ROLE_LABEL[r.role];
+        const roleLabel = tr(ROLE_LABEL[r.role]);
         if (r.role === "HORSE_OWNER") {
           const owned = horses.filter((h) => (h.ownerId ?? h.owner?.id) === r.id);
           return (
@@ -234,7 +234,7 @@ export default function AccountListPage() {
     },
     {
       key: "status",
-      header: "Status",
+      header: tr("Status"),
       width: 160,
       render: (r) => {
         const s = ACCOUNT_STATUS[r.status];
@@ -256,25 +256,25 @@ export default function AccountListPage() {
       ? [
           {
             key: "requested",
-            header: "Requested",
+            header: tr("Requested"),
             width: 190,
             render: (r: PublicAccount) =>
               r.status === "INVITED"
-                ? `Invited ${formatDateTime(r.createdAt)}`
+                ? tr("Invited {{date}}", { date: formatDateTime(r.createdAt) })
                 : formatDateTime(r.requestedAt ?? r.createdAt),
           },
         ]
       : []),
     {
       key: "last",
-      header: "Last active",
+      header: tr("Last active"),
       width: 190,
       hideOnNarrow: true,
-      render: (r) => (r.lastActive ? formatDateTime(r.lastActive) : r.requestedAt ? `requested ${formatDate(r.requestedAt)}` : "—"),
+      render: (r) => (r.lastActive ? formatDateTime(r.lastActive) : r.requestedAt ? tr("requested {{date}}", { date: formatDate(r.requestedAt) }) : "—"),
     },
     {
       key: "actions",
-      header: "Actions",
+      header: tr("Actions"),
       align: "right",
       render: (r) => (
         // Một hành động chính theo trạng thái để ngoài; các hành động khác trong menu "⋯" (DESIGN.md: một menu mỗi hàng).
@@ -337,7 +337,7 @@ export default function AccountListPage() {
       action={
         tab === "ALL" ? (
           <Button size="sm" icon="plus" onClick={() => setCreateOpen(true)}>
-            Create account
+            {tr("Create account")}
           </Button>
         ) : undefined
       }
@@ -347,8 +347,8 @@ export default function AccountListPage() {
   return (
     <>
       <PageHeader
-        title={tr("Account Management")}
-        description={tr("Manage club staff, horse owners, account approvals, and security access levels.")}
+        title={tr("Accounts")}
+        description={tr("Manage club staff, horse owners, and account approvals.")}
         showDate
       />
 
@@ -383,11 +383,11 @@ export default function AccountListPage() {
               setPage(1);
             }}
             items={[
-              { id: "ALL", label: "All" },
-              { id: "ACTIVE", label: "Active" },
-              { id: "INACTIVE", label: "Deactivated" },
-              { id: "PENDING", label: "Pending", dot: pendingNews },
-              { id: "LOCKED", label: "Locked" },
+              { id: "ALL", label: tr("All") },
+              { id: "ACTIVE", label: tr("Active") },
+              { id: "INACTIVE", label: tr("Deactivated") },
+              { id: "PENDING", label: tr("Pending"), dot: pendingNews },
+              { id: "LOCKED", label: tr("Locked") },
             ]}
           />
           <div className={styles.tools}>
@@ -446,7 +446,7 @@ export default function AccountListPage() {
           onSaved={(account) => {
             replace(account);
             setDialog(null);
-            toast.show(`Account of ${account.fullName} saved.`, "ok");
+            toast.show(tr("Account of {{name}} saved.", { name: account.fullName }), "ok");
           }}
           onDeactivate={() => setDialog({ kind: "deactivate", target: dialog.target })}
           onDelete={() => setDialog({ kind: "delete", target: dialog.target })}
@@ -456,7 +456,7 @@ export default function AccountListPage() {
       {dialog?.kind === "decline" && (
         <ReasonConfirmModal
           title={tr(`Decline the request of ${dialog.target.fullName}?`)}
-          subtitle={`${ROLE_LABEL[dialog.target.role]} · ${dialog.target.email}`}
+          subtitle={`${tr(ROLE_LABEL[dialog.target.role])} · ${dialog.target.email}`}
           tone="warn"
           confirmLabel={tr("Decline request")}
           cancelLabel={tr("Keep waiting")}
@@ -472,7 +472,7 @@ export default function AccountListPage() {
       {dialog?.kind === "lock" && (
         <ReasonConfirmModal
           title={tr(`Lock the account of ${dialog.target.fullName}?`)}
-          subtitle={`${ROLE_LABEL[dialog.target.role]} · ${dialog.target.email}`}
+          subtitle={`${tr(ROLE_LABEL[dialog.target.role])} · ${dialog.target.email}`}
           tone="danger"
           confirmLabel={tr("Lock account")}
           cancelLabel={tr("Keep active")}
@@ -488,7 +488,7 @@ export default function AccountListPage() {
       {dialog?.kind === "deactivate" && (
         <ReasonConfirmModal
           title={tr(`Deactivate the account of ${dialog.target.fullName}?`)}
-          subtitle={`${ROLE_LABEL[dialog.target.role]} · ${dialog.target.email}`}
+          subtitle={`${tr(ROLE_LABEL[dialog.target.role])} · ${dialog.target.email}`}
           tone="danger"
           confirmLabel={tr("Deactivate account")}
           cancelLabel={tr("Keep the account")}
@@ -504,7 +504,7 @@ export default function AccountListPage() {
       {dialog?.kind === "delete" && (
         <ConfirmModal
           title={tr(`Delete the account of ${dialog.target.fullName}?`)}
-          subtitle={`${ACCOUNT_STATUS[dialog.target.status].label} · ${dialog.target.email}`}
+          subtitle={`${tr(ACCOUNT_STATUS[dialog.target.status].label)} · ${dialog.target.email}`}
           tone="danger"
           confirmLabel={tr("Delete account")}
           cancelLabel={tr("Keep the account")}
@@ -524,7 +524,7 @@ export default function AccountListPage() {
             setCreateOpen(false);
             setTab("PENDING");
             setPage(1);
-            toast.show(`Invitation sent to ${account.email}.`, "ok");
+            toast.show(tr("Invitation sent to {{email}}.", { email: account.email }), "ok");
           }}
         />
       )}

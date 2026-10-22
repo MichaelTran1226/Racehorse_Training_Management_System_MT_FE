@@ -10,7 +10,8 @@ import {
   localizeNotification,
 } from "@/shared/lib/notifications";
 
-import { tr, isVietnamese } from "@/shared/i18n/tr";
+import { tr } from "@/shared/i18n/tr";
+import { useAppLanguage } from "@/shared/lib/language";
 interface NotificationPopoverProps {
   notifications: AppNotification[];
   open: boolean;
@@ -24,6 +25,7 @@ export function NotificationPopover({
   onClose,
   triggerRef,
 }: NotificationPopoverProps) {
+  const { isVietnamese: isVi } = useAppLanguage();
   const navigate = useNavigate();
   const popoverRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<"all" | "unread">("all");
@@ -81,7 +83,7 @@ export function NotificationPopover({
 
   const renderItem = (n: AppNotification) => {
     const theme = getCategoryTheme(n.category);
-    const loc = localizeNotification(n, isVietnamese());
+    const loc = localizeNotification(n, isVi);
     return (
       <div
         key={n.id}
@@ -137,7 +139,7 @@ export function NotificationPopover({
             }}
           >
             <strong style={{ color: "var(--text)", fontWeight: 700 }}>
-              {n.senderName ? `${n.senderName}: ` : ""}
+              {loc.senderName ? `${loc.senderName}: ` : ""}
             </strong>
             <span style={{ fontWeight: n.read ? 400 : 600 }}>{loc.message}</span>
           </div>

@@ -33,7 +33,7 @@ interface TopbarProps {
 export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
   const { user } = useAuth();
   const { theme, toggle: toggleTheme } = useTheme();
-  const { isVietnamese, t } = useAppLanguage();
+  const { t } = useAppLanguage();
   const navigate = useNavigate();
   const [popoverOpen, setPopoverOpen] = useState(false);
   const bellTriggerRef = useRef<HTMLDivElement>(null);
@@ -118,12 +118,12 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
   return (
     <header className={styles.bar}>
       <div className={styles.leftGroup}>
-        <button type="button" aria-label={isVietnamese ? "Mở menu" : tr("Open menu")} onClick={onMenu} className={styles.menu}>
+        <button type="button" aria-label={tr("Open menu")} onClick={onMenu} className={styles.menu}>
           <Icon name="list" size={18} />
         </button>
 
         {showTrail && (
-          <nav aria-label={isVietnamese ? "Đường dẫn" : tr("Breadcrumb")} className={styles.crumbs}>
+          <nav aria-label={tr("Breadcrumb")} className={styles.crumbs}>
             <ol>
               {trail.map((part, i) => {
                 const last = i === trail.length - 1;
@@ -180,7 +180,7 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
             }}
           />
           {searchQuery && (
-            <button type="button" onClick={() => setSearchQuery("")} aria-label={isVietnamese ? "Xóa tìm kiếm" : tr("Clear search")} className={styles.clear}>
+            <button type="button" onClick={() => setSearchQuery("")} aria-label={tr("Clear search")} className={styles.clear}>
               <Icon name="x" size={14} />
             </button>
           )}
@@ -207,8 +207,8 @@ export function Topbar({ breadcrumb, onMenu, onLogout }: TopbarProps) {
           <div ref={bellTriggerRef} className={styles.bellTrigger}>
             <button
               type="button"
-              aria-label={unreadCount > 0 ? (isVietnamese ? tr(`Thông báo, ${unreadCount} chưa đọc`) : tr(`Notifications, ${unreadCount} unread`)) : (isVietnamese ? "Thông báo" : tr("Notifications"))}
-              title={isVietnamese ? "Thông báo" : tr("Notifications")}
+              aria-label={unreadCount > 0 ? tr("Notifications, {{count}} unread", { count: unreadCount }) : tr("Notifications")}
+              title={tr("Notifications")}
               onClick={() => setPopoverOpen((prev) => !prev)}
               className={styles.actionBtn}
             >

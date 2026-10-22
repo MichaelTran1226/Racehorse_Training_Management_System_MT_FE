@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { Card } from "@/shared/components/ui/Card";
 import { Button } from "@/shared/components/ui/Button";
@@ -40,7 +40,7 @@ import {
   changeTournamentStatus,
   deleteTournament,
 } from "../api";
-import type { Tournament, TournamentStatus } from "../types";
+import type { Tournament } from "../types";
 import { TournamentModal } from "../components/TournamentModal";
 import { RaceRegistrationModal } from "../components/RaceRegistrationModal";
 import { RecordResultsModal } from "../components/RecordResultsModal";
@@ -69,11 +69,7 @@ export default function RaceEntryPage() {
   const [reopenTarget, setReopenTarget] = useState<Tournament | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, [statusFilter]);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetchTournaments({
@@ -86,7 +82,11 @@ export default function RaceEntryPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [statusFilter, searchTerm]);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
   // KPIs
   const totalTournaments = tournaments.length;
@@ -157,9 +157,9 @@ export default function RaceEntryPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
-        title={tr("Tournament Registration & Race Entries")}
+        title={tr("Tournaments & Entries")}
         description={tr(
-          "Official championship management, horse eligibility screening, race execution, and prize money settlement.",
+          "Tournament schedule, horse eligibility screening, and race registrations.",
         )}
         action={
           isClubManager ? (

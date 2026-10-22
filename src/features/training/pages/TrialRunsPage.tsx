@@ -95,14 +95,14 @@ export default function TrialRunsPage() {
         </div>
       </div>
 
-      <div style={{ padding: "0.75rem 1rem", borderRadius: "8px", background: "color-mix(in srgb, var(--brand) 6%, var(--surface))", border: "1px solid color-mix(in srgb, var(--brand) 20%, var(--border))", fontSize: "var(--fs-sm)", lineHeight: 1.5 }}>
+      <div style={{ padding: "0.625rem 0.875rem", borderRadius: "8px", background: "color-mix(in srgb, var(--brand) 6%, var(--surface))", border: "1px solid color-mix(in srgb, var(--brand) 20%, var(--border))", fontSize: "var(--fs-sm)", lineHeight: 1.5 }}>
         {isVietnamese ? (
           <>
-            ⏱️ <strong>Theo dõi & Điều phối đường chạy thử:</strong> Giám sát các phiên chạy thử tốc độ cao. Hệ thống tự động đảm bảo khoảng cách an toàn tối thiểu 15 phút giữa 2 lượt chạy trên cùng một đường chạy và chặn ngựa đang bị khóa y tế. Bấm <em>"Ghi kết quả"</em> trên từng phiên để cập nhật tốc độ, thời gian và chỉ số phục hồi.
+            ⏱️ Giám sát các phiên chạy thử tốc độ cao. Đảm bảo giãn cách an toàn tối thiểu 15 phút giữa các lượt chạy cùng mặt sân.
           </>
         ) : (
           <>
-            ⏱️ <strong>Track Coordination & Monitoring:</strong> Monitor high-speed trial runs across active courses. The system automatically enforces a 15-minute safety buffer between consecutive runs on the same track. Click <em>"Record result"</em> on any session to log time, speed, and recovery metrics.
+            ⏱️ Monitor high-speed trial runs. A 15-minute safety interval is enforced between runs on the same track.
           </>
         )}
       </div>

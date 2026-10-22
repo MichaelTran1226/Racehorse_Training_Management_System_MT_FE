@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { Card } from "@/shared/components/ui/Card";
 import { Badge } from "@/shared/components/ui/Badge";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
-import { Button } from "@/shared/components/ui/Button";
 import { tr } from "@/shared/i18n/tr";
 import { fetchTournaments, fetchTournamentDetail } from "../api";
 import type { Tournament } from "../types";
@@ -14,17 +13,7 @@ export default function RaceResultsPage() {
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadCompletedTournaments();
-  }, []);
-
-  useEffect(() => {
-    if (selectedTournamentId) {
-      loadDetail(selectedTournamentId);
-    }
-  }, [selectedTournamentId]);
-
-  async function loadCompletedTournaments() {
+  const loadCompletedTournaments = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetchTournaments({ status: "COMPLETED" });
@@ -38,16 +27,27 @@ export default function RaceResultsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
-  async function loadDetail(id: string) {
+  const loadDetail = useCallback(async (id: string) => {
     try {
       const detail = await fetchTournamentDetail(id);
       setSelectedTournament(detail);
     } catch (err) {
       console.error("Failed to load tournament detail", err);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    void loadCompletedTournaments();
+  }, [loadCompletedTournaments]);
+
+  useEffect(() => {
+    if (selectedTournamentId) {
+      void loadDetail(selectedTournamentId);
+    }
+  }, [selectedTournamentId, loadDetail]);
+
 
   const finishedRegistrations = (selectedTournament?.registrations ?? [])
     .filter((r) => r.result)
@@ -60,9 +60,9 @@ export default function RaceResultsPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
-        title={tr("Official Race Results & Championship Hall of Fame")}
+        title={tr("Race Results")}
         description={tr(
-          "Verified tournament standings, sprint speeds, prize money distributions, and club career statistics.",
+          "Official tournament standings, sprint speeds, and prize distributions.",
         )}
       />
 

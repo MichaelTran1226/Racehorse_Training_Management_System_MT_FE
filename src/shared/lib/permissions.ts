@@ -322,21 +322,19 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
       ],
     },
     {
-      label: "SUPPLIES",
-      items: [
-        item("supplies/inventory", "Zone Inventory", "layers", { i18nKey: "zoneInventory" }),
-        item("supplies/requests", "Restock Requests", "clipboard", { i18nKey: "restockRequests" }),
-        item("catalog", "Supplies Catalog", "package", { requires: "manageAccounts" }),
-      ],
-    },
-    {
       label: "MASTER DATA",
       items: [
         item("horses", "Horses", "horse", { requires: "viewHorses" }),
         item("stalls", "Stall Map", "grid"),
-        item("tasks", "Today's Tasks", "check"),
         item("stable/shifts", "Shift Roster", "calendar", { i18nKey: "shiftRoster" }),
-        item("rations", "Meal Rations", "wheat", { i18nKey: "rations" }),
+      ],
+    },
+    {
+      label: "SUPPLIES",
+      items: [
+        item("catalog", "Supplies Catalog", "package", { requires: "manageAccounts" }),
+        item("supplies/inventory", "Zone Inventory", "layers", { i18nKey: "zoneInventory" }),
+        item("supplies/requests", "Restock Requests", "clipboard", { i18nKey: "restockRequests" }),
       ],
     },
     {

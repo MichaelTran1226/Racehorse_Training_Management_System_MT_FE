@@ -159,7 +159,11 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
     <>
       <PageHeader
         title={tr(`Permissions of ${account.fullName}.`)}
-        description={tr(`${ROLE_LABEL[account.role]} · ${account.email} · active since ${formatDate(account.createdAt)}. Changes take effect at the next page load for that account.`)}
+        description={tr("{{role}} · {{email}} · active since {{createdAt}}. Changes take effect at the next page load for that account.", {
+          role: tr(ROLE_LABEL[account.role]),
+          email: account.email,
+          createdAt: formatDate(account.createdAt),
+        })}
       />
 
       {dirty && (
@@ -175,7 +179,7 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
           <Avatar name={account.fullName} size={34} />
           <div>
             <strong>
-              {account.fullName} · {ROLE_LABEL[account.role]}
+              {account.fullName} · {tr(ROLE_LABEL[account.role])}
             </strong>
             <span>
               {tr("Granted")}{" "}{padCount(on)} of {padCount(total)} {tr("· last change")}{" "}{account.permissionsChangedAt ? formatDate(account.permissionsChangedAt) : "—"}
@@ -193,19 +197,19 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
           <div className={styles.groups}>
             {PERMISSION_GROUPS.filter((group) => applicable.some((p) => p.group === group)).map((group) => (
               <div key={group}>
-                <p className={styles.groupLabel}>{group}</p>
+                <p className={styles.groupLabel}>{tr(group)}</p>
                 {applicable.filter((p) => p.group === group).map((meta) => {
                   const lock = permissionLock(account.role, meta);
                   return (
                     <div key={meta.key} className={styles.row}>
                       <div className={styles.rowText}>
-                        <strong>{meta.name}</strong>
-                        <span>{meta.note}</span>
+                        <strong>{tr(meta.name)}</strong>
+                        <span>{tr(meta.note)}</span>
                       </div>
                       <Switch
-                        label={meta.name}
+                        label={tr(meta.name)}
                         checked={effective(account, draft, meta)}
-                        blockedReason={lock.locked ? lock.reason : undefined}
+                        blockedReason={lock.locked && lock.reason ? tr(lock.reason) : undefined}
                         onChange={(v) => toggle(meta.key, v)}
                       />
                     </div>
@@ -223,7 +227,7 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
                 <Avatar name={account.fullName} size={38} />
                 <div>
                   <strong>{account.fullName}</strong>
-                  <span>{ROLE_LABEL[account.role]}</span>
+                  <span>{tr(ROLE_LABEL[account.role])}</span>
                 </div>
               </div>
               <div>
@@ -259,7 +263,7 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
       {revokeMeta && (
         <ConfirmModal
           title={tr(`Revoke “${revokeMeta.name}”?`)}
-          subtitle={`${account.fullName} · ${ROLE_LABEL[account.role]}`}
+          subtitle={`${account.fullName} · ${tr(ROLE_LABEL[account.role])}`}
           tone="danger"
           confirmLabel={tr("Revoke permission")}
           cancelLabel={tr("Keep permission")}
@@ -269,8 +273,8 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
             setRevokeKey(null);
           }}
         >
-          {revokeMeta.revokeEffect ? `${revokeMeta.revokeEffect} ` : ""}
-          {GENERIC_EFFECT}
+          {revokeMeta.revokeEffect ? `${tr(revokeMeta.revokeEffect)} ` : ""}
+          {tr(GENERIC_EFFECT)}
         </ConfirmModal>
       )}
     </>

@@ -34,8 +34,8 @@ export function RoleFilter({ value, onChange }: RoleFilterProps) {
   }, [open]);
 
   const options: Array<{ value: Role | "ALL"; label: string }> = [
-    { value: "ALL", label: "All roles" },
-    ...ROLES.map((r) => ({ value: r, label: ROLE_LABEL[r] })),
+    { value: "ALL", label: tr("All roles") },
+    ...ROLES.map((r) => ({ value: r, label: tr(ROLE_LABEL[r]) })),
   ];
 
   return (
@@ -48,7 +48,7 @@ export function RoleFilter({ value, onChange }: RoleFilterProps) {
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
       >
-        {value === "ALL" ? tr("Filter by role") : tr(`Role: ${ROLE_LABEL[value]}`)}
+        {value === "ALL" ? tr("Filter by role") : tr("Role: {{value}}", { value: tr(ROLE_LABEL[value]) })}
       </Button>
       {open && (
         <div role="menu" className={styles.menu}>

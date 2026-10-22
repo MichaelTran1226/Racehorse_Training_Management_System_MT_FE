@@ -615,6 +615,7 @@ const routes: Route[] = [
         .map((a) => ({ id: a.id, fullName: a.fullName, email: a.email, horseCount: getStoredHorses().filter((h) => h.assignedGroomId === a.id).length })),
   },
   { method: "GET", pattern: /^\/stalls$/, handler: ({ db, url }) => mockStalls(db, url) },
+  { method: "GET", pattern: /^\/stalls\/zones$/, handler: () => mockZones() },
   // Đăng ký ô chuồng cho ngựa (Allocate Stall)
   {
     method: "POST",
@@ -4090,7 +4091,7 @@ const routes: Route[] = [
       const { horseId, meals } = body as { horseId: string; meals: Array<{ items: Array<{ amount: number; unit: string }> }> };
       const horses = getStoredHorses();
       const h = horses.find((x) => x.id === horseId);
-      const horseWeightKg = 500;
+      const horseWeightKg = (h as unknown as { weight?: number })?.weight || 500;
 
       let totalKg = 0;
       for (const m of meals || []) {

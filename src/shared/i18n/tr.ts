@@ -19,7 +19,7 @@ const VAR = /\{\{(\w+)\}\}/g;
 let patterns: Pattern[] | null = null;
 
 function escapeRe(s: string) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/[-–—]/g, "[-–—]");
 }
 
 function compilePatterns(): Pattern[] {
@@ -47,7 +47,7 @@ function fill(text: string, params: Params): string {
 }
 
 export function isVietnamese(): boolean {
-  return i18n.language === "vi";
+  return Boolean(i18n.language && i18n.language.toLowerCase().startsWith("vi"));
 }
 
 export function tr(text: string, params?: Params): string {

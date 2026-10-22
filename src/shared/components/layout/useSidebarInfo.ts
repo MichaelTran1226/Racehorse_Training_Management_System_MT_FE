@@ -6,6 +6,8 @@ import type { AuthUser, PublicAccount } from "@/shared/types/auth";
 import { getUnreadNotificationsCount } from "@/shared/lib/notifications";
 import { hasNewPendingRequests, subscribePendingSeen } from "@/shared/lib/pendingRequests";
 
+import { tr } from "@/shared/i18n/tr";
+
 export interface SidebarNote {
   title: string;
   body: string;
@@ -37,7 +39,12 @@ export function useSidebarInfo(user: AuthUser | null, pathname: string): Sidebar
         const first = waiting[0];
         setPending({
           count: waiting.length,
-          first: first ? `${ROLE_LABEL[first.role]} · sent ${formatShortDate(first.requestedAt ?? first.createdAt)}` : undefined,
+          first: first
+            ? tr("{{role}} · sent {{date}}", {
+                role: tr(ROLE_LABEL[first.role]),
+                date: formatShortDate(first.requestedAt ?? first.createdAt),
+              })
+            : undefined,
         });
       })
       .catch(() => {
@@ -60,7 +67,16 @@ export function useSidebarInfo(user: AuthUser | null, pathname: string): Sidebar
   if (!user) return { note: null, notifications: 0, accountsAlert: false };
   if (canManage) {
     return {
-      note: pending.count > 0 ? { title: `${pending.count} ${pending.count === 1 ? "request" : "requests"} waiting`, body: pending.first ?? "", href: "/accounts" } : null,
+      note:
+        pending.count > 0
+          ? {
+              title: tr(pending.count === 1 ? "{{count}} request waiting" : "{{count}} requests waiting", {
+                count: pending.count,
+              }),
+              body: pending.first ?? "",
+              href: "/accounts",
+            }
+          : null,
       notifications: pending.count || unreadCount,
       accountsAlert,
     };

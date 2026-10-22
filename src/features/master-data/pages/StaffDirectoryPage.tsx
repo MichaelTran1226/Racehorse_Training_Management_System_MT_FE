@@ -66,7 +66,7 @@ export default function StaffDirectoryPage() {
           currentUser.permissions.manageAccounts ? (
             <Link to="/accounts">
               <Button tone="primary" size="md">
-                + Manage Accounts & Invites
+                {tr("+ Manage Accounts & Invites")}
               </Button>
             </Link>
           ) : undefined

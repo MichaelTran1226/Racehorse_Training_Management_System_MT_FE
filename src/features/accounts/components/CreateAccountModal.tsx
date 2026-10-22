@@ -38,8 +38,8 @@ export function CreateAccountModal({ onClose, onCreated }: CreateAccountModalPro
     const mail = email.trim().toLowerCase();
     const found: typeof errors = {};
     if (fullNameError(fullName)) found.name = fullNameError(fullName);
-    if (!mail) found.email = "Club email is required.";
-    else if (!EMAIL_RE.test(mail)) found.email = "Email must be a @gmail.com address.";
+    if (!mail) found.email = tr("Club email is required.");
+    else if (!EMAIL_RE.test(mail)) found.email = tr("Email must be a @gmail.com address.");
     if (found.name || found.email) return setErrors(found);
 
     setBusy(true);
@@ -57,8 +57,8 @@ export function CreateAccountModal({ onClose, onCreated }: CreateAccountModalPro
 
   return (
     <Modal
-      title={tr("Create a staff account")}
-      subtitle={tr("The new member gets an invitation email to set a password.")}
+      title={tr("Add staff account")}
+      subtitle={tr("An invitation email will be sent to activate the account.")}
       width={460}
       onClose={onClose}
     >

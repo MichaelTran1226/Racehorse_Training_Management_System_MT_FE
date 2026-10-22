@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { Card } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
@@ -7,7 +7,6 @@ import { Select } from '@/shared/components/form/Select';
 import { Badge } from '@/shared/components/ui/Badge';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { Alert } from '@/shared/components/ui/Alert';
-import { useToast } from '@/shared/components/ui/Toast';
 import { useCurrentUser } from '@/shared/components/layout/AuthProvider';
 import { useAppLanguage } from '@/shared/lib/language';
 import { tr } from '@/shared/i18n/tr';
@@ -21,8 +20,7 @@ import type { Zone } from '../types';
 
 export default function MealRationsPage() {
   const user = useCurrentUser();
-  const toast = useToast();
-  const { isVietnamese } = useAppLanguage();
+  useAppLanguage();
 
   const [plans, setPlans] = useState<NutritionPlan[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
@@ -42,7 +40,7 @@ export default function MealRationsPage() {
   const canCreate = user?.role === 'HEAD_TRAINER' || user?.role === 'CLUB_MANAGER';
   const isVet = user?.role === 'VETERINARIAN' || user?.role === 'CLUB_MANAGER';
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -61,11 +59,11 @@ export default function MealRationsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [statusFilter, selectedZoneId, search]);
 
   useEffect(() => {
-    loadData();
-  }, [statusFilter, selectedZoneId]);
+    void loadData();
+  }, [loadData]);
 
   // KPIs
   const stats = useMemo(() => {

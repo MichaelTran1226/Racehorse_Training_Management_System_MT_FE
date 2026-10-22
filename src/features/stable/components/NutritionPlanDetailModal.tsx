@@ -337,6 +337,7 @@ export function NutritionPlanDetailModal({
                 }}
               >
                 <span>
+                  {mealIcons[meal.mealType] ? `${mealIcons[meal.mealType]} ` : ''}
                   {mealNames[meal.mealType] || meal.mealType}
                 </span>
                 {meal.time && (

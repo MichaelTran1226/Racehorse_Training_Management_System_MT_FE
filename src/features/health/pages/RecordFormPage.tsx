@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams, useSearchParams, useBlocker } from "react-router-dom";
 import { Checkbox } from "@/shared/components/form/Checkbox";
 import { Field } from "@/shared/components/form/Field";
@@ -65,6 +65,11 @@ export default function RecordFormPage() {
 
   const isEdit = Boolean(id);
 
+  const examTypeOptions = useMemo(() => EXAM_TYPE_OPTIONS.map((o) => ({ value: o.value, label: tr(o.label) })), []);
+  const discoveryOptions = useMemo(() => DISCOVERY_OPTIONS.map((o) => ({ value: o.value, label: tr(o.label) })), []);
+  const labTypeOptions = useMemo(() => LAB_TYPE_OPTIONS.map((o) => ({ value: o.value, label: tr(o.label) })), []);
+  const proposedStatusOptions = useMemo(() => PROPOSED_STATUS_OPTIONS.map((o) => ({ value: o.value, label: tr(o.label) })), []);
+
   // Block 1: Exam info
   const [horseId, setHorseId] = useState(horseIdParam);
   const [horseOptions, setHorseOptions] = useState<{ value: string; label: string }[]>([]);
@@ -87,11 +92,11 @@ export default function RecordFormPage() {
             setHorseId(data[0].id);
           }
         } else {
-          setHorseOptions([{ value: "", label: "-- No horses available --" }]);
+          setHorseOptions([{ value: "", label: tr("-- No horses available --") }]);
         }
       })
       .catch(() => {
-        if (active) setHorseOptions([{ value: "", label: "-- Error loading horses --" }]);
+        if (active) setHorseOptions([{ value: "", label: tr("-- Error loading horses --") }]);
       })
       .finally(() => {
         if (active) setLoadingHorses(false);
@@ -434,10 +439,10 @@ export default function RecordFormPage() {
         <div className={styles.headerTop}>
           <div className={styles.titleArea}>
             <h1 className={styles.horseTitle}>
-              {isEdit ? tr("Edit Medical Record (Draft)") : tr("New Electronic Medical Record")}
+              {isEdit ? tr("Edit Electronic Medical Record") : tr("New Electronic Medical Record")}
             </h1>
             <span style={{ fontSize: "var(--fs-body)", color: "var(--muted)" }}>
-              {tr("Record clinical exam findings, vital signs, and initialize the treatment plan.")}
+              {tr("Record clinical exam findings, vital signs, and treatment plan.")}
             </span>
           </div>
         </div>
@@ -507,7 +512,7 @@ export default function RecordFormPage() {
 
           <Field label={tr("Examination Type *")}>
             <Select
-              options={EXAM_TYPE_OPTIONS}
+              options={examTypeOptions}
               value={examinationType}
               onChange={(e) => setExaminationType(e.target.value)}
             />
@@ -515,7 +520,7 @@ export default function RecordFormPage() {
 
           <Field label={tr("Discovery Source")}>
             <Select
-              options={DISCOVERY_OPTIONS}
+              options={discoveryOptions}
               value={discoverySource}
               onChange={(e) => setDiscoverySource(e.target.value)}
             />
@@ -682,7 +687,7 @@ export default function RecordFormPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h2 className={styles.sectionTitle}>
             <Icon name="file" size={18} />
-            {tr("3. Diagnostic Tests & Imaging (0–20 items)")}
+            {tr("3. Diagnostic Tests & Imaging")}
           </h2>
           <Button size="sm" tone="ghost" icon="plus" onClick={addLabTest}>
             {tr("Add Diagnostic Result")}
@@ -710,7 +715,7 @@ export default function RecordFormPage() {
                   }}
                 >
                   <Select
-                    options={LAB_TYPE_OPTIONS}
+                    options={labTypeOptions}
                     value={test.testType}
                     onChange={(e) => updateLabTest(idx, "testType", e.target.value)}
                   />
@@ -752,7 +757,7 @@ export default function RecordFormPage() {
       <div className={styles.sectionCard}>
         <h2 className={styles.sectionTitle}>
           <Icon name="stethoscope" size={18} />
-          {tr("4. Confirmatory Diagnosis & Proposed Actions")}
+          {tr("4. Diagnosis & Treatment Plan")}
         </h2>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -817,7 +822,7 @@ export default function RecordFormPage() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "center" }}>
             <Field label={tr("Proposed Horse Status")}>
               <Select
-                options={PROPOSED_STATUS_OPTIONS}
+                options={proposedStatusOptions}
                 value={proposedStatus}
                 onChange={(e) => setProposedStatus(e.target.value)}
               />

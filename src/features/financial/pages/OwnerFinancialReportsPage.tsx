@@ -137,9 +137,9 @@ export default function OwnerFinancialReportsPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <PageHeader
-        title={tr("Owner Financial Reports & Ledger Settlement")}
+        title={tr("Owner Financial Reports")}
         description={tr(
-          "Transparent accounting ledger: monthly stall boarding, veterinary care, conditioning expenses, and 70% race prize deductions.",
+          "Monthly statements for boarding, veterinary care, training fees, and prize deductions.",
         )}
         action={
           <div style={{ display: "flex", gap: "0.5rem" }}>

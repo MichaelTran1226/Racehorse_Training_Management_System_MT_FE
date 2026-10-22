@@ -192,7 +192,7 @@ export default function PlanWizardPage() {
           {editing ? tr(`Edit ${existing?.planCode ?? "plan"}`) : tr("Create Training Plan")}
         </h1>
         <p style={{ margin: "0.25rem 0 0", color: "var(--text-muted)", fontSize: "var(--fs-body)" }}>
-          {tr("Create plan architecture with phases first (Step 1). Once saved, you can immediately add workouts and schedule sessions on the Weekly Calendar (Step 2).")}
+          {tr("Set goals, dates, and periodization phases for the training plan.")}
         </p>
       </div>
 
@@ -240,7 +240,7 @@ export default function PlanWizardPage() {
             </div>
           </div>
           <div style={{ fontSize: "var(--fs-xs)", color: "var(--muted)", maxWidth: 360 }}>
-            💡 {tr("Why this order? Workouts require Phase boundaries and dates to ensure horse conditioning safety.")}
+            💡 {tr("Workouts are scheduled within phase date boundaries.")}
           </div>
         </div>
       </Card>

@@ -304,8 +304,8 @@ export default function HorseFormPage() {
         title={isEdit ? tr(`Edit ${name || horseCode}`) : tr("Register horse")}
         description={
           isEdit
-            ? tr("Update the identity details of this horse.")
-            : tr("Enter the identity details. The HR- code is created when you save.")
+            ? tr("Update identity and profile details.")
+            : tr("Enter identity details to register a new horse.")
         }
         action={
           <div style={{ display: "flex", gap: "0.75rem" }}>
@@ -343,10 +343,10 @@ export default function HorseFormPage() {
           {/* Column 1: Identity */}
           <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
             <h3 style={{ margin: 0, fontSize: "var(--fs-body-lg)", fontWeight: 700, borderBottom: "1px solid var(--border)", paddingBottom: "0.5rem" }}>
-              {tr("Identity & Microchip Credentials")}
+              {tr("Identity Details")}
             </h3>
 
-            <Field label={tr("Horse Code (ID)")} hint={tr("System auto-generates code formatted as HR-XXXXXX upon save")}>
+            <Field label={tr("Horse Code (ID)")} hint={tr("Generated upon save (HR-XXXXXX)")}>
               <Input
                 value={isEdit ? horseCode : tr("Auto-generated on save")}
                 disabled
@@ -354,7 +354,7 @@ export default function HorseFormPage() {
               />
             </Field>
 
-            <Field label={tr("Horse Name *")} error={errors.name} hint={tr("Between 2 and 100 characters (alphanumeric, spaces, ' - .)")}>
+            <Field label={tr("Horse Name *")} error={errors.name} hint={tr("2 to 100 characters")}>
               <Input
                 placeholder={tr("Enter horse name...")}
                 value={name}
@@ -370,7 +370,7 @@ export default function HorseFormPage() {
             <Field
               label={tr("Microchip Number *")}
               error={errors.microchip}
-              hint={isEdit ? tr("Exactly 15 digits.") : tr("Exactly 15 digits. Leave it as generated or type the implanted chip number.")}
+              hint={tr("15-digit ISO microchip number")}
             >
               <div style={{ display: "flex", gap: "0.5rem" }}>
                 <Input
@@ -404,7 +404,7 @@ export default function HorseFormPage() {
             <Field
               label={tr("RFID Tag Code (optional)")}
               error={errors.rfid}
-              hint={tr("4-32 upper-case letters, digits or hyphens.")}
+              hint={tr("4 to 32 letters, digits or hyphens")}
             >
               <div style={{ display: "flex", gap: "0.5rem" }}>
                 <Input
@@ -439,7 +439,7 @@ export default function HorseFormPage() {
           {/* Column 2: Traits & Pedigree */}
           <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
             <h3 style={{ margin: 0, fontSize: "var(--fs-body-lg)", fontWeight: 700, borderBottom: "1px solid var(--border)", paddingBottom: "0.5rem" }}>
-              {tr("Biological Traits & Conformation")}
+              {tr("Physical Traits")}
             </h3>
 
             <Field label={tr("Breed *")} error={errors.breed}>
@@ -456,7 +456,7 @@ export default function HorseFormPage() {
             <Field
               label={tr("Date of Birth *")}
               error={errors.dob}
-              hint={tr(`Up to 12 years old (${minDobStr} – ${todayStr})`)}
+              hint={tr(`Max 12 years (${minDobStr} – ${todayStr})`)}
             >
               <Input
                 type="date"

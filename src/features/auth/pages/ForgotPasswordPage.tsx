@@ -47,8 +47,8 @@ export default function ForgotPasswordPage() {
 
   return (
     <AuthLayout
-      title={tr("Reset your password.")}
-      description={tr("Enter the club email of the account. A 6-digit code follows by email and stays valid for 10 minutes.")}
+      title={tr("Forgot password")}
+      description={tr("Enter your email to receive a 6-digit password reset code.")}
     >
       <form onSubmit={onSubmit} noValidate style={{ display: "contents" }}>
         {failure && (
@@ -56,7 +56,7 @@ export default function ForgotPasswordPage() {
             {failure}
           </Alert>
         )}
-        <Field label={tr("Club email")} required error={error} hint={tr("For security the answer is the same whether or not the email exists")}>
+        <Field label={tr("Club email")} required error={error}>
           <Input
             type="email"
             icon="mail"
