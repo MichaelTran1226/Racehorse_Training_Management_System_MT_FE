@@ -58,7 +58,9 @@ export function RecordResultsModal({
           officialNotes: existing?.officialNotes ?? "",
         };
       });
-      setRows(initial);
+      queueMicrotask(() => {
+        setRows(initial);
+      });
     }
   }, [tournament, isOpen]);
 

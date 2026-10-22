@@ -31,7 +31,9 @@ export function PermissionRequestsPanel() {
   }, []);
 
   useEffect(() => {
-    void load();
+    queueMicrotask(() => {
+      void load();
+    });
   }, [load]);
 
   async function resolve(request: PermissionRequest, status: "GRANTED" | "DISMISSED") {

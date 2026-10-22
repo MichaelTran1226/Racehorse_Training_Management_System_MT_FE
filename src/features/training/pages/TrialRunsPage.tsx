@@ -49,7 +49,9 @@ export default function TrialRunsPage() {
   }, [from, to, toast]);
 
   useEffect(() => {
-    void load();
+    queueMicrotask(() => {
+      void load();
+    });
   }, [load]);
 
   // Nhóm theo ngày + mặt sân để điều phối.

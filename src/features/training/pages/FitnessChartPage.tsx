@@ -51,7 +51,9 @@ export default function FitnessChartPage() {
   }, [id, weeks]);
 
   useEffect(() => {
-    void load();
+    queueMicrotask(() => {
+      void load();
+    });
   }, [load]);
 
   if (error) {

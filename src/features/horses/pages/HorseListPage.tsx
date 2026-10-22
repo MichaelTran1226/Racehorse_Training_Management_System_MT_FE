@@ -171,7 +171,9 @@ export default function HorseListPage() {
   }, [querySearch, queryStatus, queryLock, queryGender, queryBreed, queryNoStall, querySort, queryPage, queryLimit]);
 
   useEffect(() => {
-    loadData();
+    queueMicrotask(() => {
+      loadData();
+    });
   }, [loadData]);
 
   function resetFilters() {

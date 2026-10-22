@@ -74,7 +74,9 @@ export default function RecordDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    void fetchDetail();
+    queueMicrotask(() => {
+      void fetchDetail();
+    });
   }, [fetchDetail]);
 
   async function handleDeleteDraft() {

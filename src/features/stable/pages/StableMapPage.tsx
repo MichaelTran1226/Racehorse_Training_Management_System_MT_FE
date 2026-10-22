@@ -69,9 +69,15 @@ export default function StableMapPage() {
       .finally(() => setLoading(false));
   }, [zoneId]);
 
-  useEffect(loadZones, [loadZones]);
   useEffect(() => {
-    loadStalls();
+    queueMicrotask(() => {
+      loadZones();
+    });
+  }, [loadZones]);
+  useEffect(() => {
+    queueMicrotask(() => {
+      loadStalls();
+    });
     // Tự làm mới mỗi 60 giây khi tab đang mở.
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") loadStalls();
@@ -83,7 +89,9 @@ export default function StableMapPage() {
   useEffect(() => {
     const q = search.trim();
     if (q.length < 2) {
-      setMatches(null);
+      queueMicrotask(() => {
+        setMatches(null);
+      });
       return;
     }
     const t = window.setTimeout(() => {

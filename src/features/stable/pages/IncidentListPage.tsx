@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { Card } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
@@ -32,7 +32,7 @@ export default function IncidentListPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState<IncidentReport | null>(null);
 
-  async function loadIncidents() {
+  const loadIncidents = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -48,11 +48,13 @@ export default function IncidentListPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [severityFilter, statusFilter, search]);
 
   useEffect(() => {
-    loadIncidents();
-  }, [severityFilter, statusFilter, search]);
+    queueMicrotask(() => {
+      void loadIncidents();
+    });
+  }, [loadIncidents]);
 
   // Realtime incident auto-refresh via shared Socket.IO connection
   useEffect(() => {
@@ -60,7 +62,7 @@ export default function IncidentListPage() {
       loadIncidents();
     });
     return unsub;
-  }, []);
+  }, [loadIncidents]);
 
   const getSeverityBadge = (sev: IncidentSeverity) => {
     switch (sev) {

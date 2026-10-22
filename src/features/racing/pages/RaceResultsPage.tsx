@@ -13,16 +13,6 @@ export default function RaceResultsPage() {
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadCompletedTournaments();
-  }, []);
-
-  useEffect(() => {
-    if (selectedTournamentId) {
-      loadDetail(selectedTournamentId);
-    }
-  }, [selectedTournamentId]);
-
   async function loadCompletedTournaments() {
     setLoading(true);
     try {
@@ -47,6 +37,20 @@ export default function RaceResultsPage() {
       console.error("Failed to load tournament detail", err);
     }
   }
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      void loadCompletedTournaments();
+    });
+  }, []);
+
+  useEffect(() => {
+    if (selectedTournamentId) {
+      queueMicrotask(() => {
+        void loadDetail(selectedTournamentId);
+      });
+    }
+  }, [selectedTournamentId]);
 
   const finishedRegistrations = (selectedTournament?.registrations ?? [])
     .filter((r) => r.result)

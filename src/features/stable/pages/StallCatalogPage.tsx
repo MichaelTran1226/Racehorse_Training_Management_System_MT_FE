@@ -281,10 +281,14 @@ export default function StallCatalogPage() {
   }, [zoneId]);
 
   useEffect(() => {
-    void loadZones();
+    queueMicrotask(() => {
+      void loadZones();
+    });
   }, [loadZones]);
   useEffect(() => {
-    void loadStalls();
+    queueMicrotask(() => {
+      void loadStalls();
+    });
   }, [loadStalls]);
 
   const zone = zones.find((z) => z.id === zoneId);

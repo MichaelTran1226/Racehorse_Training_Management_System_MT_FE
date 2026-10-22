@@ -92,7 +92,9 @@ export default function AccountListPage() {
   }, []);
 
   useEffect(() => {
-    void load();
+    queueMicrotask(() => {
+      void load();
+    });
   }, [load]);
 
   // Số ngựa của từng Chủ ngựa (cột Role): đọc mọi trang của GET /horses (tối đa 100 dòng/trang).

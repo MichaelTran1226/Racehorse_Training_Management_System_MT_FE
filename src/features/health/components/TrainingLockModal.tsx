@@ -45,8 +45,8 @@ export function TrainingLockModal({
   onLiftLock,
   onExtendLock,
 }: TrainingLockModalProps) {
-  const minDate = new Date(Date.now() + 86400000).toISOString().split("T")[0];
-  const maxDate = new Date(Date.now() + 180 * 86400000).toISOString().split("T")[0];
+  const [minDate] = useState(() => new Date(Date.now() + 86400000).toISOString().split("T")[0]);
+  const [maxDate] = useState(() => new Date(Date.now() + 180 * 86400000).toISOString().split("T")[0]);
 
   const [selectedHorseId, setSelectedHorseId] = useState(
     horseId || (horseOptions && horseOptions.length > 0 ? horseOptions[0].value : "")

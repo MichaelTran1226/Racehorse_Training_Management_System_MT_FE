@@ -47,7 +47,9 @@ export default function PlanListPage() {
   }, []);
 
   useEffect(() => {
-    void loadPlans();
+    queueMicrotask(() => {
+      void loadPlans();
+    });
   }, [loadPlans]);
 
   const q = search.toLowerCase();

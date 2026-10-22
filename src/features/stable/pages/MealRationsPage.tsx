@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { Card } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
@@ -38,7 +38,7 @@ export default function MealRationsPage() {
   const canCreate = user?.role === 'HEAD_TRAINER' || user?.role === 'CLUB_MANAGER';
   const isVet = user?.role === 'VETERINARIAN' || user?.role === 'CLUB_MANAGER';
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -57,11 +57,13 @@ export default function MealRationsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [statusFilter, selectedZoneId, search]);
 
   useEffect(() => {
-    loadData();
-  }, [statusFilter, selectedZoneId]);
+    queueMicrotask(() => {
+      void loadData();
+    });
+  }, [loadData]);
 
   // KPIs
   const stats = useMemo(() => {

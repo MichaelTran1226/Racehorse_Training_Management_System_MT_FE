@@ -80,8 +80,8 @@ export function NutritionPlanModal({
         const horseList = Array.isArray(horsesRes) ? horsesRes : horsesRes.items || [];
         setHorses(horseList);
         setSupplies(suppliesRes.filter((s) => s.isActive));
-        if (!horseId && horseList.length > 0) {
-          setHorseId(horseList[0].id);
+        if (horseList.length > 0) {
+          setHorseId((currentId) => currentId || horseList[0].id);
         }
       } catch (err) {
         if (active) setError(messageFor(err));

@@ -107,7 +107,9 @@ export default function WeeklyCalendarPage() {
   }, [from, to]);
 
   useEffect(() => {
-    void load();
+    queueMicrotask(() => {
+      void load();
+    });
   }, [load]);
 
   useEffect(() => {

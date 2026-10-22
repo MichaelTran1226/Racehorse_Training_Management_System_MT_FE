@@ -56,7 +56,9 @@ export default function PermissionMatrix({ accountId }: { accountId: string }) {
   }, [accountId]);
 
   useEffect(() => {
-    void load();
+    queueMicrotask(() => {
+      void load();
+    });
   }, [load]);
 
   const changes = useMemo(() => {

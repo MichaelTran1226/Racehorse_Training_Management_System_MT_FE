@@ -47,8 +47,8 @@ export function IncidentReportModal({
         if (!active) return;
         const list = Array.isArray(res) ? res : res.items || [];
         setHorses(list);
-        if (!horseId && list.length > 0) {
-          setHorseId(list[0].id);
+        if (list.length > 0) {
+          setHorseId((currentId) => currentId || list[0].id);
         }
       } catch (err) {
         if (active) setError(messageFor(err));

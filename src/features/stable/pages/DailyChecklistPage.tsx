@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@/shared/components/layout/PageHeader';
 import { Card } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
@@ -38,7 +38,7 @@ export default function DailyChecklistPage() {
   const [error, setError] = useState('');
 
   // Clock tick to update the 15-minute undo timers every second
-  const [nowMs, setNowMs] = useState<number>(Date.now());
+  const [nowMs, setNowMs] = useState<number>(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNowMs(Date.now()), 1000);
     return () => clearInterval(timer);
@@ -63,11 +63,13 @@ export default function DailyChecklistPage() {
           setShiftsLoaded(true);
         });
     } else {
-      setShiftsLoaded(true);
+      queueMicrotask(() => {
+        setShiftsLoaded(true);
+      });
     }
   }, [isGroom, selectedDate]);
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -94,12 +96,14 @@ export default function DailyChecklistPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [selectedDate, selectedZoneId, statusFilter, onlyMyTasks]);
 
   useEffect(() => {
     if (!shiftsLoaded) return;
-    loadData();
-  }, [selectedDate, selectedZoneId, statusFilter, onlyMyTasks, shiftsLoaded]);
+    queueMicrotask(() => {
+      void loadData();
+    });
+  }, [shiftsLoaded, loadData]);
 
   const handleGenerate = async () => {
     if (generating) return;

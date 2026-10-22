@@ -40,7 +40,9 @@ export default function AlertListPage() {
   }, [toast]);
 
   useEffect(() => {
-    void loadAlerts();
+    queueMicrotask(() => {
+      void loadAlerts();
+    });
   }, [loadAlerts]);
 
   const handleConfirmAck = async () => {

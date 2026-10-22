@@ -150,7 +150,9 @@ export default function ShiftRosterPage() {
   }, [startDateStr, endDateStr, selectedZoneId, isManager, isGroom]);
 
   useEffect(() => {
-    fetchData();
+    queueMicrotask(() => {
+      void fetchData();
+    });
   }, [fetchData]);
 
   // Thống kê số ca trực mỗi groom đã làm trong tuần

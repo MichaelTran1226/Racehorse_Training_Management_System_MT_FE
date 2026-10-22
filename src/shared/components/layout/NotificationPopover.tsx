@@ -30,7 +30,9 @@ export function NotificationPopover({
 
   useEffect(() => {
     if (!open) {
-      setMenuOpen(false);
+      queueMicrotask(() => {
+        setMenuOpen(false);
+      });
       return;
     }
     function handleClickOutside(event: MouseEvent) {

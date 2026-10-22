@@ -8,7 +8,6 @@ import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { Input } from '@/shared/components/form/Input';
 import { Select } from '@/shared/components/form/Select';
 import { useCurrentUser } from '@/shared/components/layout/authContext';
-import { useAppLanguage } from '@/shared/lib/language';
 import { tr } from '@/shared/i18n/tr';
 import { messageFor } from '@/shared/lib/messages';
 import { getZones } from '../api';
@@ -30,7 +29,6 @@ const CATEGORY_NAMES: Record<SupplyCategory, string> = {
 export default function InventoryPage() {
   const currentUser = useCurrentUser();
   const isManager = currentUser.role === 'CLUB_MANAGER';
-  const { isVietnamese } = useAppLanguage();
 
   const [zones, setZones] = useState<Zone[]>([]);
   const [supplies, setSupplies] = useState<SupplyCatalogItem[]>([]);
@@ -90,7 +88,9 @@ export default function InventoryPage() {
   }, [zoneFilter, categoryFilter, search, lowStockOnly]);
 
   useEffect(() => {
-    fetchStock();
+    queueMicrotask(() => {
+      void fetchStock();
+    });
   }, [fetchStock]);
 
   const zoneOptions = useMemo(() => {
@@ -98,17 +98,15 @@ export default function InventoryPage() {
       { value: 'ALL', label: tr('All Stall Zones') },
       ...zones.map((z) => ({ value: z.id, label: `${z.code} - ${z.name}` })),
     ];
-  }, [zones, isVietnamese]);
+  }, [zones]);
 
-  const categoryOptions = useMemo(() => {
-    return [
-      { value: 'ALL', label: tr('All Categories') },
-      { value: 'FEED', label: tr('Feed & Forage') },
-      { value: 'MEDICINE', label: tr('Medications & Vaccines') },
-      { value: 'CARE', label: tr('Daily Care & Supplements') },
-      { value: 'EQUIPMENT', label: tr('Grooming & Equipment') },
-    ];
-  }, [isVietnamese]);
+  const categoryOptions = [
+    { value: 'ALL', label: tr('All Categories') },
+    { value: 'FEED', label: tr('Feed & Forage') },
+    { value: 'MEDICINE', label: tr('Medications & Vaccines') },
+    { value: 'CARE', label: tr('Daily Care & Supplements') },
+    { value: 'EQUIPMENT', label: tr('Grooming & Equipment') },
+  ];
 
   const sufficientCount = useMemo(
     () => items.filter((i) => i.status === 'SUFFICIENT').length,
@@ -235,7 +233,7 @@ export default function InventoryPage() {
         ),
       },
     ],
-    [isManager, isVietnamese],
+    [isManager],
   );
 
   return (

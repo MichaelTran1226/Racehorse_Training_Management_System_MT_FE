@@ -40,7 +40,9 @@ export default function ShiftCatalogPage() {
   }, []);
 
   useEffect(() => {
-    fetchShifts();
+    queueMicrotask(() => {
+      void fetchShifts();
+    });
   }, [fetchShifts]);
 
   const handleToggleStatus = async () => {

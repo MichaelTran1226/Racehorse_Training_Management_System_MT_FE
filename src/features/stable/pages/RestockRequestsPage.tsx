@@ -8,7 +8,6 @@ import { DataTable, type Column } from '@/shared/components/ui/DataTable';
 import { Input } from '@/shared/components/form/Input';
 import { Select } from '@/shared/components/form/Select';
 import { useCurrentUser } from '@/shared/components/layout/authContext';
-import { useAppLanguage } from '@/shared/lib/language';
 import { tr } from '@/shared/i18n/tr';
 import { messageFor } from '@/shared/lib/messages';
 import { getZones } from '../api';
@@ -24,7 +23,6 @@ import { type SupplyCatalogItem, formatSupplyUnit } from '@/features/master-data
 export default function RestockRequestsPage() {
   const currentUser = useCurrentUser();
   const isManager = currentUser.role === 'CLUB_MANAGER';
-  const { isVietnamese } = useAppLanguage();
 
   const [zones, setZones] = useState<Zone[]>([]);
   const [supplies, setSupplies] = useState<SupplyCatalogItem[]>([]);
@@ -78,26 +76,25 @@ export default function RestockRequestsPage() {
   }, [statusFilter, zoneFilter, search]);
 
   useEffect(() => {
-    fetchRequests();
+    queueMicrotask(() => {
+      void fetchRequests();
+    });
   }, [fetchRequests]);
 
-  const statusTabs = useMemo(
-    () => [
-      { key: 'ALL', label: tr('All Proposals') },
-      { key: 'PENDING', label: tr('Pending Review') },
-      { key: 'APPROVED', label: tr('Approved & In-Transit') },
-      { key: 'DELIVERED', label: tr('Delivered / In Stock') },
-      { key: 'REJECTED', label: tr('Rejected') },
-    ],
-    [isVietnamese],
-  );
+  const statusTabs = [
+    { key: 'ALL', label: tr('All Proposals') },
+    { key: 'PENDING', label: tr('Pending Review') },
+    { key: 'APPROVED', label: tr('Approved & In-Transit') },
+    { key: 'DELIVERED', label: tr('Delivered / In Stock') },
+    { key: 'REJECTED', label: tr('Rejected') },
+  ];
 
   const zoneOptions = useMemo(() => {
     return [
       { value: 'ALL', label: tr('All Stall Zones') },
       ...zones.map((z) => ({ value: z.id, label: `${z.code} - ${z.name}` })),
     ];
-  }, [zones, isVietnamese]);
+  }, [zones]);
 
   const getStatusBadge = (status: RestockStatus) => {
     switch (status) {
@@ -219,7 +216,7 @@ export default function RestockRequestsPage() {
         ),
       },
     ],
-    [isManager, isVietnamese],
+    [isManager],
   );
 
   return (

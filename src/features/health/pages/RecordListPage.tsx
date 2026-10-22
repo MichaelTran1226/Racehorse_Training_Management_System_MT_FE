@@ -64,7 +64,9 @@ export default function RecordListPage() {
   }, [debouncedSearch, status, page]);
 
   useEffect(() => {
-    void fetchRecords();
+    queueMicrotask(() => {
+      void fetchRecords();
+    });
   }, [fetchRecords]);
 
   return (

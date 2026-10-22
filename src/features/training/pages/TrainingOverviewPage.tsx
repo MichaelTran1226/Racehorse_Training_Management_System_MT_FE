@@ -42,7 +42,9 @@ export default function TrainingOverviewPage() {
   }, []);
 
   useEffect(() => {
-    void load();
+    queueMicrotask(() => {
+      void load();
+    });
   }, [load]);
 
   if (error) {

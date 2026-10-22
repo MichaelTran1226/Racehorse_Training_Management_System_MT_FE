@@ -76,14 +76,18 @@ export default function PlanDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    void load();
+    queueMicrotask(() => {
+      void load();
+    });
   }, [load]);
 
   // "Lưu và kích hoạt" ở SC-2.03 chuyển sang đây với ?activate=1 -> mở DL-2.02 ngay.
   useEffect(() => {
     if (plan && params.get("activate") === "1" && plan.status === "DRAFT" && isTrainer) {
-      setDialog({ kind: "activate" });
-      setParams({}, { replace: true });
+      queueMicrotask(() => {
+        setDialog({ kind: "activate" });
+        setParams({}, { replace: true });
+      });
     }
   }, [plan, params, setParams, isTrainer]);
 

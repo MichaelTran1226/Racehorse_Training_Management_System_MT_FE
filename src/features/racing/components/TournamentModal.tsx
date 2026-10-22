@@ -29,32 +29,34 @@ export function TournamentModal({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (initialData) {
-      setName(initialData.name);
-      setRaceDate(initialData.raceDate ? initialData.raceDate.split("T")[0] : "");
-      setRegistrationDeadline(
-        initialData.registrationDeadline ? initialData.registrationDeadline.split("T")[0] : "",
-      );
-      setLocation(initialData.location);
-      setDistanceMeters(initialData.distanceMeters);
-      setTrackType(initialData.trackType);
-      setPrizePool(initialData.prizePool);
-      setStatus(initialData.status);
-    } else {
-      setName("");
-      const now = new Date();
-      now.setDate(now.getDate() + 30);
-      setRaceDate(now.toISOString().split("T")[0]);
-      const dl = new Date();
-      dl.setDate(dl.getDate() + 20);
-      setRegistrationDeadline(dl.toISOString().split("T")[0]);
-      setLocation("");
-      setDistanceMeters(1600);
-      setTrackType("TURF");
-      setPrizePool(100000000);
-      setStatus("UPCOMING");
-    }
-    setError(null);
+    queueMicrotask(() => {
+      if (initialData) {
+        setName(initialData.name);
+        setRaceDate(initialData.raceDate ? initialData.raceDate.split("T")[0] : "");
+        setRegistrationDeadline(
+          initialData.registrationDeadline ? initialData.registrationDeadline.split("T")[0] : "",
+        );
+        setLocation(initialData.location);
+        setDistanceMeters(initialData.distanceMeters);
+        setTrackType(initialData.trackType);
+        setPrizePool(initialData.prizePool);
+        setStatus(initialData.status);
+      } else {
+        setName("");
+        const now = new Date();
+        now.setDate(now.getDate() + 30);
+        setRaceDate(now.toISOString().split("T")[0]);
+        const dl = new Date();
+        dl.setDate(dl.getDate() + 20);
+        setRegistrationDeadline(dl.toISOString().split("T")[0]);
+        setLocation("");
+        setDistanceMeters(1600);
+        setTrackType("TURF");
+        setPrizePool(100000000);
+        setStatus("UPCOMING");
+      }
+      setError(null);
+    });
   }, [initialData, isOpen]);
 
   if (!isOpen) return null;

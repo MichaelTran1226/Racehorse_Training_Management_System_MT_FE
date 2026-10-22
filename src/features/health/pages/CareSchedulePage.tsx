@@ -77,7 +77,9 @@ export default function CareSchedulePage() {
   }, [toast]);
 
   useEffect(() => {
-    void loadData();
+    queueMicrotask(() => {
+      void loadData();
+    });
   }, [loadData]);
 
   useEffect(() => {

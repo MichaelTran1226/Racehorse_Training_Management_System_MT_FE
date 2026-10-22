@@ -52,7 +52,9 @@ export default function TrainingLockPage() {
   }, [toast]);
 
   useEffect(() => {
-    void loadLocks();
+    queueMicrotask(() => {
+      void loadLocks();
+    });
   }, [loadLocks]);
 
   useEffect(() => {

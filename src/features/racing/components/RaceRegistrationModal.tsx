@@ -27,28 +27,42 @@ export function RaceRegistrationModal({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isOpen && tournament) {
-      loadEligibility();
-    }
-  }, [isOpen, tournament]);
+    if (!isOpen || !tournament) return;
+    let cancelled = false;
 
-  async function loadEligibility() {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetchEligibility(tournament.id);
-      setData(res);
-      // Auto select first eligible horse if not already registered
-      const firstAvailable = res.eligible.find((h) => !h.isRegistered);
-      if (firstAvailable) {
-        setSelectedHorseId(firstAvailable.id);
+    async function loadEligibility() {
+      try {
+        const res = await fetchEligibility(tournament.id);
+        if (cancelled) return;
+        setData(res);
+        // Auto select first eligible horse if not already registered
+        const firstAvailable = res.eligible.find((h) => !h.isRegistered);
+        if (firstAvailable) {
+          setSelectedHorseId(firstAvailable.id);
+        }
+      } catch (err: any) {
+        if (!cancelled) {
+          setError(err?.message || tr("Failed to load race eligibility"));
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
-    } catch (err: any) {
-      setError(err?.message || tr("Failed to load race eligibility"));
-    } finally {
-      setLoading(false);
     }
-  }
+
+    queueMicrotask(() => {
+      if (!cancelled) {
+        setLoading(true);
+        setError(null);
+        void loadEligibility();
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, tournament]);
 
   async function handleRegister() {
     if (!selectedHorseId) {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { Card } from "@/shared/components/ui/Card";
 import { Button } from "@/shared/components/ui/Button";
@@ -29,6 +29,7 @@ export default function RaceEntryPage() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeSearch, setActiveSearch] = useState("");
 
   // Modals state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -36,16 +37,12 @@ export default function RaceEntryPage() {
   const [registeringTournament, setRegisteringTournament] = useState<Tournament | null>(null);
   const [resultsTournament, setResultsTournament] = useState<Tournament | null>(null);
 
-  useEffect(() => {
-    loadData();
-  }, [statusFilter]);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetchTournaments({
         status: statusFilter,
-        search: searchTerm,
+        search: activeSearch,
       });
       setTournaments(res.items);
     } catch (err) {
@@ -53,7 +50,13 @@ export default function RaceEntryPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [statusFilter, activeSearch]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      loadData();
+    });
+  }, [loadData]);
 
   // KPIs
   const totalTournaments = tournaments.length;
@@ -158,7 +161,7 @@ export default function RaceEntryPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") loadData();
+                if (e.key === "Enter") setActiveSearch(searchTerm);
               }}
               style={{
                 padding: "0.5rem 0.875rem",
@@ -170,7 +173,7 @@ export default function RaceEntryPage() {
                 width: "240px",
               }}
             />
-            <Button tone="secondary" onClick={() => loadData()}>
+            <Button tone="secondary" onClick={() => setActiveSearch(searchTerm)}>
               {tr("Filter")}
             </Button>
           </div>

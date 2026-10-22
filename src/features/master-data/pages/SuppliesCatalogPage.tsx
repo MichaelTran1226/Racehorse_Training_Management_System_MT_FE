@@ -57,7 +57,9 @@ export default function SuppliesCatalogPage() {
   }, [categoryFilter, statusFilter, search]);
 
   useEffect(() => {
-    fetchSupplies();
+    queueMicrotask(() => {
+      void fetchSupplies();
+    });
   }, [fetchSupplies]);
 
   const handleToggleStatus = async () => {

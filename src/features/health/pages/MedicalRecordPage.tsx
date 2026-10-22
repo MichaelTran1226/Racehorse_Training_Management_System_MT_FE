@@ -71,7 +71,9 @@ export default function MedicalRecordPage() {
   }, [id]);
 
   useEffect(() => {
-    void loadData();
+    queueMicrotask(() => {
+      void loadData();
+    });
   }, [loadData]);
 
   // Load observations with filter

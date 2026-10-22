@@ -100,16 +100,24 @@ export function WorkoutDialog({ plans, plan: fixedPlan, session, defaultDate, on
   // Giai đoạn mặc định: giai đoạn chứa ngày đã chọn, nếu không thì giai đoạn đầu.
   useEffect(() => {
     if (phases.length === 0 || phases.some((p) => p.id === phaseId)) return;
-    setPhaseId((phases.find((p) => p.startDate <= date && date <= p.endDate) ?? phases[0]).id);
+    queueMicrotask(() => {
+      setPhaseId((phases.find((p) => p.startDate <= date && date <= p.endDate) ?? phases[0]).id);
+    });
   }, [phases, phaseId, date]);
   const phase = phases.find((p) => p.id === phaseId);
   useEffect(() => {
-    if (phase && !until) setUntil(phase.endDate);
+    if (phase && !until) {
+      queueMicrotask(() => {
+        setUntil(phase.endDate);
+      });
+    }
   }, [phase, until]);
 
   // Sửa thông tin thì bỏ các cảnh báo / xác nhận cũ.
   useEffect(() => {
-    setWarnings([]);
+    queueMicrotask(() => {
+      setWarnings([]);
+    });
   }, [planId, phaseId, date, time, type, intensity, distance, reps, groomId]);
 
   const locked = Boolean(plan?.isLockedByMedical);

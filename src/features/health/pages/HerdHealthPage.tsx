@@ -62,7 +62,9 @@ export default function HerdHealthPage() {
   }, []);
 
   useEffect(() => {
-    void load();
+    queueMicrotask(() => {
+      void load();
+    });
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") void load();
     }, REFRESH_MS);

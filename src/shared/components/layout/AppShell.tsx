@@ -33,10 +33,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [status, pathname, navigate]);
 
   // Thông báo: hỏi BE mỗi 30 giây khi đã đăng nhập; đổi tài khoản/đăng xuất thì dừng.
+  const userId = user?.id;
   useEffect(() => {
-    if (status !== "authenticated" || !user) return;
+    if (status !== "authenticated" || !userId) return;
     return startNotificationPolling();
-  }, [status, user?.id]);
+  }, [status, userId]);
 
   // Mỗi lần đổi trang: đóng menu hẹp và hỏi lại server (quyền có thể vừa bị đổi).
   useEffect(() => {

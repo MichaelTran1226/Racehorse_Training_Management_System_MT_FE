@@ -47,7 +47,9 @@ export default function MyTrainingPage() {
   }, [range.from, range.to]);
 
   useEffect(() => {
-    void load();
+    queueMicrotask(() => {
+      void load();
+    });
     const timer = window.setInterval(() => void load(), REFRESH_MS);
     return () => window.clearInterval(timer);
   }, [load]);
