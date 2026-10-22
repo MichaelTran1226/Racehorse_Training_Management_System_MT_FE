@@ -8,6 +8,32 @@ export interface WorkoutSimulationStart {
   status: "PENDING" | "RUNNING" | "COMPLETED" | "ABORTED_INJURY";
   launchUrl: string;
 }
+export interface SimulatorTelemetrySnapshot {
+  event: "sim:telemetry_tick";
+  session_id: string;
+  sim_time_s: number;
+  horse: { horse_id: string; microchip_id?: string };
+  track: {
+    surface: string;
+    target_distance_m: number;
+    covered_distance_m: number;
+    track_condition: string;
+  };
+  metrics: {
+    velocity_mps: number;
+    heart_rate_bpm: number;
+    stamina_pct: number;
+    body_temp_c: number;
+  };
+  alerts: { overload_warning: boolean; limp_detected: boolean; heat_stress: boolean };
+}
+export interface LiveSimulatorSession {
+  id: string;
+  status: "RUNNING";
+  horseIds: string[];
+  lastSnapshot: SimulatorTelemetrySnapshot | null;
+  updatedAt: string;
+}
 export type ExerciseType = "WALK" | "TROT" | "CANTER" | "BREEZE" | "TRIAL" | "SWIM" | "TREADMILL";
 export type ExerciseIntensity = "LIGHT" | "MEDIUM" | "HEAVY";
 export type TrackType = "TURF" | "DIRT" | "SYNTHETIC" | "NONE";

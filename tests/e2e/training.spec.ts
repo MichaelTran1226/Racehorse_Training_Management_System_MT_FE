@@ -107,3 +107,14 @@ test('head trainer launches a due trial with the URL issued by the backend', asy
 
   await expect(popup).toHaveURL(/localhost:5175\/\?sessionId=mock-sim-w-106/);
 });
+
+test('live monitor renders telemetry returned by the simulator API', async ({ page }) => {
+  await signIn(page, 'nam.tran@gmail.com');
+  await page.goto('/training/monitor');
+
+  await expect(page.getByText('MICROCHIP-LIVE-001')).toBeVisible();
+  await expect(page.getByText('43.2 km/h')).toBeVisible();
+  await expect(page.getByText('156 bpm')).toBeVisible();
+  await expect(page.getByText('600m / 1200m')).toBeVisible();
+  await expect(page.getByText('Waiting for the first telemetry packet…')).toBeVisible();
+});

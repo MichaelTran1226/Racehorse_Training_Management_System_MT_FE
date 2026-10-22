@@ -6,6 +6,7 @@ import type {
   ExerciseType,
   FitnessData,
   Groom,
+  LiveSimulatorSession,
   PlanStatus,
   RepeatResult,
   ResultInput,
@@ -361,6 +362,18 @@ export const trainingApi = {
 
   async startSimulation(workoutId: string): Promise<WorkoutSimulationStart> {
     return api<WorkoutSimulationStart>("POST", `/simulator/workouts/${workoutId}/start`);
+  },
+
+  async getLiveSimulatorSessions(): Promise<LiveSimulatorSession[]> {
+    const response = await api<{
+      active: Array<Omit<LiveSimulatorSession, "id"> & { sessionId: string }>;
+      recent: LiveSimulatorSession[];
+    }>("GET", "/simulator/sessions?status=RUNNING");
+    const sessions = [
+      ...response.active.map(({ sessionId, ...session }) => ({ id: sessionId, ...session })),
+      ...response.recent,
+    ];
+    return [...new Map(sessions.map((session) => [session.id, session])).values()];
   },
 
   // Thể lực & cảnh báo

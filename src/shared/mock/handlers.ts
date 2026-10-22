@@ -3183,6 +3183,41 @@ const routes: Route[] = [
   },
   {
     method: "GET",
+    pattern: /^\/simulator\/sessions$/,
+    handler({ db, url }) {
+      trainingRole(currentUser(db), ["CLUB_MANAGER", "HEAD_TRAINER", "VETERINARIAN"]);
+      if (url.searchParams.get("status") !== "RUNNING") return { active: [], recent: [] };
+      return {
+        active: [],
+        recent: [
+          {
+            id: "mock-live-session",
+            status: "RUNNING",
+            horseIds: ["horse-1"],
+            updatedAt: "2026-10-23T01:00:00.000Z",
+            lastSnapshot: {
+              event: "sim:telemetry_tick",
+              session_id: "mock-live-session",
+              sim_time_s: 42,
+              horse: { horse_id: "horse-1", microchip_id: "MICROCHIP-LIVE-001" },
+              track: { surface: "TURF", target_distance_m: 1200, covered_distance_m: 600, track_condition: "GOOD" },
+              metrics: { velocity_mps: 12, heart_rate_bpm: 156, stamina_pct: 74, body_temp_c: 38.4 },
+              alerts: { overload_warning: false, limp_detected: false, heat_stress: false },
+            },
+          },
+          {
+            id: "mock-live-waiting",
+            status: "RUNNING",
+            horseIds: ["horse-2"],
+            updatedAt: "2026-10-23T01:00:01.000Z",
+            lastSnapshot: null,
+          },
+        ],
+      };
+    },
+  },
+  {
+    method: "GET",
     pattern: /^\/training\/grooms$/,
     handler({ db }) {
       trainingRole(currentUser(db), ["HEAD_TRAINER"]);
