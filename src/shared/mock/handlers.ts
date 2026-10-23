@@ -3218,6 +3218,27 @@ const routes: Route[] = [
   },
   {
     method: "GET",
+    pattern: /^\/simulator\/workouts\/([^/]+)\/latest$/,
+    handler({ db, params }) {
+      trainingRole(currentUser(db), ["HEAD_TRAINER"]);
+      if (params[0] !== "w-106") throw new ApiError(404, "SIMULATOR_RESULT_NOT_FOUND", "No simulation result exists.");
+      return {
+        sessionId: "mock-sim-w-106",
+        status: "ABORTED_INJURY",
+        resultDraft: {
+          actualTimeSeconds: 72.4,
+          actualDistanceMeters: 1187,
+          heartRatePeak: 195,
+          heartRateRecovery: 86,
+          topSpeedKmh: 65.5,
+          actualSurface: "TURF",
+          trackCondition: "SOFT",
+        },
+      };
+    },
+  },
+  {
+    method: "GET",
     pattern: /^\/training\/grooms$/,
     handler({ db }) {
       trainingRole(currentUser(db), ["HEAD_TRAINER"]);
@@ -3355,6 +3376,7 @@ const routes: Route[] = [
         trackCondition: body.trackCondition ?? null,
         heartRatePeak: body.heartRatePeak ?? null,
         heartRateRecovery: body.heartRateRecovery ?? null,
+        topSpeedKmh: body.topSpeedKmh ?? null,
         performanceScore: Number(body.performanceScore),
         completionLevel: String(body.completionLevel),
         resultNotes: String(body.trainerNotes ?? ""),

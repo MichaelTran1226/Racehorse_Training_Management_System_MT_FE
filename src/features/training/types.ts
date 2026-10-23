@@ -8,6 +8,20 @@ export interface WorkoutSimulationStart {
   status: "PENDING" | "RUNNING" | "COMPLETED" | "ABORTED_INJURY";
   launchUrl: string;
 }
+export interface WorkoutSimulationResultDraft {
+  actualTimeSeconds?: number;
+  actualDistanceMeters?: number;
+  heartRatePeak?: number;
+  heartRateRecovery?: number;
+  topSpeedKmh?: number;
+  actualSurface?: TrackType;
+  trackCondition?: TrackCondition;
+}
+export interface WorkoutSimulationResult {
+  sessionId: string;
+  status: "PENDING" | "RUNNING" | "COMPLETED" | "ABORTED_INJURY";
+  resultDraft: WorkoutSimulationResultDraft | null;
+}
 export interface SimulatorTelemetrySnapshot {
   event: "sim:telemetry_tick";
   session_id: string;
@@ -264,6 +278,7 @@ export interface ResultInput {
   trackCondition?: TrackCondition;
   heartRatePeak?: number;
   heartRateRecovery?: number;
+  topSpeedKmh?: number;
   performanceScore: number;
   completionLevel: CompletionLevel;
   trainerNotes: string;

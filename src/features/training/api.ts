@@ -19,6 +19,7 @@ import type {
   TrainingPhase,
   TrainingPlan,
   WorkoutSimulationStart,
+  WorkoutSimulationResult,
 } from "./types";
 
 // Mọi lỗi từ BE đi thẳng ra màn hình (không còn "lưu tạm vào trình duyệt rồi báo thành công").
@@ -362,6 +363,10 @@ export const trainingApi = {
 
   async startSimulation(workoutId: string): Promise<WorkoutSimulationStart> {
     return api<WorkoutSimulationStart>("POST", `/simulator/workouts/${workoutId}/start`);
+  },
+
+  async getLatestSimulationResult(workoutId: string): Promise<WorkoutSimulationResult> {
+    return api<WorkoutSimulationResult>("GET", `/simulator/workouts/${workoutId}/latest`);
   },
 
   async getLiveSimulatorSessions(): Promise<LiveSimulatorSession[]> {

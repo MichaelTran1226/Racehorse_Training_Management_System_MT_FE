@@ -118,3 +118,30 @@ test('live monitor renders telemetry returned by the simulator API', async ({ pa
   await expect(page.getByText('600m / 1200m')).toBeVisible();
   await expect(page.getByText('Waiting for the first telemetry packet…')).toBeVisible();
 });
+
+test('trainer result form is prefilled from a finished simulator session', async ({ page }) => {
+  await signIn(page, 'nam.tran@gmail.com');
+  await page.goto('/training/sessions/w-106/result');
+
+  await expect(page.getByLabel('Actual distance (m)')).toHaveValue('1187');
+  await expect(page.getByLabel('Running time (mm:ss.s)')).toHaveValue('01:12.4');
+  await expect(page.getByLabel('Peak heart rate (bpm)')).toHaveValue('195');
+  await expect(page.getByLabel('Heart rate after 10 min rest (bpm)')).toHaveValue('86');
+  await expect(page.getByLabel('Top speed (km/h)')).toHaveValue('65.5');
+  await expect(page.getByLabel('Actual surface')).toHaveValue('TURF');
+  await expect(page.getByLabel('Track condition')).toHaveValue('SOFT');
+  await expect(page.getByLabel('Performance score')).toHaveValue('');
+  await expect(page.getByLabel('Completion')).toHaveValue('');
+  await expect(page.getByLabel(/Professional comment/)).toHaveValue('');
+
+  await page.getByLabel('Performance score').selectOption('7');
+  await page.getByLabel('Completion').selectOption('PARTIAL');
+  await page.getByLabel(/Professional comment/).fill('Stopped safely and referred for veterinary review.');
+  await page.getByRole('button', { name: 'Save result' }).click();
+  await expect(page).toHaveURL('/dashboard');
+
+  await page.goto('/training/sessions/w-106/result');
+  await expect(page.getByText('Completed', { exact: true })).toBeVisible();
+  await expect(page.getByText('65.5 km/h')).toBeVisible();
+  await expect(page.getByText('Stopped safely and referred for veterinary review.')).toBeVisible();
+});
