@@ -126,6 +126,8 @@ function RootLayout() {
   );
 }
 
+import { SkeletonPage } from "@/shared/components/ui/Skeleton";
+
 // Khung chung của mọi trang SAU đăng nhập: Sidebar + Topbar. Chưa đăng nhập thì AppShell đưa về /login.
 function AppLayout() {
   return (
@@ -133,7 +135,7 @@ function AppLayout() {
       {/* RoleGuard chặn trang khi tài khoản không đủ quyền (hiện 403 ngay tại URL đó). */}
       <RoleGuard>
         {/* Nhóm Y tế và Huấn luyện tải theo route (React.lazy) để file JS đầu tiên nhẹ hơn. */}
-        <Suspense fallback={<p role="status" style={{ margin: 0, color: "var(--muted)" }}>Loading…</p>}>
+        <Suspense fallback={<SkeletonPage />}>
           <Outlet />
         </Suspense>
       </RoleGuard>

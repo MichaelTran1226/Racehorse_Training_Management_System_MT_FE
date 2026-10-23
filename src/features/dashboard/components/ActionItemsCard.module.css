@@ -305,16 +305,16 @@
 }
 
 .actionBtn:hover {
-  background: #F5F8F5;
-  border-color: #315D4B;
-  color: #244638;
+  background: var(--surface-row-hover);
+  border-color: var(--brand);
+  color: var(--brand-600);
 }
 
 :global([data-theme="dark"]) .actionBtn:hover,
 :global(.theme-dark) .actionBtn:hover {
-  background: rgba(141, 187, 164, 0.15);
-  border-color: #8DBBA4;
-  color: #8DBBA4;
+  background: var(--brand-50);
+  border-color: var(--brand);
+  color: var(--brand);
 }
 
 /* Empty State */

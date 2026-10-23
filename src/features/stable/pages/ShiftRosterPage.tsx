@@ -292,7 +292,7 @@ export default function ShiftRosterPage() {
           {tr('Loading rosters...')}
         </div>
       ) : isGroom && onlyMyShifts ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ margin: 0, fontSize: '1.125rem' }}>
               {tr('Your personal roster for this week ({{count}} shifts)', { count: filteredMyShifts.length })}

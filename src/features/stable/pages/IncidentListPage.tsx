@@ -6,6 +6,7 @@ import { Input } from '@/shared/components/form/Input';
 import { Select } from '@/shared/components/form/Select';
 import { Badge } from '@/shared/components/ui/Badge';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { SkeletonTable } from '@/shared/components/ui/Skeleton';
 import { Alert } from '@/shared/components/ui/Alert';
 import { useCurrentUser } from '@/shared/components/layout/AuthProvider';
 import { useAppLanguage } from '@/shared/lib/language';
@@ -146,11 +147,7 @@ export default function IncidentListPage() {
 
       {/* Incidents Table / Cards */}
       {loading ? (
-        <Card pad={32}>
-          <div style={{ textAlign: 'center', color: 'var(--muted)' }}>
-            <div>{tr('Loading incident reports...')}</div>
-          </div>
-        </Card>
+        <SkeletonTable columns={5} rows={5} />
       ) : incidents.length === 0 ? (
         <Card pad={32}>
           <EmptyState

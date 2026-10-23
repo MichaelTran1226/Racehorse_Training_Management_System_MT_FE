@@ -5,6 +5,7 @@ import { Button } from "@/shared/components/ui/Button";
 import { Card } from "@/shared/components/ui/Card";
 import { Icon } from "@/shared/components/ui/Icon";
 import { HealthBadge } from "@/shared/components/ui/HealthBadge";
+import { Skeleton } from "@/shared/components/ui/Skeleton";
 import type { HealthStatus } from "@/shared/types/enums";
 import type { AuthUser } from "@/shared/types/auth";
 import { getHealthBoard } from "@/features/health/api";
@@ -210,8 +211,17 @@ function UpcomingTournamentsWidget() {
       </div>
 
       {loading ? (
-        <div style={{ padding: "24px", textAlign: "center", color: "var(--muted)", fontSize: "var(--fs-sm)" }}>
-          {tr("Loading tournaments...")}
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          {Array.from({ length: 3 }, (_, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", border: "1px solid var(--border)", borderRadius: "10px" }}>
+              <Skeleton variant="rect" width={42} height={42} borderRadius={8} />
+              <div style={{ flex: 1 }}>
+                <Skeleton variant="text" width="65%" height={14} />
+                <Skeleton variant="text" width="40%" height={10} style={{ marginTop: 4 }} />
+              </div>
+              <Skeleton variant="badge" width={70} height={20} />
+            </div>
+          ))}
         </div>
       ) : tournaments.length === 0 ? (
         <div style={{ padding: "24px", textAlign: "center", color: "var(--muted)", fontSize: "var(--fs-sm)" }}>

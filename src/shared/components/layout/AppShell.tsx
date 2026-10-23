@@ -8,6 +8,8 @@ import { breadcrumbFor } from "@/shared/lib/navigation";
 import { ROLE_LABEL } from "@/shared/lib/permissions";
 import { useAppLanguage } from "@/shared/lib/language";
 import { startNotificationPolling } from "@/shared/lib/notifications";
+import { triggerCloudLogoutTransition } from "@/shared/lib/cloudTransition";
+import { SkeletonWorkspace } from "@/shared/components/ui/Skeleton";
 import { useAuth } from "./AuthProvider";
 import { BreadcrumbContext } from "./BreadcrumbContext";
 import { Sidebar } from "./Sidebar";
@@ -47,11 +49,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [pathname]);
 
   if (status !== "authenticated" || !user) {
-    return (
-      <div className={styles.boot} role="status">
-        {tr("Loading workspace…")}
-      </div>
-    );
+    return <SkeletonWorkspace />;
   }
 
   return (
@@ -68,7 +66,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           />
           {/* key theo ngôn ngữ: đổi ngôn ngữ thì trang vẽ lại để mọi chữ tr() đổi theo. */}
           <main id="content" className={styles.content} key={lang}>
-            {children}
+            <div key={pathname} className={styles.pageTransition}>
+              {children}
+            </div>
           </main>
         </div>
       </div>
@@ -83,8 +83,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           cancelLabel={t("common.staySignedIn", "Stay signed in")}
           onCancel={() => setLogoutOpen(false)}
           onConfirm={async () => {
-            await signOut();
-            navigate("/login", { replace: true });
+            setLogoutOpen(false);
+            triggerCloudLogoutTransition(async () => {
+              await signOut();
+              navigate("/login", { replace: true });
+            });
           }}
         >
           {t("common.confirmLogoutBody", `The session for ${user.fullName} · ${t(`nav.role_${user.role}`, ROLE_LABEL[user.role])} closes and the browser returns to the sign-in page.`)}

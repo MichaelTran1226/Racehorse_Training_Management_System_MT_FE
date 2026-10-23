@@ -5,6 +5,7 @@ import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
 import { Card } from "@/shared/components/ui/Card";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
+import { SkeletonCards } from "@/shared/components/ui/Skeleton";
 import { Input } from "@/shared/components/form/Input";
 import { Select } from "@/shared/components/form/Select";
 import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
@@ -249,7 +250,7 @@ export default function WeeklyCalendarPage() {
       <div style={{ display: "grid", gridTemplateColumns: selected ? "minmax(0, 1fr) 320px" : "minmax(0, 1fr)", gap: "1rem", alignItems: "start" }}>
         <div>
           {loading ? (
-            <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>{isVietnamese ? "Đang tải lịch tập..." : tr("Loading schedule...")}</div>
+            <SkeletonCards count={3} />
           ) : mode === "day" ? (
             shown.length === 0 ? (
               <EmptyState title={isVietnamese ? tr(`Không có bài tập vào ngày ${date}.`) : tr(`No workouts on ${date}.`)} />

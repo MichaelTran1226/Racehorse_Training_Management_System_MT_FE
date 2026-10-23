@@ -57,15 +57,61 @@ export function Sidebar({ user, pathname, note, accountsAlert, open, onNavigate 
     };
   }, [canViewLocks]);
 
+  const [clickedId, setClickedId] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("equiflow_sidebar_collapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleCollapse = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("equiflow_sidebar_collapsed", String(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
+  const handleItemClick = (id: string) => {
+    setClickedId(id);
+    setTimeout(() => {
+      setClickedId((prev) => (prev === id ? null : prev));
+    }, 550);
+    onNavigate();
+  };
+
   return (
-    <nav aria-label={tr("Main navigation")} className={cx(styles.nav, open && styles.open)}>
+    <nav
+      aria-label={tr("Main navigation")}
+      className={cx(styles.nav, open && styles.open, collapsed && styles.collapsed)}
+    >
       <div className={styles.brand}>
-        <span className={styles.logo}>
-          <img src={BRAND.logo} alt="" width={26} height={26} />
-        </span>
-        <div>
-          <strong>{BRAND.name}</strong>
-          <span>{BRAND.fullNameShort}</span>
+        <button
+          type="button"
+          onClick={toggleCollapse}
+          className={styles.collapseBtn}
+          aria-label={collapsed ? tr("Expand sidebar") : tr("Collapse sidebar")}
+          title={collapsed ? tr("Expand sidebar") : tr("Collapse sidebar")}
+        >
+          <span className={styles.hamburgerBar} />
+          <span className={styles.hamburgerBar} />
+          <span className={styles.hamburgerBar} />
+        </button>
+
+        <div className={styles.brandInfo}>
+          <span className={styles.logo}>
+            <img src={BRAND.logo} alt="" width={24} height={24} />
+          </span>
+          <div className={styles.brandText}>
+            <strong>{BRAND.name}</strong>
+            <span>{BRAND.fullNameShort}</span>
+          </div>
         </div>
       </div>
 
@@ -79,6 +125,7 @@ export function Sidebar({ user, pathname, note, accountsAlert, open, onNavigate 
               {groupTitle ? <p className={styles.groupLabel}>{groupTitle}</p> : null}
             {g.items.map((it) => {
               const active = isNavItemActive(it, pathname);
+              const isClicked = clickedId === it.id;
               const showAlertDot =
                 (it.id === "locks" && hasActiveLocks) || (it.id === "accounts" && accountsAlert) || Boolean(it.alert);
               const itemKey = it.i18nKey || it.id;
@@ -87,13 +134,18 @@ export function Sidebar({ user, pathname, note, accountsAlert, open, onNavigate 
                 <Link
                   key={it.id}
                   to={it.href}
-                  onClick={onNavigate}
+                  onClick={() => handleItemClick(it.id)}
                   aria-current={active ? "page" : undefined}
-                  className={cx(styles.item, active && styles.active)}
+                  className={cx(styles.item, active && styles.active, isClicked && styles.itemClicked)}
+                  title={collapsed ? itemLabel : undefined}
                 >
-                  <Icon name={it.icon} size={18} />
+                  {active && <span className={styles.activePill} aria-hidden="true" />}
+                  <span className={cx(styles.iconWrapper, isClicked && styles.iconBounce)}>
+                    <Icon name={it.icon} size={18} />
+                  </span>
                   <span className={styles.itemLabel}>{itemLabel}</span>
                   {showAlertDot && <span className={cx(styles.dot, styles.alertDot)} aria-label={tr("Action required")} />}
+                  {isClicked && <span className={styles.clickRipple} aria-hidden="true" />}
                 </Link>
               );
             })}

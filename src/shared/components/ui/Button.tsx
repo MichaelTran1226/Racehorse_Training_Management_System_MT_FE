@@ -6,7 +6,7 @@ import { Icon } from "./Icon";
 import styles from "./Button.module.css";
 import { trNode } from "@/shared/i18n/tr";
 
-type Tone = "primary" | "secondary" | "ghost" | "quiet" | "danger" | "accent";
+type Tone = "primary" | "secondary" | "ghost" | "quiet" | "danger" | "accent" | "dark" | "outline";
 type Size = "sm" | "md" | "lg";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

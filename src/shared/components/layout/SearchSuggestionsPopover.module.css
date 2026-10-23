@@ -143,9 +143,9 @@
 /* Dark mode adjustment for active tab */
 :global([data-theme="dark"]) .tabBtnActive,
 :global(.theme-dark) .tabBtnActive {
-  background: rgba(141, 187, 164, 0.18);
-  color: #8DBBA4;
-  border-color: rgba(141, 187, 164, 0.35);
+  background: var(--brand-50);
+  color: var(--brand);
+  border-color: rgba(96, 165, 250, 0.35);
 }
 
 .divider {
@@ -193,14 +193,14 @@
 
 /* Selected item highlight */
 .resultRowSelected {
-  background: #E8F2EB !important;
-  border-color: rgba(36, 70, 56, 0.22) !important;
+  background: var(--brand-100) !important;
+  border-color: rgba(37, 99, 235, 0.22) !important;
 }
 
 :global([data-theme="dark"]) .resultRowSelected,
 :global(.theme-dark) .resultRowSelected {
-  background: rgba(141, 187, 164, 0.15) !important;
-  border-color: rgba(141, 187, 164, 0.3) !important;
+  background: var(--brand-50) !important;
+  border-color: rgba(96, 165, 250, 0.3) !important;
 }
 
 .itemLeft {

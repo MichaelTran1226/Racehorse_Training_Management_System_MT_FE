@@ -1,0 +1,236 @@
+/* ============================================================
+   SKELETON SCREEN ANIMATION SYSTEM (Shimmer Beam 60fps)
+   ============================================================ */
+
+/* Khối Skeleton cơ sở với dải sáng lướt qua (Shimmer Beam Wave) */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--surface-3, #E2E8F0);
+  border-radius: var(--r-sm, 6px);
+  display: block;
+  user-select: none;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.skeleton::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.55) 45%,
+    rgba(255, 255, 255, 0.75) 50%,
+    rgba(255, 255, 255, 0.55) 55%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmerWave 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  content: '';
+}
+
+:global([data-theme="dark"]) .skeleton {
+  background-color: var(--surface-3, #334155);
+}
+
+:global([data-theme="dark"]) .skeleton::after {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.06) 45%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.06) 55%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+@keyframes shimmerWave {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Các biến thể cơ bản */
+.text {
+  height: 14px;
+  border-radius: var(--r-xs, 4px);
+  margin-bottom: 6px;
+}
+.text:last-child {
+  margin-bottom: 0;
+}
+
+.title {
+  height: 24px;
+  border-radius: var(--r-xs, 4px);
+  margin-bottom: 8px;
+}
+
+.circle {
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.rect {
+  border-radius: var(--r, 8px);
+}
+
+.button {
+  height: 38px;
+  border-radius: var(--r-sm, 6px);
+}
+
+.badge {
+  height: 22px;
+  border-radius: 9999px;
+  display: inline-block;
+}
+
+/* Composite Skeletons: Table Wireframe */
+.tableContainer {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg, 12px);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  width: 100%;
+}
+
+.tableHeader {
+  display: flex;
+  align-items: center;
+  padding: 12px 18px;
+  background: var(--surface-table-head, var(--surface-2));
+  border-bottom: 1px solid var(--border);
+  gap: 16px;
+}
+
+.tableRow {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-soft);
+  gap: 16px;
+  transition: background 0.2s;
+}
+
+.tableRow:last-child {
+  border-bottom: 0;
+}
+
+/* Composite Skeletons: Card Grid Wireframe */
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.cardItem {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg, 12px);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Composite Skeletons: KPI Stats Grid Wireframe */
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.kpiCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg, 12px);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Composite Skeletons: Page Header & Toolbar Wireframe */
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 18px;
+  gap: 16px;
+  width: 100%;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg, 12px);
+  padding: 10px 16px;
+  margin-bottom: 18px;
+  gap: 12px;
+  width: 100%;
+}
+
+/* Full Workspace Skeleton (Hiển thị khi mở web hoặc F5) */
+.workspace {
+  display: flex;
+  min-height: 100vh;
+  background: var(--page);
+  width: 100vw;
+  overflow: hidden;
+}
+
+.workspaceSidebar {
+  width: var(--sidebar-w, 224px);
+  border-right: 1px solid var(--border);
+  background: var(--nav-bg, var(--surface));
+  padding: 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.workspaceMain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.workspaceTopbar {
+  height: 64px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.workspaceContent {
+  flex: 1;
+  max-width: var(--content-max, 1400px);
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--content-pad, 28px 32px);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
