@@ -40,6 +40,20 @@ for (const email of ['nam.tran@gmail.com', 'viet.do@gmail.com']) {
 }
 
 test.describe('P0 Medical & Training Lock Workflow (Flow 3)', () => {
+  test('veterinarian loads simulator vitals but diagnosis remains a human decision', async ({ page }) => {
+    await signIn(page, 'chau.le@gmail.com');
+    await page.goto('/medical/records/new');
+
+    await page.getByRole('button', { name: 'Load Simulator Measurements' }).click();
+
+    await expect(page.getByLabel('Temperature (°C) *')).toHaveValue('38.3');
+    await expect(page.getByLabel('Resting Heart Rate (bpm) *')).toHaveValue('39');
+    await expect(page.getByLabel('Respiratory Rate (breaths/min) *')).toHaveValue('14');
+    await expect(page.getByLabel('Weight (kg)')).toHaveValue('487');
+    await expect(page.getByText(/equiflow-sim-v3/)).toBeVisible();
+    await expect(page.getByLabel('Definitive Diagnosis *')).toHaveValue('');
+  });
+
   // P0 - FR-3.10 / BR-3.03: Chỉ Bác sĩ Thú y (VET) mới có quyền Đặt Khóa Huấn Luyện
   test('P0: Head Trainer cannot see Place Training Lock action', async ({ page }) => {
     await signIn(page, 'nam.tran@gmail.com');

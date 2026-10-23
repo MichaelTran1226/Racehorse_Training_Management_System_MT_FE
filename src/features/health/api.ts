@@ -15,6 +15,7 @@ import type {
   TreatmentPhase,
   TreatmentPhaseInput,
   UpdateMedicalRecordInput,
+  ExamSimulationResult,
 } from "./types";
 
 export interface ListRecordsParams {
@@ -73,6 +74,16 @@ export interface HealthBoardResponse {
 
 // P1-14: Sơ đồ sức khỏe đàn ngựa (SC-3.01). Bộ lọc áp ở trình duyệt để thẻ đếm luôn tính cả đàn.
 export const getHealthBoard = () => api<HealthBoardResponse>("GET", "/medical/health-board");
+
+export const startExamSimulation = (horseId: string, medicalRecordId?: string) =>
+  api<{ sessionId: string; status: string; launchUrl: string }>(
+    "POST",
+    `/simulator/horses/${horseId}/exams/start`,
+    medicalRecordId ? { medicalRecordId } : {},
+  );
+
+export const getLatestExamSimulation = (horseId: string) =>
+  api<ExamSimulationResult>("GET", `/simulator/horses/${horseId}/exams/latest`);
 
 // P2-01: Hồ sơ y tế ngựa 6 tab (SC-3.02, API-004)
 export const getHorseMedicalProfile = (horseId: string) =>

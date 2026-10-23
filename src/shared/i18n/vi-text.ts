@@ -3542,5 +3542,11 @@ export const VI_TEXT: Record<string, string> = {
   "MEDICAL": "Y TẾ & SỨC KHỎE",
   "ADMINISTRATION": "QUẢN TRỊ",
   "Notifications, {{count}} unread": "Thông báo, {{count}} chưa đọc",
+  "Open Simulator Exam": "Mở mô hình khám",
+  "Load Simulator Measurements": "Tải chỉ số từ mô hình",
+  "The simulator has not returned measurements yet.": "Mô hình chưa trả về chỉ số khám.",
+  "Simulator measurements loaded. Review them before saving.": "Đã tải chỉ số từ mô hình. Hãy kiểm tra trước khi lưu.",
+  "Simulator measurement source": "Nguồn chỉ số mô hình",
+  "Review all measurements before saving the medical record.": "Hãy kiểm tra toàn bộ chỉ số trước khi lưu bệnh án.",
 };
 

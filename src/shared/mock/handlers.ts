@@ -2200,6 +2200,38 @@ const routes: Route[] = [
 
   // ---- SC-3.01 Sơ đồ sức khỏe (bản giả của GET /medical/health-board, dựng từ kho ngựa giả)
   {
+    method: "POST",
+    pattern: /^\/simulator\/horses\/([^/]+)\/exams\/start$/,
+    handler({ db, params }) {
+      currentUser(db);
+      return {
+        sessionId: `exam-${params[0]}`,
+        status: "PENDING",
+        launchUrl: `http://localhost:5175/?sessionId=exam-${params[0]}`,
+      };
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/simulator\/horses\/([^/]+)\/exams\/latest$/,
+    handler({ db, params }) {
+      currentUser(db);
+      return {
+        sessionId: `exam-${params[0]}`,
+        status: "COMPLETED",
+        resultDraft: {
+          temperature: 38.3,
+          restingHeartRate: 39,
+          respiratoryRate: 14,
+          weightKg: 487,
+          capturedAt: "2026-10-23T01:00:00.000Z",
+          modelVersion: "equiflow-sim-v3",
+          source: "EQUIFLOW_SIMULATOR",
+        },
+      };
+    },
+  },
+  {
     method: "GET",
     pattern: /^\/medical\/health-board$/,
     handler({ db }) {
