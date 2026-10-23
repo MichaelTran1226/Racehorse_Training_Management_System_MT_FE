@@ -6,6 +6,7 @@ import type {
   ExerciseType,
   FitnessData,
   Groom,
+  LiveSimulatorSession,
   PlanStatus,
   RepeatResult,
   ResultInput,
@@ -17,6 +18,8 @@ import type {
   TrainingOverview,
   TrainingPhase,
   TrainingPlan,
+  WorkoutSimulationStart,
+  WorkoutSimulationResult,
 } from "./types";
 
 // Mọi lỗi từ BE đi thẳng ra màn hình (không còn "lưu tạm vào trình duyệt rồi báo thành công").
@@ -356,6 +359,26 @@ export const trainingApi = {
     if (range?.to) params.set("to", range.to);
     const qs = params.toString() ? `?${params.toString()}` : "";
     return (await api<BeWorkout[]>("GET", `/training/trial-runs${qs}`)).map((w) => toSession(w));
+  },
+
+  async startSimulation(workoutId: string): Promise<WorkoutSimulationStart> {
+    return api<WorkoutSimulationStart>("POST", `/simulator/workouts/${workoutId}/start`);
+  },
+
+  async getLatestSimulationResult(workoutId: string): Promise<WorkoutSimulationResult> {
+    return api<WorkoutSimulationResult>("GET", `/simulator/workouts/${workoutId}/latest`);
+  },
+
+  async getLiveSimulatorSessions(): Promise<LiveSimulatorSession[]> {
+    const response = await api<{
+      active: Array<Omit<LiveSimulatorSession, "id"> & { sessionId: string }>;
+      recent: LiveSimulatorSession[];
+    }>("GET", "/simulator/sessions?status=RUNNING");
+    const sessions = [
+      ...response.active.map(({ sessionId, ...session }) => ({ id: sessionId, ...session })),
+      ...response.recent,
+    ];
+    return [...new Map(sessions.map((session) => [session.id, session])).values()];
   },
 
   // Thể lực & cảnh báo

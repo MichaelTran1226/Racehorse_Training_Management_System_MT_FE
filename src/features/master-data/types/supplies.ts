@@ -59,6 +59,48 @@ export function formatSupplyUnit(unit?: string): string {
   return tr(label);
 }
 
+export type SupplyMajorGroup = 'FEED' | 'MEDICINE_SUPPLEMENT' | 'EQUIPMENT';
+
+export function getSupplyMajorGroup(category?: string): SupplyMajorGroup {
+  if (!category) return 'FEED';
+  const c = category.toUpperCase();
+  if (c.startsWith('FEED') || c === 'FEED') return 'FEED';
+  if (
+    c.startsWith('MED') ||
+    c.startsWith('SUPPLEMENT') ||
+    c === 'VACCINE' ||
+    c === 'DEWORMER' ||
+    c === 'MEDICINE' ||
+    c === 'CARE'
+  ) {
+    return 'MEDICINE_SUPPLEMENT';
+  }
+  return 'EQUIPMENT';
+}
+
+export function formatSupplyName(name?: string): string {
+  return name || '';
+}
+
+export function getFriendlyCategoryName(category?: string): string {
+  if (!category) return '';
+  const c = category.toUpperCase();
+  if (c === 'FEED_HAY') return tr('Hay');
+  if (c === 'FEED_GRAIN') return tr('Grain');
+  if (c.startsWith('FEED') || c === 'FEED') return tr('Feed & Forage');
+  if (c === 'MEDICINE' || c.startsWith('MED')) return tr('Medicine');
+  if (c === 'VACCINE') return tr('Vaccine');
+  if (c === 'DEWORMER') return tr('Dewormer');
+  if (c.startsWith('SUPPLEMENT_VITAMIN')) return tr('Vitamins');
+  if (c.startsWith('SUPPLEMENT_MINERAL')) return tr('Minerals');
+  if (c.startsWith('SUPPLEMENT_ELECTROLYTE')) return tr('Electrolytes');
+  if (c.startsWith('SUPPLEMENT') || c === 'CARE') return tr('Supplements');
+  if (c.startsWith('TOOL') || c === 'EQUIPMENT') return tr('Tools & Equipment');
+  if (c.startsWith('CLEANING')) return tr('Cleaning Supplies');
+  const label = SUPPLY_CATEGORY_LABELS[category as SupplyCategory];
+  return label ? tr(label) : category;
+}
+
 export interface SupplyCatalogItem {
   id: string;
   code: string;

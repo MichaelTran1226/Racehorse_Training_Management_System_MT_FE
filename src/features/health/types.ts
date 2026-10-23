@@ -127,6 +127,8 @@ export interface InjuryItem {
 export interface PreventiveCareItem {
   id: string;
   horseId: string;
+  realHorseId?: string;
+  typeCatalogId?: string;
   type: string;
   category: "VACCINATION" | "DEWORMING" | "FARRIER" | "DENTAL" | "GENERAL";
   lastAdministeredDate?: string;
@@ -197,6 +199,20 @@ export interface CreateMedicalRecordInput {
   proposedStatus?: string;
   proposeMedicalLock?: boolean;
   saveAsDraft?: boolean;
+}
+
+export interface ExamSimulationResult {
+  sessionId: string;
+  status: "PENDING" | "RUNNING" | "COMPLETED" | "ABORTED_INJURY";
+  resultDraft: {
+    temperature: number;
+    restingHeartRate: number;
+    respiratoryRate: number;
+    weightKg: number;
+    capturedAt: string;
+    modelVersion: string;
+    source: "EQUIFLOW_SIMULATOR";
+  } | null;
 }
 
 export interface UpdateMedicalRecordInput {

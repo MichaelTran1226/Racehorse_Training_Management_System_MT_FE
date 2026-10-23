@@ -11,6 +11,7 @@ import { messageFor } from '@/shared/lib/messages';
 import { nutritionApi } from '../api/nutritionApi';
 import type { NutritionPlan } from '../types/nutrition';
 import type { Role } from '@/shared/types/auth';
+import { formatSupplyName } from '@/features/master-data/types/supplies';
 
 interface NutritionPlanDetailModalProps {
   plan: NutritionPlan;
@@ -365,12 +366,7 @@ export function NutritionPlanDetailModal({
                       {meal.items.map((it, idx) => (
                         <tr key={idx} style={{ borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
                           <td style={{ padding: '6px 0', fontWeight: 500 }}>
-                            {it.supplyName}{' '}
-                            {it.supplyCode && (
-                              <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem' }}>
-                                ({it.supplyCode})
-                              </span>
-                            )}
+                            {formatSupplyName(it.supplyName)}
                           </td>
                           <td style={{ textAlign: 'center', padding: '6px 0' }}>
                             <strong style={{ color: 'var(--color-primary)' }}>{it.amount}</strong> {it.unit}

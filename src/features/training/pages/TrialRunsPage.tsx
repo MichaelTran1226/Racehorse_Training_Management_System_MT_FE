@@ -37,6 +37,7 @@ export default function TrialRunsPage() {
   const [plans, setPlans] = useState<TrainingPlan[]>([]);
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [launchingId, setLaunchingId] = useState<string | null>(null);
 
   const canManage = user.role === "HEAD_TRAINER" || user.role === "CLUB_MANAGER";
 
@@ -64,6 +65,25 @@ export default function TrialRunsPage() {
 
   const handleOpenSchedule = () => {
     setIsScheduleOpen(true);
+  };
+
+  const launchSimulation = async (workoutId: string) => {
+    const popup = window.open("about:blank", "_blank");
+    if (!popup) {
+      toast.show(tr("Please allow pop-ups to open the simulation."), "danger");
+      return;
+    }
+    popup.opener = null;
+    setLaunchingId(workoutId);
+    try {
+      const { launchUrl } = await trainingApi.startSimulation(workoutId);
+      popup.location.replace(launchUrl);
+    } catch (err) {
+      popup.close();
+      toast.show(messageFor(err), "danger");
+    } finally {
+      setLaunchingId(null);
+    }
   };
 
   // Nhóm theo ngày + mặt sân để điều phối.
@@ -169,13 +189,40 @@ export default function TrialRunsPage() {
                         </Badge>
                       </td>
                       <td style={{ padding: "0.5rem 0.75rem", textAlign: "right" }}>
-                        <Link to={`/training/sessions/${row.id}/result`}>
-                          <Button size="sm" tone={row.status === "COMPLETED" ? "secondary" : "primary"}>
-                            {row.status === "COMPLETED"
-                              ? (isVietnamese ? "Xem kết quả" : tr("View result"))
-                              : (isVietnamese ? "Ghi kết quả" : tr("Record result"))}
-                          </Button>
-                        </Link>
+                        <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
+                          {user.role === "HEAD_TRAINER" && row.status === "SCHEDULED" && (
+                            <Button
+                              size="sm"
+                              tone="primary"
+                              disabled={
+                                launchingId === row.id ||
+                                row.isHorseLocked ||
+                                new Date(row.scheduledAt) > new Date()
+                              }
+                              title={
+                                row.isHorseLocked
+                                  ? tr("The horse is still under a Training Lock.")
+                                  : new Date(row.scheduledAt) > new Date()
+                                    ? tr("The trial has not reached its scheduled start time.")
+                                    : undefined
+                              }
+                              onClick={() => void launchSimulation(row.id)}
+                            >
+                              {launchingId === row.id
+                                ? tr("Opening…")
+                                : isVietnamese
+                                  ? "Chạy mô phỏng"
+                                  : tr("Run simulation")}
+                            </Button>
+                          )}
+                          <Link to={`/training/sessions/${row.id}/result`}>
+                            <Button size="sm" tone={row.status === "COMPLETED" ? "secondary" : "primary"}>
+                              {row.status === "COMPLETED"
+                                ? (isVietnamese ? "Xem kết quả" : tr("View result"))
+                                : (isVietnamese ? "Ghi kết quả" : tr("Record result"))}
+                            </Button>
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))}

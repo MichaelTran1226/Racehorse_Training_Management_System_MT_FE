@@ -218,6 +218,7 @@ export default function HorseListPage() {
       render: (h) => (
         <span className="num nowrap">
           {h.gender ? tr(h.gender) : "—"} · {ageOf(h.dob)}
+          {h.weightKg ? ` · ${h.weightKg} kg` : ""}
         </span>
       ),
     },

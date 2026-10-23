@@ -18,7 +18,7 @@ import { StockAdjustModal } from '../components/StockAdjustModal';
 import { RestockRequestModal } from '../components/RestockRequestModal';
 import type { StockHealthStatus, StockItemRow, SupplyCategory } from '../types/inventory';
 import type { Zone } from '../types';
-import { type SupplyCatalogItem, formatSupplyUnit } from '@/features/master-data/types/supplies';
+import { type SupplyCatalogItem, formatSupplyUnit, getFriendlyCategoryName, formatSupplyName } from '@/features/master-data/types/supplies';
 
 const CATEGORY_NAMES: Record<SupplyCategory, string> = {
   FEED: 'Feed & Forage',
@@ -105,8 +105,7 @@ export default function InventoryPage() {
       { value: 'ALL', label: tr('All Categories') },
       { value: 'FEED', label: tr('Feed & Forage') },
       { value: 'MEDICINE', label: tr('Medications & Vaccines') },
-      { value: 'CARE', label: tr('Daily Care & Supplements') },
-      { value: 'EQUIPMENT', label: tr('Grooming & Equipment') },
+      { value: 'EQUIPMENT', label: tr('Equipment & Tools') },
     ];
   }, [isVietnamese]);
 
@@ -160,12 +159,12 @@ export default function InventoryPage() {
         key: 'supply',
         header: tr('Supply Item'),
         render: (row) => {
-          const catLabel = CATEGORY_NAMES[row.category] || row.category;
+          const catLabel = getFriendlyCategoryName(row.category);
           return (
             <div>
-              <div style={{ fontWeight: 600, color: 'var(--ink)' }}>{row.supplyName}</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--muted)', fontFamily: 'monospace' }}>
-                {row.supplyCode} · {tr(catLabel)}
+              <div style={{ fontWeight: 600, color: 'var(--ink)' }}>{formatSupplyName(row.supplyName)}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
+                {catLabel}
               </div>
             </div>
           );
@@ -243,24 +242,6 @@ export default function InventoryPage() {
       <PageHeader
         title={tr('Zone Supply Inventory')}
         description={tr('Track real-time stock levels, health status, and physical counts across stall zones.')}
-        action={
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <Button
-              tone="secondary"
-              onClick={() => setRequestModalPrefill({})}
-            >
-              + {tr('Propose Restock')}
-            </Button>
-            {isManager && (
-              <Button
-                tone="primary"
-                onClick={() => setAdjustModalItem(null)}
-              >
-                + {tr('Adjust Physical Count')}
-              </Button>
-            )}
-          </div>
-        }
       />
 
       {/* KPI Summary Cards */}
@@ -314,7 +295,7 @@ export default function InventoryPage() {
 
           <div style={{ minWidth: '220px', flex: '2 1 220px' }}>
             <Input
-              placeholder={tr('Search by supply code or name...')}
+              placeholder={tr('Search by supply name...')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -341,6 +322,25 @@ export default function InventoryPage() {
           </label>
         </div>
       </Card>
+
+      {/* Category Tabs for fast category switching */}
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        {[
+          { key: 'ALL', label: tr('All Categories') },
+          { key: 'FEED', label: tr('Feed & Forage') },
+          { key: 'MEDICINE', label: tr('Medications & Vaccines') },
+          { key: 'EQUIPMENT', label: tr('Equipment & Tools') },
+        ].map((tab) => (
+          <Button
+            key={tab.key}
+            size="sm"
+            tone={categoryFilter === tab.key ? 'primary' : 'secondary'}
+            onClick={() => setCategoryFilter(tab.key)}
+          >
+            {tab.label}
+          </Button>
+        ))}
+      </div>
 
       {/* Main Stock Table */}
       <Card pad={0}>

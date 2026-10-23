@@ -204,7 +204,6 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
         item("stable/shifts", "Shift Roster", "calendar", { i18nKey: "shiftRoster" }),
         item("rations", "Meal Rations", "wheat", { i18nKey: "rations" }),
         item("catalog", "Supplies Catalog", "package"),
-        item("herd", "Herd Health", "stethoscope", { requires: "viewMedical" }),
       ],
     },
     {
@@ -222,7 +221,6 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
       items: [item("monitor", "Session Telemetry", "activity"), item("alerts", "Threshold Alerts", "alert", { alert: true })],
     },
     { label: "RACING", items: [item("races", "Race Entries", "trophy")] },
-    // Menu Y tế (MEDICAL) cho HEAD_TRAINER (theo dõi sức khỏe toàn đàn, bệnh án, danh sách khóa huấn luyện, lịch tiêm)
     {
       label: "MEDICAL",
       items: [
@@ -262,11 +260,10 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
       items: [
         item("herd", "Herd Health", "stethoscope", { requires: "viewMedical" }),
         item("records", "Medical Records", "file", { requires: "viewMedical" }),
-        item("rx", "Prescriptions", "pill", { requires: "viewMedical" }),
-        // Danh sách khóa huấn luyện (Training Locks) yêu cầu quyền viewMedical (đồng bộ với HEAD_TRAINER và CLUB_MANAGER)
+        // Danh sách khóa huấn luyện (Training Locks) yêu cầu quyền viewMedical
         item("locks", "Training Locks", "lock", { requires: "viewMedical" }),
         item("alerts", "Biomechanical Alerts", "alert", { i18nKey: "biomechanicalAlerts", alert: true }),
-        item("vaccine", "Vaccination Schedule", "syringe", { i18nKey: "vaccinationSchedule", requires: "viewMedical" }),
+        item("vaccine", "Preventive Care", "syringe", { i18nKey: "preventiveCare", requires: "viewMedical" }),
         item("incidents", "Incident Reports", "camera", { requires: "viewMedical" }),
       ],
     },
@@ -345,7 +342,6 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
         item("calendar", "Weekly Calendar", "calendar"),
       ],
     },
-    // Menu Y tế (MEDICAL) cho CLUB_MANAGER (quản lý, giám sát sức khỏe, bệnh án và lịch chăm sóc)
     {
       label: "MEDICAL",
       items: [
@@ -422,12 +418,28 @@ export function isNavItemActive(navItem: NavItem, pathname: string): boolean {
       pathname.startsWith("/training/metrics/")
     );
   }
-  if (navItem.href === "/alerts") {
+  if (navItem.href === "/stalls") {
     return (
-      pathname === "/alerts" ||
-      pathname.startsWith("/alerts/") ||
-      pathname === "/training/alerts" ||
-      pathname.startsWith("/training/alerts/")
+      pathname === "/stalls" ||
+      pathname.startsWith("/stalls/") ||
+      pathname === "/stables/map" ||
+      pathname.startsWith("/stables/map/")
+    );
+  }
+  if (navItem.href === "/my-horses") {
+    return (
+      pathname === "/my-horses" ||
+      pathname.startsWith("/my-horses/") ||
+      pathname === "/horses" ||
+      pathname.startsWith("/horses/")
+    );
+  }
+  if (navItem.href === "/horses") {
+    return (
+      pathname === "/horses" ||
+      pathname.startsWith("/horses/") ||
+      pathname === "/my-horses" ||
+      pathname.startsWith("/my-horses/")
     );
   }
   return pathname === navItem.href || pathname.startsWith(navItem.href + "/");
@@ -510,7 +522,35 @@ export function screenAccess(role: Role, permissions: PermissionMap, pathname: s
     return { allowed: role === "CLUB_MANAGER", group: "WORKSPACE", label: "Deleted horses", ownerRoles: ["CLUB_MANAGER"], inOwnRole: role === "CLUB_MANAGER" };
   }
 
+  // Quyền truy cập hồ sơ bệnh án qua chiến mã (FR-3.01 / Flow 1 / Flow 3):
+  // Cho phép Vet, Club Manager, Head Trainer, Horse Owner (ngựa của họ) truy cập hồ sơ bệnh án và chấn thương.
+  if (
+    pathname.startsWith("/medical/horses/") ||
+    pathname.startsWith("/records/horse/") ||
+    pathname.startsWith("/medical/records/") ||
+    pathname.startsWith("/medical/injuries") ||
+    pathname.includes("/injuries")
+  ) {
+    const canAccess =
+      role === "VETERINARIAN" ||
+      role === "CLUB_MANAGER" ||
+      role === "HEAD_TRAINER" ||
+      role === "HORSE_OWNER" ||
+      !!permissions.viewMedical;
+    return {
+      allowed: canAccess,
+      group: "MEDICAL",
+      label: "Medical Records",
+      ownerRoles: ["VETERINARIAN", "CLUB_MANAGER", "HEAD_TRAINER"],
+      inOwnRole: canAccess,
+    };
+  }
+
   let href = "/" + (pathname.split("/")[1] ?? "");
+  
+  if (href === "/horses" && role === "HORSE_OWNER") {
+    href = "/my-horses";
+  }
   
   if (href === "/medical") {
     const seg2 = pathname.split("/")[2];

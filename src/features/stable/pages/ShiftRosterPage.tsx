@@ -207,7 +207,7 @@ export default function ShiftRosterPage() {
         description={tr('Staff allocation matrix by date, shift and stall zone.')}
         action={
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            <Link to="/stables/map" style={{ textDecoration: 'none' }}>
+            <Link to="/stalls" style={{ textDecoration: 'none' }}>
               <Button tone="ghost">{tr('View Stall Map')}</Button>
             </Link>
             {isManager && (
@@ -241,13 +241,13 @@ export default function ShiftRosterPage() {
         {/* Điều hướng tuần */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Button tone="ghost" size="sm" onClick={handlePrevWeek}>
-            {tr('◀ Previous week (BTN-4.01)')}
+            {tr('◀ Previous week')}
           </Button>
           <Button tone="ghost" size="sm" onClick={handleCurrentWeek}>
-            {tr('This week (BTN-4.03)')}
+            {tr('This week')}
           </Button>
           <Button tone="ghost" size="sm" onClick={handleNextWeek}>
-            {tr('Next week ▶ (BTN-4.02)')}
+            {tr('Next week ▶')}
           </Button>
           <span style={{ fontWeight: 600, fontSize: '0.9375rem', marginLeft: '0.5rem' }}>
             {targetWeekLabel}
@@ -280,7 +280,7 @@ export default function ShiftRosterPage() {
                 checked={onlyMyShifts}
                 onChange={(e) => setOnlyMyShifts(e.target.checked)}
               />
-              <span>{tr('My shifts only (BTN-4.06)')}</span>
+              <span>{tr('My shifts only')}</span>
             </label>
           )}
         </div>
@@ -304,63 +304,116 @@ export default function ShiftRosterPage() {
               {tr('You have no shifts assigned for this week.')}
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
-              {filteredMyShifts.map((ms) => {
-                const shiftDate = new Date(ms.date);
-                const dayIdx = (shiftDate.getUTCDay() + 6) % 7;
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {weekDays.map((day) => {
+                const dayShifts = filteredMyShifts.filter((ms) => ms.date.startsWith(day.dateStr));
                 return (
                   <div
-                    key={ms.id}
+                    key={day.dateStr}
                     style={{
                       background: 'var(--surface)',
-                      border: '1px solid var(--border)',
+                      border: day.isToday ? '2px solid var(--brand)' : '1px solid var(--border)',
                       borderRadius: 'var(--r-md)',
-                      padding: '1rem',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.75rem',
+                      overflow: 'hidden',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: 600, fontSize: '1rem' }}>
-                        {formatDMY(shiftDate)} ({isVi ? DAY_NAMES_VI[dayIdx] : DAY_NAMES_EN[dayIdx]})
-                      </span>
-                      <Badge tone="brand">{ms.shift.name}</Badge>
-                    </div>
-
-                    <div style={{ fontSize: '0.875rem', color: 'var(--muted)' }}>
-                      <div>{tr('Zone:')} <strong>{ms.zone.name}</strong></div>
-                      <div>{tr('Duty hours:')} <strong>{ms.shift.startTime} – {ms.shift.endTime}</strong></div>
-                      {ms.notes && <div style={{ marginTop: '0.25rem' }}>{tr('Notes:')} <em>{ms.notes}</em></div>}
-                    </div>
-
-                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.8125rem' }}>{tr('Horses in assigned zone:')}</span>
-                      <Badge tone="neutral">{tr('{{count}} horses', { count: ms.assignedHorsesCount })}</Badge>
-                    </div>
-
-                    {ms.assignedHorses.length > 0 && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
-                        {ms.assignedHorses.slice(0, 5).map((h) => (
-                          <span
-                            key={h.id}
-                            style={{
-                              fontSize: '0.75rem',
-                              padding: '0.2rem 0.4rem',
-                              background: 'var(--surface-muted)',
-                              borderRadius: 'var(--r-xs)',
-                            }}
-                          >
-                            {h.name} {h.isMedicalLocked && `[${tr('Locked')}]`}
-                          </span>
-                        ))}
-                        {ms.assignedHorses.length > 5 && (
-                          <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
-                            +{ms.assignedHorses.length - 5} {tr('others')}
-                          </span>
-                        )}
+                    {/* Day Header */}
+                    <div
+                      style={{
+                        padding: '0.75rem 1rem',
+                        background: day.isToday ? 'rgba(var(--brand-rgb), 0.08)' : 'var(--surface-muted)',
+                        borderBottom: '1px solid var(--border)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <span style={{ fontWeight: 700, fontSize: '1rem' }}>{day.dayName}</span>
+                        <span style={{ fontSize: '0.875rem', color: 'var(--muted)' }}>{day.formattedDMY}</span>
+                        {day.isToday && <Badge tone="brand">{tr('Today')}</Badge>}
                       </div>
-                    )}
+                      <Badge tone={dayShifts.length > 0 ? 'ok' : 'neutral'}>
+                        {dayShifts.length > 0
+                          ? tr('{{count}} shifts', { count: dayShifts.length })
+                          : tr('Rest day')}
+                      </Badge>
+                    </div>
+
+                    {/* Shifts on this day */}
+                    <div style={{ padding: '0.875rem 1rem' }}>
+                      {dayShifts.length === 0 ? (
+                        <div style={{ fontSize: '0.875rem', color: 'var(--muted)', fontStyle: 'italic', padding: '0.25rem 0' }}>
+                          {tr('No duties scheduled for this day.')}
+                        </div>
+                      ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '0.875rem' }}>
+                          {dayShifts.map((ms) => (
+                            <div
+                              key={ms.id}
+                              style={{
+                                background: 'var(--surface-muted)',
+                                border: '1px solid var(--border)',
+                                borderRadius: 'var(--r-sm)',
+                                padding: '0.875rem',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '0.5rem',
+                              }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Badge tone="brand">{ms.shift.name}</Badge>
+                                <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>
+                                  {ms.shift.startTime} – {ms.shift.endTime}
+                                </span>
+                              </div>
+
+                              <div style={{ fontSize: '0.875rem' }}>
+                                <span style={{ color: 'var(--muted)' }}>{tr('Zone:')}</span> <strong>{ms.zone.name}</strong>
+                              </div>
+
+                              {ms.notes && (
+                                <div style={{ fontSize: '0.8125rem', color: 'var(--muted)', background: 'var(--surface)', padding: '0.35rem 0.5rem', borderRadius: 'var(--r-xs)' }}>
+                                  <strong>{tr('Notes:')}</strong> {ms.notes}
+                                </div>
+                              )}
+
+                              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
+                                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)', fontWeight: 500 }}>
+                                    {tr('Horses in zone:')}
+                                  </span>
+                                  <Badge tone="neutral">{tr('{{count}} horses', { count: ms.assignedHorsesCount })}</Badge>
+                                </div>
+                                {ms.assignedHorses.length > 0 && (
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                                    {ms.assignedHorses.slice(0, 6).map((h) => (
+                                      <span
+                                        key={h.id}
+                                        style={{
+                                          fontSize: '0.75rem',
+                                          padding: '0.15rem 0.4rem',
+                                          background: 'var(--surface)',
+                                          borderRadius: 'var(--r-xs)',
+                                          border: '1px solid var(--border)',
+                                        }}
+                                      >
+                                        {h.name} {h.isMedicalLocked && `[${tr('Locked')}]`}
+                                      </span>
+                                    ))}
+                                    {ms.assignedHorses.length > 6 && (
+                                      <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
+                                        +{ms.assignedHorses.length - 6} {tr('others')}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}

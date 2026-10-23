@@ -342,29 +342,10 @@ export default function MealRationsPage() {
 
                       {/* Horse */}
                       <td style={{ padding: '0.875rem 1rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                          <div
-                            style={{
-                              width: '28px',
-                              height: '28px',
-                              borderRadius: '50%',
-                              backgroundColor: 'var(--color-surface)',
-                              border: '1px solid var(--color-border)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: '0.75rem',
-                              fontWeight: 700,
-                              color: 'var(--color-primary)',
-                            }}
-                          >
-                            {(horse?.name || 'H').slice(0, 1).toUpperCase()}
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: 600 }}>{horse?.name || tr('Unknown')}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
-                              {horse?.horseCode}
-                            </div>
+                        <div>
+                          <div style={{ fontWeight: 600 }}>{horse?.name || tr('Unknown')}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                            {horse?.horseCode}
                           </div>
                         </div>
                       </td>

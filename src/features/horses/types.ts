@@ -21,6 +21,7 @@ export interface Horse {
   dob: string;
   gender: string;
   color: string;
+  weightKg?: number | null;
   avatarUrl?: string;
   status: HorseStatus;
   isMedicalLocked: boolean;
@@ -76,6 +77,7 @@ export interface CreateHorsePayload {
   dob: string;
   gender: string;
   color: string;
+  weightKg?: number | null;
   microchip: string;
   rfid?: string;
   ownerId?: string;
@@ -89,6 +91,7 @@ export interface UpdateHorsePayload {
   dob?: string;
   gender?: string;
   color?: string;
+  weightKg?: number | null;
   microchip?: string;
   rfid?: string;
   ownerId?: string;

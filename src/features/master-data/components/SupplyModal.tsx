@@ -133,7 +133,7 @@ export function SupplyModal({ item, onClose, onSaved }: SupplyModalProps) {
 
   return (
     <Modal
-      title={item ? tr('Edit supply: {{code}}', { code: item.code }) : tr('Add New Supply')}
+      title={item ? tr('Edit supply: {{name}}', { name: item.name }) : tr('Add New Supply')}
       onClose={handleClose}
     >
       <form onSubmit={handleSave} className="space-y-4">

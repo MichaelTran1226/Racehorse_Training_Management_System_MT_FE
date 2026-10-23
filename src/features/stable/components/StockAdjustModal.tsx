@@ -11,7 +11,7 @@ import { tr } from '@/shared/i18n/tr';
 import { messageFor } from '@/shared/lib/messages';
 import { inventoryApi } from '../api/inventoryApi';
 import type { StockItemRow } from '../types/inventory';
-import { formatSupplyUnit } from '@/features/master-data/types/supplies';
+import { formatSupplyUnit, formatSupplyName } from '@/features/master-data/types/supplies';
 
 interface StockAdjustModalProps {
   stockItem?: StockItemRow | null;
@@ -53,7 +53,7 @@ export function StockAdjustModal({
   );
 
   const supplyOptions = useMemo(
-    () => supplies.map((s) => ({ value: s.id, label: `${s.code} - ${s.name} (${formatSupplyUnit(s.unit)})` })),
+    () => supplies.map((s) => ({ value: s.id, label: `${formatSupplyName(s.name)} (${formatSupplyUnit(s.unit)})` })),
     [supplies],
   );
 
@@ -122,7 +122,7 @@ export function StockAdjustModal({
 
           <Field label={tr('Supply Item')} required>
             {stockItem ? (
-              <Input value={`${stockItem.supplyCode} - ${stockItem.supplyName}`} disabled />
+              <Input value={formatSupplyName(stockItem.supplyName)} disabled />
             ) : (
               <Select
                 options={supplyOptions}

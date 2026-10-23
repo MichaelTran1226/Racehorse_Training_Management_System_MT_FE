@@ -127,7 +127,7 @@ export function CopyWeekRosterModal({
             {tr('Cancel')}
           </Button>
           <Button tone="primary" type="submit" disabled={busy || isPastTargetWeek}>
-            {busy ? tr('Copying...') : tr('Copy (BTN-4.54)')}
+            {busy ? tr('Copying...') : tr('Copy')}
           </Button>
         </div>
       </form>

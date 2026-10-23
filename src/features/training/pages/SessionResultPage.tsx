@@ -12,6 +12,7 @@ import { Textarea } from "@/shared/components/form/Textarea";
 import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
 import { useToast } from "@/shared/components/ui/Toast";
 import { formatDateTime } from "@/shared/lib/format";
+import { ApiError } from "@/shared/lib/api";
 import { messageFor } from "@/shared/lib/messages";
 import { trainingApi } from "../api";
 import {
@@ -25,7 +26,7 @@ import {
   TRACK_CONDITION_LABEL,
   TRACK_LABEL,
 } from "../types";
-import type { AbnormalSign, CompletionLevel, ExerciseSession, TrackCondition, TrackType } from "../types";
+import type { AbnormalSign, CompletionLevel, ExerciseSession, TrackCondition, TrackType, WorkoutSimulationResultDraft } from "../types";
 
 import { tr } from "@/shared/i18n/tr";
 import { useAppLanguage } from "@/shared/lib/language";
@@ -76,6 +77,9 @@ export default function SessionResultPage() {
   const [condition, setCondition] = useState<TrackCondition | "">("");
   const [peakHr, setPeakHr] = useState("");
   const [recoveryHr, setRecoveryHr] = useState("");
+  const [topSpeed, setTopSpeed] = useState("");
+  const [simulationAborted, setSimulationAborted] = useState(false);
+  const [simulationLoadError, setSimulationLoadError] = useState("");
   const [score, setScore] = useState("");
   const [completion, setCompletion] = useState<CompletionLevel | "">("");
   const [comment, setComment] = useState("");
@@ -117,14 +121,15 @@ export default function SessionResultPage() {
     }
   }, [blocker]);
 
-  const fill = useCallback((s: ExerciseSession) => {
+  const fill = useCallback((s: ExerciseSession, draft?: WorkoutSimulationResultDraft | null) => {
     const r = s.result;
-    setDistance(String(r?.actualDistanceMeters ?? s.targetDistanceMeters * s.repetitions));
-    setTime(formatTime(r?.actualDurationSeconds));
-    setSurface(r?.actualSurface ?? s.trackType);
-    setCondition(r?.trackCondition ?? "");
-    setPeakHr(r?.maxHeartRate?.toString() ?? "");
-    setRecoveryHr(r?.recoveryHeartRate?.toString() ?? "");
+    setDistance(String(r?.actualDistanceMeters ?? draft?.actualDistanceMeters ?? s.targetDistanceMeters * s.repetitions));
+    setTime(formatTime(r?.actualDurationSeconds ?? draft?.actualTimeSeconds));
+    setSurface(r?.actualSurface ?? draft?.actualSurface ?? s.trackType);
+    setCondition(r?.trackCondition ?? draft?.trackCondition ?? "");
+    setPeakHr((r?.maxHeartRate ?? draft?.heartRatePeak)?.toString() ?? "");
+    setRecoveryHr((r?.recoveryHeartRate ?? draft?.heartRateRecovery)?.toString() ?? "");
+    setTopSpeed((r?.maxSpeedKmh ?? draft?.topSpeedKmh)?.toString() ?? "");
     setScore(r?.performanceScore?.toString() ?? "");
     setCompletion(r?.completionLevel ?? "");
     setComment(r?.headTrainerFeedback ?? "");
@@ -135,16 +140,34 @@ export default function SessionResultPage() {
   }, []);
 
   useEffect(() => {
-    trainingApi
-      .getSession(id)
-      .then((s) => {
+    let mounted = true;
+    void (async () => {
+      try {
+        const s = await trainingApi.getSession(id);
+        let simulation = null;
+        if (!s.result && isTrainer) {
+          try {
+            simulation = await trainingApi.getLatestSimulationResult(id);
+          } catch (err) {
+            if (!(err instanceof ApiError && err.code === "SIMULATOR_RESULT_NOT_FOUND") && mounted) {
+              setSimulationLoadError(messageFor(err));
+            }
+          }
+        }
+        if (!mounted) return;
         setSession(s);
         setLoadedAt(Date.now());
-        fill(s);
+        fill(s, simulation?.resultDraft);
+        setSimulationAborted(simulation?.status === "ABORTED_INJURY");
         // Chưa có kết quả và HT mở -> vào thẳng chế độ ghi.
         setEditing(s.status !== "COMPLETED" && isTrainer);
-      })
-      .catch((err) => setLoadError(messageFor(err)));
+      } catch (err) {
+        if (mounted) setLoadError(messageFor(err));
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
   }, [id, fill, isTrainer]);
 
   if (loadError) return <Alert tone="danger" title={tr("Could not load the workout")}>{loadError}</Alert>;
@@ -242,6 +265,7 @@ export default function SessionResultPage() {
         trackCondition: condition || undefined,
         heartRatePeak: peakHr ? Number(peakHr) : undefined,
         heartRateRecovery: recoveryHr ? Number(recoveryHr) : undefined,
+        topSpeedKmh: topSpeed ? Number(topSpeed) : undefined,
         performanceScore: Number(score),
         completionLevel: completion as CompletionLevel,
         trainerNotes: comment.trim(),
@@ -330,6 +354,7 @@ export default function SessionResultPage() {
             <div>{tr("Actual distance:")}{" "}<strong>{r.actualDistanceMeters ?? "—"} m</strong></div>
             <div>{tr("Time:")}{" "}<strong>{formatTime(r.actualDurationSeconds) || "—"}</strong></div>
             <div>{tr("Average speed:")}{" "}<strong>{r.avgSpeedKmh != null ? `${r.avgSpeedKmh} km/h` : "—"}</strong></div>
+            <div>{tr("Top speed:")}{" "}<strong>{r.maxSpeedKmh != null ? `${r.maxSpeedKmh} km/h` : "—"}</strong></div>
             <div>{tr("Surface:")}{" "}<strong>{r.actualSurface ? tr(TRACK_LABEL[r.actualSurface]) : "—"}</strong>{r.trackCondition ? ` (${tr(TRACK_CONDITION_LABEL[r.trackCondition])})` : ""}</div>
             <div>{tr("Peak HR:")}{" "}<strong>{r.maxHeartRate ?? "—"} {tr("bpm")}</strong></div>
             <div>{tr("HR after 10 min:")}{" "}<strong>{r.recoveryHeartRate ?? "—"} {tr("bpm")}</strong></div>
@@ -352,6 +377,8 @@ export default function SessionResultPage() {
       {editing && (
         <>
           {error && <Alert tone="danger" title={tr("Cannot save")}>{error}</Alert>}
+          {simulationLoadError && <Alert tone="warn" title={tr("Could not load simulator measurements")}>{simulationLoadError}</Alert>}
+          {simulationAborted && <Alert tone="warn" title={tr("Simulation ended due to injury")}>{tr("Review the imported measurements and record any abnormal signs before completing this workout.")}</Alert>}
           <Card pad={20}>
             <h2 style={{ margin: "0 0 0.75rem", fontSize: "var(--fs-body-lg)" }}>{tr("Actual figures")}</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
