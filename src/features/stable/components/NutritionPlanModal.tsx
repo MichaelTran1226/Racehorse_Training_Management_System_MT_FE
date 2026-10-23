@@ -13,8 +13,9 @@ import { messageFor } from '@/shared/lib/messages';
 import { nutritionApi } from '../api/nutritionApi';
 import { getSupplies } from '@/features/master-data/api/suppliesApi';
 import { getHorses } from '@/features/horses/api';
+import { useAppLanguage } from '@/shared/lib/language';
 import type { Meal, MealItem, NutritionPlan } from '../types/nutrition';
-import type { SupplyCatalogItem } from '@/features/master-data/types/supplies';
+import { type SupplyCatalogItem, formatSupplyName, getFriendlyCategoryName } from '@/features/master-data/types/supplies';
 import type { Horse } from '@/features/horses/types';
 
 interface NutritionPlanModalProps {
@@ -50,6 +51,7 @@ export function NutritionPlanModal({
 }: NutritionPlanModalProps) {
   const toast = useToast();
   const isEditing = Boolean(plan);
+  const { isVietnamese } = useAppLanguage();
 
   const [horseId, setHorseId] = useState<string>(plan?.horseId || initialHorseId || '');
   const [meals, setMeals] = useState<Meal[]>(
@@ -67,7 +69,7 @@ export function NutritionPlanModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  // Tải danh sách ngựa và danh mục vật tư thức ăn
+  // Tải danh sách ngựa và danh mục vật tư thức ăn (chỉ lấy thức ăn & thực phẩm bổ sung)
   useEffect(() => {
     let active = true;
     async function loadData() {
@@ -79,7 +81,12 @@ export function NutritionPlanModal({
         if (!active) return;
         const horseList = Array.isArray(horsesRes) ? horsesRes : horsesRes.items || [];
         setHorses(horseList);
-        setSupplies(suppliesRes.filter((s) => s.isActive));
+        const feedSupplies = suppliesRes.filter(
+          (s) =>
+            s.isActive &&
+            (s.category.startsWith('FEED') || s.category.startsWith('SUPPLEMENT')),
+        );
+        setSupplies(feedSupplies);
         if (!horseId && horseList.length > 0) {
           setHorseId(horseList[0].id);
         }
@@ -95,7 +102,8 @@ export function NutritionPlanModal({
     };
   }, []);
 
-  const horseWeightKg = 500; // Khối lượng ngựa chuẩn hoặc theo hồ sơ
+  const selectedHorse = horses.find((h) => h.id === horseId);
+  const horseWeightKg = selectedHorse?.weightKg || (plan as any)?.horseWeightSnapshot || 500;
 
   // Tính toán trực tiếp tổng kg thức ăn và tỉ lệ %
   const { totalKg, ratioPct, evaluation } = useMemo(() => {
@@ -254,9 +262,9 @@ export function NutritionPlanModal({
     () =>
       supplies.map((s) => ({
         value: s.id,
-        label: `${s.name} (${s.code})`,
+        label: `${formatSupplyName(s.name)} (${getFriendlyCategoryName(s.category)})`,
       })),
-    [supplies],
+    [supplies, isVietnamese],
   );
 
   return (
@@ -349,7 +357,7 @@ export function NutritionPlanModal({
                 {totalKg} kg
               </span>
               <span style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginLeft: '6px' }}>
-                ({ratioPct}% {tr('of body weight')})
+                ({ratioPct}% {tr('of body weight')} · {horseWeightKg} kg)
               </span>
             </div>
           </div>

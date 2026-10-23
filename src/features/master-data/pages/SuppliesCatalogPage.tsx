@@ -16,6 +16,8 @@ import { SupplyModal } from '../components/SupplyModal';
 import {
   SUPPLY_CATEGORY_LABELS,
   SUPPLY_UNIT_LABELS,
+  formatSupplyName,
+  getFriendlyCategoryName,
   type SupplyCatalogItem,
   type SupplyCategory,
 } from '../types/supplies';
@@ -79,6 +81,9 @@ export default function SuppliesCatalogPage() {
 
   const categoryOptions = [
     { value: 'ALL', label: tr('All Categories') },
+    { value: 'FEED', label: tr('Feed & Forage') },
+    { value: 'MEDICINE', label: tr('Medications & Vaccines') },
+    { value: 'EQUIPMENT', label: tr('Equipment & Tools') },
     ...Object.entries(SUPPLY_CATEGORY_LABELS).map(([value, label]) => ({
       value,
       label: tr(label),
@@ -122,7 +127,7 @@ export default function SuppliesCatalogPage() {
       >
         <div style={{ minWidth: 220 }}>
           <Input
-            placeholder={tr('Search by code or name...')}
+            placeholder={tr('Search by supply name...')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -158,6 +163,25 @@ export default function SuppliesCatalogPage() {
         )}
       </div>
 
+      {/* Category Tabs for fast category switching */}
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        {[
+          { key: 'ALL', label: tr('All Categories') },
+          { key: 'FEED', label: tr('Feed & Forage') },
+          { key: 'MEDICINE', label: tr('Medications & Vaccines') },
+          { key: 'EQUIPMENT', label: tr('Equipment & Tools') },
+        ].map((tab) => (
+          <Button
+            key={tab.key}
+            size="sm"
+            tone={categoryFilter === tab.key ? 'primary' : 'secondary'}
+            onClick={() => setCategoryFilter(tab.key)}
+          >
+            {tab.label}
+          </Button>
+        ))}
+      </div>
+
       {/* Bảng dữ liệu */}
       <DataTable<SupplyCatalogItem>
         loading={loading}
@@ -168,16 +192,11 @@ export default function SuppliesCatalogPage() {
         caption={tr('Supplies and materials catalog')}
         columns={[
           {
-            key: 'code',
-            header: tr('Code'),
-            render: (it) => <strong style={{ fontFamily: 'monospace' }}>{it.code}</strong>,
-          },
-          {
             key: 'name',
             header: tr('Supply Name'),
             render: (it) => (
               <div>
-                <div style={{ fontWeight: 600 }}>{it.name}</div>
+                <div style={{ fontWeight: 600 }}>{formatSupplyName(it.name)}</div>
                 {it.description && (
                   <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{it.description}</div>
                 )}
@@ -187,7 +206,7 @@ export default function SuppliesCatalogPage() {
           {
             key: 'category',
             header: tr('Category'),
-            render: (it) => tr(SUPPLY_CATEGORY_LABELS[it.category] || it.category),
+            render: (it) => getFriendlyCategoryName(it.category),
           },
           {
             key: 'unit',

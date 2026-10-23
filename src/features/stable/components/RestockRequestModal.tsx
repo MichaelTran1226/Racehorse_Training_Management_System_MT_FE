@@ -10,7 +10,7 @@ import { useToast } from '@/shared/components/ui/Toast';
 import { tr } from '@/shared/i18n/tr';
 import { messageFor } from '@/shared/lib/messages';
 import { inventoryApi } from '../api/inventoryApi';
-import { formatSupplyUnit } from '@/features/master-data/types/supplies';
+import { formatSupplyUnit, formatSupplyName } from '@/features/master-data/types/supplies';
 
 interface RestockRequestModalProps {
   zones: Array<{ id: string; name: string; code: string }>;
@@ -49,7 +49,7 @@ export function RestockRequestModal({
   );
 
   const supplyOptions = useMemo(
-    () => supplies.map((s) => ({ value: s.id, label: `${s.code} - ${s.name} (${formatSupplyUnit(s.unit)})` })),
+    () => supplies.map((s) => ({ value: s.id, label: `${formatSupplyName(s.name)} (${formatSupplyUnit(s.unit)})` })),
     [supplies],
   );
 

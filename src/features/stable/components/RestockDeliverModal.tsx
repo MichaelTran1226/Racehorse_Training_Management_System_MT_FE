@@ -11,7 +11,7 @@ import { tr } from '@/shared/i18n/tr';
 import { messageFor } from '@/shared/lib/messages';
 import { inventoryApi } from '../api/inventoryApi';
 import type { RestockRequestItem } from '../types/inventory';
-import { formatSupplyUnit } from '@/features/master-data/types/supplies';
+import { formatSupplyUnit, formatSupplyName } from '@/features/master-data/types/supplies';
 
 interface RestockDeliverModalProps {
   request: RestockRequestItem;
@@ -92,7 +92,7 @@ export function RestockDeliverModal({ request, onClose, onSaved }: RestockDelive
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ color: 'var(--muted)' }}>{tr('Supply Item')}:</span>
-            <strong>{request.supply.code} - {request.supply.name}</strong>
+            <strong>{formatSupplyName(request.supply.name)}</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ color: 'var(--muted)' }}>{tr('Approved Quantity')}:</span>

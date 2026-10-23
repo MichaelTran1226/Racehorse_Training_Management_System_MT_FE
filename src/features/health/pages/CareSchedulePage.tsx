@@ -16,6 +16,7 @@ import { Modal } from "@/shared/components/ui/Modal";
 import { Textarea } from "@/shared/components/form/Textarea";
 import { useAuth } from "@/shared/components/layout/AuthProvider";
 import { useToast } from "@/shared/components/ui/Toast";
+import { getHorses } from "@/features/horses/api";
 import { healthApi } from "../api";
 import type { PreventiveCareItem, PreventiveStatus } from "../types";
 
@@ -48,6 +49,18 @@ export default function CareSchedulePage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [search, setSearch] = useState<string>("");
 
+  // Create Preventive Care Schedule Modal (Bác sĩ thú y thêm Preventive Care)
+  const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [horseList, setHorseList] = useState<Array<{ id: string; name: string; horseCode?: string }>>([]);
+  const [createHorseId, setCreateHorseId] = useState<string>("");
+  const [createCategory, setCreateCategory] = useState<"VACCINATION" | "DEWORMING" | "FARRIER" | "DENTAL" | "GENERAL">("VACCINATION");
+  const [createType, setCreateType] = useState<string>("Equine Influenza & Tetanus Booster");
+  const [createDueDate, setCreateDueDate] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 14);
+    return d.toISOString().split("T")[0];
+  });
+  const [createNotes, setCreateNotes] = useState<string>("");
 
   // Record Completion Modal (DL-3.12)
   const [selectedCare, setSelectedCare] = useState<PreventiveCareItem | null>(null);
@@ -92,6 +105,49 @@ export default function CareSchedulePage() {
     };
   }, [loadData]);
 
+  const handleOpenCreateModal = async () => {
+    try {
+      const res = await getHorses({ limit: 100 });
+      const list = res.items || [];
+      setHorseList(list);
+      if (list.length > 0 && !createHorseId) {
+        setCreateHorseId(list[0].id);
+      }
+    } catch {
+      // fallback
+    }
+    setShowCreateModal(true);
+  };
+
+  const handleCreateSchedule = async () => {
+    if (!createHorseId) {
+      toast.show(tr("Please select a horse"), "danger");
+      return;
+    }
+    if (!createType.trim()) {
+      toast.show(tr("Please enter care service name"), "danger");
+      return;
+    }
+    try {
+      setSubmitting(true);
+      await healthApi.createCareSchedule({
+        horseId: createHorseId,
+        category: createCategory,
+        type: createType.trim(),
+        dueDate: createDueDate,
+        notes: createNotes.trim() || undefined,
+      });
+      toast.show(tr("Preventive care schedule created successfully"), "ok");
+      setShowCreateModal(false);
+      setCreateNotes("");
+      void loadData();
+    } catch (err: any) {
+      toast.show(err?.message || "Failed to create care schedule", "danger");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleOpenCompleteModal = (care: PreventiveCareItem) => {
     setSelectedCare(care);
     setAdminDate(new Date().toISOString().split("T")[0]);
@@ -113,13 +169,15 @@ export default function CareSchedulePage() {
     try {
       setSubmitting(true);
       await healthApi.recordCareCompletion(selectedCare.id, {
+        horseId: selectedCare.realHorseId,
+        typeCatalogId: selectedCare.typeCatalogId,
         administeredDate: adminDate,
         administeredBy: adminBy,
         nextDueDate: nextDue,
-        notes,
+        notes: notes.trim() || undefined,
         performedByMode,
-        productAdministered,
-        batchNumber,
+        productAdministered: productAdministered.trim() || undefined,
+        batchNumber: batchNumber.trim() || undefined,
       });
       toast.show(`Recorded completion: ${selectedCare.type}`, "ok");
       setSelectedCare(null);
@@ -254,6 +312,13 @@ export default function CareSchedulePage() {
       <PageHeader
         title={tr("Preventive care")}
         description={tr("Vaccinations, deworming, farrier, and dental schedules for all horses.")}
+        action={
+          isVet ? (
+            <Button tone="primary" icon="plus" onClick={() => void handleOpenCreateModal()}>
+              {tr("Schedule Preventive Care")}
+            </Button>
+          ) : undefined
+        }
       />
 
       <Card pad={0}>
@@ -367,11 +432,14 @@ export default function CareSchedulePage() {
               />
             </Field>
 
-            <Field label={tr("Batch / Lot Number")}>
+            <Field
+              label={tr("Batch / Lot Number (Optional)")}
+              hint={tr("Leave blank if not applicable or unavailable")}
+            >
               <Input
                 value={batchNumber}
                 onChange={(e) => setBatchNumber(e.target.value)}
-                placeholder={tr("e.g., LOT-2026-VACC-091")}
+                placeholder={tr("e.g., LOT-2026-VACC-091 (optional)")}
               />
             </Field>
 
@@ -413,6 +481,89 @@ export default function CareSchedulePage() {
                 disabled={submitting}
               >
                 {submitting ? tr("Saving...") : tr("Confirm Completion")}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {showCreateModal && (
+        <Modal
+          title={tr("Schedule Preventive Care")}
+          subtitle={tr("Plan an upcoming preventive care event for a racehorse.")}
+          width={540}
+          onClose={() => setShowCreateModal(false)}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <Field label={tr("Select Horse *")}>
+              <Select
+                value={createHorseId}
+                onChange={(e) => setCreateHorseId(e.target.value)}
+                options={[
+                  { value: "", label: tr("— Select a horse —") },
+                  ...horseList.map((h) => ({
+                    value: h.id,
+                    label: `${h.name} (${h.horseCode || h.id.slice(0, 6)})`,
+                  })),
+                ]}
+              />
+            </Field>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+              <Field label={tr("Category *")}>
+                <Select
+                  value={createCategory}
+                  onChange={(e) => {
+                    const cat = e.target.value as any;
+                    setCreateCategory(cat);
+                    if (cat === "VACCINATION") setCreateType("Equine Influenza & Tetanus Booster");
+                    else if (cat === "DEWORMING") setCreateType("Ivermectin Paste Deworming");
+                    else if (cat === "FARRIER") setCreateType("Routine Hoof Trimming & Shoe Reset");
+                    else if (cat === "DENTAL") setCreateType("Annual Dental Floating & Oral Exam");
+                    else setCreateType("Routine Health Screening");
+                  }}
+                  options={[
+                    { value: "VACCINATION", label: tr("Vaccination") },
+                    { value: "DEWORMING", label: tr("Deworming") },
+                    { value: "FARRIER", label: tr("Farrier Care") },
+                    { value: "DENTAL", label: tr("Dental Care") },
+                    { value: "GENERAL", label: tr("Routine Checkup") },
+                  ]}
+                />
+              </Field>
+
+              <Field label={tr("Due Date *")}>
+                <Input
+                  type="date"
+                  value={createDueDate}
+                  onChange={(e) => setCreateDueDate(e.target.value)}
+                />
+              </Field>
+            </div>
+
+            <Field label={tr("Care Procedure / Vaccine Name *")}>
+              <Input
+                value={createType}
+                onChange={(e) => setCreateType(e.target.value)}
+                placeholder={tr("e.g. Equine Influenza & Tetanus Booster")}
+              />
+            </Field>
+
+            <Field label={tr("Clinical Notes / Instructions")}>
+              <Textarea
+                rows={3}
+                value={createNotes}
+                onChange={(e) => setCreateNotes(e.target.value)}
+                placeholder={tr("Instructions, target product, or specific health precautions...")}
+              />
+            </Field>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "0.5rem" }}>
+              <Button tone="ghost" onClick={() => setShowCreateModal(false)}>
+                {tr("Cancel")}
+              </Button>
+              <Button tone="primary" onClick={() => void handleCreateSchedule()} disabled={submitting}>
+                {submitting ? tr("Scheduling...") : tr("Create Schedule")}
               </Button>
             </div>
           </div>

@@ -35,7 +35,6 @@ export default function DailyChecklistPage() {
   const [summary, setSummary] = useState<DailyTaskSummary | null>(null);
   const [zones, setZones] = useState<Zone[]>([]);
   const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
   const [actionBusyId, setActionBusyId] = useState<string | null>(null);
   const [error, setError] = useState('');
 
@@ -102,23 +101,6 @@ export default function DailyChecklistPage() {
     if (!shiftsLoaded) return;
     loadData();
   }, [selectedDate, selectedZoneId, statusFilter, onlyMyTasks, shiftsLoaded]);
-
-  const handleGenerate = async () => {
-    if (generating) return;
-    setGenerating(true);
-    try {
-      const res = await dailyTasksApi.generate({
-        date: selectedDate,
-        zoneId: selectedZoneId !== 'ALL' ? selectedZoneId : undefined,
-      });
-      toast.show(res.message || tr('Daily tasks generated.'), 'ok');
-      await loadData();
-    } catch (err) {
-      toast.show(messageFor(err), 'danger');
-    } finally {
-      setGenerating(false);
-    }
-  };
 
   const handleComplete = async (taskId: string) => {
     if (actionBusyId) return;
@@ -254,24 +236,15 @@ export default function DailyChecklistPage() {
           'Mobile-first task execution for grooms & stable staff with 15-minute undo protection and emergency reporting.',
         )}
         action={
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <Button
-              tone="primary"
-              onClick={() => {
-                setIncidentTargetHorseId(undefined);
-                setIncidentModalOpen(true);
-              }}
-            >
-              + {tr('Report Incident')}
-            </Button>
-            <Button
-              tone="secondary"
-              onClick={handleGenerate}
-              disabled={generating}
-            >
-              {generating ? tr('Generating…') : tr('Sync / Generate Tasks')}
-            </Button>
-          </div>
+          <Button
+            tone="primary"
+            onClick={() => {
+              setIncidentTargetHorseId(undefined);
+              setIncidentModalOpen(true);
+            }}
+          >
+            + {tr('Report Incident')}
+          </Button>
         }
       />
 
@@ -413,12 +386,7 @@ export default function DailyChecklistPage() {
         <Card pad={32}>
           <EmptyState
             title={tr('No tasks found for this date')}
-            description={tr('There are no tasks matching your filters. You can generate tasks from approved nutrition plans and stable routines.')}
-            action={
-              <Button tone="primary" onClick={handleGenerate} disabled={generating}>
-                {generating ? tr('Generating…') : tr('Generate Tasks for Today')}
-              </Button>
-            }
+            description={tr('There are no tasks matching your filters.')}
           />
         </Card>
       ) : (
@@ -572,7 +540,7 @@ export default function DailyChecklistPage() {
                                 textDecoration: task.isCompleted ? 'line-through' : 'none',
                               }}
                             >
-                              {task.title}
+                              {task.title.replace(/^[\p{Extended_Pictographic}\p{Emoji}\s]+/u, '').trim()}
                             </span>
                           </div>
 

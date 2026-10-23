@@ -68,6 +68,7 @@ export default function HorseFormPage() {
   const [dob, setDob] = useState("");
   const [gender, setGender] = useState("Stallion");
   const [color, setColor] = useState("");
+  const [weightKg, setWeightKg] = useState("");
   const [microchip, setMicrochip] = useState(() => (isEdit ? "" : generateMicrochip15()));
   const [rfid, setRfid] = useState(() => (isEdit ? "" : generateRfidCode()));
 
@@ -97,6 +98,7 @@ export default function HorseFormPage() {
         setDob(horse.dob ? horse.dob.split("T")[0] : "");
         setGender(LEGACY_GENDER[horse.gender] ?? horse.gender ?? "Stallion");
         setColor(horse.color || "");
+        setWeightKg(horse.weightKg != null ? String(horse.weightKg) : "");
         setMicrochip(horse.microchip || horse.microchipRfid || "");
         setRfid(horse.rfid || "");
       })
@@ -173,6 +175,15 @@ export default function HorseFormPage() {
       errs.color = "Please select a coat color.";
     }
 
+    if (!weightKg.trim()) {
+      errs.weightKg = "Cân nặng là bắt buộc.";
+    } else {
+      const numW = Number(weightKg);
+      if (isNaN(numW) || numW <= 0) {
+        errs.weightKg = "Cân nặng phải lớn hơn 0 kg.";
+      }
+    }
+
     // Microchip: khi tạo, để trống thì hệ thống tự sinh; khi sửa phải giữ số thật (không tự sinh số mới).
     if (isEdit && !microchip.trim()) {
       errs.microchip = "Microchip number is required.";
@@ -205,6 +216,7 @@ export default function HorseFormPage() {
           dob,
           gender,
           color,
+          weightKg: weightKg.trim() ? Number(weightKg) : undefined,
           microchip: finalMicrochip,
           rfid: finalRfid,
         };
@@ -219,6 +231,7 @@ export default function HorseFormPage() {
           dob,
           gender,
           color,
+          weightKg: weightKg.trim() ? Number(weightKg) : undefined,
           microchip: finalMicrochip,
           rfid: finalRfid,
         };
@@ -228,6 +241,7 @@ export default function HorseFormPage() {
         if (andAddAnother) {
           setName("");
           setDob("");
+          setWeightKg("");
           setMicrochip(generateMicrochip15());
           setRfid(generateRfidCode());
           setErrors({});
@@ -490,6 +504,26 @@ export default function HorseFormPage() {
                 onChange={(e) => {
                   setColor(e.target.value);
                   setIsDirty(true);
+                }}
+              />
+            </Field>
+
+            <Field
+              label={tr("Weight (kg) *")}
+              error={errors.weightKg}
+              hint={tr("Enter horse body weight in kg (greater than 0)")}
+            >
+              <Input
+                type="number"
+                step="any"
+                min={1}
+                placeholder={tr("e.g. 480")}
+                value={weightKg}
+                invalid={Boolean(errors.weightKg)}
+                onChange={(e) => {
+                  setWeightKg(e.target.value);
+                  setIsDirty(true);
+                  if (errors.weightKg) setErrors((prev) => ({ ...prev, weightKg: "" }));
                 }}
               />
             </Field>
