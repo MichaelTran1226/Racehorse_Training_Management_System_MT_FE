@@ -222,6 +222,15 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
     },
     { label: "RACING", items: [item("races", "Race Entries", "trophy")] },
     {
+      label: "MEDICAL",
+      items: [
+        item("herd", "Herd Health", "stethoscope", { requires: "viewMedical" }),
+        item("records", "Medical Records", "file", { requires: "viewMedical" }),
+        item("locks", "Training Locks", "lock", { requires: "viewMedical" }),
+        item("vaccine", "Preventive Care", "syringe", { requires: "viewMedical" }),
+      ],
+    },
+    {
       label: "SUPPLIES",
       items: [
         item("supplies/inventory", "Zone Inventory", "layers", { i18nKey: "zoneInventory" }),
@@ -315,7 +324,6 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
         item("horses", "Horses", "horse", { requires: "viewHorses" }),
         item("stalls", "Stall Map", "grid"),
         item("stable/shifts", "Shift Roster", "calendar", { i18nKey: "shiftRoster" }),
-        item("incidents", "Incident Reports", "camera"),
       ],
     },
     {
@@ -332,6 +340,16 @@ export const ROLE_NAV: Record<Role, NavGroup[]> = {
         item("training", "Training Overview", "chart", { i18nKey: "trainingOverview" }),
         item("plans", "Training Plans", "clipboard", { i18nKey: "trainingPlans" }),
         item("calendar", "Weekly Calendar", "calendar"),
+      ],
+    },
+    {
+      label: "MEDICAL",
+      items: [
+        item("herd", "Herd Health", "stethoscope", { requires: "viewMedical" }),
+        item("records", "Medical Records", "file", { requires: "viewMedical" }),
+        item("locks", "Training Locks", "lock", { requires: "viewMedical" }),
+        item("vaccine", "Preventive Care", "syringe", { requires: "viewMedical" }),
+        item("incidents", "Incident Reports", "camera", { requires: "viewMedical" }),
       ],
     },
     {
@@ -505,8 +523,7 @@ export function screenAccess(role: Role, permissions: PermissionMap, pathname: s
   }
 
   // Quyền truy cập hồ sơ bệnh án qua chiến mã (FR-3.01 / Flow 1 / Flow 3):
-  // Chỉ Vet mới hiện menu Medical ở Sidebar, nhưng các vai trò khác (Club Manager, Head Trainer, Horse Owner)
-  // vẫn truy cập được Medical Record thông qua liên kết từ hồ sơ ngựa.
+  // Cho phép Vet, Club Manager, Head Trainer, Horse Owner (ngựa của họ) truy cập hồ sơ bệnh án và chấn thương.
   if (
     pathname.startsWith("/medical/horses/") ||
     pathname.startsWith("/records/horse/") ||
