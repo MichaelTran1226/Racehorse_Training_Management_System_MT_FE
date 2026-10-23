@@ -3,6 +3,51 @@
 
 export type PlanStatus = "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED";
 export type SessionStatus = "SCHEDULED" | "COMPLETED" | "BLOCKED" | "MISSED" | "CANCELLED";
+export interface WorkoutSimulationStart {
+  sessionId: string;
+  status: "PENDING" | "RUNNING" | "COMPLETED" | "ABORTED_INJURY";
+  launchUrl: string;
+}
+export interface WorkoutSimulationResultDraft {
+  actualTimeSeconds?: number;
+  actualDistanceMeters?: number;
+  heartRatePeak?: number;
+  heartRateRecovery?: number;
+  topSpeedKmh?: number;
+  actualSurface?: TrackType;
+  trackCondition?: TrackCondition;
+}
+export interface WorkoutSimulationResult {
+  sessionId: string;
+  status: "PENDING" | "RUNNING" | "COMPLETED" | "ABORTED_INJURY";
+  resultDraft: WorkoutSimulationResultDraft | null;
+}
+export interface SimulatorTelemetrySnapshot {
+  event: "sim:telemetry_tick";
+  session_id: string;
+  sim_time_s: number;
+  horse: { horse_id: string; microchip_id?: string };
+  track: {
+    surface: string;
+    target_distance_m: number;
+    covered_distance_m: number;
+    track_condition: string;
+  };
+  metrics: {
+    velocity_mps: number;
+    heart_rate_bpm: number;
+    stamina_pct: number;
+    body_temp_c: number;
+  };
+  alerts: { overload_warning: boolean; limp_detected: boolean; heat_stress: boolean };
+}
+export interface LiveSimulatorSession {
+  id: string;
+  status: "RUNNING";
+  horseIds: string[];
+  lastSnapshot: SimulatorTelemetrySnapshot | null;
+  updatedAt: string;
+}
 export type ExerciseType = "WALK" | "TROT" | "CANTER" | "BREEZE" | "TRIAL" | "SWIM" | "TREADMILL";
 export type ExerciseIntensity = "LIGHT" | "MEDIUM" | "HEAVY";
 export type TrackType = "TURF" | "DIRT" | "SYNTHETIC" | "NONE";
@@ -233,6 +278,7 @@ export interface ResultInput {
   trackCondition?: TrackCondition;
   heartRatePeak?: number;
   heartRateRecovery?: number;
+  topSpeedKmh?: number;
   performanceScore: number;
   completionLevel: CompletionLevel;
   trainerNotes: string;

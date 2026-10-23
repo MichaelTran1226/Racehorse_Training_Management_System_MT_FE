@@ -2,6 +2,26 @@
 // Khóa là đúng câu tiếng Anh trong code; {{ten}} là biến trong câu ghép.
 // Thêm câu mới: thêm một dòng "English": "Tiếng Việt". Câu không có ở đây sẽ hiện tiếng Anh.
 export const VI_TEXT: Record<string, string> = {
+  "0 – 80 km/h": "0 – 80 km/h",
+  "Biometrics sent by running simulator sessions": "Chỉ số sinh trắc từ các phiên mô phỏng đang chạy",
+  "Body temperature": "Thân nhiệt",
+  "Current speed": "Tốc độ hiện tại",
+  "Could not load simulator measurements": "Không thể tải số đo từ mô phỏng",
+  "Heart rate": "Nhịp tim",
+  "Live Session Telemetry": "Thông số phiên chạy trực tiếp",
+  "Live telemetry is temporarily unavailable. Showing the latest received data.": "Tạm thời mất kết nối dữ liệu trực tiếp. Đang hiển thị dữ liệu nhận gần nhất.",
+  "Loading live telemetry…": "Đang tải thông số trực tiếp…",
+  "No trial is running": "Không có lượt chạy thử nào đang diễn ra",
+  "Review the imported measurements and record any abnormal signs before completing this workout.": "Hãy kiểm tra các số đo đã nhập và ghi nhận dấu hiệu bất thường trước khi hoàn tất buổi tập.",
+  "Running": "Đang chạy",
+  "Simulation ended due to injury": "Mô phỏng kết thúc do chấn thương",
+  "Stamina": "Thể lực",
+  "Start a due trial to see live telemetry here.": "Bắt đầu một lượt chạy thử đến hạn để xem thông số trực tiếp tại đây.",
+  "Top speed (km/h)": "Tốc độ tối đa (km/h)",
+  "Top speed must be 0 to 80 km/h.": "Tốc độ tối đa phải từ 0 đến 80 km/h.",
+  "Top speed:": "Tốc độ tối đa:",
+  "Waiting for the first telemetry packet…": "Đang chờ gói thông số đầu tiên…",
+  "Warning": "Cảnh báo",
   " Click Add zone to start.": " Bấm Thêm khu để bắt đầu.",
   " Reason: {{reason}}": " Lý do: {{reason}}",
   " match the current filters": " khớp bộ lọc hiện tại",
@@ -3522,5 +3542,11 @@ export const VI_TEXT: Record<string, string> = {
   "MEDICAL": "Y TẾ & SỨC KHỎE",
   "ADMINISTRATION": "QUẢN TRỊ",
   "Notifications, {{count}} unread": "Thông báo, {{count}} chưa đọc",
+  "Open Simulator Exam": "Mở mô hình khám",
+  "Load Simulator Measurements": "Tải chỉ số từ mô hình",
+  "The simulator has not returned measurements yet.": "Mô hình chưa trả về chỉ số khám.",
+  "Simulator measurements loaded. Review them before saving.": "Đã tải chỉ số từ mô hình. Hãy kiểm tra trước khi lưu.",
+  "Simulator measurement source": "Nguồn chỉ số mô hình",
+  "Review all measurements before saving the medical record.": "Hãy kiểm tra toàn bộ chỉ số trước khi lưu bệnh án.",
 };
 

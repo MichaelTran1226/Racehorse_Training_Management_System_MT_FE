@@ -12,7 +12,13 @@ import { Icon } from "@/shared/components/ui/Icon";
 import { useToast } from "@/shared/components/ui/Toast";
 import { getHorses } from "@/features/horses/api";
 import { tr } from "@/shared/i18n/tr";
-import { createRecord, getRecordDetail, updateRecord } from "../api";
+import {
+  createRecord,
+  getLatestExamSimulation,
+  getRecordDetail,
+  startExamSimulation,
+  updateRecord,
+} from "../api";
 import { isHeartRateWarning, isRespiratoryWarning, isTempWarning } from "../components/VitalsDisplay";
 import { parseMedicalErrors } from "../lib/medical-errors";
 import type { LabTestItem, SeverityLevel } from "../types";
@@ -130,6 +136,8 @@ export default function RecordFormPage() {
   const [proposeMedicalLock, setProposeMedicalLock] = useState(false);
 
   const [busy, setBusy] = useState(false);
+  const [examBusy, setExamBusy] = useState(false);
+  const [examSource, setExamSource] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -425,6 +433,51 @@ export default function RecordFormPage() {
     }
   }
 
+  async function handleStartExam() {
+    if (!horseId) return;
+    const popup = window.open("about:blank", "_blank");
+    if (!popup) {
+      toast.show(tr("Please allow pop-ups to open the simulation."), "danger");
+      return;
+    }
+    popup.opener = null;
+    setExamBusy(true);
+    try {
+      const session = await startExamSimulation(horseId, id);
+      popup.location.replace(session.launchUrl);
+    } catch (err: unknown) {
+      popup.close();
+      const parsed = parseMedicalErrors(err);
+      setError(parsed.summary);
+      setErrorDetails(parsed.details);
+    } finally {
+      setExamBusy(false);
+    }
+  }
+
+  async function handleLoadExam() {
+    if (!horseId) return;
+    setExamBusy(true);
+    try {
+      const response = await getLatestExamSimulation(horseId);
+      const draft = response.resultDraft;
+      if (!draft) throw new Error(tr("The simulator has not returned measurements yet."));
+      setTemperature(draft.temperature);
+      setRestingHeartRate(draft.restingHeartRate);
+      setRespiratoryRate(draft.respiratoryRate);
+      setWeightKg(draft.weightKg);
+      setExamSource(`${draft.modelVersion} · ${new Date(draft.capturedAt).toLocaleString()}`);
+      setDirty(true);
+      toast.show(tr("Simulator measurements loaded. Review them before saving."), "ok");
+    } catch (err: unknown) {
+      const parsed = parseMedicalErrors(err);
+      setError(parsed.summary);
+      setErrorDetails(parsed.details);
+    } finally {
+      setExamBusy(false);
+    }
+  }
+
   const tempWarn = isTempWarning(temperature);
   const hrWarn = isHeartRateWarning(restingHeartRate);
   const rrWarn = isRespiratoryWarning(respiratoryRate);
@@ -572,10 +625,25 @@ export default function RecordFormPage() {
             <Icon name="pulse" size={18} />
             {tr("2. Vital Signs")}
           </h2>
-          <span style={{ fontSize: "var(--fs-caption)", color: "var(--muted)" }}>
-            {tr("Values exceeding adult equine physiological reference ranges will be highlighted in red.")}
-          </span>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
+            <Button tone="ghost" onClick={() => void handleStartExam()} disabled={!horseId || examBusy}>
+              {tr("Open Simulator Exam")}
+            </Button>
+            <Button tone="ghost" onClick={() => void handleLoadExam()} disabled={!horseId || examBusy}>
+              {tr("Load Simulator Measurements")}
+            </Button>
+          </div>
         </div>
+
+        <p style={{ fontSize: "var(--fs-caption)", color: "var(--muted)" }}>
+          {tr("Values exceeding adult equine physiological reference ranges will be highlighted in red.")}
+        </p>
+
+        {examSource && (
+          <Alert tone="info" icon="pulse" title={tr("Simulator measurement source")}>
+            {examSource}. {tr("Review all measurements before saving the medical record.")}
+          </Alert>
+        )}
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
           <Field

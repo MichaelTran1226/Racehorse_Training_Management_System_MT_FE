@@ -199,6 +199,20 @@ export interface CreateMedicalRecordInput {
   saveAsDraft?: boolean;
 }
 
+export interface ExamSimulationResult {
+  sessionId: string;
+  status: "PENDING" | "RUNNING" | "COMPLETED" | "ABORTED_INJURY";
+  resultDraft: {
+    temperature: number;
+    restingHeartRate: number;
+    respiratoryRate: number;
+    weightKg: number;
+    capturedAt: string;
+    modelVersion: string;
+    source: "EQUIFLOW_SIMULATOR";
+  } | null;
+}
+
 export interface UpdateMedicalRecordInput {
   examinationDate?: string;
   examinationType?: string;

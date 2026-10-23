@@ -2200,6 +2200,38 @@ const routes: Route[] = [
 
   // ---- SC-3.01 Sơ đồ sức khỏe (bản giả của GET /medical/health-board, dựng từ kho ngựa giả)
   {
+    method: "POST",
+    pattern: /^\/simulator\/horses\/([^/]+)\/exams\/start$/,
+    handler({ db, params }) {
+      currentUser(db);
+      return {
+        sessionId: `exam-${params[0]}`,
+        status: "PENDING",
+        launchUrl: `http://localhost:5175/?sessionId=exam-${params[0]}`,
+      };
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/simulator\/horses\/([^/]+)\/exams\/latest$/,
+    handler({ db, params }) {
+      currentUser(db);
+      return {
+        sessionId: `exam-${params[0]}`,
+        status: "COMPLETED",
+        resultDraft: {
+          temperature: 38.3,
+          restingHeartRate: 39,
+          respiratoryRate: 14,
+          weightKg: 487,
+          capturedAt: "2026-10-23T01:00:00.000Z",
+          modelVersion: "equiflow-sim-v3",
+          source: "EQUIFLOW_SIMULATOR",
+        },
+      };
+    },
+  },
+  {
     method: "GET",
     pattern: /^\/medical\/health-board$/,
     handler({ db }) {
@@ -3161,6 +3193,83 @@ const routes: Route[] = [
     },
   },
   {
+    method: "POST",
+    pattern: /^\/simulator\/workouts\/([^/]+)\/start$/,
+    handler({ db, params }) {
+      trainingRole(currentUser(db), ["HEAD_TRAINER"]);
+      const workout = getStoredWorkouts().find((w) => w.id === params[0]);
+      if (!workout) throw new ApiError(404, "WORKOUT_NOT_FOUND", "Workout session not found.");
+      if (workout.status !== "SCHEDULED") {
+        throw new ApiError(409, "WORKOUT_NOT_SIMULATABLE", "Only scheduled workouts can be simulated.");
+      }
+      if (new Date(workout.scheduledDate) > new Date()) {
+        throw new ApiError(409, "WORKOUT_NOT_STARTED", "The workout has not reached its scheduled start time.");
+      }
+      const horse = mockHorse(workout.horseId);
+      if (horse.isLocked && isHeavyMock(workout)) {
+        throw new ApiError(409, "MEDICAL_LOCK_ACTIVE", "A medical lock prevents this high-intensity workout.");
+      }
+      const sessionId = `mock-sim-${workout.id}`;
+      return { sessionId, status: "PENDING", launchUrl: `http://localhost:5175/?sessionId=${sessionId}` };
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/simulator\/sessions$/,
+    handler({ db, url }) {
+      trainingRole(currentUser(db), ["CLUB_MANAGER", "HEAD_TRAINER", "VETERINARIAN"]);
+      if (url.searchParams.get("status") !== "RUNNING") return { active: [], recent: [] };
+      return {
+        active: [],
+        recent: [
+          {
+            id: "mock-live-session",
+            status: "RUNNING",
+            horseIds: ["horse-1"],
+            updatedAt: "2026-10-23T01:00:00.000Z",
+            lastSnapshot: {
+              event: "sim:telemetry_tick",
+              session_id: "mock-live-session",
+              sim_time_s: 42,
+              horse: { horse_id: "horse-1", microchip_id: "MICROCHIP-LIVE-001" },
+              track: { surface: "TURF", target_distance_m: 1200, covered_distance_m: 600, track_condition: "GOOD" },
+              metrics: { velocity_mps: 12, heart_rate_bpm: 156, stamina_pct: 74, body_temp_c: 38.4 },
+              alerts: { overload_warning: false, limp_detected: false, heat_stress: false },
+            },
+          },
+          {
+            id: "mock-live-waiting",
+            status: "RUNNING",
+            horseIds: ["horse-2"],
+            updatedAt: "2026-10-23T01:00:01.000Z",
+            lastSnapshot: null,
+          },
+        ],
+      };
+    },
+  },
+  {
+    method: "GET",
+    pattern: /^\/simulator\/workouts\/([^/]+)\/latest$/,
+    handler({ db, params }) {
+      trainingRole(currentUser(db), ["HEAD_TRAINER"]);
+      if (params[0] !== "w-106") throw new ApiError(404, "SIMULATOR_RESULT_NOT_FOUND", "No simulation result exists.");
+      return {
+        sessionId: "mock-sim-w-106",
+        status: "ABORTED_INJURY",
+        resultDraft: {
+          actualTimeSeconds: 72.4,
+          actualDistanceMeters: 1187,
+          heartRatePeak: 195,
+          heartRateRecovery: 86,
+          topSpeedKmh: 65.5,
+          actualSurface: "TURF",
+          trackCondition: "SOFT",
+        },
+      };
+    },
+  },
+  {
     method: "GET",
     pattern: /^\/training\/grooms$/,
     handler({ db }) {
@@ -3299,6 +3408,7 @@ const routes: Route[] = [
         trackCondition: body.trackCondition ?? null,
         heartRatePeak: body.heartRatePeak ?? null,
         heartRateRecovery: body.heartRateRecovery ?? null,
+        topSpeedKmh: body.topSpeedKmh ?? null,
         performanceScore: Number(body.performanceScore),
         completionLevel: String(body.completionLevel),
         resultNotes: String(body.trainerNotes ?? ""),

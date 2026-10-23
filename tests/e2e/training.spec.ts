@@ -86,3 +86,62 @@ test('a groom sees the workouts assigned to them', async ({ page }) => {
   await expect(page.getByText(/Thunderbolt Swift/).first()).toBeVisible();
   await expect(page.getByText('do not take the horse to the track', { exact: false }).first()).toBeVisible();
 });
+
+test('head trainer launches a due trial with the URL issued by the backend', async ({ page }) => {
+  await page.context().route('http://localhost:5175/**', (route) =>
+    route.fulfill({ contentType: 'text/html', body: '<title>Simulator</title>' }),
+  );
+  await signIn(page, 'nam.tran@gmail.com');
+  await page.goto('/training/trials');
+
+  const dueRow = page.getByRole('row').filter({ hasText: 'Thunderbolt Swift' }).filter({ hasText: '1200m' });
+  const futureRow = page.getByRole('row').filter({ hasText: 'Thunderbolt Swift' }).filter({ hasText: '1000m' });
+  await expect(futureRow.getByRole('button', { name: 'Run simulation' })).toBeDisabled();
+  await expect(futureRow.getByRole('button', { name: 'Run simulation' })).toHaveAttribute(
+    'title',
+    'The trial has not reached its scheduled start time.',
+  );
+  const popupPromise = page.waitForEvent('popup');
+  await dueRow.getByRole('button', { name: 'Run simulation' }).click();
+  const popup = await popupPromise;
+
+  await expect(popup).toHaveURL(/localhost:5175\/\?sessionId=mock-sim-w-106/);
+});
+
+test('live monitor renders telemetry returned by the simulator API', async ({ page }) => {
+  await signIn(page, 'nam.tran@gmail.com');
+  await page.goto('/training/monitor');
+
+  await expect(page.getByText('MICROCHIP-LIVE-001')).toBeVisible();
+  await expect(page.getByText('43.2 km/h')).toBeVisible();
+  await expect(page.getByText('156 bpm')).toBeVisible();
+  await expect(page.getByText('600m / 1200m')).toBeVisible();
+  await expect(page.getByText('Waiting for the first telemetry packet…')).toBeVisible();
+});
+
+test('trainer result form is prefilled from a finished simulator session', async ({ page }) => {
+  await signIn(page, 'nam.tran@gmail.com');
+  await page.goto('/training/sessions/w-106/result');
+
+  await expect(page.getByLabel('Actual distance (m)')).toHaveValue('1187');
+  await expect(page.getByLabel('Running time (mm:ss.s)')).toHaveValue('01:12.4');
+  await expect(page.getByLabel('Peak heart rate (bpm)')).toHaveValue('195');
+  await expect(page.getByLabel('Heart rate after 10 min rest (bpm)')).toHaveValue('86');
+  await expect(page.getByLabel('Top speed (km/h)')).toHaveValue('65.5');
+  await expect(page.getByLabel('Actual surface')).toHaveValue('TURF');
+  await expect(page.getByLabel('Track condition')).toHaveValue('SOFT');
+  await expect(page.getByLabel('Performance score')).toHaveValue('');
+  await expect(page.getByLabel('Completion')).toHaveValue('');
+  await expect(page.getByLabel(/Professional comment/)).toHaveValue('');
+
+  await page.getByLabel('Performance score').selectOption('7');
+  await page.getByLabel('Completion').selectOption('PARTIAL');
+  await page.getByLabel(/Professional comment/).fill('Stopped safely and referred for veterinary review.');
+  await page.getByRole('button', { name: 'Save result' }).click();
+  await expect(page).toHaveURL('/dashboard');
+
+  await page.goto('/training/sessions/w-106/result');
+  await expect(page.getByText('Completed', { exact: true })).toBeVisible();
+  await expect(page.getByText('65.5 km/h')).toBeVisible();
+  await expect(page.getByText('Stopped safely and referred for veterinary review.')).toBeVisible();
+});
