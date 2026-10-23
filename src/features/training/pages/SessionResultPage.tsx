@@ -212,6 +212,10 @@ export default function SessionResultPage() {
       }
     }
 
+    if (topSpeed && (isNaN(Number(topSpeed)) || Number(topSpeed) < 0 || Number(topSpeed) > 80)) {
+      errs.topSpeed = tr("Top speed must be 0 to 80 km/h.");
+    }
+
     if (!score) {
       errs.score = tr("Please select a performance score.");
     }
@@ -413,6 +417,9 @@ export default function SessionResultPage() {
               </Field>
               <Field label={tr("Heart rate after 10 min rest (bpm)")} error={fieldErrors.recoveryHr} hint="20 – 200 bpm">
                 <Input type="number" inputMode="numeric" value={recoveryHr} onChange={(e) => set(setRecoveryHr, "recoveryHr")(e.target.value)} />
+              </Field>
+              <Field label={tr("Top speed (km/h)")} error={fieldErrors.topSpeed} hint={tr("0 – 80 km/h")}>
+                <Input type="number" inputMode="decimal" value={topSpeed} onChange={(e) => set(setTopSpeed, "topSpeed")(e.target.value)} />
               </Field>
             </div>
             {avgSpeed != null && avgSpeed > 75 && (

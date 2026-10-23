@@ -312,6 +312,13 @@ export default function CareSchedulePage() {
       <PageHeader
         title={tr("Preventive care")}
         description={tr("Vaccinations, deworming, farrier, and dental schedules for all horses.")}
+        action={
+          isVet ? (
+            <Button tone="primary" icon="plus" onClick={() => void handleOpenCreateModal()}>
+              {tr("Schedule Preventive Care")}
+            </Button>
+          ) : undefined
+        }
       />
 
       <Card pad={0}>
