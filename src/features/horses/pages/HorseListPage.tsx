@@ -201,10 +201,11 @@ export default function HorseListPage() {
     },
     {
       key: "sex",
-      header: tr("Sex · Age"),
+      header: tr("Sex · Age · Weight"),
       render: (h) => (
         <span className="num nowrap">
           {h.gender ? tr(h.gender) : "—"} · {ageOf(h.dob)}
+          {h.weightKg ? ` · ${h.weightKg} kg` : ""}
         </span>
       ),
     },

@@ -19,7 +19,7 @@ import { RestockReviewModal } from '../components/RestockReviewModal';
 import { RestockDeliverModal } from '../components/RestockDeliverModal';
 import type { RestockRequestItem, RestockStatus } from '../types/inventory';
 import type { Zone } from '../types';
-import { type SupplyCatalogItem, formatSupplyUnit } from '@/features/master-data/types/supplies';
+import { type SupplyCatalogItem, formatSupplyUnit, formatSupplyName, getFriendlyCategoryName } from '@/features/master-data/types/supplies';
 
 export default function RestockRequestsPage() {
   const currentUser = useCurrentUser();
@@ -134,9 +134,9 @@ export default function RestockRequestsPage() {
         header: tr('Supply & Stall Zone'),
         render: (row) => (
           <div>
-            <div style={{ fontWeight: 600, color: 'var(--ink)' }}>{row.supply.name}</div>
+            <div style={{ fontWeight: 600, color: 'var(--ink)' }}>{formatSupplyName(row.supply.name)}</div>
             <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
-              {row.supply.code} · <strong style={{ color: 'var(--ink)' }}>{row.zone.name}</strong> ({row.zone.code})
+              {getFriendlyCategoryName(row.supply.category)} · <strong style={{ color: 'var(--ink)' }}>{row.zone.name}</strong> ({row.zone.code})
             </div>
           </div>
         ),

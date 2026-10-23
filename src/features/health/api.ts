@@ -539,7 +539,9 @@ export const getCareSchedules = async (): Promise<import("./types").PreventiveCa
     return {
       id: item.id,
       horseId: horseNameDisplay,
-      type: item.typeCatalog?.name || item.type || "Routine Care",
+      realHorseId: item.horse?.id || item.horseId,
+      typeCatalogId: item.typeCatalogId,
+      type: item.typeCatalog?.name || item.productAdministered || item.type || "Routine Care",
       category: cat,
       lastAdministeredDate: item.lastCompletedDate ? String(item.lastCompletedDate).split("T")[0] : undefined,
       administeredBy: item.performedByName || item.veterinarian?.fullName || "Veterinarian",
@@ -566,8 +568,8 @@ export const recordCareCompletion = async (
 ) => {
   return await api("POST", "/medical/preventive/record", {
     scheduleId: careId,
-    horseId: input.horseId,
-    typeCatalogId: input.typeCatalogId,
+    horseId: input.horseId || undefined,
+    typeCatalogId: input.typeCatalogId || undefined,
     performedDate: input.administeredDate,
     performedByMode: input.performedByMode || (input.administeredBy ? "EXTERNAL" : "SELF"),
     performedByName: input.administeredBy,
@@ -576,6 +578,17 @@ export const recordCareCompletion = async (
     customNextDueDate: input.nextDueDate,
     notes: input.notes,
   });
+};
+
+export const createCareSchedule = async (input: {
+  horseId: string;
+  typeCatalogId?: string;
+  category: "VACCINATION" | "DEWORMING" | "FARRIER" | "DENTAL" | "GENERAL";
+  type: string;
+  dueDate: string;
+  notes?: string;
+}) => {
+  return await api("POST", "/medical/preventive/schedules", input);
 };
 
 export const healthApi = {
@@ -610,5 +623,6 @@ export const healthApi = {
   updatePreventiveCatalog,
   togglePreventiveCatalogStatus,
   getCareSchedules,
+  createCareSchedule,
   recordCareCompletion,
 };

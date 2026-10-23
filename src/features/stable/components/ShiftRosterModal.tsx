@@ -71,6 +71,29 @@ export function ShiftRosterModal({
     }
   };
 
+  const canDelete = currentRosters.length > 0 && new Date(`${date}T23:59:59`) >= new Date();
+
+  const handleDelete = async () => {
+    if (!window.confirm(tr('Are you sure you want to delete this shift schedule?'))) return;
+    setBusy(true);
+    setError('');
+    try {
+      await assignShiftSlot({
+        date,
+        shiftId: shift.id,
+        zoneId: zone.id,
+        groomUserIds: [],
+        applyScope,
+      });
+      toast.show(tr('Shift schedule deleted successfully.'), 'ok');
+      onSaved();
+    } catch (err) {
+      setError(messageFor(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (busy) return;
@@ -230,13 +253,20 @@ export function ShiftRosterModal({
           />
         </Field>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.25rem' }}>
-          <Button tone="secondary" type="button" onClick={handleClose}>
-            {tr('Cancel')}
-          </Button>
-          <Button tone="primary" type="submit" disabled={busy}>
-            {busy ? tr('Saving...') : tr('Save Roster (BTN-4.53)')}
-          </Button>
+        <div style={{ display: 'flex', justifyContent: canDelete ? 'space-between' : 'flex-end', alignItems: 'center', gap: '0.75rem', marginTop: '1.25rem' }}>
+          {canDelete && (
+            <Button tone="danger" type="button" disabled={busy} onClick={handleDelete}>
+              {tr('Delete Schedule')}
+            </Button>
+          )}
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <Button tone="secondary" type="button" onClick={handleClose}>
+              {tr('Cancel')}
+            </Button>
+            <Button tone="primary" type="submit" disabled={busy}>
+              {busy ? tr('Saving...') : tr('Save Roster')}
+            </Button>
+          </div>
         </div>
       </form>
     </Modal>

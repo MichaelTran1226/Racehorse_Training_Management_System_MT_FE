@@ -27,23 +27,51 @@ const ROUTE_OPTIONS = [
   { value: "Ophthalmic", label: "Ophthalmic" },
 ];
 
+const COMMON_EQUINE_MEDICATIONS = [
+  { value: "Phenylbutazone 20% dung dịch tiêm", label: "Phenylbutazone 20% (NSAID giảm đau/kháng viêm)", defaultUnit: "ml", defaultRoute: "Intravenous", defaultWithdrawalDays: 7 },
+  { value: "Flunixin Meglumine 50mg/ml", label: "Flunixin Meglumine 50mg/ml (Kháng viêm nội tạng/hạ sốt)", defaultUnit: "ml", defaultRoute: "Intramuscular", defaultWithdrawalDays: 5 },
+  { value: "Dexamethasone 2mg/ml", label: "Dexamethasone 2mg/ml (Corticosteroid chống sốc/viêm)", defaultUnit: "ml", defaultRoute: "Intravenous", defaultWithdrawalDays: 7 },
+  { value: "Thuốc tẩy giun Ivermectin Paste 1.87%", label: "Ivermectin Paste 1.87% (Tẩy giun sán đường ruột)", defaultUnit: "g", defaultRoute: "Oral", defaultWithdrawalDays: 0 },
+  { value: "Omeprazole GastroGard Paste", label: "Omeprazole GastroGard (Điều trị viêm loét dạ dày)", defaultUnit: "g", defaultRoute: "Oral", defaultWithdrawalDays: 0 },
+  { value: "Meloxicam Oral Suspension", label: "Meloxicam Oral Suspension (Kháng viêm khớp)", defaultUnit: "ml", defaultRoute: "Oral", defaultWithdrawalDays: 3 },
+  { value: "Gentamicin Sulfate 100mg/ml", label: "Gentamicin Sulfate 100mg/ml (Kháng sinh phổ rộng)", defaultUnit: "ml", defaultRoute: "Intramuscular", defaultWithdrawalDays: 14 },
+  { value: "Cefquinome (Cobactan 2.5%)", label: "Cefquinome 2.5% (Kháng sinh Cephalosporin thế hệ 4)", defaultUnit: "ml", defaultRoute: "Intramuscular", defaultWithdrawalDays: 8 },
+  { value: "Men vi sinh đường ruột EquiFlora dạng ống", label: "Men vi sinh đường ruột EquiFlora dạng ống", defaultUnit: "ml", defaultRoute: "Oral", defaultWithdrawalDays: 0 },
+  { value: "Bột bù điện giải Post-Workout Electrolyte", label: "Bột bù điện giải Post-Workout Electrolyte", defaultUnit: "sachets", defaultRoute: "Oral", defaultWithdrawalDays: 0 },
+  { value: "OTHER", label: "Khác / Nhập tên thuốc khác...", defaultUnit: "ml", defaultRoute: "Oral", defaultWithdrawalDays: 0 },
+];
+
 interface AddPrescriptionModalProps {
   onClose: () => void;
   onSubmit: (input: PrescriptionInput) => Promise<void>;
 }
 
 export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModalProps) {
-  const [medicationName, setMedicationName] = useState("");
+  const [selectedMed, setSelectedMed] = useState(COMMON_EQUINE_MEDICATIONS[0].value);
+  const [medicationName, setMedicationName] = useState(COMMON_EQUINE_MEDICATIONS[0].value);
   const [dosage, setDosage] = useState(1);
-  const [unit, setUnit] = useState("g");
-  const [route, setRoute] = useState("Oral");
+  const [unit, setUnit] = useState(COMMON_EQUINE_MEDICATIONS[0].defaultUnit);
+  const [route, setRoute] = useState(COMMON_EQUINE_MEDICATIONS[0].defaultRoute);
   const [frequencyPerDay, setFrequencyPerDay] = useState(2);
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
   const [daysCount, setDaysCount] = useState(5);
-  const [withdrawalDays, setWithdrawalDays] = useState(7);
+  const [withdrawalDays, setWithdrawalDays] = useState(COMMON_EQUINE_MEDICATIONS[0].defaultWithdrawalDays);
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleMedChange = (val: string) => {
+    setSelectedMed(val);
+    const found = COMMON_EQUINE_MEDICATIONS.find((m) => m.value === val);
+    if (found && val !== "OTHER") {
+      setMedicationName(found.value);
+      setUnit(found.defaultUnit);
+      setRoute(found.defaultRoute);
+      setWithdrawalDays(found.defaultWithdrawalDays);
+    } else {
+      setMedicationName("");
+    }
+  };
 
   const totalAmount = dosage * frequencyPerDay * daysCount;
 
@@ -114,13 +142,23 @@ export function AddPrescriptionModal({ onClose, onSubmit }: AddPrescriptionModal
           </div>
         )}
 
-        <Field label={tr("Medication Name *")} hint={tr("Select or enter active ingredient / commercial drug name")}>
-          <Input
-            value={medicationName}
-            onChange={(e) => setMedicationName(e.target.value)}
-            placeholder={tr("e.g., Phenylbutazone Paste, Dexamethasone, Flunixin Meglumine...")}
-            required
+        <Field label={tr("Medication Name *")} hint={tr("Select from standard pharmacy catalog or enter custom drug name")}>
+          <Select
+            value={selectedMed}
+            onChange={(e) => handleMedChange(e.target.value)}
+            options={COMMON_EQUINE_MEDICATIONS.map((m) => ({ value: m.value, label: m.label }))}
           />
+          {selectedMed === "OTHER" && (
+            <div style={{ marginTop: 8 }}>
+              <Input
+                value={medicationName}
+                onChange={(e) => setMedicationName(e.target.value)}
+                placeholder={tr("Nhập tên thuốc / hoạt chất dược phẩm...")}
+                required
+                autoFocus
+              />
+            </div>
+          )}
         </Field>
 
         <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1.5fr", gap: 10 }}>

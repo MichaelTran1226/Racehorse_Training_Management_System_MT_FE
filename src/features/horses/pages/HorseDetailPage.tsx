@@ -314,6 +314,12 @@ export default function HorseDetailPage() {
               <span>{horse.color ? tr(horse.color) : ""}</span>
               <span style={{ margin: "0 0.5rem", opacity: 0.5 }}>•</span>
               <span>{ageText}</span>
+              {horse.weightKg ? (
+                <>
+                  <span style={{ margin: "0 0.5rem", opacity: 0.5 }}>•</span>
+                  <span><strong>{horse.weightKg} kg</strong></span>
+                </>
+              ) : null}
             </div>
 
             {/* Microchip & RFID quick-copy pills */}
@@ -494,6 +500,11 @@ export default function HorseDetailPage() {
             <div>
               <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>{tr("Coat Color")}</div>
               <div style={{ fontWeight: 600 }}>{horse.color ? tr(horse.color) : "—"}</div>
+            </div>
+
+            <div>
+              <div style={{ color: "var(--ink-muted)", marginBottom: 4 }}>{tr("Weight")}</div>
+              <div style={{ fontWeight: 600 }}>{horse.weightKg ? `${horse.weightKg} kg` : "—"}</div>
             </div>
 
             <div>
