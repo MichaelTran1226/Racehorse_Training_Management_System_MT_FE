@@ -5,6 +5,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Select } from '@/shared/components/form/Select';
 import { Badge } from '@/shared/components/ui/Badge';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
+import { SkeletonTable } from '@/shared/components/ui/Skeleton';
 import { Alert } from '@/shared/components/ui/Alert';
 import { useToast } from '@/shared/components/ui/Toast';
 import { useCurrentUser } from '@/shared/components/layout/AuthProvider';
@@ -404,11 +405,7 @@ export default function DailyChecklistPage() {
 
       {/* Task List grouped by Horse */}
       {loading ? (
-        <Card pad={32}>
-          <div style={{ textAlign: 'center', color: 'var(--muted)', padding: '1rem' }}>
-            <div style={{ fontWeight: 600 }}>{tr('Loading daily care tasks...')}</div>
-          </div>
-        </Card>
+        <SkeletonTable columns={4} rows={5} />
       ) : horseGroups.length === 0 ? (
         <Card pad={32}>
           <EmptyState

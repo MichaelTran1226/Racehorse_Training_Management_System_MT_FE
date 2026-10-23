@@ -4,6 +4,7 @@ import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
 import { Card } from "@/shared/components/ui/Card";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
+import { SkeletonTable } from "@/shared/components/ui/Skeleton";
 import { Field } from "@/shared/components/form/Field";
 import { Input } from "@/shared/components/form/Input";
 import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
@@ -122,9 +123,7 @@ export default function TrialRunsPage() {
       </Card>
 
       {loading ? (
-        <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>
-          {isVietnamese ? "Đang tải các lượt chạy thử..." : tr("Loading trial runs...")}
-        </div>
+        <SkeletonTable columns={5} rows={5} />
       ) : trials.length === 0 ? (
         <EmptyState
           title={isVietnamese ? "Chưa có lượt chạy thử nào trong khoảng thời gian này" : tr("No trial runs in this period")}

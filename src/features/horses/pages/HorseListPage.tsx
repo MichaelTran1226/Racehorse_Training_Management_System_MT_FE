@@ -22,6 +22,9 @@ import type { Horse, HorseListFilter } from "../types";
 
 import { tr } from "@/shared/i18n/tr";
 import { isVietnamese } from "@/shared/lib/language";
+import { Icon } from "@/shared/components/ui/Icon";
+import { cx } from "@/shared/lib/cx";
+import styles from "./HorseListPage.module.css";
 const STATUS_FILTERS: Array<{ id: string; label: string }> = [
   { id: "ALL", label: "All" },
   { id: "ACTIVE", label: "Ready to Race" },
@@ -94,10 +97,20 @@ export default function HorseListPage() {
   const [error, setError] = useState("");
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [breedOptions, setBreedOptions] = useState([{ value: "ALL", label: tr("Breed: All") }]);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   const genderOptions = useMemo(() => GENDER_OPTIONS.map((o) => ({ value: o.value, label: tr(o.label) })), []);
   const lockOptions = useMemo(() => LOCK_OPTIONS.map((o) => ({ value: o.value, label: tr(o.label) })), []);
   const sortOptions = useMemo(() => SORT_OPTIONS.map((o) => ({ value: o.value, label: tr(o.label) })), []);
+
+  const activeAdvancedFilterCount = useMemo(() => {
+    return [
+      queryBreed !== "ALL",
+      queryGender !== "ALL",
+      queryLock !== "ALL",
+      queryNoStall,
+    ].filter(Boolean).length;
+  }, [queryBreed, queryGender, queryLock, queryNoStall]);
 
   // Bộ lọc Giống lấy từ danh mục SC-1.06 (cả mục đã ngừng dùng, vì ngựa cũ vẫn mang giá trị đó).
   useEffect(() => {
@@ -334,53 +347,218 @@ export default function HorseListPage() {
       />
 
       <Card pad={0}>
-        <div style={{ padding: "0 20px", borderBottom: "1px solid var(--border)" }}>
-          <Tabs
-            label={tr("Filter by status")}
-            items={STATUS_FILTERS.map((s) => ({
-              id: s.id,
-              label: tr(s.label),
-              count: s.id === queryStatus && !loading && !error ? total : undefined,
-            }))}
-            active={queryStatus}
-            onChange={(id) => updateUrl({ status: id, page: 1 })}
-          />
-        </div>
+        <div className={styles.toolbarContainer}>
+          {/* Tier 1: Thanh trạng thái (Status Filter Strip) */}
+          <div className={styles.statusStrip}>
+            <Tabs
+              label={tr("Filter by status")}
+              items={STATUS_FILTERS.map((s) => ({
+                id: s.id,
+                label: tr(s.label),
+                count: s.id === queryStatus && !loading && !error ? total : undefined,
+              }))}
+              active={queryStatus}
+              onChange={(id) => updateUrl({ status: id, page: 1 })}
+            />
+          </div>
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", padding: "16px 20px" }}>
-          <div style={{ flex: "1 1 240px", maxWidth: 320 }}>
-            <Input
-              icon="search"
-              aria-label={tr("Search horses")}
-              placeholder={tr("Name, HR code, microchip or RFID")}
-              value={searchInput}
-              onChange={(e) => handleSearchChange(e.target.value)}
-            />
+          {/* Tier 2: Thanh tìm kiếm & bộ lọc chính (Gọn gàng, dễ tiếp cận) */}
+          <div className={styles.mainBar}>
+            <div className={styles.leftControls}>
+              <div className={styles.searchWrap}>
+                <Input
+                  icon="search"
+                  aria-label={tr("Search horses")}
+                  placeholder={tr("Name, HR code, microchip or RFID")}
+                  value={searchInput}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowAdvancedFilters((prev) => !prev)}
+                className={cx(
+                  styles.filterToggleBtn,
+                  (showAdvancedFilters || activeAdvancedFilterCount > 0) && styles.filterActive
+                )}
+                aria-expanded={showAdvancedFilters}
+                title={tr("Advanced filters")}
+              >
+                <Icon name="sliders" size={15} />
+                <span>{tr("Filters")}</span>
+                {activeAdvancedFilterCount > 0 && (
+                  <span className={styles.filterBadge}>{activeAdvancedFilterCount}</span>
+                )}
+                <Icon
+                  name="chevronDown"
+                  size={12}
+                  style={{
+                    transform: showAdvancedFilters ? "rotate(180deg)" : "rotate(0deg)",
+                    transition: "transform 0.2s ease",
+                  }}
+                />
+              </button>
+            </div>
+
+            <div className={styles.rightControls}>
+              <div className={styles.sortWrap}>
+                <Select
+                  aria-label={tr("Sort")}
+                  value={querySort}
+                  options={sortOptions}
+                  onChange={(e) => updateUrl({ sort: e.target.value, page: 1 })}
+                />
+              </div>
+
+              {filtered && (
+                <Button tone="ghost" size="sm" icon="x" onClick={resetFilters}>
+                  {tr("Clear all")}
+                </Button>
+              )}
+            </div>
           </div>
-          <div style={{ width: 160 }}>
-            <Select aria-label={tr("Breed")} value={queryBreed} options={breedOptions} onChange={(e) => updateUrl({ breed: e.target.value, page: 1 })} />
-          </div>
-          <div style={{ width: 130 }}>
-            <Select aria-label={tr("Sex")} value={queryGender} options={genderOptions} onChange={(e) => updateUrl({ gender: e.target.value, page: 1 })} />
-          </div>
-          <div style={{ width: 190 }}>
-            <Select
-              aria-label={tr("Training Lock")}
-              value={queryLock}
-              options={lockOptions}
-              onChange={(e) => updateUrl({ lock: e.target.value, page: 1 })}
-            />
-          </div>
-          {(currentUser.role === "CLUB_MANAGER" || currentUser.role === "HEAD_TRAINER") && (
-            <Checkbox checked={queryNoStall} onChange={(v) => updateUrl({ noStall: v ? "true" : undefined, page: 1 })} label={tr("No stall yet")} />
+
+          {/* Tier 3: Ngăn kéo bộ lọc nâng cao (Expandable Drawer khi cần) */}
+          {showAdvancedFilters && (
+            <div className={styles.filterDrawer}>
+              <div className={styles.filterGrid}>
+                <div className={styles.filterField}>
+                  <label className={styles.fieldLabel}>{tr("Breed")}</label>
+                  <Select
+                    aria-label={tr("Breed")}
+                    value={queryBreed}
+                    options={breedOptions}
+                    onChange={(e) => updateUrl({ breed: e.target.value, page: 1 })}
+                  />
+                </div>
+
+                <div className={styles.filterField}>
+                  <label className={styles.fieldLabel}>{tr("Sex")}</label>
+                  <Select
+                    aria-label={tr("Sex")}
+                    value={queryGender}
+                    options={genderOptions}
+                    onChange={(e) => updateUrl({ gender: e.target.value, page: 1 })}
+                  />
+                </div>
+
+                <div className={styles.filterField}>
+                  <label className={styles.fieldLabel}>{tr("Training Lock")}</label>
+                  <Select
+                    aria-label={tr("Training Lock")}
+                    value={queryLock}
+                    options={lockOptions}
+                    onChange={(e) => updateUrl({ lock: e.target.value, page: 1 })}
+                  />
+                </div>
+
+                {(currentUser.role === "CLUB_MANAGER" || currentUser.role === "HEAD_TRAINER") && (
+                  <div className={styles.checkboxField}>
+                    <Checkbox
+                      checked={queryNoStall}
+                      onChange={(v) => updateUrl({ noStall: v ? "true" : undefined, page: 1 })}
+                      label={tr("No stall yet")}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className={styles.drawerFooter}>
+                {activeAdvancedFilterCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateUrl({ breed: undefined, gender: undefined, lock: undefined, noStall: undefined, page: 1 });
+                    }}
+                    className={styles.clearAllTextBtn}
+                  >
+                    {tr("Reset advanced filters")}
+                  </button>
+                ) : (
+                  <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                    {tr("Filter by breed, sex, lock status and stall assignment")}
+                  </span>
+                )}
+
+                <Button size="sm" tone="secondary" onClick={() => setShowAdvancedFilters(false)}>
+                  {tr("Close")}
+                </Button>
+              </div>
+            </div>
           )}
-          <div style={{ width: 180, marginLeft: "auto" }}>
-            <Select aria-label={tr("Sort")} value={querySort} options={sortOptions} onChange={(e) => updateUrl({ sort: e.target.value, page: 1 })} />
-          </div>
-          {filtered && (
-            <Button tone="ghost" size="sm" icon="x" onClick={resetFilters}>
-              {tr("Clear filters")}
-            </Button>
+
+          {/* Tier 4: Các chip bộ lọc đang hoạt động (Hiển thị ngay khi đóng ngăn kéo để người dùng luôn nắm bắt) */}
+          {!showAdvancedFilters && activeAdvancedFilterCount > 0 && (
+            <div className={styles.chipsRow}>
+              <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>{tr("Active filters:")}</span>
+
+              {queryBreed !== "ALL" && (
+                <span className={styles.chip}>
+                  {tr("Breed")}: <strong>{queryBreed}</strong>
+                  <button
+                    type="button"
+                    aria-label={tr("Remove filter")}
+                    onClick={() => updateUrl({ breed: undefined, page: 1 })}
+                    className={styles.chipCloseBtn}
+                  >
+                    ✕
+                  </button>
+                </span>
+              )}
+
+              {queryGender !== "ALL" && (
+                <span className={styles.chip}>
+                  {tr("Sex")}: <strong>{queryGender}</strong>
+                  <button
+                    type="button"
+                    aria-label={tr("Remove filter")}
+                    onClick={() => updateUrl({ gender: undefined, page: 1 })}
+                    className={styles.chipCloseBtn}
+                  >
+                    ✕
+                  </button>
+                </span>
+              )}
+
+              {queryLock !== "ALL" && (
+                <span className={styles.chip}>
+                  {tr("Lock")}: <strong>{queryLock === "true" ? tr("Locked") : tr("Not locked")}</strong>
+                  <button
+                    type="button"
+                    aria-label={tr("Remove filter")}
+                    onClick={() => updateUrl({ lock: undefined, page: 1 })}
+                    className={styles.chipCloseBtn}
+                  >
+                    ✕
+                  </button>
+                </span>
+              )}
+
+              {queryNoStall && (
+                <span className={styles.chip}>
+                  {tr("No stall yet")}
+                  <button
+                    type="button"
+                    aria-label={tr("Remove filter")}
+                    onClick={() => updateUrl({ noStall: undefined, page: 1 })}
+                    className={styles.chipCloseBtn}
+                  >
+                    ✕
+                  </button>
+                </span>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  updateUrl({ breed: undefined, gender: undefined, lock: undefined, noStall: undefined, page: 1 });
+                }}
+                className={styles.clearAllTextBtn}
+              >
+                {tr("Reset filters")}
+              </button>
+            </div>
           )}
         </div>
 

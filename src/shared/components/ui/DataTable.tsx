@@ -54,15 +54,28 @@ export function DataTable<T>({ columns, rows, rowKey, loading, empty, caption, s
         </thead>
         <tbody>
           {loading
-            ? Array.from({ length: SKELETON_ROWS }, (_, i) => (
-                <tr key={i} className={styles.row}>
-                  {columns.map((c) => (
-                    <td key={c.key} className={cx(styles.td, c.hideOnNarrow && styles.narrow)}>
-                      <span className={styles.skeleton} />
-                    </td>
-                  ))}
-                </tr>
-              ))
+            ? Array.from({ length: SKELETON_ROWS }, (_, i) => {
+                const rowWidths = [
+                  ["75%", "55%", "65%", "45%", "40%"],
+                  ["60%", "70%", "50%", "60%", "35%"],
+                  ["85%", "45%", "75%", "50%", "45%"],
+                  ["65%", "60%", "45%", "55%", "30%"],
+                  ["70%", "50%", "60%", "40%", "50%"],
+                ];
+                const widths = rowWidths[i % rowWidths.length];
+                return (
+                  <tr key={i} className={styles.row}>
+                    {columns.map((c, colIdx) => (
+                      <td key={c.key} className={cx(styles.td, c.hideOnNarrow && styles.narrow)}>
+                        <span
+                          className={styles.skeleton}
+                          style={{ width: widths[colIdx % widths.length] || "60%" }}
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })
             : rows.map((row) => {
                 const isSelected = selectedKey !== undefined && selectedKey !== null && rowKey(row) === selectedKey;
                 return (

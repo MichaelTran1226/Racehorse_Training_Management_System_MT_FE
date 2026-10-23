@@ -18,6 +18,7 @@ import { EMAIL_MAX, EMAIL_RE } from "@/shared/lib/email";
 import { PASSWORD_MAX } from "@/shared/lib/password";
 import { safeNext } from "../flow";
 import { EMAIL_PLACEHOLDER } from "@/shared/lib/brand";
+import { triggerCloudTransition } from "@/shared/lib/cloudTransition";
 import styles from "./AuthPages.module.css";
 
 interface AlertState {
@@ -77,6 +78,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [checking, setChecking] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [capsLock, setCapsLock] = useState(false);
@@ -94,8 +96,8 @@ export default function LoginPage() {
 
   // Đã đăng nhập rồi mà vào /login thì đưa thẳng vào app.
   useEffect(() => {
-    if (status === "authenticated" && params) navigate(next, { replace: true });
-  }, [status, params, next, navigate]);
+    if (status === "authenticated" && params && !isTransitioning) navigate(next, { replace: true });
+  }, [status, params, next, navigate, isTransitioning]);
 
   function onEmailChange(value: string) {
     setEmail(value);
@@ -124,10 +126,14 @@ export default function LoginPage() {
     setNextStep(undefined);
     setChecking(true);
     try {
+      setIsTransitioning(true);
       await signIn(mail, password, remember);
       saveLock(mail, null);
-      navigate(next, { replace: true });
+      triggerCloudTransition(() => {
+        navigate(next, { replace: true });
+      });
     } catch (err) {
+      setIsTransitioning(false);
       const failure = loginFailure(err);
       setAlert(failure.alert);
       setEmailError(failure.emailError ?? "");

@@ -5,6 +5,7 @@ import { Badge } from "@/shared/components/ui/Badge";
 import { Button } from "@/shared/components/ui/Button";
 import { Card } from "@/shared/components/ui/Card";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
+import { SkeletonTable } from "@/shared/components/ui/Skeleton";
 import { Input } from "@/shared/components/form/Input";
 import { Pagination } from "@/shared/components/ui/Pagination";
 import { Tabs } from "@/shared/components/ui/Tabs";
@@ -118,10 +119,11 @@ export default function PlanListPage() {
         </Alert>
       )}
 
-      <Card>
-        {loading ? (
-          <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>{tr("Loading training plans...")}</div>
-        ) : shown.length === 0 ? (
+      {loading ? (
+        <SkeletonTable columns={6} rows={5} />
+      ) : (
+        <Card>
+          {shown.length === 0 ? (
           <EmptyState
             title={plans.length === 0 ? tr("No training plans yet.") : tr("No plans match the filter.")}
             action={isTrainer && plans.length === 0 ? <Button onClick={() => navigate("/training/plans/new")}>Create plan</Button> : undefined}
@@ -190,6 +192,7 @@ export default function PlanListPage() {
           </div>
         )}
       </Card>
+      )}
 
       {cloning && (
         <ClonePlanDialog

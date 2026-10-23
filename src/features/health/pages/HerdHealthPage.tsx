@@ -5,6 +5,7 @@ import { Button } from "@/shared/components/ui/Button";
 import { Badge } from "@/shared/components/ui/Badge";
 import { Alert } from "@/shared/components/ui/Alert";
 import { Segmented } from "@/shared/components/ui/Segmented";
+import { SkeletonCards } from "@/shared/components/ui/Skeleton";
 import { Input } from "@/shared/components/form/Input";
 import { Select } from "@/shared/components/form/Select";
 import { Checkbox } from "@/shared/components/form/Checkbox";
@@ -372,7 +373,7 @@ export default function HerdHealthPage() {
       <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           {loading ? (
-            <div style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>{tr("Loading herd health…")}</div>
+            <SkeletonCards count={4} />
           ) : horses.length === 0 ? (
             <div style={{ padding: 40, textAlign: "center", border: "2px dashed var(--border)", borderRadius: "var(--r-lg)" }}>{tr("No horses yet.")}</div>
           ) : filtered.length === 0 && view === "cards" ? (

@@ -1,4 +1,4 @@
-/* Nút theo DESIGN.md: cao 44px (md), 36px (sm, dùng trong bảng/thanh lọc), bo 7px, chữ 14px. */
+/* Nút hiện đại, sắc nét theo phong cách Linear/Notion/SaaS cao cấp */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -10,29 +10,85 @@
   white-space: nowrap;
   cursor: pointer;
   border-radius: var(--r-btn);
-  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+  position: relative;
+  transition:
+    background var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease),
+    transform 0.1s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+.btn:active:not(.off) {
+  transform: translateY(1px) scale(0.98);
 }
 .block { display: flex; width: 100%; }
 .link, .link:hover { text-decoration: none; }
 .link.primary:hover { color: var(--text-on-brand); }
 .link.secondary:hover { color: var(--text); }
 
-.sm { height: var(--control-h-sm); min-width: var(--control-h-sm); padding: 0 12px; font-size: var(--fs-body); gap: 6px; }
-.md { height: var(--control-h); padding: 0 16px; font-size: var(--fs-body); gap: 8px; }
-.lg { height: 48px; padding: 0 20px; font-size: var(--fs-body-lg); gap: 8px; }
+.sm { height: var(--control-h-sm); min-width: var(--control-h-sm); padding: 0 12px; font-size: var(--fs-body); gap: 6px; border-radius: 7px; }
+.md { height: var(--control-h); padding: 0 16px; font-size: var(--fs-body); gap: 8px; border-radius: 8px; }
+.lg { height: 48px; padding: 0 20px; font-size: var(--fs-body-lg); gap: 8px; border-radius: 10px; }
 
-.primary { background: var(--brand); color: var(--text-on-brand); border-color: var(--brand); }
-.primary:hover:not(.off) { background: var(--brand-600); border-color: var(--brand-600); }
+/* Tông Dark (nút Filters như trong ảnh mẫu): Nền đen/slate đậm, chữ trắng sắc nét, viền rõ ràng */
+.dark {
+  background: #0F172A;
+  color: #FFFFFF;
+  border-color: #0F172A;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+.dark:hover:not(.off) {
+  background: #1E293B;
+  border-color: #1E293B;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+:global([data-theme="dark"]) .dark {
+  background: #1E293B;
+  color: #F8FAFC;
+  border-color: #334155;
+}
+:global([data-theme="dark"]) .dark:hover:not(.off) {
+  background: #334155;
+  border-color: #475569;
+}
+
+/* Tông Outline (nút Grouping, Columns như trong ảnh mẫu): Nền trắng/bề mặt, viền sắc nét, bóng nhẹ */
+.outline, .secondary {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border-strong);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+.outline:hover:not(.off), .secondary:hover:not(.off) {
+  background: var(--surface-2);
+  border-color: var(--border-field);
+  color: var(--text);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.07);
+}
+
+.primary {
+  background: var(--brand);
+  color: var(--text-on-brand);
+  border-color: var(--brand);
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.primary:hover:not(.off) {
+  background: var(--brand-600);
+  border-color: var(--brand-600);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+}
+
 .accent { background: var(--brand); color: var(--text-on-brand); border-color: var(--brand); }
 .accent:hover:not(.off) { background: var(--brand-600); border-color: var(--brand-600); }
 .danger { background: var(--danger); color: var(--text-on-brand); border-color: var(--danger); }
 .danger:hover:not(.off) { background: var(--danger-600); border-color: var(--danger-600); }
-.secondary { background: var(--surface); color: var(--text); border-color: var(--border-strong); }
-.secondary:hover:not(.off) { background: var(--surface-2); border-color: var(--border-field); }
-.quiet { background: var(--brand-50); color: var(--brand-600); }
-.quiet:hover:not(.off) { background: var(--brand-100); }
-.ghost { background: transparent; color: var(--text-2); }
+
+.quiet { background: var(--brand-50); color: var(--brand-600); border-color: var(--brand-100); }
+.quiet:hover:not(.off) { background: var(--brand-100); border-color: var(--brand-200, #BFDBFE); }
+.ghost { background: transparent; color: var(--text-2); border-color: transparent; }
 .ghost:hover:not(.off) { background: var(--surface-3); color: var(--text); }
 
 /* Bị chặn: nền xám, chữ nhạt — không làm mờ cả nút (khó đọc). */
-.off { background: var(--surface-3); border-color: var(--border); color: var(--muted); cursor: not-allowed; }
+.off { background: var(--surface-3); border-color: var(--border); color: var(--muted); cursor: not-allowed; box-shadow: none; }
+

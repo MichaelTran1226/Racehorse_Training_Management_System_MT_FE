@@ -1,0 +1,275 @@
+/* EquiFlow Horse List - Modern Clean Filter & Toolbar UI */
+
+.toolbarContainer {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface, #FFFFFF);
+  border-radius: var(--r-card, 10px) var(--r-card, 10px) 0 0;
+}
+
+/* Tier 1: Thanh trạng thái (Status Filter Strip) */
+.statusStrip {
+  padding: 12px 20px 8px;
+  border-bottom: 1px solid var(--border, #E2E8F0);
+  overflow-x: auto;
+}
+
+/* Tier 2: Thanh tìm kiếm & bộ lọc chính (Main Action Bar) */
+.mainBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  flex-wrap: wrap;
+}
+
+.leftControls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.searchWrap {
+  flex: 1 1 260px;
+  max-width: 380px;
+  min-width: 200px;
+}
+
+/* Nút bấm Filters dạng Pill đen / nổi bật */
+.filterToggleBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 8px;
+  background: var(--surface, #FFFFFF);
+  color: var(--text, #0F172A);
+  border: 1px solid var(--border-strong, #CBD5E1);
+  font-family: var(--font);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.filterToggleBtn:hover {
+  background: var(--surface-2, #F1F5F9);
+  border-color: var(--border-field, #94A3B8);
+  color: var(--text, #0F172A);
+}
+
+.filterToggleBtn:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+/* Khi đang mở bộ lọc hoặc có bộ lọc đang áp dụng */
+.filterActive {
+  background: #0F172A !important;
+  color: #FFFFFF !important;
+  border-color: #0F172A !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+:global([data-theme="dark"]) .filterToggleBtn {
+  background: #1E293B;
+  border-color: #334155;
+  color: #F8FAFC;
+}
+
+:global([data-theme="dark"]) .filterToggleBtn:hover {
+  background: #334155;
+  border-color: #475569;
+}
+
+:global([data-theme="dark"]) .filterActive {
+  background: var(--brand, #2563EB) !important;
+  border-color: var(--brand, #2563EB) !important;
+  color: #FFFFFF !important;
+}
+
+.filterBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--brand, #2563EB);
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.filterActive .filterBadge {
+  background: #FFFFFF;
+  color: #0F172A;
+}
+
+.rightControls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.sortWrap {
+  width: 180px;
+}
+
+/* Tier 3: Khung lọc mở rộng dạng Drawer (gọn gàng, ngăn nắp) */
+.filterDrawer {
+  padding: 16px 20px;
+  background: var(--surface-2, #F8FAFC);
+  border-top: 1px solid var(--border, #E2E8F0);
+  border-bottom: 1px solid var(--border, #E2E8F0);
+  animation: slideDownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideDownFade {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+:global([data-theme="dark"]) .filterDrawer {
+  background: #0B1329;
+  border-color: #1E293B;
+}
+
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.filterField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-2, #475569);
+  text-transform: uppercase;
+}
+
+:global([data-theme="dark"]) .fieldLabel {
+  color: #94A3B8;
+}
+
+.checkboxField {
+  display: flex;
+  align-items: center;
+  height: 38px;
+}
+
+.drawerFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border, #E2E8F0);
+}
+
+:global([data-theme="dark"]) .drawerFooter {
+  border-color: #334155;
+}
+
+/* Tier 4: Các chip/thẻ bộ lọc đang hoạt động */
+.chipsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--surface-2, #F8FAFC);
+  border-top: 1px solid var(--border, #E2E8F0);
+  flex-wrap: wrap;
+}
+
+:global([data-theme="dark"]) .chipsRow {
+  background: #0B1329;
+  border-color: #1E293B;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--surface, #FFFFFF);
+  border: 1px solid var(--border-strong, #CBD5E1);
+  color: var(--text, #0F172A);
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+:global([data-theme="dark"]) .chip {
+  background: #1E293B;
+  border-color: #334155;
+  color: #F8FAFC;
+}
+
+.chipCloseBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: none;
+  background: var(--surface-3, #E2E8F0);
+  color: var(--text-2, #475569);
+  cursor: pointer;
+  padding: 0;
+  font-size: 10px;
+  line-height: 1;
+  transition: all 0.12s ease;
+}
+
+.chipCloseBtn:hover {
+  background: var(--danger, #EF4444);
+  color: #FFFFFF;
+}
+
+:global([data-theme="dark"]) .chipCloseBtn {
+  background: #334155;
+  color: #94A3B8;
+}
+
+.clearAllTextBtn {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brand, #2563EB);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.clearAllTextBtn:hover {
+  color: var(--brand-600, #1D4ED8);
+}

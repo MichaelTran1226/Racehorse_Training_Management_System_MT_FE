@@ -3,6 +3,7 @@ import { PageHeader } from "@/shared/components/layout/PageHeader";
 import { Card } from "@/shared/components/ui/Card";
 import { Badge } from "@/shared/components/ui/Badge";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
+import { SkeletonTable } from "@/shared/components/ui/Skeleton";
 import { tr } from "@/shared/i18n/tr";
 import { fetchTournaments, fetchTournamentDetail } from "../api";
 import type { Tournament } from "../types";
@@ -67,9 +68,7 @@ export default function RaceResultsPage() {
       />
 
       {loading ? (
-        <Card pad={32}>
-          <div style={{ textAlign: "center", color: "var(--muted)" }}>{tr("Loading race results...")}</div>
-        </Card>
+        <SkeletonTable columns={5} rows={5} />
       ) : tournaments.length === 0 ? (
         <Card pad={32}>
           <EmptyState

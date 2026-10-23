@@ -6,11 +6,13 @@ import { Button } from "@/shared/components/ui/Button";
 import { Modal } from "@/shared/components/ui/Modal";
 import { KpiTile } from "@/shared/components/ui/KpiTile";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
+import { SkeletonTable } from "@/shared/components/ui/Skeleton";
 import { useCurrentUser } from "@/shared/components/layout/AuthProvider";
 import { tr } from "@/shared/i18n/tr";
 import { useAppLanguage } from "@/shared/lib/language";
 import { fetchOwnerSummary, changeInvoiceStatus, generateMonthlyInvoices, payInvoice } from "../api";
 import type { FinancialInvoice, InvoiceStatus, OwnerSummaryResponse } from "../types";
+import { ViewToolbar, type ViewTabItem } from "@/shared/components/ui/ViewToolbar";
 
 export default function OwnerFinancialReportsPage() {
   useAppLanguage();
@@ -21,6 +23,24 @@ export default function OwnerFinancialReportsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<string>("ALL");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  // ViewToolbar state
+  const [activeView, setActiveView] = useState("analysis");
+  const [activeMode, setActiveMode] = useState("financial");
+  const [showFilterBar, setShowFilterBar] = useState(false);
+  const [groupBy, setGroupBy] = useState<"period" | "horse" | "none">("none");
+
+  const viewTabs: ViewTabItem[] = [
+    { id: "people_mgmt", label: "People Management", locked: true },
+    { id: "analysis", label: "Analysis", locked: true },
+    { id: "saved_view", label: "My saved view" },
+    { id: "budget_23q4", label: "Budgeting 23Q4" },
+  ];
+
+  const viewModes = [
+    { id: "people", label: "People view" },
+    { id: "financial", label: "Financial view" },
+  ];
 
   // Generate monthly invoices modal state
   const [isGenerateOpen, setIsGenerateOpen] = useState(false);
@@ -232,46 +252,94 @@ export default function OwnerFinancialReportsPage() {
         </div>
       </Card>
 
-      {/* Filter and Period Selector */}
+      {/* Modern SaaS Views & Action Toolbar matching the user design specification */}
       <Card pad={16}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <label style={{ fontWeight: 600, fontSize: "var(--fs-sm)" }}>{tr("Billing Period:")}</label>
-            <select
-              value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value)}
-              style={{
-                padding: "0.5rem 1rem",
-                borderRadius: "var(--r-sm, 6px)",
-                border: "1px solid var(--border)",
-                background: "var(--surface)",
-                color: "var(--ink)",
-                fontSize: "var(--fs-sm)",
-                fontWeight: 600,
-              }}
-            >
-              <option value="ALL">{tr("All Billing Periods")}</option>
-              {periods.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
-          </div>
+        <ViewToolbar
+          views={viewTabs}
+          activeView={activeView}
+          onSelectView={(v) => setActiveView(v)}
+          onNewView={() => alert(tr("New view creation modal"))}
+          onFilterClick={() => setShowFilterBar((prev) => !prev)}
+          onGroupingClick={() => {
+            const next = groupBy === "none" ? "horse" : groupBy === "horse" ? "period" : "none";
+            setGroupBy(next);
+          }}
+          onColumnsClick={() => alert(tr("Customize table columns"))}
+          modes={viewModes}
+          activeMode={activeMode}
+          onSelectMode={(m) => setActiveMode(m)}
+        />
 
-          <div style={{ display: "flex", gap: "1.5rem", fontSize: "var(--fs-xs)", color: "var(--muted)" }}>
-            <span>🏠 {tr("Stall Boarding:")} {((summary?.totalBoarding ?? 0) / 1000000).toLocaleString()}M</span>
-            <span>🩺 {tr("Veterinary Care:")} {((summary?.totalMedical ?? 0) / 1000000).toLocaleString()}M</span>
-            <span>🏇 {tr("Conditioning:")} {((summary?.totalTraining ?? 0) / 1000000).toLocaleString()}M</span>
+        {/* Dynamic Filter & Status Bar */}
+        {(showFilterBar || selectedPeriod !== "ALL" || groupBy !== "none") && (
+          <div
+            style={{
+              marginTop: "12px",
+              paddingTop: "12px",
+              borderTop: "1px solid var(--border)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "10px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+              <label style={{ fontWeight: 600, fontSize: "13px", color: "var(--text)" }}>{tr("Billing Period:")}</label>
+              <select
+                value={selectedPeriod}
+                onChange={(e) => setSelectedPeriod(e.target.value)}
+                style={{
+                  padding: "0.35rem 0.75rem",
+                  borderRadius: "6px",
+                  border: "1px solid var(--border-strong)",
+                  background: "var(--surface)",
+                  color: "var(--text)",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                }}
+              >
+                <option value="ALL">{tr("All Billing Periods")}</option>
+                {periods.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+
+              {groupBy !== "none" && (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "3px 8px",
+                    borderRadius: "6px",
+                    background: "var(--brand-50)",
+                    border: "1px solid var(--brand-100)",
+                    color: "var(--brand-600)",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                  }}
+                >
+                  ⬡ {tr("Grouped by:")} {groupBy === "horse" ? tr("Horse") : tr("Billing Period")}
+                </span>
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: "1.25rem", fontSize: "12px", color: "var(--muted)", fontWeight: 500 }}>
+              <span>🏠 {tr("Boarding:")} {((summary?.totalBoarding ?? 0) / 1000000).toLocaleString()}M</span>
+              <span>🩺 {tr("Medical:")} {((summary?.totalMedical ?? 0) / 1000000).toLocaleString()}M</span>
+              <span>🏇 {tr("Conditioning:")} {((summary?.totalTraining ?? 0) / 1000000).toLocaleString()}M</span>
+            </div>
           </div>
-        </div>
+        )}
       </Card>
 
       {/* Invoices List Table */}
       {loading ? (
-        <Card pad={32}>
-          <div style={{ textAlign: "center", color: "var(--muted)" }}>{tr("Loading financial statements...")}</div>
-        </Card>
+        <SkeletonTable columns={6} rows={6} />
       ) : filteredInvoices.length === 0 ? (
         <Card pad={32}>
           <EmptyState

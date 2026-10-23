@@ -1,0 +1,179 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+/* Hàng 1: Danh sách các tab/view đã lưu */
+.viewsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.newViewBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px dashed var(--border-strong, #CBD5E1);
+  background: transparent;
+  color: var(--text-2, #475569);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.newViewBtn:hover {
+  background: var(--surface-2, #F1F5F9);
+  border-color: var(--brand, #2563EB);
+  color: var(--brand, #2563EB);
+}
+
+.viewTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong, #CBD5E1);
+  background: var(--surface, #FFFFFF);
+  color: var(--text-2, #475569);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
+}
+.viewTab:hover {
+  background: var(--surface-2, #F1F5F9);
+  color: var(--text, #0F172A);
+  border-color: var(--border-field, #94A3B8);
+}
+.activeViewTab {
+  border-color: var(--brand, #2563EB);
+  color: var(--text, #0F172A);
+  font-weight: 600;
+  background: var(--surface, #FFFFFF);
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.12), 0 0 0 1px rgba(37, 99, 235, 0.15);
+}
+
+:global([data-theme="dark"]) .viewTab {
+  background: #1E293B;
+  border-color: #334155;
+  color: #94A3B8;
+}
+:global([data-theme="dark"]) .viewTab:hover {
+  background: #334155;
+  color: #F8FAFC;
+}
+:global([data-theme="dark"]) .activeViewTab {
+  border-color: var(--brand, #60A5FA);
+  color: #F8FAFC;
+  background: #1E293B;
+}
+
+/* Hàng 2: Thanh thao tác (Action Bar) */
+.actionBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.leftActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rightActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Nút Filters (nền tối, chữ trắng đậm, tương phản cao) */
+.filterBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 6px;
+  background: #0F172A;
+  color: #FFFFFF;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid #0F172A;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  transition: all 0.15s ease;
+}
+.filterBtn:hover {
+  background: #1E293B;
+  border-color: #1E293B;
+}
+.filterBtn:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+:global([data-theme="dark"]) .filterBtn {
+  background: #1E293B;
+  border-color: #334155;
+  color: #F8FAFC;
+}
+:global([data-theme="dark"]) .filterBtn:hover {
+  background: #334155;
+}
+
+/* Nút khung viền trắng/bề mặt sắc nét (Grouping, Columns) */
+.outlineBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 6px;
+  background: var(--surface, #FFFFFF);
+  color: var(--text, #0F172A);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--border-strong, #CBD5E1);
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
+}
+.outlineBtn:hover {
+  background: var(--surface-2, #F1F5F9);
+  border-color: var(--border-field, #94A3B8);
+  color: var(--text, #0F172A);
+}
+.outlineBtn:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+:global([data-theme="dark"]) .outlineBtn {
+  background: #1E293B;
+  border-color: #334155;
+  color: #F8FAFC;
+}
+:global([data-theme="dark"]) .outlineBtn:hover {
+  background: #334155;
+  border-color: #475569;
+}
