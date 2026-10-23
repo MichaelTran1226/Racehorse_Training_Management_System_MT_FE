@@ -13,12 +13,40 @@ import { EXERCISE_TYPE_LABEL, SESSION_STATUS_LABEL } from "@/features/training/t
 import { getZones } from "@/features/stable/api";
 import { getHorses } from "@/features/horses/api";
 import { listAccounts } from "@/features/accounts/api";
-import { fetchTournaments } from "@/features/racing/api";
+import { fetchTournamentDetail, fetchTournaments } from "@/features/racing/api";
+import { dailyTasksApi } from "@/features/stable/api/dailyTasksApi";
+import { getMyShifts } from "@/features/stable/api/shiftRosterApi";
+import { incidentsApi } from "@/features/stable/api/incidentsApi";
+import { fetchOwnerSummary } from "@/features/financial/api";
+import type { InvoiceStatus } from "@/features/financial/types";
 import type { Tournament } from "@/features/racing/types";
 import { useLoaded } from "./DashboardBlocks";
 import { ActionItemsCard } from "./ActionItemsCard";
 import { tr } from "@/shared/i18n/tr";
 import { useAppLanguage } from "@/shared/lib/language";
+
+const INVOICE_STATUS_VI: Record<InvoiceStatus, string> = {
+  DRAFT: "Nháp",
+  SENT: "Đã gửi",
+  PAID: "Đã thanh toán",
+  OVERDUE: "Quá hạn",
+  CANCELLED: "Đã hủy",
+};
+const INVOICE_STATUS_EN: Record<InvoiceStatus, string> = {
+  DRAFT: "Draft",
+  SENT: "Sent",
+  PAID: "Paid",
+  OVERDUE: "Overdue",
+  CANCELLED: "Cancelled",
+};
+
+/** Tuần Thứ Hai – Chủ Nhật chứa ngày `date` (YYYY-MM-DD). */
+function clubWeek(date: string): [string, string] {
+  const d = new Date(`${date}T00:00:00Z`);
+  const monday = new Date(d.getTime() - ((d.getUTCDay() + 6) % 7) * 86_400_000);
+  const sunday = new Date(monday.getTime() + 6 * 86_400_000);
+  return [monday.toISOString().slice(0, 10), sunday.toISOString().slice(0, 10)];
+}
 
 const TOURNAMENT_STATUS_LABEL: Record<string, string> = {
   UPCOMING: "Sắp diễn ra",
@@ -284,11 +312,11 @@ export function ManagerDashboard({ user }: { user: AuthUser }) {
 
   const s = board.data?.summary;
   const k = overview.data?.kpis;
-  const zoneTotal = (zones.data ?? []).reduce((n, z) => n + (z.stallCount ?? 0), 0) || 19;
-  const zoneUsed = (zones.data ?? []).reduce((n, z) => n + (z.occupiedCount ?? 0), 0) || 8;
-  const occupancyPercent = Math.round((zoneUsed / zoneTotal) * 100);
+  const zoneTotal = (zones.data ?? []).reduce((n, z) => n + (z.stallCount ?? 0), 0);
+  const zoneUsed = (zones.data ?? []).reduce((n, z) => n + (z.occupiedCount ?? 0), 0);
+  const occupancyPercent = zoneTotal ? Math.round((zoneUsed / zoneTotal) * 100) : 0;
 
-  const pendingCount = pending.data?.length ?? 2;
+  const pendingCount = pending.data?.length ?? 0;
   const emptyStallsCount = zoneTotal - zoneUsed;
 
   // Attention Horses for Right Column
@@ -305,12 +333,7 @@ export function ManagerDashboard({ user }: { user: AuthUser }) {
           iconBg="#EAF7EE"
           iconColor="#059669"
           label={isVi ? "Ngựa đang quản lý" : "Horses under management"}
-          value={s?.total ?? 8}
-          trend={
-            <span style={{ color: "#059669", fontWeight: 600 }}>
-              ↑ 2 {isVi ? "so với tháng trước" : tr("vs last month")}
-            </span>
-          }
+          value={s?.total ?? "—"}
           to="/horses"
         />
 
@@ -319,8 +342,8 @@ export function ManagerDashboard({ user }: { user: AuthUser }) {
           iconBg="#EBF2FE"
           iconColor="#2563eb"
           label={isVi ? "Buổi tập hôm nay" : tr("Today's workouts")}
-          value={k ? `${k.todayCompleted}/${k.todayTotal}` : "0/0"}
-          trend={<span>{k ? `${k.activePlans} ${isVi ? "giáo án đang áp dụng" : tr("active plans")}` : isVi ? "2 giáo án đang áp dụng" : "2 active plans"}</span>}
+          value={k ? `${k.todayCompleted}/${k.todayTotal}` : "—"}
+          trend={<span>{k ? `${k.activePlans} ${isVi ? "giáo án đang áp dụng" : tr("active plans")}` : "—"}</span>}
           to="/training"
         />
 
@@ -329,10 +352,10 @@ export function ManagerDashboard({ user }: { user: AuthUser }) {
           iconBg="#FDECEB"
           iconColor="#dc2626"
           label={isVi ? "Cần chăm sóc y tế" : "Medical safety"}
-          value={s ? s.lockedCount + s.observationCount : 3}
+          value={s ? s.lockedCount + s.observationCount : "—"}
           trend={
             <span style={{ color: "#dc2626", fontWeight: 600 }}>
-              ↑ {s?.lockedCount ?? 2} {isVi ? "khóa huấn luyện" : "locked"} · {s?.observationCount ?? 1} {isVi ? "cần theo dõi" : "watch"}
+              ↑ {s?.lockedCount ?? "—"} {isVi ? "khóa huấn luyện" : "locked"} · {s?.observationCount ?? "—"} {isVi ? "cần theo dõi" : "watch"}
             </span>
           }
           to="/herd"
@@ -355,7 +378,7 @@ export function ManagerDashboard({ user }: { user: AuthUser }) {
         <ActionItemsCard
           pendingCount={pendingCount}
           emptyStallsCount={emptyStallsCount}
-          lockedCount={s?.lockedCount ?? 2}
+          lockedCount={s?.lockedCount ?? 0}
         />
 
         {/* Right: Tình trạng sức khỏe ngựa */}
@@ -447,57 +470,9 @@ export function ManagerDashboard({ user }: { user: AuthUser }) {
                 );
               })
             ) : (
-              // Sample Fallback matching Image 2
-              [
-                { id: "h1", name: "Midnight Mirage", stall: "STALL-C01", sub: isVi ? "Khóa huấn luyện · Theo dõi" : "Training Lock", badge: "🟣 Cách ly", tone: "violet" },
-                { id: "h2", name: "Northern Dancer Legacy", stall: "STALL-A02", sub: isVi ? "Chấn thương · Đang điều trị" : "Injured · In treatment", badge: "🔴 Chấn thương", tone: "danger" },
-                { id: "h3", name: "Shadowfax Wonder", stall: "STALL-B01", sub: isVi ? "Cần theo dõi · Tình trạng ổn định" : "Under observation", badge: "🟡 Theo dõi", tone: "warn" },
-              ].map((h) => (
-                <Link
-                  key={h.id}
-                  to="/herd"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "10px 12px",
-                    borderRadius: "10px",
-                    background: "var(--surface-muted, rgba(0,0,0,0.02))",
-                    border: "1px solid var(--border)",
-                    textDecoration: "none",
-                    color: "inherit",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <div
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        borderRadius: "50%",
-                        background: "var(--surface-sunken, #e5e7eb)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "14px",
-                      }}
-                    >
-                      🐎
-                    </div>
-                    <div>
-                      <div style={{ fontSize: "var(--fs-sm)", fontWeight: 700, color: "var(--ink)" }}>
-                        {h.name} <span style={{ color: "var(--muted)", fontWeight: 400 }}>({h.stall})</span>
-                      </div>
-                      <div style={{ fontSize: "var(--fs-xs)", color: "var(--muted)", marginTop: "2px" }}>
-                        📍 {h.sub}
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <Badge tone={h.tone as any}>{h.badge}</Badge>
-                    <Icon name="chevronRight" size={16} />
-                  </div>
-                </Link>
-              ))
+              <p style={{ margin: 0, color: "var(--muted)", fontSize: "var(--fs-sm)" }}>
+                {board.data ? (isVi ? "Không có ngựa cần chú ý." : "No horse needs attention.") : "—"}
+              </p>
             )}
           </div>
         </Card>
@@ -634,7 +609,7 @@ export function TrainerDashboard() {
           iconBg="#d1fae5"
           iconColor="#059669"
           label={isVi ? "Giáo án đang hoạt động" : "Active training plans"}
-          value={k?.activePlans ?? 2}
+          value={k?.activePlans ?? "—"}
           trend={<span>{isVi ? "Đang huấn luyện tích cực" : "Active coaching"}</span>}
           to="/training/plans"
         />
@@ -643,7 +618,7 @@ export function TrainerDashboard() {
           iconBg="#dbeafe"
           iconColor="#2563eb"
           label={isVi ? "Buổi tập hôm nay" : tr("Today's workouts")}
-          value={k ? `${k.todayCompleted}/${k.todayTotal}` : "0/0"}
+          value={k ? `${k.todayCompleted}/${k.todayTotal}` : "—"}
           trend={<span>{isVi ? "Hoàn thành / Kế hoạch" : "Done / Planned"}</span>}
           to="/training"
         />
@@ -652,7 +627,7 @@ export function TrainerDashboard() {
           iconBg="#fee2e2"
           iconColor="#dc2626"
           label={isVi ? "Bị khóa y tế (7 ngày tới)" : tr("Blocked (7 days)")}
-          value={k?.blockedNext7Days ?? 0}
+          value={k?.blockedNext7Days ?? "—"}
           trend={<span style={{ color: "#dc2626" }}>{isVi ? "Cấm bài tập nặng" : "Heavy blocked"}</span>}
           to="/locks"
         />
@@ -661,7 +636,7 @@ export function TrainerDashboard() {
           iconBg="#fef3c7"
           iconColor="#d97706"
           label={isVi ? "Tải trọng tăng đột ngột" : tr("Load spike")}
-          value={k?.loadSpikeHorses ?? 0}
+          value={k?.loadSpikeHorses ?? "—"}
           trend={<span style={{ color: "#d97706" }}>ACWR {">"} 1.3</span>}
           to="/training"
         />
@@ -704,7 +679,7 @@ export function VetDashboard() {
           iconBg="#fee2e2"
           iconColor="#dc2626"
           label={isVi ? "Lệnh khóa y tế hiệu lực" : "Training Locks in force"}
-          value={s?.lockedCount ?? 2}
+          value={s?.lockedCount ?? "—"}
           trend={<span style={{ color: "#dc2626" }}>{isVi ? "Cấm xuất chuồng / thi đấu" : "Prohibited"}</span>}
           to="/locks"
         />
@@ -713,7 +688,7 @@ export function VetDashboard() {
           iconBg="#fef3c7"
           iconColor="#d97706"
           label={isVi ? "Đang theo dõi đặc biệt" : tr("Under observation")}
-          value={s?.observationCount ?? 1}
+          value={s?.observationCount ?? "—"}
           trend={<span style={{ color: "#d97706" }}>{isVi ? "Khám lâm sàng định kỳ" : "Routine clinical"}</span>}
           to="/herd"
         />
@@ -763,6 +738,19 @@ export function VetDashboard() {
 // ------------------------------------------------------------------
 export function GroomDashboard() {
   const { isVietnamese: isVi } = useAppLanguage();
+  const today = todayClub();
+  const [weekStart, weekEnd] = clubWeek(today);
+  const horses = useLoaded(() => getHorses({ limit: 100 }));
+  const shifts = useLoaded(() => getMyShifts({ startDate: weekStart, endDate: weekEnd }));
+  const tasks = useLoaded(() => dailyTasksApi.list({ date: today, onlyMine: true }));
+  // Sự cố còn mở = mới báo + đang xem xét.
+  const openIncidents = useLoaded(() =>
+    Promise.all([
+      incidentsApi.list({ status: "REPORTED", limit: 1 }),
+      incidentsApi.list({ status: "UNDER_REVIEW", limit: 1 }),
+    ]).then(([a, b]) => a.total + b.total),
+  );
+  const t = tasks.data?.stats;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -771,36 +759,36 @@ export function GroomDashboard() {
           icon="home"
           iconBg="#d1fae5"
           iconColor="#059669"
-          label={isVi ? "Chuồng phụ trách" : tr("Assigned Stalls")}
-          value="4"
-          trend={<span>{isVi ? "Khu Zone A" : "Zone A Barn"}</span>}
-          to="/stables/map"
+          label={isVi ? "Ngựa phụ trách" : tr("Assigned horses")}
+          value={horses.data?.items.length ?? "—"}
+          trend={<span>{isVi ? "Theo ô chuồng được phân" : "By assigned stalls"}</span>}
+          to="/horses"
         />
         <InteractiveKpiCard
           icon="calendar"
           iconBg="#dbeafe"
           iconColor="#2563eb"
           label={isVi ? "Ca trực tuần này" : tr("Weekly Roster")}
-          value="5"
-          trend={<span>{isVi ? "Ca sáng & Ca chiều" : "Morning & Afternoon"}</span>}
-          to="/rosters"
+          value={shifts.data?.length ?? "—"}
+          trend={<span>{isVi ? "Thứ Hai – Chủ Nhật" : "Monday – Sunday"}</span>}
+          to="/stable/shifts"
         />
         <InteractiveKpiCard
           icon="activity"
           iconBg="#fef3c7"
           iconColor="#d97706"
           label={isVi ? "Nhiệm vụ hôm nay" : tr("Daily tasks")}
-          value="8"
-          trend={<span>{isVi ? "Cho ăn, tắm chải, dọn chuồng" : "Feeding & Care"}</span>}
-          to="/daily-tasks"
+          value={t ? `${t.completed}/${t.total}` : "—"}
+          trend={<span>{isVi ? "Đã xong / tổng việc" : "Done / total"}</span>}
+          to="/tasks"
         />
         <InteractiveKpiCard
           icon="alert"
           iconBg="#fee2e2"
           iconColor="#dc2626"
           label={isVi ? "Sự cố cần kiểm tra" : tr("Incidents")}
-          value="0"
-          trend={<span style={{ color: "#059669" }}>{isVi ? "An toàn" : "Safe"}</span>}
+          value={openIncidents.data ?? "—"}
+          trend={<span>{isVi ? "Mới báo hoặc đang xem xét" : "Reported or under review"}</span>}
           to="/incidents"
         />
       </div>
@@ -811,12 +799,16 @@ export function GroomDashboard() {
             <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 750 }}>
               {isVi ? "Nhiệm vụ chăm sóc ngựa" : tr("Daily Care Tasks")}
             </h3>
-            <Link to="/daily-tasks" style={{ fontSize: "var(--fs-xs)", color: "var(--brand)" }}>
+            <Link to="/tasks" style={{ fontSize: "var(--fs-xs)", color: "var(--brand)" }}>
               {isVi ? "Chi tiết nhiệm vụ →" : tr("All tasks →")}
             </Link>
           </div>
           <p style={{ margin: 0, color: "var(--muted)", fontSize: "var(--fs-sm)" }}>
-            {isVi ? "Đã hoàn thành các bữa ăn sáng và vệ sinh máng nước chuồng A01 - A04." : tr("Morning feeds completed.")}
+            {t
+              ? isVi
+                ? `Hôm nay đã xong ${t.completed}/${t.total} việc, còn ${t.pending} việc.`
+                : `${t.completed}/${t.total} tasks done today, ${t.pending} left.`
+              : "—"}
           </p>
         </Card>
 
@@ -832,7 +824,30 @@ export function GroomDashboard() {
 export function OwnerDashboard() {
   const { isVietnamese: isVi } = useAppLanguage();
   const horses = useLoaded(() => getHorses({ limit: 100 }));
-  const myHorsesCount = horses.data?.items?.length ?? 1;
+  const plans = useLoaded(() => trainingApi.getPlans({ status: "ACTIVE" }));
+  const summary = useLoaded(() => fetchOwnerSummary());
+  const mine = horses.data ? new Set(horses.data.items.map((h) => h.id)) : null;
+  // shortcut: 1 lượt gọi chi tiết cho mỗi giải có người đăng ký; thêm endpoint đếm theo chủ ngựa khi số giải lớn.
+  const entries = useLoaded(
+    () =>
+      fetchTournaments({ limit: 100 }).then(async (res) => {
+        const withEntries = res.items.filter((t) => (t.registeredCount ?? 0) > 0);
+        const details = await Promise.all(withEntries.map((t) => fetchTournamentDetail(t.id)));
+        return details.flatMap((d) => d.registrations ?? []);
+      }),
+  );
+  const myHorsesCount = horses.data?.items.length ?? "—";
+  const raceEntries = entries.data && mine ? entries.data.filter((r) => mine.has(r.horseId)).length : "—";
+  const latestInvoice = summary.data
+    ? [...summary.data.invoices].sort((a, b) => b.billingPeriod.localeCompare(a.billingPeriod))[0]
+    : undefined;
+  const invoiceText = !summary.data
+    ? "—"
+    : latestInvoice
+      ? (isVi ? INVOICE_STATUS_VI : INVOICE_STATUS_EN)[latestInvoice.status]
+      : isVi
+        ? "Chưa có"
+        : "None";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -851,8 +866,8 @@ export function OwnerDashboard() {
           iconBg="#dbeafe"
           iconColor="#2563eb"
           label={isVi ? "Giáo án đang chạy" : tr("Active plans")}
-          value="1"
-          trend={<span>{isVi ? "Đạt 75% khối lượng" : "75% completed"}</span>}
+          value={plans.data?.length ?? "—"}
+          trend={<span>{isVi ? "Của các ngựa bạn sở hữu" : "For your horses"}</span>}
           to="/progress"
         />
         <InteractiveKpiCard
@@ -860,8 +875,8 @@ export function OwnerDashboard() {
           iconBg="#fef3c7"
           iconColor="#d97706"
           label={isVi ? "Giải đua đã tham gia" : tr("Races entered")}
-          value="1"
-          trend={<span style={{ color: "#059669" }}>🏆 {isVi ? "Hạng 1 giải Mùa Thu" : "Rank 1 Winner"}</span>}
+          value={raceEntries}
+          trend={<span>{isVi ? "Lượt đăng ký thi đấu" : "Race registrations"}</span>}
           to="/races"
         />
         <InteractiveKpiCard
@@ -869,9 +884,9 @@ export function OwnerDashboard() {
           iconBg="#ede9fe"
           iconColor="#7c3aed"
           label={isVi ? "Hóa đơn tháng này" : tr("Monthly invoice")}
-          value={isVi ? "Đã quyết toán" : "Paid"}
-          trend={<span>{isVi ? "Xem sao kê minh bạch" : "View statement"}</span>}
-          to="/owner/financial"
+          value={invoiceText}
+          trend={<span>{latestInvoice ? latestInvoice.billingPeriod : isVi ? "Xem sao kê minh bạch" : "View statement"}</span>}
+          to="/financial-reports"
         />
       </div>
 
@@ -885,11 +900,19 @@ export function OwnerDashboard() {
               {isVi ? "Chi tiết giáo án →" : tr("Plan detail →")}
             </Link>
           </div>
-          <p style={{ margin: 0, color: "var(--muted)", fontSize: "var(--fs-sm)" }}>
-            {isVi
-              ? "Ngựa Thunderbolt Swift đang hồi phục thể lực tốt sau giải đua Grand Autumn Cup 2026."
-              : tr("Thunderbolt Swift is in prime fitness after Grand Autumn Cup.")}
-          </p>
+          {plans.data && plans.data.length > 0 ? (
+            <ul style={{ margin: 0, paddingLeft: "18px", color: "var(--muted)", fontSize: "var(--fs-sm)" }}>
+              {plans.data.map((p) => (
+                <li key={p.id}>
+                  <Link to={`/training/plans/${p.id}`}>{p.horseName}</Link> · {p.name}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p style={{ margin: 0, color: "var(--muted)", fontSize: "var(--fs-sm)" }}>
+              {plans.data ? (isVi ? "Chưa có giáo án đang áp dụng." : "No active plan.") : "—"}
+            </p>
+          )}
         </Card>
 
         <UpcomingTournamentsWidget />
