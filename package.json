@@ -32,7 +32,8 @@
     "preview": "vite preview",
     "lint": "oxlint",
     "test": "playwright test",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:live": "playwright test -c playwright.live.config.ts"
   },
   "dependencies": {
     "i18next": "^26.4.4",
